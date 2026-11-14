@@ -1,0 +1,3 @@
+# Git nao mexe em fim de linha nem em BOM de nenhum arquivo
+# (os .sql precisam ficar exatamente como foram gerados: CRLF, BOM so com acento)
+* -text

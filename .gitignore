@@ -1,0 +1,41 @@
+# .gitignore do SistemaCMJ (criado em 14/11/2026)
+
+# Access legado: binario grande, nao versionar
+CashBookCMJ/
+*.mdb
+*.accdb
+*.ldb
+*.laccdb
+
+# Material de referencia do padrao de origem (nao faz parte do sistema)
+Padrao_SQL/
+padroes/Scripts.sql
+
+# Pasta temporaria do Google Drive e lixo do Windows
+.tmp.driveupload/
+desktop.ini
+Thumbs.db
+
+# Segredos e credenciais (PADRAO_SQL regra 54): nunca no Git
+secrets.json
+appsettings.*.local.json
+*.env
+.env*
+*.pfx
+*.p12
+*.pem
+*.key
+*chave_privada*
+
+# .NET / Visual Studio / VS Code
+bin/
+obj/
+.vs/
+*.user
+*.suo
+publish/
+
+# Backups e logs
+*.bak
+*.trn
+*.log
