@@ -23,7 +23,8 @@ Atualizado em 14/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dize
 
 | Nº | Nome da conversa | Fase do plano |
 |---|---|---|
-| 01 | Git e levantamento do Access | 1 |
+| 01 | Git e levantamento do Access (Git concluído em 14/11/2026) | 1 |
+| 01b | Levantamento do Access | 1 |
 | 02 | Base SIS (licença, parâmetros, usuários, auditoria, lote, anexo, log, fila de e-mail) | 2 |
 | 03 | Modelo de dados (cadastros, imóveis, vendas, financeiro) | 2 |
 | 04 | API ASP.NET Core (esqueleto, login, fila de e-mail, agendador) | 3 |
