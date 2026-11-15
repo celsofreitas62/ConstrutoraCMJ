@@ -13,6 +13,7 @@
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02a).
+    v1.1 (15/11/2026) - Etapa 02b: SENHA_PBKDF2_ITERACOES.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -39,6 +40,8 @@ FROM (VALUES
          N'Tamanho máximo de cada anexo, em MB.', 'SIS', 1),
         ('LOG_PASSO_DIAS_RETENCAO', N'90', 'INTEIRO',
          N'Dias que o log passo a passo das rotinas é guardado (mínimo 7). O log de erros não é apagado.', 'SIS', 1),
+        ('SENHA_PBKDF2_ITERACOES', N'600000', 'INTEIRO',
+         N'Iterações do PBKDF2-SHA256 usadas pela API ao gravar senha (mínimo aceito: 100000).', 'SIS', 0),
         ('CIDADE_PADRAO', N'Poços de Caldas', 'TEXTO',
          N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)

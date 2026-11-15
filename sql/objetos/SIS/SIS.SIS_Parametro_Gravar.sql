@@ -15,23 +15,25 @@
                   TEXTO    livre (espaços das pontas removidos)
                 Devolve 1 linha: SUCESSO, MENSAGEM, ID_PARAMETRO.
                 Antes/depois vai para SIS.Auditoria pela trigger (etapa 02c).
-                Conferência de permissão: entra na v1.1 (etapa 02b).
+                Permissão: SIS_PARAMETRO / ALTERAR.
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02a).
+    v1.1 (15/11/2026) - Etapa 02b: recebe @IdUsuario (no lugar do nome) e
+                        confere a permissão SIS_PARAMETRO / ALTERAR.
 
   Homologação (LOCAL):
-    -- EXEC SIS.SIS_Parametro_Gravar @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'10', @Usuario = N'teste';
-    -- EXEC SIS.SIS_Parametro_Gravar @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'8',  @Usuario = N'teste';
+    -- EXEC SIS.SIS_Parametro_Gravar @IdUsuario = 2, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'10';
+    -- EXEC SIS.SIS_Parametro_Gravar @IdUsuario = 2, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'8';
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
 CREATE OR ALTER PROCEDURE [SIS].[SIS_Parametro_Gravar]
-    @Chave    VARCHAR(60),
-    @Valor    NVARCHAR(4000),
-    @Usuario  NVARCHAR(100) = NULL
+    @IdUsuario  INT,
+    @Chave      VARCHAR(60),
+    @Valor      NVARCHAR(4000)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -47,9 +49,16 @@ BEGIN
     DECLARE @ValorNovo    NVARCHAR(4000) = N'';
     DECLARE @Data         DATE;
     DECLARE @Linhas       INT            = 0;
+    DECLARE @Usuario      NVARCHAR(100);
 
     BEGIN TRY
-        SET @Usuario   = ISNULL(NULLIF(LTRIM(RTRIM(@Usuario)), N''), SIS.fn_SIS_Usuario_Atual());
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_PARAMETRO', 'ALTERAR') = 0
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Você não tem permissão para alterar parâmetros.' AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS INT) AS ID_PARAMETRO;
+            RETURN;
+        END;
+
+        SET @Usuario   = SIS.fn_SIS_Usuario_Login(@IdUsuario);
         SET @Chave     = UPPER(LTRIM(RTRIM(ISNULL(@Chave, ''))));
         SET @ValorNovo = LTRIM(RTRIM(ISNULL(@Valor, N'')));
 

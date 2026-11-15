@@ -11,6 +11,9 @@
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02a).
+    v1.1 (15/11/2026) - Etapa 02b: procedures recebem @IdUsuario (usa o
+                        usuário celso, administrador geral); confere os 10 parâmetros da 02a
+                        pela chave. Rodar depois do pacote 02b.
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -35,6 +38,7 @@ CREATE TABLE #Ret   (SUCESSO BIT, MENSAGEM NVARCHAR(400), ID_PARAMETRO INT);
 
 DECLARE @ValorOriginal NVARCHAR(4000);
 DECLARE @EmailOriginal NVARCHAR(4000);
+DECLARE @IdAdmin       INT = (SELECT u.ID_USUARIO FROM SIS.Usuario u WHERE u.LOGIN = 'celso');
 
 -- 1) Objetos esperados
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO)
@@ -61,7 +65,9 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO)
 SELECT N'Carga: módulos', N'9', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Modulo;
 
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO)
-SELECT N'Carga: parâmetros', N'10', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Parametro;
+SELECT N'Carga: parâmetros da 02a', N'10', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Parametro p
+WHERE p.CHAVE IN ('EMAIL_TESTE', 'EMAIL_ADMIN_ALERTA', 'EMAIL_TENTATIVAS_MAX', 'SENHA_TAMANHO_MINIMO', 'SENHA_TENTATIVAS_BLOQUEIO',
+                  'SESSAO_MINUTOS_INATIVIDADE', 'ANEXO_PASTA_RAIZ', 'ANEXO_TAMANHO_MAX_MB', 'LOG_PASSO_DIAS_RETENCAO', 'CIDADE_PADRAO');
 
 -- 2) Functions
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
@@ -91,35 +97,35 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
 SELECT @ValorOriginal = p.VALOR FROM SIS.Parametro p WHERE p.CHAVE = 'SENHA_TAMANHO_MINIMO';
 SELECT @EmailOriginal = p.VALOR FROM SIS.Parametro p WHERE p.CHAVE = 'EMAIL_ADMIN_ALERTA';
 
-INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'abc', @Usuario = N'homologacao';
+INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'abc';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Gravar inteiro inválido (recusa)', N'0', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
 
-INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N' 12 ', @Usuario = N'homologacao';
+INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N' 12 ';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Gravar inteiro válido', N'1', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Valor gravado sem espaços', N'12', p.VALOR FROM SIS.Parametro p WHERE p.CHAVE = 'SENHA_TAMANHO_MINIMO';
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Usuário da alteração', N'homologacao', ISNULL(p.USUARIO_ALTERACAO, N'') FROM SIS.Parametro p WHERE p.CHAVE = 'SENHA_TAMANHO_MINIMO';
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Usuário da alteração', N'celso', ISNULL(p.USUARIO_ALTERACAO, N'') FROM SIS.Parametro p WHERE p.CHAVE = 'SENHA_TAMANHO_MINIMO';
 
-INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'12', @Usuario = N'homologacao';
+INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'12';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Gravar mesmo valor (sem alteração)', N'Nenhuma alteração: o valor já era este.', MENSAGEM FROM #Ret; DELETE FROM #Ret;
 
-INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = @ValorOriginal, @Usuario = N'homologacao';
+INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = @ValorOriginal;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Restaurar valor original', N'1', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
 
-INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @Chave = 'EMAIL_TESTE', @Valor = N'outro@exemplo.com', @Usuario = N'homologacao';
+INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'EMAIL_TESTE', @Valor = N'outro@exemplo.com';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Gravar parâmetro não editável (recusa)', N'0', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'EMAIL_TESTE continua igual', N'celsofreitas62@gmail.com', p.VALOR FROM SIS.Parametro p WHERE p.CHAVE = 'EMAIL_TESTE';
 
-INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @Chave = 'NAO_EXISTE', @Valor = N'1', @Usuario = N'homologacao';
+INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'NAO_EXISTE', @Valor = N'1';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Gravar parâmetro inexistente (recusa)', N'0', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
 
-INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @Chave = 'EMAIL_ADMIN_ALERTA', @Valor = N'a@b.com; c@d.com', @Usuario = N'homologacao';
+INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'EMAIL_ADMIN_ALERTA', @Valor = N'a@b.com; c@d.com';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Gravar dois e-mails (recusa)', N'0', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
 
-INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @Chave = 'email_admin_alerta', @Valor = N'Teste@Exemplo.com', @Usuario = N'homologacao';
+INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'email_admin_alerta', @Valor = N'Teste@Exemplo.com';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Gravar e-mail válido (chave minúscula)', N'1', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'E-mail gravado em minúsculas', N'teste@exemplo.com', p.VALOR FROM SIS.Parametro p WHERE p.CHAVE = 'EMAIL_ADMIN_ALERTA';
 
-INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @Chave = 'EMAIL_ADMIN_ALERTA', @Valor = @EmailOriginal, @Usuario = N'homologacao';
+INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'EMAIL_ADMIN_ALERTA', @Valor = @EmailOriginal;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Restaurar e-mail original', N'1', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
 
 -- 4) Log de erro
@@ -143,8 +149,8 @@ SELECT N'RESUMO' AS GRADE,
 FROM #Teste t;
 
 -- 6) Listas (só para conferir na tela)
-EXEC SIS.SIS_Parametro_Listar;
-EXEC SIS.SIS_Log_Erro_Listar @Rotina = N'HOMOLOGACAO';
+EXEC SIS.SIS_Parametro_Listar @IdUsuario = @IdAdmin;
+EXEC SIS.SIS_Log_Erro_Listar @IdUsuario = @IdAdmin, @Rotina = N'HOMOLOGACAO';
 EXEC SIS.SIS_Log_Limpar_Processar;
 
 DROP TABLE IF EXISTS #Teste;

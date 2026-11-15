@@ -70,6 +70,8 @@ git commit -m "mensagem que o Claude sugerir"
 
 Para ver o histórico: `git log --oneline`.
 
+**Sempre comece pelo `Set-Location C:\SistemaCMJ`**: o PowerShell abre em `C:\Users\celso`, e lá o Git responde `fatal: not a git repository`. Se aparecer esse erro, rode o `Set-Location` e repita os comandos.
+
 Cuidados: a pasta é sincronizada com o Google Drive. Não edite o projeto em dois computadores ao mesmo tempo. Nunca coloque senha, chave ou certificado na pasta fora dos lugares que o `.gitignore` já protege.
 
 ## 7. Se algo der errado

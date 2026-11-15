@@ -11,20 +11,23 @@
                 ou erro técnico fazem THROW 50001 com mensagem amigável (o erro
                 técnico real vai para SIS.Log_Erro) e a API mostra a mensagem
                 de erros 50001 ao usuário.
-                Conferência de permissão: entra na v1.1 (etapa 02b).
+                Permissão: SIS_LOG_ERRO / VER.
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02a).
+    v1.1 (15/11/2026) - Etapa 02b: recebe @IdUsuario e confere a permissão
+                        SIS_LOG_ERRO / VER.
 
   Homologação (LOCAL):
-    -- EXEC SIS.SIS_Log_Erro_Listar;
-    -- EXEC SIS.SIS_Log_Erro_Listar @DtInicio = '2026-11-01', @DtFim = '2026-11-30', @Origem = 'API', @Texto = N'teste';
+    -- EXEC SIS.SIS_Log_Erro_Listar @IdUsuario = 2;
+    -- EXEC SIS.SIS_Log_Erro_Listar @IdUsuario = 2, @DtInicio = '2026-11-01', @DtFim = '2026-11-30', @Origem = 'API', @Texto = N'teste';
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
 CREATE OR ALTER PROCEDURE [SIS].[SIS_Log_Erro_Listar]
+    @IdUsuario  INT,
     @DtInicio   DATE           = NULL,
     @DtFim      DATE           = NULL,
     @Rotina     NVARCHAR(256)  = NULL,
@@ -40,6 +43,9 @@ BEGIN
     DECLARE @EtapaAtual VARCHAR(100)  = 'Validação dos filtros';
 
     BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_LOG_ERRO', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver o log de erros.', 1;
+
         SET @DtFim     = ISNULL(@DtFim, CAST(SYSDATETIME() AS DATE));
         SET @DtInicio  = ISNULL(@DtInicio, DATEADD(DAY, -30, @DtFim));
         SET @Rotina    = NULLIF(LTRIM(RTRIM(@Rotina)), N'');
