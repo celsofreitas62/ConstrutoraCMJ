@@ -1,6 +1,6 @@
 # Guia do Celso: como trabalhar com o Claude no SistemaCMJ
 
-Atualizado em 14/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dizer ao Claude.
+Atualizado em 15/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dizer ao Claude.
 
 ---
 
@@ -24,7 +24,7 @@ Atualizado em 14/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dize
 | Nº | Nome da conversa | Fase do plano |
 |---|---|---|
 | 01 | Git e levantamento do Access (Git concluído em 14/11/2026) | 1 |
-| 01b | Levantamento do Access | 1 |
+| 01b | Levantamento do Access (concluído em 15/11/2026) | 1 |
 | 02 | Base SIS (licença, parâmetros, usuários, auditoria, lote, anexo, log, fila de e-mail) | 2 |
 | 03 | Modelo de dados (cadastros, imóveis, vendas, financeiro) | 2 |
 | 04 | API ASP.NET Core (esqueleto, login, fila de e-mail, agendador) | 3 |
@@ -48,6 +48,8 @@ Se uma etapa ficar grande, abra outra com o mesmo número e uma letra (ex.: `07b
 - **Onde paramos?**: resumo do estado atual.
 
 ## 5. O que só você faz
+
+- **Confirmar o próximo passo**: o Claude sempre propõe e espera o seu OK antes de desenvolver (o sistema é modernizado, nada do Access é copiado sem você aprovar).
 
 - **Aprovar** o acesso à pasta (o Claude não aprova por você).
 - **Rodar os scripts SQL** no SSMS: Arquivo → Abrir → escolher o `.sql` → conferir o banco no alto da tela → **F5**. Sempre no `SISTEMACMJ_LOCAL` primeiro.

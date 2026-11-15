@@ -30,12 +30,12 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 
 **Situação em 15/11/2026, 10h (conversa 01b)**: extração **concluída sem erros** na base atual e na base de 2015. Levantamento escrito em `legado/schema_access.md` (tabelas, movimento, comparação das três fontes de movimento, qualidade dos dados, telas e relatórios). Conclusão principal: a base de 2015 é um backup antigo e não traz dado novo (aguardando confirmação do Celso). Pontos para o Celso decidir: seção 7 do `schema_access.md`.
 
-**Ao retomar, primeiro** (atualizado em 14/11/2026, fim da conversa 01):
-1. Perguntar ao Celso se a proposta foi aprovada (e se entrou a cláusula de licença de uso, seção 3.5) e se já tem as respostas pendentes: versão do Windows do servidor e as 4 perguntas da seção 3.3.
-2. **Próximo passo combinado**: **Fase 1, levantamento do Access** (seções 5 e 7), na conversa **"01b – Levantamento do Access"**: ler `CashBookCMJ/CashBookCMJ.mdb` (telas, consultas, VBA) e `CashBookCMJ/CashBookCMJ_be.mdb` (dados) e documentar em `legado/`. Primeiro resolver **como ler o .mdb**: no notebook não há driver ACE e a máquina de trabalho do Claude não tem `mdbtools`; opções: instalar o *Microsoft Access Database Engine* (mesma arquitetura do Office) e extrair por script no Windows, ou exportar pelo próprio Access, se o Celso tiver o Access instalado. O VBA e os formulários só saem pelo Access (ou por script com o Access instalado).
-3. Depois: script da **base `SIS`** (licença, parâmetros, usuários/permissões, auditoria, lote, anexo, log, fila de e-mail), seções 3.4 a 3.7.
+**Ao retomar, primeiro** (atualizado em 15/11/2026, fim da conversa 01b):
+1. Perguntar ao Celso se a proposta foi aprovada (e se entrou a cláusula de licença de uso, seção 3.5) e se já tem as respostas pendentes: versão do Windows do servidor, as 4 perguntas da seção 3.3 e as 3 decisões do levantamento (`legado/schema_access.md`, seção 7: base 2015 fora da migração? histórico desde 2008 ou a partir de um ano? materiais/modelos/cheques continuam?).
+2. **Próximo passo confirmado pelo Celso (15/11/2026)**: **Fase 2, base `SIS`**, na conversa **"02 – Base SIS"**: licença, parâmetros, usuários/permissões, auditoria, lote, anexo, log, fila de e-mail (seções 3.4 a 3.7), seguindo `padroes/`. **Antes de escrever qualquer script, apresentar a proposta de tabelas e procedures e esperar a confirmação do Celso** (regra da seção 9).
+3. Fase 1 (levantamento) **concluída** em 15/11/2026: material em `legado/` (ver `legado/schema_access.md`). As regras de cada tela antiga (parcelas, reajuste, pagamento em lote, transferências) serão lidas do VBA (`legado/extracao/objetos/`) quando cada módulo for desenhado, e levadas ao Celso para decidir o que modernizar.
 4. Trabalho organizado em **uma conversa por etapa**, dentro do projeto **SistemaCMJ** no Claude; cada conversa começa lendo este arquivo e termina atualizando esta seção.
-5. **Ao fechar cada etapa, lembrar o Celso** de abrir uma conversa nova dentro do projeto, com o nome da próxima etapa (lista em `docs/GUIA_DO_CELSO.md`, seção 3), e escrever "Vamos continuar o SistemaCMJ".
+5. **Ao fechar cada etapa, avisar o Celso** para abrir uma conversa nova dentro do projeto, com o nome da próxima etapa (lista em `docs/GUIA_DO_CELSO.md`, seção 3), e escrever "Vamos continuar o SistemaCMJ".
 
 ## 1. Objetivo
 
@@ -286,7 +286,7 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 
 ## 7. Plano de trabalho (fases)
 
-1. **Levantamento**: extrair o Access (estrutura, consultas, VBA, volume) e documentar em `legado/`. Fechar as decisões pendentes.
+1. **Levantamento**: extrair o Access (estrutura, consultas, VBA, volume) e documentar em `legado/`. Fechar as decisões pendentes. **Concluído em 15/11/2026** (`legado/schema_access.md`); restam as 3 decisões da seção 7 desse arquivo.
 2. **Modelo de dados** em SQL (arquivos em `sql/objetos/<BLOCO>/`) + base `SIS` (usuários, parâmetros, log, fila de e-mail, grupos).
 3. **Serviço/API** esqueleto: login, chamada genérica de procedure, processador da fila de e-mail, agendador.
 4. **Cadastros** (telas HTML + procedures).
@@ -351,3 +351,4 @@ C:\SistemaCMJ\            (sincronizada com o Google Drive)
 - **15/11/2026**: pedido do Celso para a fase de desenvolvimento das telas: **menu do sistema em formato drill-down lateral**, se possível (seção 3, item 8).
 - **15/11/2026**: **regra do Celso**: sempre perguntar o próximo passo para confirmação antes de desenvolver; o sistema será modernizado, nada do Access é copiado como foi feito sem confirmação (seção 9 e `padroes/BOAS_PRATICAS.md`). Avisar quando for hora de abrir conversa nova.
 - **15/11/2026**: extração concluída (base atual e 2015, 0 erros). Contagem real: movimento 102.230, arquivo morto 147.866 (o Access mostrava números desatualizados por falta de compactação). Base 2015 = backup: `ArquivoMorto` 2015 100% contido no atual; movimento 2015 já existe na base atual (1.560 alterados depois e 263 excluídos depois). `ArquivoMorto` tem numeração própria que colide com o movimento: chave nova na migração, guardando número e origem. Documento: `legado/schema_access.md`.
+- **15/11/2026**: **etapa 01b encerrada** (Git: commit `8d0523b`). Próximo passo **confirmado pelo Celso**: conversa **"02 – Base SIS"**.
