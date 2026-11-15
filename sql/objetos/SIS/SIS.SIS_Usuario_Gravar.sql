@@ -27,6 +27,8 @@
     v1.1 (15/11/2026) - Dois níveis de administrador: só o nível 2 vê/altera
                         usuário de nível 2 e dá perfil de nível 2; sempre sobra
                         um usuário ativo em cada nível de administrador em uso.
+    v1.2 (15/11/2026) - Correção: login com "_" era recusado (mesmo defeito do
+                        padrão "[^...._-]" do LIKE).
 
   Homologação (LOCAL): ver sql/testes/SIS/02b_Homologacao_SIS.sql.
 *******************************************************************************/
@@ -73,7 +75,7 @@ BEGIN
         SET @Email   = LOWER(LTRIM(RTRIM(ISNULL(@Email, N''))));
         SET @Ativo   = ISNULL(@Ativo, 1);
 
-        IF LEN(@Login) < 3 OR @Login LIKE '%[^a-z0-9._-]%' COLLATE Latin1_General_BIN2
+        IF LEN(@Login) < 3 OR REPLACE(REPLACE(REPLACE(@Login, '.', ''), '_', ''), '-', '') LIKE '%[^a-z0-9]%' COLLATE Latin1_General_BIN2
             SET @Recusa = N'Login inválido: use de 3 a 40 letras minúsculas, números, ponto, hífen ou sublinhado (sem espaço e sem acento).';
         IF @Recusa = N'' AND @Nome = N''
             SET @Recusa = N'Informe o nome do usuário.';

@@ -398,6 +398,8 @@ GO
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02b).
+    v1.1 (15/11/2026) - Correção do CK_Usuario_LOGIN: login com "_" era
+                        recusado; ajuste recria a restrição em banco já criado.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -431,9 +433,20 @@ BEGIN
         CONSTRAINT PK_Usuario        PRIMARY KEY CLUSTERED (ID_USUARIO),
         CONSTRAINT UQ_Usuario_LOGIN  UNIQUE (LOGIN),
         CONSTRAINT FK_Usuario_Perfil FOREIGN KEY (ID_PERFIL) REFERENCES [SIS].[Perfil] (ID_PERFIL),
-        CONSTRAINT CK_Usuario_LOGIN  CHECK (LEN(LOGIN) >= 3 AND LOGIN NOT LIKE '%[^a-z0-9._-]%' COLLATE Latin1_General_BIN2),
+        CONSTRAINT CK_Usuario_LOGIN  CHECK (LEN(LOGIN) >= 3 AND REPLACE(REPLACE(REPLACE(LOGIN, '.', ''), '_', ''), '-', '') NOT LIKE '%[^a-z0-9]%' COLLATE Latin1_General_BIN2),
         CONSTRAINT CK_Usuario_NOME   CHECK (NOME <> N'')
     );
+END;
+GO
+
+-- Ajuste de banco criado com a v1.0 (CK_Usuario_LOGIN com o padrão defeituoso)
+IF EXISTS (SELECT 1 FROM sys.check_constraints c
+           WHERE c.name = N'CK_Usuario_LOGIN' AND c.parent_object_id = OBJECT_ID(N'[SIS].[Usuario]')
+             AND c.definition NOT LIKE N'%replace%')
+BEGIN
+    ALTER TABLE [SIS].[Usuario] DROP CONSTRAINT CK_Usuario_LOGIN;
+    ALTER TABLE [SIS].[Usuario] ADD CONSTRAINT CK_Usuario_LOGIN
+        CHECK (LEN(LOGIN) >= 3 AND REPLACE(REPLACE(REPLACE(LOGIN, '.', ''), '_', ''), '-', '') NOT LIKE '%[^a-z0-9]%' COLLATE Latin1_General_BIN2);
 END;
 GO
 
@@ -1766,6 +1779,8 @@ GO
     v1.1 (15/11/2026) - Dois níveis de administrador: só o nível 2 vê/altera
                         usuário de nível 2 e dá perfil de nível 2; sempre sobra
                         um usuário ativo em cada nível de administrador em uso.
+    v1.2 (15/11/2026) - Correção: login com "_" era recusado (mesmo defeito do
+                        padrão "[^...._-]" do LIKE).
 
   Homologação (LOCAL): ver sql/testes/SIS/02b_Homologacao_SIS.sql.
 *******************************************************************************/
@@ -1812,7 +1827,7 @@ BEGIN
         SET @Email   = LOWER(LTRIM(RTRIM(ISNULL(@Email, N''))));
         SET @Ativo   = ISNULL(@Ativo, 1);
 
-        IF LEN(@Login) < 3 OR @Login LIKE '%[^a-z0-9._-]%' COLLATE Latin1_General_BIN2
+        IF LEN(@Login) < 3 OR REPLACE(REPLACE(REPLACE(@Login, '.', ''), '_', ''), '-', '') LIKE '%[^a-z0-9]%' COLLATE Latin1_General_BIN2
             SET @Recusa = N'Login inválido: use de 3 a 40 letras minúsculas, números, ponto, hífen ou sublinhado (sem espaço e sem acento).';
         IF @Recusa = N'' AND @Nome = N''
             SET @Recusa = N'Informe o nome do usuário.';
@@ -3067,6 +3082,10 @@ GO
     v1.1 (15/11/2026) - Etapa 02b: recebe @IdUsuario (no lugar do nome) e
                         confere a permissão SIS_PARAMETRO / ALTERAR.
     v1.2 (15/11/2026) - Tipos ARQUIVO e COR (identidade visual).
+    v1.3 (15/11/2026) - Correção: nome de arquivo com "_" era recusado (o
+                        padrão "[^...._-]" do LIKE não funciona como
+                        esperado); ". _ -" agora são retirados antes de
+                        conferir se o resto é só letra e número.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Parametro_Gravar @IdUsuario = 2, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'10';
@@ -3180,7 +3199,7 @@ BEGIN
         IF @Tipo = 'ARQUIVO' AND @ValorNovo <> N''
         BEGIN
             IF LEN(@ValorNovo) > 200
-               OR @ValorNovo LIKE N'%[^A-Za-z0-9._-]%' COLLATE Latin1_General_BIN2
+               OR REPLACE(REPLACE(REPLACE(@ValorNovo, N'.', N''), N'_', N''), N'-', N'') LIKE N'%[^A-Za-z0-9]%' COLLATE Latin1_General_BIN2
                OR LOWER(@ValorNovo) NOT LIKE N'%_.png'
                   AND LOWER(@ValorNovo) NOT LIKE N'%_.jpg'
                   AND LOWER(@ValorNovo) NOT LIKE N'%_.jpeg'

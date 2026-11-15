@@ -18,6 +18,8 @@
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02b).
+    v1.1 (15/11/2026) - Correção do CK_Usuario_LOGIN: login com "_" era
+                        recusado; ajuste recria a restrição em banco já criado.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -51,9 +53,20 @@ BEGIN
         CONSTRAINT PK_Usuario        PRIMARY KEY CLUSTERED (ID_USUARIO),
         CONSTRAINT UQ_Usuario_LOGIN  UNIQUE (LOGIN),
         CONSTRAINT FK_Usuario_Perfil FOREIGN KEY (ID_PERFIL) REFERENCES [SIS].[Perfil] (ID_PERFIL),
-        CONSTRAINT CK_Usuario_LOGIN  CHECK (LEN(LOGIN) >= 3 AND LOGIN NOT LIKE '%[^a-z0-9._-]%' COLLATE Latin1_General_BIN2),
+        CONSTRAINT CK_Usuario_LOGIN  CHECK (LEN(LOGIN) >= 3 AND REPLACE(REPLACE(REPLACE(LOGIN, '.', ''), '_', ''), '-', '') NOT LIKE '%[^a-z0-9]%' COLLATE Latin1_General_BIN2),
         CONSTRAINT CK_Usuario_NOME   CHECK (NOME <> N'')
     );
+END;
+GO
+
+-- Ajuste de banco criado com a v1.0 (CK_Usuario_LOGIN com o padrão defeituoso)
+IF EXISTS (SELECT 1 FROM sys.check_constraints c
+           WHERE c.name = N'CK_Usuario_LOGIN' AND c.parent_object_id = OBJECT_ID(N'[SIS].[Usuario]')
+             AND c.definition NOT LIKE N'%replace%')
+BEGIN
+    ALTER TABLE [SIS].[Usuario] DROP CONSTRAINT CK_Usuario_LOGIN;
+    ALTER TABLE [SIS].[Usuario] ADD CONSTRAINT CK_Usuario_LOGIN
+        CHECK (LEN(LOGIN) >= 3 AND REPLACE(REPLACE(REPLACE(LOGIN, '.', ''), '_', ''), '-', '') NOT LIKE '%[^a-z0-9]%' COLLATE Latin1_General_BIN2);
 END;
 GO
 

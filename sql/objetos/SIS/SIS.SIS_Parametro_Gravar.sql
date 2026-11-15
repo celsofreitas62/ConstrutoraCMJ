@@ -26,6 +26,10 @@
     v1.1 (15/11/2026) - Etapa 02b: recebe @IdUsuario (no lugar do nome) e
                         confere a permissão SIS_PARAMETRO / ALTERAR.
     v1.2 (15/11/2026) - Tipos ARQUIVO e COR (identidade visual).
+    v1.3 (15/11/2026) - Correção: nome de arquivo com "_" era recusado (o
+                        padrão "[^...._-]" do LIKE não funciona como
+                        esperado); ". _ -" agora são retirados antes de
+                        conferir se o resto é só letra e número.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Parametro_Gravar @IdUsuario = 2, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'10';
@@ -139,7 +143,7 @@ BEGIN
         IF @Tipo = 'ARQUIVO' AND @ValorNovo <> N''
         BEGIN
             IF LEN(@ValorNovo) > 200
-               OR @ValorNovo LIKE N'%[^A-Za-z0-9._-]%' COLLATE Latin1_General_BIN2
+               OR REPLACE(REPLACE(REPLACE(@ValorNovo, N'.', N''), N'_', N''), N'-', N'') LIKE N'%[^A-Za-z0-9]%' COLLATE Latin1_General_BIN2
                OR LOWER(@ValorNovo) NOT LIKE N'%_.png'
                   AND LOWER(@ValorNovo) NOT LIKE N'%_.jpg'
                   AND LOWER(@ValorNovo) NOT LIKE N'%_.jpeg'

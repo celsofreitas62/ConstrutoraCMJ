@@ -10,6 +10,8 @@
 
   Changelog:
     v1.0 (15/11/2026) - Criação.
+    v1.1 (15/11/2026) - Testes de login com "_", "." e "-" (correção do
+                        padrão do LIKE); usuário de teste apagado no fim.
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -90,7 +92,16 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Restaurar logomarca origin
 INSERT INTO #Ret EXEC SIS.SIS_Parametro_Gravar @IdUsuario = @IdAdmin, @Chave = 'EMPRESA_LOGO_EMAIL', @Valor = N'outra.png';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'admin (CMJ) troca a logomarca (sem permissão)', N'0', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
 
--- 5) Resultado
+-- 5) Login com sublinhado, ponto e hífen (mesma correção)
+DELETE FROM SIS.Usuario WHERE LOGIN IN ('hml_teste-1.a', 'hml_x');
+DECLARE @IdPerfilAdmin INT = (SELECT TOP (1) p.ID_PERFIL FROM SIS.Perfil p WHERE p.NIVEL_ADMIN = 1 ORDER BY p.ID_PERFIL);
+INSERT INTO #Ret EXEC SIS.SIS_Usuario_Gravar @IdUsuario = @IdCelso, @Login = 'hml_teste-1.a', @Nome = N'Teste de login', @IdPerfil = @IdPerfilAdmin;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Login com _ . - aceito', N'1', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
+INSERT INTO #Ret EXEC SIS.SIS_Usuario_Gravar @IdUsuario = @IdCelso, @Login = 'hml_x#', @Nome = N'Teste de login', @IdPerfil = @IdPerfilAdmin;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Login com # (recusa)', N'0', CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret; DELETE FROM #Ret;
+DELETE FROM SIS.Usuario WHERE LOGIN IN ('hml_teste-1.a', 'hml_x');
+
+-- 6) Resultado
 SELECT N'TESTES' AS GRADE, t.ID, t.TESTE, t.ESPERADO, t.OBTIDO,
        CASE WHEN t.OBTIDO COLLATE Latin1_General_CS_AS = t.ESPERADO THEN N'OK' ELSE N'FALHOU' END AS RESULTADO
 FROM #Teste t
