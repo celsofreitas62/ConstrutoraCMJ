@@ -42,9 +42,11 @@ Serviço da aplicação (agendador interno, a cada 1 min)
 
 16. **Container** branco centralizado (largura máx. ~700 px), sombra sutil, fonte Arial/Segoe UI, margens internas. CSS **inline** (clientes de e-mail ignoram `<style>` externo e muitos ignoram o do `<head>`).
 17. **Cabeçalho colorido por severidade**:
-    - Informativo / relatório: azul institucional da CMJ (**cor a definir**; provisório `#1F4E79`), texto branco, negrito, maiúsculas.
-    - Alerta / ação imediata (vencido, falha, divergência): vermelho `#D32F2F`.
-    - Sucesso / confirmação (pagamento recebido): verde `#2E7D32`.
+    - Informativo / relatório: **cor principal do cliente**, parâmetro `EMPRESA_COR_PRINCIPAL` (CMJ: vermelho `#D43414`, da logomarca), texto branco, negrito, maiúsculas.
+    - Alerta / ação imediata (vencido, falha, divergência): parâmetro `EMAIL_COR_ALERTA` (laranja escuro `#E65100`, diferente da cor da CMJ) **e** a palavra "ALERTA" no cabeçalho, para não depender só da cor.
+    - Cores lidas sempre por `SIS.fn_SIS_Parametro_Cor('CHAVE')`, nunca escritas no código (decidido em 15/11/2026: o sistema serve a outro cliente só trocando parâmetros).
+    - Sucesso / confirmação (pagamento recebido): parâmetro `EMAIL_COR_SUCESSO` (verde `#2E7D32`).
+    - **Logomarca** no topo do e-mail: arquivo do parâmetro `EMPRESA_LOGO_EMAIL` (na pasta `IDENTIDADE_PASTA`), anexado pelo serviço como imagem embutida (CID), nunca link externo.
 18. **Tabelas zebradas**: linhas ímpares brancas, pares `#f5f5f5`; bordas discretas `#eeeeee`; **valores à direita**, códigos e datas centralizados; total em negrito na última linha.
 19. **Caixas de destaque** para mensagens de atenção (fundo claro da cor da severidade, borda à esquerda na cor forte).
 20. **Largura controlada**: antes de acrescentar coluna, tentar unificar duas correlatas (ex.: `Parcela` + `Vencimento` → `3/36 - 10/12/2026`). Pensar na leitura no celular.
@@ -58,7 +60,7 @@ Fundo `#f9f9f9`, letra pequena:
 - `Gerado automaticamente pelo sistema SistemaCMJ: [schema].[procedure]` (usar a variável `@NomeProc`, nunca texto fixo)
 - `Emitido em: dd/MM/yyyy HH:mm`
 - `Grupo de Destinatários: <código do grupo>` (só em e-mail **interno**; no e-mail ao cliente, omitir)
-- Assinatura em negrito: **razão social da CMJ** (a definir)
+- Assinatura em negrito: **razão social do cliente**, `SIS.fn_SIS_Empresa_Razao_Social()` (vem da licença)
 
 E-mail ao **cliente** (boleto, confirmação de pagamento) tem rodapé próprio, sem detalhes técnicos: razão social, CNPJ, telefone/WhatsApp do financeiro, aviso "não responda este e-mail" se a caixa for só de envio, e aviso contra golpe do boleto ("confira se o beneficiário é ... e o banco é Sicredi 748 antes de pagar").
 

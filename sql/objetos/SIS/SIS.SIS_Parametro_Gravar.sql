@@ -12,6 +12,10 @@
                   DATA     aaaa-mm-dd                  (aceita dd/mm/aaaa)
                   SN       "S" ou "N"
                   EMAIL    um endereço só, minúsculo   (vazio = não configurado)
+                  ARQUIVO  só o nome, sem pasta, sem espaço e sem acento,
+                           extensão png/jpg/jpeg/svg/gif (vazio = sem
+                           arquivo). A API grava o arquivo na pasta antes.
+                  COR      "#RRGGBB" (gravado em maiúsculas)
                   TEXTO    livre (espaços das pontas removidos)
                 Devolve 1 linha: SUCESSO, MENSAGEM, ID_PARAMETRO.
                 Antes/depois vai para SIS.Auditoria pela trigger (etapa 02c).
@@ -21,6 +25,7 @@
     v1.0 (15/11/2026) - Criação (etapa 02a).
     v1.1 (15/11/2026) - Etapa 02b: recebe @IdUsuario (no lugar do nome) e
                         confere a permissão SIS_PARAMETRO / ALTERAR.
+    v1.2 (15/11/2026) - Tipos ARQUIVO e COR (identidade visual).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Parametro_Gravar @IdUsuario = 2, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'10';
@@ -129,6 +134,25 @@ BEGIN
                     OR @ValorNovo LIKE N'%,%'
                     OR @ValorNovo LIKE N'%@%@%')
                 SET @Recusa = N'Informe um único e-mail válido (para vários destinatários, use um grupo de e-mail).';
+        END;
+
+        IF @Tipo = 'ARQUIVO' AND @ValorNovo <> N''
+        BEGIN
+            IF LEN(@ValorNovo) > 200
+               OR @ValorNovo LIKE N'%[^A-Za-z0-9._-]%' COLLATE Latin1_General_BIN2
+               OR LOWER(@ValorNovo) NOT LIKE N'%_.png'
+                  AND LOWER(@ValorNovo) NOT LIKE N'%_.jpg'
+                  AND LOWER(@ValorNovo) NOT LIKE N'%_.jpeg'
+                  AND LOWER(@ValorNovo) NOT LIKE N'%_.svg'
+                  AND LOWER(@ValorNovo) NOT LIKE N'%_.gif'
+                SET @Recusa = N'Informe só o nome do arquivo (sem pasta, sem espaço e sem acento), com extensão png, jpg, svg ou gif.';
+        END;
+
+        IF @Tipo = 'COR'
+        BEGIN
+            SET @ValorNovo = UPPER(@ValorNovo);
+            IF LEN(@ValorNovo) <> 7 OR @ValorNovo NOT LIKE N'#[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]' COLLATE Latin1_General_BIN2
+                SET @Recusa = N'Informe a cor no formato #RRGGBB (ex.: #D43414).';
         END;
 
         IF @Recusa <> N''

@@ -3053,6 +3053,10 @@ GO
                   DATA     aaaa-mm-dd                  (aceita dd/mm/aaaa)
                   SN       "S" ou "N"
                   EMAIL    um endereço só, minúsculo   (vazio = não configurado)
+                  ARQUIVO  só o nome, sem pasta, sem espaço e sem acento,
+                           extensão png/jpg/jpeg/svg/gif (vazio = sem
+                           arquivo). A API grava o arquivo na pasta antes.
+                  COR      "#RRGGBB" (gravado em maiúsculas)
                   TEXTO    livre (espaços das pontas removidos)
                 Devolve 1 linha: SUCESSO, MENSAGEM, ID_PARAMETRO.
                 Antes/depois vai para SIS.Auditoria pela trigger (etapa 02c).
@@ -3062,6 +3066,7 @@ GO
     v1.0 (15/11/2026) - Criação (etapa 02a).
     v1.1 (15/11/2026) - Etapa 02b: recebe @IdUsuario (no lugar do nome) e
                         confere a permissão SIS_PARAMETRO / ALTERAR.
+    v1.2 (15/11/2026) - Tipos ARQUIVO e COR (identidade visual).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Parametro_Gravar @IdUsuario = 2, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'10';
@@ -3172,6 +3177,25 @@ BEGIN
                 SET @Recusa = N'Informe um único e-mail válido (para vários destinatários, use um grupo de e-mail).';
         END;
 
+        IF @Tipo = 'ARQUIVO' AND @ValorNovo <> N''
+        BEGIN
+            IF LEN(@ValorNovo) > 200
+               OR @ValorNovo LIKE N'%[^A-Za-z0-9._-]%' COLLATE Latin1_General_BIN2
+               OR LOWER(@ValorNovo) NOT LIKE N'%_.png'
+                  AND LOWER(@ValorNovo) NOT LIKE N'%_.jpg'
+                  AND LOWER(@ValorNovo) NOT LIKE N'%_.jpeg'
+                  AND LOWER(@ValorNovo) NOT LIKE N'%_.svg'
+                  AND LOWER(@ValorNovo) NOT LIKE N'%_.gif'
+                SET @Recusa = N'Informe só o nome do arquivo (sem pasta, sem espaço e sem acento), com extensão png, jpg, svg ou gif.';
+        END;
+
+        IF @Tipo = 'COR'
+        BEGIN
+            SET @ValorNovo = UPPER(@ValorNovo);
+            IF LEN(@ValorNovo) <> 7 OR @ValorNovo NOT LIKE N'#[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]' COLLATE Latin1_General_BIN2
+                SET @Recusa = N'Informe a cor no formato #RRGGBB (ex.: #D43414).';
+        END;
+
         IF @Recusa <> N''
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdParametro AS ID_PARAMETRO;
@@ -3235,6 +3259,8 @@ GO
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02a).
     v1.1 (15/11/2026) - Etapa 02b: SENHA_PBKDF2_ITERACOES.
+    v1.2 (15/11/2026) - Identidade visual por cliente: pasta, logomarcas e
+                        cores (valores de fábrica = CMJ).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -3263,6 +3289,24 @@ FROM (VALUES
          N'Dias que o log passo a passo das rotinas é guardado (mínimo 7). O log de erros não é apagado.', 'SIS', 1),
         ('SENHA_PBKDF2_ITERACOES', N'600000', 'INTEIRO',
          N'Iterações do PBKDF2-SHA256 usadas pela API ao gravar senha (mínimo aceito: 100000).', 'SIS', 0),
+        ('IDENTIDADE_PASTA', N'C:\SistemaCMJ_Arquivos\Identidade', 'TEXTO',
+         N'Pasta do servidor com os arquivos de identidade visual do cliente (logomarcas).', 'SIS', 0),
+        ('EMPRESA_LOGO', N'logo.png', 'ARQUIVO',
+         N'Logomarca vertical completa (documentos, contratos, telas grandes). Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_LOGO_HORIZONTAL', N'logo_horizontal.png', 'ARQUIVO',
+         N'Logomarca horizontal (cabeçalho do sistema e dos relatórios). Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_LOGO_EMAIL', N'logo_email.png', 'ARQUIVO',
+         N'Logomarca pequena do cabeçalho dos e-mails. Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_LOGO_SIMBOLO', N'logo_simbolo.png', 'ARQUIVO',
+         N'Só o símbolo da logomarca (menu recolhido, ícone). Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_COR_PRINCIPAL', N'#D43414', 'COR',
+         N'Cor principal do cliente: cabeçalhos do sistema, dos relatórios e dos e-mails informativos.', 'SIS', 1),
+        ('EMPRESA_COR_SECUNDARIA', N'#A8A8A8', 'COR',
+         N'Cor secundária do cliente (detalhes, linhas, textos de apoio).', 'SIS', 1),
+        ('EMAIL_COR_ALERTA', N'#E65100', 'COR',
+         N'Cor dos avisos de alerta (vencido, falha, divergência). Diferente da cor principal.', 'SIS', 1),
+        ('EMAIL_COR_SUCESSO', N'#2E7D32', 'COR',
+         N'Cor das confirmações (pagamento recebido, envio concluído).', 'SIS', 1),
         ('CIDADE_PADRAO', N'Poços de Caldas', 'TEXTO',
          N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)

@@ -175,6 +175,7 @@ BEGIN
     DECLARE @CorpoHTML    NVARCHAR(MAX) = N'';
     DECLARE @Linhas       NVARCHAR(MAX) = N'';
     DECLARE @Grupo        VARCHAR(30)   = '';
+    DECLARE @CorPrincipal NVARCHAR(7)   = SIS.fn_SIS_Parametro_Cor('EMPRESA_COR_PRINCIPAL');   -- cor do cliente, nunca fixa
 
     BEGIN TRY
         IF @TipoEmail = 'VENC_PAGAR' SET @Grupo = 'FIN_PAGAR';
@@ -204,15 +205,15 @@ BEGIN
                      + N'CMJ - Contas a pagar vencendo hoje';
 
         SET @CorpoHTML = N'<div style="font-family:Arial,Segoe UI,sans-serif;max-width:700px;margin:auto;background:#ffffff;box-shadow:0 1px 4px #cccccc">'
-            + N'<div style="background:#1F4E79;color:#ffffff;padding:14px;font-weight:bold;text-transform:uppercase">Contas a pagar - vencimento hoje</div>'
+            + N'<div style="background:' + @CorPrincipal + N';color:#ffffff;padding:14px;font-weight:bold;text-transform:uppercase">Contas a pagar - vencimento hoje</div>'
             + N'<div style="padding:16px"><table style="border-collapse:collapse;width:100%;font-size:13px">'
-            + N'<tr style="background:#1F4E79;color:#ffffff"><th style="padding:6px">Vencimento</th><th style="padding:6px">Favorecido</th><th style="padding:6px">Valor</th></tr>'
+            + N'<tr style="background:' + @CorPrincipal + N';color:#ffffff"><th style="padding:6px">Vencimento</th><th style="padding:6px">Favorecido</th><th style="padding:6px">Valor</th></tr>'
             + @Linhas + N'</table></div>'
             + N'<div style="background:#f9f9f9;color:#777777;font-size:11px;padding:10px">'
             + N'Gerado automaticamente pelo sistema SistemaCMJ: ' + @NomeProc + N'<br>'
             + N'Emitido em: ' + FORMAT(SYSDATETIME(), 'dd/MM/yyyy HH:mm') + N'<br>'
             + N'Grupo de Destinatários: ' + @Grupo + N'<br>'
-            + N'<b>' + SIS.fn_SIS_Parametro('EMPRESA_RAZAO_SOCIAL') + N'</b></div></div>';
+            + N'<b>' + SIS.fn_SIS_Texto_HTML(SIS.fn_SIS_Empresa_Razao_Social()) + N'</b></div></div>';
 
         SET @EtapaAtual = 'Enfileiramento';
         INSERT INTO SIS.Email_Fila (ID_EMAIL, CHAVE_ORIGEM, PARA, ASSUNTO, CORPO_HTML, ANEXOS, STATUS, ORIGEM, DT_CRIACAO)

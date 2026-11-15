@@ -14,6 +14,8 @@
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02a).
     v1.1 (15/11/2026) - Etapa 02b: SENHA_PBKDF2_ITERACOES.
+    v1.2 (15/11/2026) - Identidade visual por cliente: pasta, logomarcas e
+                        cores (valores de fábrica = CMJ).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -42,6 +44,24 @@ FROM (VALUES
          N'Dias que o log passo a passo das rotinas é guardado (mínimo 7). O log de erros não é apagado.', 'SIS', 1),
         ('SENHA_PBKDF2_ITERACOES', N'600000', 'INTEIRO',
          N'Iterações do PBKDF2-SHA256 usadas pela API ao gravar senha (mínimo aceito: 100000).', 'SIS', 0),
+        ('IDENTIDADE_PASTA', N'C:\SistemaCMJ_Arquivos\Identidade', 'TEXTO',
+         N'Pasta do servidor com os arquivos de identidade visual do cliente (logomarcas).', 'SIS', 0),
+        ('EMPRESA_LOGO', N'logo.png', 'ARQUIVO',
+         N'Logomarca vertical completa (documentos, contratos, telas grandes). Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_LOGO_HORIZONTAL', N'logo_horizontal.png', 'ARQUIVO',
+         N'Logomarca horizontal (cabeçalho do sistema e dos relatórios). Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_LOGO_EMAIL', N'logo_email.png', 'ARQUIVO',
+         N'Logomarca pequena do cabeçalho dos e-mails. Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_LOGO_SIMBOLO', N'logo_simbolo.png', 'ARQUIVO',
+         N'Só o símbolo da logomarca (menu recolhido, ícone). Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_COR_PRINCIPAL', N'#D43414', 'COR',
+         N'Cor principal do cliente: cabeçalhos do sistema, dos relatórios e dos e-mails informativos.', 'SIS', 1),
+        ('EMPRESA_COR_SECUNDARIA', N'#A8A8A8', 'COR',
+         N'Cor secundária do cliente (detalhes, linhas, textos de apoio).', 'SIS', 1),
+        ('EMAIL_COR_ALERTA', N'#E65100', 'COR',
+         N'Cor dos avisos de alerta (vencido, falha, divergência). Diferente da cor principal.', 'SIS', 1),
+        ('EMAIL_COR_SUCESSO', N'#2E7D32', 'COR',
+         N'Cor das confirmações (pagamento recebido, envio concluído).', 'SIS', 1),
         ('CIDADE_PADRAO', N'Poços de Caldas', 'TEXTO',
          N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)

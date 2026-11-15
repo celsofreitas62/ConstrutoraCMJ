@@ -8,13 +8,17 @@
                 - CHAVE: maiúsculas, dígitos e "_", no formato MODULO_ASSUNTO.
                 - VALOR: sempre gravado no formato canônico do TIPO
                   (INTEIRO "15", DECIMAL "2.5" com ponto, DATA "2026-11-15",
-                  SN "S"/"N", EMAIL um endereço só; vazio = não configurado).
+                  SN "S"/"N", EMAIL um endereço só, ARQUIVO nome do arquivo
+                  sem pasta (ex.: logo.png; a pasta vem de outro parâmetro),
+                  COR "#RRGGBB"; vazio = não configurado).
                 - VALOR_PADRAO: valor de fábrica, para "restaurar padrão".
                 - EDITAVEL_ADMIN = 0: só o instalador altera (por script).
                 A auditoria (antes/depois) entra com a trigger da etapa 02c.
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02a).
+    v1.1 (15/11/2026) - Tipos ARQUIVO e COR (identidade visual por cliente:
+                        logomarca e cores sem mexer no sistema).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -40,8 +44,18 @@ BEGIN
         CONSTRAINT UQ_Parametro_CHAVE  UNIQUE (CHAVE),
         CONSTRAINT FK_Parametro_Modulo FOREIGN KEY (ID_MODULO) REFERENCES [SIS].[Modulo] (ID_MODULO),
         CONSTRAINT CK_Parametro_CHAVE  CHECK (CHAVE <> '' AND CHAVE NOT LIKE '%[^A-Z0-9_]%'),
-        CONSTRAINT CK_Parametro_TIPO   CHECK (TIPO IN ('TEXTO', 'INTEIRO', 'DECIMAL', 'DATA', 'SN', 'EMAIL'))
+        CONSTRAINT CK_Parametro_TIPO   CHECK (TIPO IN ('TEXTO', 'INTEIRO', 'DECIMAL', 'DATA', 'SN', 'EMAIL', 'ARQUIVO', 'COR'))
     );
+END;
+GO
+
+-- Ajuste de banco criado com a v1.0 (CHECK sem ARQUIVO e COR)
+IF EXISTS (SELECT 1 FROM sys.check_constraints c
+           WHERE c.name = N'CK_Parametro_TIPO' AND c.parent_object_id = OBJECT_ID(N'[SIS].[Parametro]')
+             AND c.definition NOT LIKE N'%ARQUIVO%')
+BEGIN
+    ALTER TABLE [SIS].[Parametro] DROP CONSTRAINT CK_Parametro_TIPO;
+    ALTER TABLE [SIS].[Parametro] ADD CONSTRAINT CK_Parametro_TIPO CHECK (TIPO IN ('TEXTO', 'INTEIRO', 'DECIMAL', 'DATA', 'SN', 'EMAIL', 'ARQUIVO', 'COR'));
 END;
 GO
 
