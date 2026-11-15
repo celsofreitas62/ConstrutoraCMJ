@@ -78,8 +78,8 @@ BEGIN
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
 
         IF XACT_STATE() <> -1
-            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, MENSAGEM, LINHA, DT_ERRO)
-            VALUES (@NomeProc, @EtapaAtual, ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
 
         SELECT CAST(0 AS BIT) AS SUCESSO,
                CAST(N'Não foi possível registrar a baixa. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
@@ -146,8 +146,8 @@ BEGIN
         IF XACT_STATE() <> -1
         BEGIN
             DROP TABLE IF EXISTS #Parcelas;
-            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, MENSAGEM, LINHA, DT_ERRO)
-            VALUES (@NomeProc, @EtapaAtual, ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
         END;
         THROW;
     END CATCH;
@@ -184,8 +184,8 @@ BEGIN
         IF @bRunLocal = 1 SET @Para = SIS.fn_SIS_Parametro('EMAIL_TESTE');
         IF ISNULL(@Para, N'') = N''
         BEGIN
-            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, MENSAGEM, LINHA, DT_ERRO)
-            VALUES (@NomeProc, @EtapaAtual, N'Grupo ' + @Grupo + N' sem e-mail válido.', 0, SYSDATETIME());
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, 0, N'Grupo ' + @Grupo + N' sem e-mail válido.', 0, SYSDATETIME());
             RETURN;
         END;
 
@@ -220,8 +220,8 @@ BEGIN
     END TRY
     BEGIN CATCH
         IF XACT_STATE() <> -1
-            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, MENSAGEM, LINHA, DT_ERRO)
-            VALUES (@NomeProc, @EtapaAtual, ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
         THROW;
     END CATCH;
 END;
@@ -255,8 +255,8 @@ BEGIN
     END TRY
     BEGIN CATCH
         IF XACT_STATE() <> -1
-            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, MENSAGEM, LINHA, DT_ERRO)
-            VALUES (@NomeProc, 'Histórico', ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, 'Histórico', ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
         THROW;   -- trigger de integridade/auditoria propaga; trigger que só notifica NÃO propaga
     END CATCH;
 END;

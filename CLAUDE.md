@@ -30,6 +30,8 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 
 **Situação em 15/11/2026, 10h (conversa 01b)**: extração **concluída sem erros** na base atual e na base de 2015. Levantamento escrito em `legado/schema_access.md` (tabelas, movimento, comparação das três fontes de movimento, qualidade dos dados, telas e relatórios). Conclusão principal: a base de 2015 é um backup antigo e não traz dado novo (aguardando confirmação do Celso). Pontos para o Celso decidir: seção 7 do `schema_access.md`.
 
+**Situação em 15/11/2026 (conversa "02 – Base SIS", em andamento)**: proposta da base `SIS` **aprovada pelo Celso** (diário). Trabalho dividido em 4 partes: **02a** schemas + logs + parâmetros + functions de formatação · **02b** licença + usuários/permissões/sessão + menu · **02c** contexto + auditoria (com gerador de trigger) + lote + anexo · **02d** e-mail + agenda das rotinas + papel da API. **02a concluída e homologada no LOCAL** (15/11/2026, 58 testes, 0 falhas; banco `SISTEMACMJ_LOCAL` criado). Próxima: **02b**.
+
 **Ao retomar, primeiro** (atualizado em 15/11/2026, fim da conversa 01b):
 1. Perguntar ao Celso se a proposta foi aprovada (e se entrou a cláusula de licença de uso, seção 3.5) e se já tem as respostas pendentes: versão do Windows do servidor, as 4 perguntas da seção 3.3 e as 3 decisões do levantamento (`legado/schema_access.md`, seção 7: base 2015 fora da migração? histórico desde 2008 ou a partir de um ano? materiais/modelos/cheques continuam?).
 2. **Próximo passo confirmado pelo Celso (15/11/2026)**: **Fase 2, base `SIS`**, na conversa **"02 – Base SIS"**: licença, parâmetros, usuários/permissões, auditoria, lote, anexo, log, fila de e-mail (seções 3.4 a 3.7), seguindo `padroes/`. **Antes de escrever qualquer script, apresentar a proposta de tabelas e procedures e esperar a confirmação do Celso** (regra da seção 9).
@@ -284,6 +286,9 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 11. **Assinatura digital**: a CMJ quer? Qual plataforma (FastSign, ZapSign, outra)? Quem assina pela CMJ? Precisa de testemunhas?
 12. **Volume**: quantos contratos ativos e quantos boletos por mês, em média (define o limite de envio de e-mail e o tamanho do banco).
 
+**A fazer quando for preciso (lembretes do Celso)**:
+- **Valor por extenso** (pedido em 15/11/2026): rotina que devolve um valor em reais por extenso ("mil duzentos e trinta e quatro reais e cinquenta e seis centavos"), para contratos, recibos, termo de quitação, declaração de IR e outros usos. Pela regra 30 do PADRAO_SQL (só leitura, devolve um valor) será a function `SIS.fn_SIS_Valor_Extenso`; fazer antes do contrato de venda (fase 5) ou quando a primeira rotina precisar.
+
 ## 7. Plano de trabalho (fases)
 
 1. **Levantamento**: extrair o Access (estrutura, consultas, VBA, volume) e documentar em `legado/`. Fechar as decisões pendentes. **Concluído em 15/11/2026** (`legado/schema_access.md`); restam as 3 decisões da seção 7 desse arquivo.
@@ -306,7 +311,10 @@ C:\SistemaCMJ\            (sincronizada com o Google Drive)
 ├── CashBookCMJ/         sistema Access legado (.mdb), só leitura
 ├── legado/              material extraído do Access
 ├── sql/
-│   ├── objetos/<BLOCO>/ arquivo de trabalho de cada objeto, testado no SISTEMACMJ_LOCAL
+│   ├── local/           scripts só do desenvolvimento (ex.: criar o SISTEMACMJ_LOCAL)
+│   ├── objetos/<BLOCO>/ arquivo de trabalho de cada objeto (um por objeto; _GERAL = schemas), testado no SISTEMACMJ_LOCAL
+│   ├── pacotes/         pacote de cada parte, gerado juntando os arquivos de objetos/ na ordem da regra 59 (não editar à mão)
+│   ├── testes/<BLOCO>/  scripts de homologação (só LOCAL; mostram ESPERADO x OBTIDO)
 │   └── MASTER/          SISTEMACMJ_MASTER_Instalacao.sql (só o que o Celso aprovou)
 ├── docs/                proposta, roteiro de instalação, layouts Sicredi, manuais
 └── Padrao_SQL/          material de referência do padrão de origem (não faz parte do sistema)
@@ -352,3 +360,8 @@ C:\SistemaCMJ\            (sincronizada com o Google Drive)
 - **15/11/2026**: **regra do Celso**: sempre perguntar o próximo passo para confirmação antes de desenvolver; o sistema será modernizado, nada do Access é copiado como foi feito sem confirmação (seção 9 e `padroes/BOAS_PRATICAS.md`). Avisar quando for hora de abrir conversa nova.
 - **15/11/2026**: extração concluída (base atual e 2015, 0 erros). Contagem real: movimento 102.230, arquivo morto 147.866 (o Access mostrava números desatualizados por falta de compactação). Base 2015 = backup: `ArquivoMorto` 2015 100% contido no atual; movimento 2015 já existe na base atual (1.560 alterados depois e 263 excluídos depois). `ArquivoMorto` tem numeração própria que colide com o movimento: chave nova na migração, guardando número e origem. Documento: `legado/schema_access.md`.
 - **15/11/2026**: **etapa 01b encerrada** (Git: commit `8d0523b`). Próximo passo **confirmado pelo Celso**: conversa **"02 – Base SIS"**.
+- **15/11/2026**: conversa "02 – Base SIS". **Proposta da base `SIS` aprovada pelo Celso**, com as 8 decisões: 1) razão social e CNPJ vêm **da licença** (function), não de parâmetro; 2) a licença aceita **um ou mais CNPJs** (`SIS.Licenca_Empresa`); 3) auditoria: inclusão/exclusão numa linha com a foto do registro em JSON, alteração campo a campo; 4) triggers de auditoria **geradas por ferramenta** (`SIS_Auditoria_Trigger_Gerar`) a partir da estrutura da tabela, salvas como script fixo; 5) senha em **PBKDF2-SHA256** calculada na API; 6) **agenda das rotinas** (`SIS.Rotina`) entra nesta etapa; 7) tabelas novas aprovadas: `Item_Acao`, `Email_Fila_Anexo`, `Anexo_Tipo`, `Licenca_Empresa`, `Sessao`, `Login_Log`; 8) `Arquivo Sistema` do Access **não migra** (senha antiga e dados de cheque), só a cidade padrão vira o parâmetro `CIDADE_PADRAO`. Também: papel `rl_sistemacmj_api` só com EXECUTE; login da API criado no roteiro de instalação, fora do MASTER.
+- **15/11/2026**: parte **02a** escrita: schemas (sem `MIG`), `SIS.Modulo`, `SIS.Log_Erro` (com `NUMERO_ERRO`, `ORIGEM` SQL/API/SERVICO, usuário e estação), `SIS.Log_Passo`, `SIS.Parametro` (tipos TEXTO/INTEIRO/DECIMAL/DATA/SN/EMAIL, valor canônico, `VALOR_PADRAO`, `EDITAVEL_ADMIN`), functions de parâmetro e de formatação (moeda, data, data/hora, CPF/CNPJ com CNPJ alfanumérico, escape HTML, usuário atual), procedures `SIS_Log_Erro_Gravar/Listar`, `SIS_Parametro_Listar/Gravar`, `SIS_Log_Limpar_Processar`, cargas de módulos e parâmetros, pacote e homologação. Organização nova da pasta `sql/` (seção 8). Os `INSERT` em `SIS.Log_Erro` passam a gravar `NUMERO_ERRO = ERROR_NUMBER()` (gabaritos atualizados).
+- **15/11/2026**: padrão proposto para procedures **`Listar`** (**ainda não é regra oficial**): devolvem só o conjunto de dados; recusa de filtro ou erro técnico vira `THROW 50001` com mensagem amigável (o erro real vai para `SIS.Log_Erro`) e a API mostra ao usuário a mensagem dos erros 50001.
+- **15/11/2026**: pedido do Celso: rotina de **valor por extenso** para contratos e outros usos (seção 6, "A fazer quando for preciso").
+- **15/11/2026**: **02a homologada** pelo Celso no `SISTEMACMJ_LOCAL` (banco criado: collation `Latin1_General_CI_AS`, recuperação SIMPLE, compatibilidade 170): pacote sem erro, **58 testes, 0 falhas**.
