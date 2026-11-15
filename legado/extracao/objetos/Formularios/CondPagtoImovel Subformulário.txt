@@ -1,0 +1,471 @@
+Version =19
+VersionRequired =19
+Checksum =-53584705
+Begin Form
+    PictureTiling = NotDefault
+    ScrollBars =2
+    ViewsAllowed =1
+    TabularFamily =124
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =6696
+    ItemSuffix =24
+    Left =2805
+    Top =5640
+    Right =2805
+    Bottom =5640
+    DatasheetGridlinesColor =12632256
+    PaintPalette = Begin
+        0x00030100ffffff0000000000
+    End
+    RecSrcDt = Begin
+        0xb7bfdb3b13a5e340
+    End
+    GUID = Begin
+        0x867e00f4fffa854a8cc7b95aa3e9dd77
+    End
+    NameMap = Begin
+        0x0acc0e550000000058774e88c57ee448b240fa42d2bfac9b000000002ddd9928 ,
+        0x18a5e340b89228010000000043006f006e00640050006100670074006f004900 ,
+        0x6d006f00760065006c000000000000003fa8c5d3f1c5f84b858b76f8bcce4342 ,
+        0x0700000058774e88c57ee448b240fa42d2bfac9b510074006400500061007200 ,
+        0x630065006c00610073000000000000007d6a097b5c66d048b0fef8533968b15d ,
+        0x0700000058774e88c57ee448b240fa42d2bfac9b560061006c006f0072004900 ,
+        0x6e0069006300690061006c000000000000008c25b8fe035adf448b017822e7fc ,
+        0xf2ef0700000058774e88c57ee448b240fa42d2bfac9b4e006f006d0065005000 ,
+        0x6100670074006f0000000000000094d2442409c48e4b9153005f80da288a0600 ,
+        0x0000867e00f4fffa854a8cc7b95aa3e9dd775100740064005000610072006300 ,
+        0x65006c0061007300000000000000d78caf1adf43214ab5eac21e77ca69310600 ,
+        0x0000867e00f4fffa854a8cc7b95aa3e9dd77560061006c006f00720049006e00 ,
+        0x69006300690061006c000000000000003c9beb9c4f7ec148beee16f9ee3a7cb2 ,
+        0x0700000058774e88c57ee448b240fa42d2bfac9b560065006e00630069006d00 ,
+        0x65006e0074006f00000000000000d0fe4573516530459aca36f9f4f6fe230700 ,
+        0x000058774e88c57ee448b240fa42d2bfac9b4400690061007300430061006c00 ,
+        0x630075006c006f0000000000000047aa3955370bb240a24099820106e36b0700 ,
+        0x000058774e88c57ee448b240fa42d2bfac9b43006f0064005000610067007400 ,
+        0x6f0049006d006f00760065006c000000000000005ba662d31df8f24897b215ee ,
+        0x54d9fcf206000000867e00f4fffa854a8cc7b95aa3e9dd775400540069007000 ,
+        0x6f0050006100670074006f000000000000000000000000000000000000000000 ,
+        0x00000c000000040000000000000000000000000000000000
+    End
+    RecordSource ="SELECT CondPagtoImovel.*, [QtdParcelas]*[ValorInicial] AS TTipoPagto FROM CondPa"
+        "gtoImovel; "
+    Caption ="CondPagtoImovel Subformulário"
+    DatasheetFontName ="Arial"
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =18
+            FontSize =10
+            FontWeight =700
+            BackColor =13209
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            Width =850
+            Height =850
+            BorderColor =8421504
+        End
+        Begin Line
+            BorderWidth =2
+            Width =1701
+            BorderColor =8421504
+        End
+        Begin CommandButton
+            TextFontFamily =18
+            Width =1701
+            Height =283
+            FontName ="Times New Roman"
+        End
+        Begin OptionButton
+            BorderWidth =3
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin CheckBox
+            BorderWidth =3
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin OptionGroup
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin BoundObjectFrame
+            Width =4536
+            Height =2835
+            LabelX =-1701
+            BorderColor =8421504
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            TextFontFamily =18
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ListBox
+            TextFontFamily =18
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ComboBox
+            TextFontFamily =18
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin Subform
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin UnboundObjectFrame
+            BackStyle =0
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+            BorderColor =8421504
+        End
+        Begin ToggleButton
+            TextFontFamily =18
+            Width =283
+            Height =283
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="Times New Roman"
+        End
+        Begin Tab
+            Width =5103
+            Height =3402
+        End
+        Begin FormHeader
+            Height =340
+            BackColor =-2147483633
+            Name ="CabeçalhoDoFormulário"
+            GUID = Begin
+                0xdcac17b0e56db24a9b3df066550752c3
+            End
+            Begin
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =687
+                    Top =57
+                    Width =930
+                    Height =240
+                    FontSize =8
+                    Name ="NomePagto_Rótulo"
+                    Caption ="Tipo Pgto"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x98f6d71cef49bc47bbd8fffcddfb7fba
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =1680
+                    Top =57
+                    Width =735
+                    Height =240
+                    FontSize =8
+                    Name ="QtdParcelas_Rótulo"
+                    Caption ="Parcelas"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xc66c023d3a0272448919b550dac7a228
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =2445
+                    Top =60
+                    Width =1020
+                    Height =240
+                    FontSize =8
+                    Name ="ValorInicial_Rótulo"
+                    Caption ="Valor"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xcfbaef0062d69c4db042e15041b0704c
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =4650
+                    Top =60
+                    Width =990
+                    Height =240
+                    FontSize =8
+                    Name ="DiasCalculo_Rótulo"
+                    Caption ="Venc Inicial"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xa141197a927a2e45aa68d18845c14070
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =3509
+                    Top =56
+                    Width =1080
+                    Height =240
+                    FontSize =8
+                    Name ="Rótulo12"
+                    Caption ="Total"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x6eb309bae9c57d469382542927543c24
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =5655
+                    Top =60
+                    Width =510
+                    Height =240
+                    FontSize =8
+                    Name ="Rótulo20"
+                    Caption ="Dias"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xb7de12b25fb1004eb257e5ae10a6a81b
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Top =60
+                    Width =630
+                    Height =240
+                    FontSize =8
+                    Name ="Rótulo22"
+                    Caption ="Cód."
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x4d6e6fe89b2213438fd8f89702be25b0
+                    End
+                End
+            End
+        End
+        Begin Section
+            Height =340
+            Name ="Detalhe"
+            GUID = Begin
+                0x6a165ef148f7114895a10692cbbf7aef
+            End
+            Begin
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =687
+                    Top =57
+                    Width =930
+                    Height =255
+                    ColumnWidth =1560
+                    FontSize =8
+                    ForeColor =16711680
+                    Name ="NomePagto"
+                    ControlSource ="NomePagto"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x6a505d7a8f1c17478246f65e6dac5989
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =1680
+                    Top =57
+                    Width =735
+                    Height =255
+                    ColumnWidth =1230
+                    FontSize =8
+                    TabIndex =1
+                    ForeColor =13209
+                    Name ="QtdParcelas"
+                    ControlSource ="QtdParcelas"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x94d2442409c48e4b9153005f80da288a
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =2475
+                    Top =57
+                    Width =990
+                    Height =255
+                    ColumnWidth =1035
+                    FontSize =8
+                    TabIndex =2
+                    ForeColor =16711680
+                    Name ="ValorInicial"
+                    ControlSource ="ValorInicial"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xd78caf1adf43214ab5eac21e77ca6931
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    Left =3511
+                    Top =60
+                    Width =1101
+                    Height =255
+                    FontSize =8
+                    TabIndex =3
+                    ForeColor =13209
+                    Name ="TTipoPagto"
+                    ControlSource ="=([QtdParcelas]*[ValorInicial])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x5ba662d31df8f24897b215ee54d9fcf2
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =4657
+                    Top =56
+                    Width =981
+                    FontSize =8
+                    TabIndex =4
+                    Name ="Vencimento"
+                    ControlSource ="Vencimento"
+                    StatusBarText ="excluir"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0x7a23ad1046c03445a483b1753e76f868
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =5685
+                    Top =60
+                    Width =501
+                    FontSize =8
+                    TabIndex =5
+                    ForeColor =16711680
+                    Name ="DiasCalculo"
+                    ControlSource ="DiasCalculo"
+                    StatusBarText ="excluir"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x370f08ed7b4fa64ca657921aa9773c5c
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =56
+                    Top =56
+                    Width =561
+                    FontSize =8
+                    TabIndex =6
+                    Name ="CodPagtoImovel"
+                    ControlSource ="CodPagtoImovel"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xf3fa5e5563954343a73603cbe73f968d
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            Height =453
+            BackColor =-2147483633
+            Name ="RodapéDoFormulário"
+            GUID = Begin
+                0x229316071a91934fa550c756a94a5c93
+            End
+            Begin
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =3524
+                    Top =56
+                    Width =1101
+                    FontSize =8
+                    FontWeight =700
+                    ForeColor =13209
+                    Name ="TTImovel"
+                    ControlSource ="=Sum([TTipoPagto])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x8190742d3e0ba04daa00bcc8f06410c4
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =1695
+                            Top =56
+                            Width =1770
+                            Height =285
+                            FontSize =8
+                            Name ="Rótulo14"
+                            Caption ="Valor total do imovel"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xa7617e16178eaf4b81c93f95f853d4a1
+                            End
+                        End
+                    End
+                End
+            End
+        End
+    End
+End

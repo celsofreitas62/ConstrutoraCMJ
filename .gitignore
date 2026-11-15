@@ -39,3 +39,6 @@ publish/
 *.bak
 *.trn
 *.log
+
+# Dados reais extraidos do Access (LGPD): nunca no Git
+legado/dados_brutos/

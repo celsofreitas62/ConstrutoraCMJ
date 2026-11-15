@@ -1,0 +1,276 @@
+Option Compare Database
+Option Explicit
+
+
+Public Function PrepararExtenso(nValorCheque As String, dDataDoCheque As Date) As String
+    PrepararExtenso = "**"
+    
+    Dim Extenso As String
+    Dim ExtensoPadrao() As String
+    Dim TamanhoExtenso As Integer
+    Dim iVariavel As Integer
+    Dim sLinha As String
+    Dim iTamanhoDescricao As Integer
+    Dim sUltimaLetra As String
+    Dim iContador As Integer
+    Dim iCortouPalavra As Integer
+    Dim iTamanhoLinha As Integer
+    Dim sFormataFavorecido As String
+    Dim sFormatarValor As String
+    Dim sMesExtenso As String
+    Dim iMesDoCheque As Integer
+    Dim iQtdLinhas As Integer
+    Dim iTamanhoLinhas As Integer
+    
+    ' Determina Qtd de linhas e Tamanho das Linhas
+    iQtdLinhas = 2
+    iTamanhoLinhas = 87
+
+    ReDim ExtensoPadrao(iQtdLinhas)
+    
+    If (IsNull(nValorCheque) Or nValorCheque <= 0) Then Exit Function
+    
+    ' Formatar valor do cheque
+    sFormatarValor = Format$(nValorCheque, "#,###,##0.00")
+    Forms![EmissaoCheque]!VlChequeFormatado = Right(("###############(" + sFormatarValor + ")##"), 16)
+    
+    ' Formatar Dia mes extenso e Ano do cheque
+    iMesDoCheque = Month(dDataDoCheque)
+    Forms![EmissaoCheque]!DiaDoCheque = Day(dDataDoCheque)
+    Forms![EmissaoCheque]!AnoDoCheque = Year(dDataDoCheque)
+    
+    Forms![EmissaoCheque]!DiaDoCheque = Format$(Forms![EmissaoCheque]!DiaDoCheque, "00")
+    
+    If iMesDoCheque = 1 Then sMesExtenso = "Janeiro"
+    If iMesDoCheque = 2 Then sMesExtenso = "Fevereiro"
+    If iMesDoCheque = 3 Then sMesExtenso = "Marco"
+    If iMesDoCheque = 4 Then sMesExtenso = "Abril"
+    If iMesDoCheque = 5 Then sMesExtenso = "Maio"
+    If iMesDoCheque = 6 Then sMesExtenso = "Junho"
+    If iMesDoCheque = 7 Then sMesExtenso = "Julho"
+    If iMesDoCheque = 8 Then sMesExtenso = "Agosto"
+    If iMesDoCheque = 9 Then sMesExtenso = "Setembro"
+    If iMesDoCheque = 10 Then sMesExtenso = "Outubro"
+    If iMesDoCheque = 11 Then sMesExtenso = "Novembro"
+    If iMesDoCheque = 12 Then sMesExtenso = "Dezembro"
+    
+    Forms![EmissaoCheque]!MesExtensoDoCheque = sMesExtenso
+    
+    ' Funcao (ExtensoX) para retornar o extenso do cheque em uma unica linha
+    Extenso = Trim(ExtensoX(nValorCheque))
+    Extenso = "(" + Extenso + ")"
+    
+    ' Tamanho maximo desejado da linha que sera dividida pela qtd de linhas
+    While Len(Extenso) < 250
+        Extenso = Trim(Extenso) + "#"
+    Wend
+    
+    ' Divide a linha principal na quantidade de linhas desejada
+    iVariavel = 1
+    Do While iVariavel <= iQtdLinhas
+        sLinha = ""
+        iTamanhoDescricao = Len(Extenso)
+        If iTamanhoDescricao = 0 Then Exit Function
+        For iContador = 1 To iTamanhoLinhas
+            sUltimaLetra = Mid(Extenso, iContador, 1)
+            sLinha = sLinha + sUltimaLetra
+        Next
+        If (sUltimaLetra <> " " And sUltimaLetra <> "#") Then
+            sUltimaLetra = Mid(Extenso, (iTamanhoLinhas + 1), 1)
+            If sUltimaLetra <> " " Then
+                iCortouPalavra = iTamanhoLinhas
+                Do While sUltimaLetra <> " "
+                    sUltimaLetra = Mid(Extenso, iCortouPalavra, 1)
+                    If sUltimaLetra <> " " Then iCortouPalavra = iCortouPalavra - 1
+                    If iCortouPalavra = 0 Then Exit Function
+                Loop
+                sLinha = Left(Extenso, iCortouPalavra)
+            End If
+        End If
+        iTamanhoLinha = Len(sLinha)
+        Extenso = Mid(Extenso, (iTamanhoLinha + 1), (iTamanhoDescricao - iTamanhoLinha))
+        ExtensoPadrao(iVariavel) = sLinha
+        iVariavel = iVariavel + 1
+    Loop
+    
+    ' devolve as linhas formatadas para as variaveis (Extenso1...n) do Form ou arquivo
+    iVariavel = 1
+    Do While iVariavel <= iQtdLinhas
+       If iVariavel = 1 Then Forms![EmissaoCheque]!Extenso1 = ExtensoPadrao(iVariavel)
+       If iVariavel = 2 Then Forms![EmissaoCheque]!Extenso2 = ExtensoPadrao(iVariavel)
+       iVariavel = iVariavel + 1
+    Loop
+    
+    ' formata o campo Favorecido
+    If (Not (IsNull(Len(Forms![EmissaoCheque]!Favorecido)))) Then
+        sFormataFavorecido = Trim(UCase$(Forms![EmissaoCheque]!Favorecido)) + ")"
+    Else
+        sFormataFavorecido = "#"
+    End If
+    
+    If (Not (IsNull(Len(Forms![EmissaoCheque]!Favorecido)))) Then
+        If Left(sFormataFavorecido, 1) <> "(" Then sFormataFavorecido = "(" + sFormataFavorecido
+    
+        While Len((Trim(sFormataFavorecido))) < 87
+            sFormataFavorecido = Trim(sFormataFavorecido) + "#"
+        Wend
+    End If
+    
+    Forms![EmissaoCheque]!FavorecidoFormatado = sFormataFavorecido
+    
+    PrepararExtenso = "OK"
+End Function
+
+Public Function ExtensoX(nValor As String) As String
+    On Error GoTo Sai
+   
+    If IsNull(nValor) Or nValor > 999999999.99 Then Exit Function
+
+    Dim intContador As Integer
+    Dim intTamanho As Integer
+    Dim strValor As String
+    Dim strParte As String
+    Dim strFinal As String
+    Dim strGrupo(4) As String
+    Dim strTexto(4) As String
+    
+    Dim strUnid(19) As String
+    strUnid(1) = "um "
+    strUnid(2) = "dois "
+    strUnid(3) = "tres "
+    strUnid(4) = "quatro "
+    strUnid(5) = "cinco "
+    strUnid(6) = "seis "
+    strUnid(7) = "sete "
+    strUnid(8) = "oito "
+    strUnid(9) = "nove "
+    strUnid(10) = "dez "
+    strUnid(11) = "onze "
+    strUnid(12) = "doze "
+    strUnid(13) = "treze "
+    strUnid(14) = "quatorze "
+    strUnid(15) = "quinze "
+    strUnid(16) = "dezesseis "
+    strUnid(17) = "dezessete "
+    strUnid(18) = "dezoito "
+    strUnid(19) = "dezenove "
+
+    Dim strDezena(9) As String
+    strDezena(1) = "dez "
+    strDezena(2) = "vinte "
+    strDezena(3) = "trinta "
+    strDezena(4) = "quarenta "
+    strDezena(5) = "cinquenta "
+    strDezena(6) = "sessenta "
+    strDezena(7) = "setenta "
+    strDezena(8) = "oitenta "
+    strDezena(9) = "noventa "
+
+    Dim strCentena(9) As String
+    strCentena(1) = "cento "
+    strCentena(2) = "duzentos "
+    strCentena(3) = "trezentos "
+    strCentena(4) = "quatrocentos "
+    strCentena(5) = "quinhentos "
+    strCentena(6) = "seiscentos "
+    strCentena(7) = "setecentos "
+    strCentena(8) = "oitocentos "
+    strCentena(9) = "novecentos "
+
+    strValor = Format$(nValor, "0000000000.00")
+    strGrupo(1) = Mid$(strValor, 2, 3) 'Milhão
+    strGrupo(2) = Mid$(strValor, 5, 3) 'Milhar
+    strGrupo(3) = Mid$(strValor, 8, 3) 'Centena
+    strGrupo(4) = "0" + Mid$(strValor, 12, 2) 'Centavo
+   
+    For intContador = 1 To 4
+        strParte = strGrupo(intContador)
+        intTamanho = Switch(Val(strParte) < 10, 1, Val(strParte) < 100, 2, Val(strParte) < 1000, 3)
+        If intTamanho = 3 Then
+            If Right$(strParte, 2) <> "00" Then
+                strTexto(intContador) = strTexto(intContador) + strCentena(Left(strParte, 1)) + "e "
+                intTamanho = 2
+            Else
+                strTexto(intContador) = strTexto(intContador) + IIf(Left$(strParte, 1) = "1", "cem ", strCentena(Left(strParte, 1)))
+            End If
+        End If
+
+        If intTamanho = 2 Then
+            If Val(Right(strParte, 2)) < 20 Then
+                strTexto(intContador) = strTexto(intContador) + strUnid(Right(strParte, 2))
+            Else
+                strTexto(intContador) = strTexto(intContador) + strDezena(Mid(strParte, 2, 1))
+                If Right$(strParte, 1) <> "0" Then
+                    strTexto(intContador) = strTexto(intContador) + "e "
+                    intTamanho = 1
+                End If
+            End If
+        End If
+
+        If intTamanho = 1 Then
+            strTexto(intContador) = strTexto(intContador) + strUnid(Right(strParte, 1))
+        End If
+    Next intContador
+
+    'Gera o formato final do texto
+    If Val(strGrupo(1) + strGrupo(2) + strGrupo(3)) = 0 And Val(strGrupo(4)) <> 0 Then
+        strFinal = strTexto(4) + IIf(Val(strGrupo(4)) = 1, "centavo", "centavos")
+    Else
+        strFinal = ""
+        If Val(strGrupo(2)) = 0 And Val(strGrupo(3)) = 0 And Val(strGrupo(4)) = 0 Then
+            strFinal = strFinal + IIf(Val(strGrupo(1)) <> 0, strTexto(1) + IIf(Val(strGrupo(1)) > 1, "milhoes de ", "milhao de "), "")
+        End If
+        If Val(strGrupo(2)) <> 0 And Val(strGrupo(3)) = 0 And Val(strGrupo(4)) = 0 Then
+            strFinal = strFinal + IIf(Val(strGrupo(1)) <> 0, strTexto(1) + IIf(Val(strGrupo(1)) > 1, "milhoes e ", "milhao e "), "")
+        End If
+        If Val(strGrupo(2)) = 0 And Val(strGrupo(3)) <> 0 And Val(strGrupo(4)) = 0 Then
+            strFinal = strFinal + IIf(Val(strGrupo(1)) <> 0, strTexto(1) + IIf(Val(strGrupo(1)) > 1, "milhoes e ", "milhao e "), "")
+        End If
+        If Val(strGrupo(2)) <> 0 And Val(strGrupo(3)) <> 0 And Val(strGrupo(4)) = 0 Then
+            strFinal = strFinal + IIf(Val(strGrupo(1)) <> 0, strTexto(1) + IIf(Val(strGrupo(1)) > 1, "milhoes, ", "milhao, "), "")
+        End If
+        If Val(strGrupo(2)) <> 0 And Val(strGrupo(3)) <> 0 And Val(strGrupo(4)) <> 0 Then
+            strFinal = strFinal + IIf(Val(strGrupo(1)) <> 0, strTexto(1) + IIf(Val(strGrupo(1)) > 1, "milhoes, ", "milhao, "), "")
+        End If
+        If Val(strGrupo(2)) <> 0 And Val(strGrupo(3)) = 0 And Val(strGrupo(4)) <> 0 Then
+            strFinal = strFinal + IIf(Val(strGrupo(1)) <> 0, strTexto(1) + IIf(Val(strGrupo(1)) > 1, "milhoes, ", "milhao, "), "")
+        End If
+        If Val(strGrupo(2)) = 0 And Val(strGrupo(3)) = 0 And Val(strGrupo(4)) <> 0 Then
+            strFinal = strFinal + IIf(Val(strGrupo(1)) <> 0, strTexto(1) + IIf(Val(strGrupo(1)) > 1, "milhoes de ", "milhao de "), "")
+        End If
+        If Val(strGrupo(2)) = 0 And Val(strGrupo(3)) <> 0 And Val(strGrupo(4)) <> 0 Then
+            strFinal = strFinal + IIf(Val(strGrupo(1)) <> 0, strTexto(1) + IIf(Val(strGrupo(1)) > 1, "milhoes, ", "milhao, "), "")
+        End If
+        If Val(strGrupo(3)) = 0 Then
+            strFinal = strFinal + IIf(Val(strGrupo(2)) <> 0, strTexto(2) + "mil ", "")
+        Else
+            If Val(strGrupo(4)) = 0 Then
+                strFinal = strFinal + IIf(Val(strGrupo(2)) <> 0, strTexto(2) + "mil e ", "")
+            Else
+                strFinal = strFinal + IIf(Val(strGrupo(2)) <> 0, strTexto(2) + "mil, ", "")
+            End If
+        End If
+        If Val(strGrupo(4)) = 0 Then
+            strFinal = strFinal + strTexto(3) + IIf(Val(strGrupo(1) + strGrupo(2) + strGrupo(3)) = 1, "real ", "reais ")
+        Else
+            strFinal = strFinal + strTexto(3) + IIf(Val(strGrupo(3)) <> 1, IIf(Val(strGrupo(1) + strGrupo(2) + strGrupo(3)) = 1, "real ", "reais "), "real ")
+        End If
+        strFinal = strFinal + IIf(Val(strGrupo(4)) <> 0, "e " + strTexto(4) + IIf(Val(strGrupo(4)) = 1, "centavo", "centavos"), "")
+    End If
+    If Left(strFinal, 1) = "u" Then
+        ExtensoX = "H" & Mid$(strFinal, 1)
+    Else
+        ExtensoX = UCase(Mid$(strFinal, 1, 1)) & Mid$(strFinal, 2)
+    End If
+
+    Dim aux As String * 250
+
+    aux = Trim(ExtensoX)
+    ExtensoX = Trim(aux)
+Sai1:
+    Exit Function
+Sai:
+    Dim NadaV As Long
+    NadaV = MsgBox("Ocorreu o erro nº" & Err.Number & Chr(13) & Err.Description & Chr(13) & Chr(13) & "Se o problema persistir, entre em contato com o supervisor!", vbCritical)
+    Resume Sai1
+End Function

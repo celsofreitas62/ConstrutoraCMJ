@@ -1,0 +1,107 @@
+Version =19
+VersionRequired =19
+Checksum =-54165947
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    RecordLocks =2
+    TabularFamily =0
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =11340
+    DatasheetFontHeight =10
+    ItemSuffix =3
+    Left =270
+    Top =600
+    Right =270
+    Bottom =600
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xe965eddc3a82e340
+    End
+    GUID = Begin
+        0x8c217fd25701744a970cbea3b67facfe
+    End
+    NameMap = Begin
+        0x0acc0e5500000000071911ff16a5b24ba60c69b67c2d1406000000008043cf28 ,
+        0x18a5e34060ca2c000100000843006100640061007300740072006f0020005000 ,
+        0x6100720063006500690072006f007300000000000000707248a17eadc94e8ee9 ,
+        0xabeb98980c0f07000000071911ff16a5b24ba60c69b67c2d140643006f006400 ,
+        0x690067006f0050006100720063006500690072006f0000000000000055cdb13b ,
+        0x4c75144b95f19a7186df854707000000071911ff16a5b24ba60c69b67c2d1406 ,
+        0x4e006f006d00650050006100720063006500690072006f00000000000000bc36 ,
+        0x0ffad7774a44aa6053fd9d37857d07000000071911ff16a5b24ba60c69b67c2d ,
+        0x140645006e00640065007200650063006f000000000000000000000000000000 ,
+        0x00000000000000000c000000040000000000000000000000000000000000
+    End
+    RecordSource ="Cadastro Parceiros"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0xb001000000000000b001000000000000000000004c2c00004c2c000001000000 ,
+        0x010000000000000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400049c0090000f66000001000001d0076908640001000f002c0101000100 ,
+        0x2c01020000004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077706e6f ,
+        0x00000000010000000000000000000000fe0000000100000000000000c8000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800290044000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000053656e6420546f204d6963726f736f6674204f6e654e6f746520506f ,
+        0x72743a00
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin TextBox
+            AutoLabel = NotDefault
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            Width =1701
+            Height =280
+            LabelX =-1701
+            FontWeight =300
+            FontName ="Arial"
+        End
+        Begin BreakLevel
+            ControlSource ="NomeParceiro"
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =11340
+            Name ="Detalhe"
+            GUID = Begin
+                0xb3070c08ee73f248b712b935e2b6c96b
+            End
+            Begin
+                Begin TextBox
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    TextAlign =1
+                    Width =11340
+                    Name ="Texto2"
+                    ControlSource ="=Trim([CodigoParceiro] & [NomeParceiro] & [Endereco])"
+                    GUID = Begin
+                        0x86503e87c3d77c478c3869c56a375366
+                    End
+                End
+            End
+        End
+    End
+End

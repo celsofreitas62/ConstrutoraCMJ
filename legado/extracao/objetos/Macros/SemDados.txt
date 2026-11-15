@@ -1,0 +1,12 @@
+Version =196611
+ColumnsShown =3
+Begin
+    Action ="MsgBox"
+    Argument ="Nao existem registros neste periodo"
+    Argument ="-1"
+    Argument ="4"
+    Argument ="Relatorios do Sistema"
+End
+Begin
+    Action ="CancelEvent"
+End

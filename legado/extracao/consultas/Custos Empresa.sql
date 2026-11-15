@@ -1,0 +1,9 @@
+﻿-- Consulta: Custos Empresa
+-- Tipo: Seleção (0)
+-- Parâmetros: Formulários![Relatorio Custos Empresa]!CodigoVinculada (Texto), Formulários![Relatorio Custos Empresa]!DTInicial (Texto), Formulários![Relatorio Custos Empresa]!DTFinal (Texto)
+-- Descrição: 
+
+SELECT Plano1.OrdemCusto, CustoEmpresa.NumMovimento, CustoEmpresa.EmpVinculada, CustoEmpresa.DataPagto, Plano1.DescricaoPlano1, Plano3.DescricaoPlano3, Plano1.Plano1, Plano2.RelatorioCustos, CustoEmpresa.SomenteIntegracao, [ValorCredito]+[ValorDebito] AS ValorMovto, CustoEmpresa.ValorDebito, EmpVinculada.SdoInicialReceitas, EmpVinculada.SdoInicialDespesas, CustoEmpresa.CodigoParceiro, Plano2.DescricaoPlano2, CustoEmpresa.ValorCredito, EmpVinculada.NomeVinculada, Parceiros.NomeParceiro, CustoEmpresa.NumDoc, CustoEmpresa.CodHistorico, CustoEmpresa.Complemento, CustoEmpresa.Plano3, CustoEmpresa.ContaFinanceira
+FROM (((Plano1 INNER JOIN (Plano2 INNER JOIN (Plano3 INNER JOIN (Parceiros INNER JOIN CustoEmpresa ON Parceiros.CodigoParceiro=CustoEmpresa.CodigoParceiro) ON Plano3.Plano3=CustoEmpresa.Plano3) ON (Plano2.Plano2=CustoEmpresa.Plano2) AND (Plano2.Plano2=Plano3.Plano2)) ON (Plano1.Plano1=CustoEmpresa.Plano1) AND (Plano1.Plano1=Plano2.Plano1)) INNER JOIN EmpVinculada ON CustoEmpresa.EmpVinculada=EmpVinculada.CodigoVinculada) INNER JOIN [F Contas Financeiras] ON CustoEmpresa.ContaFinanceira=[F Contas Financeiras].CodigoConta) INNER JOIN Historico ON CustoEmpresa.CodHistorico=Historico.CodHistorico
+WHERE (((CustoEmpresa.EmpVinculada)=Formulários![Relatorio Custos Empresa]!CodigoVinculada) And ((CustoEmpresa.DataPagto)>=Formulários![Relatorio Custos Empresa]!DTInicial And (CustoEmpresa.DataPagto)<=Formulários![Relatorio Custos Empresa]!DTFinal) And ((Plano1.Plano1)<>1) And ((Plano2.RelatorioCustos)=True) And ((CustoEmpresa.SomenteIntegracao)=False))
+ORDER BY Plano1.OrdemCusto;

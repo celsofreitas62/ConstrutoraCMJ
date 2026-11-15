@@ -1,0 +1,425 @@
+Version =19
+VersionRequired =19
+Checksum =-54280531
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    RecordLocks =2
+    TabularFamily =124
+    BorderStyle =1
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =9350
+    DatasheetFontHeight =10
+    ItemSuffix =18
+    Left =3630
+    Top =225
+    Right =3630
+    Bottom =225
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0x1da4bafbfb6de340
+    End
+    GUID = Begin
+        0x3ccff301ef87274dbc3b27d38513610e
+    End
+    NameMap = Begin
+        0x0acc0e550000000033f2700b8480324c94b67e173d5e5f7d00000000f341a828 ,
+        0x18a5e3402065190032ec9e68460020005400690070006f007300200043006f00 ,
+        0x6e00740061002000460069006e0061006e006300650069007200610000000000 ,
+        0x00008f62d3b824edbb479fce7b0009fc2dba0000000093ca9e2818a5e3400100 ,
+        0x0000c4619e684600200043006f006e007400610073002000460069006e006100 ,
+        0x6e00630065006900720061007300000000000000456689f74547aa43b9ef9287 ,
+        0xb569b6b10700000033f2700b8480324c94b67e173d5e5f7d4400650073006300 ,
+        0x72006900630061006f0000000000000030f674aea2bfac4cb0b2674b64f5cecb ,
+        0x070000008f62d3b824edbb479fce7b0009fc2dba440065007300630072006900 ,
+        0x630061006f00000000000000f4f0198850db124e801de6966228c75907000000 ,
+        0x8f62d3b824edbb479fce7b0009fc2dba4e0075006d00650072006f0020004300 ,
+        0x6f006e007400610000000000000050b56d7e88141648b05000ef2baeb4c10700 ,
+        0x00008f62d3b824edbb479fce7b0009fc2dba4c0069006d006900740065002000 ,
+        0x4300720065006400690074006f000000000000006db9dbd2032c41498d3afea7 ,
+        0xa5117f970700000033f2700b8480324c94b67e173d5e5f7d43006f0064005400 ,
+        0x690070006f0043006f006e00740061000000000000002e12478bfab45a48ac39 ,
+        0xbd8ad7c43f7e070000008f62d3b824edbb479fce7b0009fc2dba540069007000 ,
+        0x6f00200043006f006e0074006100000000000000000000000000000000000000 ,
+        0x000000000c000000040000000000000000000000000000000000
+    End
+    RecordSource ="SELECT [F Tipos Conta Financeira].[Descricao], [F Contas Financeiras].[Descricao"
+        "], [F Contas Financeiras].[Numero Conta], [F Contas Financeiras].[Limite Credito"
+        "] FROM [F Tipos Conta Financeira] INNER JOIN [F Contas Financeiras] ON [F Tipos "
+        "Conta Financeira].[CodTipoConta]=[F Contas Financeiras].[Tipo Conta]; "
+    Caption ="Contas Financeiras"
+    OnOpen ="[Event Procedure]"
+    MenuBar ="Relatorio"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x8905000089050000890500008905000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400049c009000032f000001000900000000006400010001002c0102000100 ,
+        0x2c01010000004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077706e6f ,
+        0x00000000010000000000000000000000fe0000000100000000000000c8000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800290044000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000053656e6420546f204d6963726f736f6674204f6e654e6f746520506f ,
+        0x72743a00
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            FontItalic = NotDefault
+            BackStyle =0
+            TextAlign =1
+            TextFontFamily =18
+            FontSize =11
+            FontWeight =700
+            ForeColor =8388608
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            BorderWidth =1
+            Width =850
+            Height =850
+            BorderColor =8388608
+        End
+        Begin Line
+            Width =1701
+            BorderColor =8388608
+        End
+        Begin Image
+            OldBorderStyle =0
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+        End
+        Begin CheckBox
+            LabelX =230
+            LabelY =-30
+        End
+        Begin BoundObjectFrame
+            Width =4536
+            Height =2835
+            LabelX =-1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin ListBox
+            OldBorderStyle =0
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin ComboBox
+            OldBorderStyle =0
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin Subform
+            OldBorderStyle =0
+            Width =1701
+            Height =1701
+        End
+        Begin UnboundObjectFrame
+            Width =4536
+            Height =2835
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            ControlSource ="[F Tipos Conta Financeira].Descricao"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Height =540
+            Name ="ReportHeader"
+            GUID = Begin
+                0x4706530d00303143b1bacdb049a0425e
+            End
+            Begin
+                Begin Label
+                    FontItalic = NotDefault
+                    BackStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =7365
+                    Top =210
+                    Width =1920
+                    Height =300
+                    FontSize =10
+                    FontWeight =400
+                    ForeColor =0
+                    Name ="Label2"
+                    Caption ="Contas Financeiras"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x97447a029922954599e329d118449991
+                    End
+                End
+            End
+        End
+        Begin PageHeader
+            Height =345
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0xb88fde3036f62f42b3cbf73db7b91997
+            End
+            Begin
+                Begin Label
+                    FontItalic = NotDefault
+                    FontUnderline = NotDefault
+                    TextFontFamily =34
+                    Left =4950
+                    Top =57
+                    Width =1314
+                    Height =255
+                    FontSize =10
+                    FontWeight =400
+                    ForeColor =16711680
+                    Name ="Numero Conta_Label"
+                    Caption ="Num. Conta"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    EventProcPrefix ="Numero_Conta_Label"
+                    GUID = Begin
+                        0x38a6ca9f4bc40b4b915a63417b800180
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    FontUnderline = NotDefault
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =6379
+                    Top =57
+                    Width =1044
+                    Height =255
+                    FontSize =10
+                    FontWeight =400
+                    ForeColor =16711680
+                    Name ="Limite Credito_Label"
+                    Caption ="Limite"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    EventProcPrefix ="Limite_Credito_Label"
+                    GUID = Begin
+                        0xda71f645c4e503458c6d361625b5e836
+                    End
+                End
+                Begin Line
+                    Width =9350
+                    BorderColor =16711680
+                    Name ="Line14"
+                    GUID = Begin
+                        0x658acb186ae7364daaab4cd4fcefaa8e
+                    End
+                End
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =285
+            Name ="GroupHeader0"
+            GUID = Begin
+                0x21952efbff1e7640b69d34390a33fe0a
+            End
+            Begin
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    DecimalPlaces =0
+                    IMESentenceMode =3
+                    Left =2265
+                    Width =2781
+                    Height =285
+                    FontSize =10
+                    Name ="Tipo Conta"
+                    ControlSource ="[F Tipos Conta Financeira].Descricao"
+                    EventProcPrefix ="Tipo_Conta"
+                    GUID = Begin
+                        0x80c7c3bd64e32d4aa1c8d803fd206a48
+                    End
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =285
+            Name ="Detail"
+            GUID = Begin
+                0xc59114029d3bbd4a9ac2765c4fe289fd
+            End
+            Begin
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =2657
+                    Width =2217
+                    Height =270
+                    FontSize =9
+                    Name ="Descricao"
+                    ControlSource ="[F Contas Financeiras].Descricao"
+                    GUID = Begin
+                        0x901e21a3bcc8bb48a1c7f945f610c636
+                    End
+                End
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =4950
+                    Width =1314
+                    Height =270
+                    FontSize =9
+                    TabIndex =1
+                    Name ="Numero Conta"
+                    ControlSource ="Numero Conta"
+                    EventProcPrefix ="Numero_Conta"
+                    GUID = Begin
+                        0x35692dfd6eeafd458595f1d6e67ee8d9
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    IMESentenceMode =3
+                    Left =6379
+                    Width =1044
+                    Height =270
+                    FontSize =9
+                    TabIndex =2
+                    Name ="Limite Credito"
+                    ControlSource ="Limite Credito"
+                    Format ="Standard"
+                    EventProcPrefix ="Limite_Credito"
+                    GUID = Begin
+                        0xfe239f5408e2ee42b2622a93ae4de69d
+                    End
+                End
+            End
+        End
+        Begin PageFooter
+            Height =332
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x7d4a3067362e8f4cad6d772fceaeff5b
+            End
+            Begin
+                Begin Line
+                    Width =9350
+                    BorderColor =16711680
+                    Name ="Linha17"
+                    GUID = Begin
+                        0xf9af144936c7874bac4ab2611a6a8037
+                    End
+                End
+                Begin TextBox
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =15
+                    Top =32
+                    Width =1126
+                    Height =300
+                    FontSize =10
+                    Name ="Text3"
+                    ControlSource ="=Now()"
+                    Format ="Short Date"
+                    GUID = Begin
+                        0x2eace67bfec8cc4fa98128c63feebe1e
+                    End
+                End
+                Begin TextBox
+                    TextAlign =3
+                    IMESentenceMode =3
+                    Left =7615
+                    Top =32
+                    Width =1636
+                    Height =300
+                    FontSize =10
+                    TabIndex =1
+                    Name ="Text4"
+                    ControlSource ="=\"Pagina \" & [Page] & \" de \" & [Pages]"
+                    GUID = Begin
+                        0xd0bf19add8e09d41864a73a92a18b931
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1201
+                    Top =30
+                    Width =6348
+                    Height =285
+                    FontSize =10
+                    FontWeight =400
+                    ForeColor =0
+                    Name ="NomeCliente"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x3ff80bc0464ec74c96cae27c41bb0c1c
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =0
+            Name ="ReportFooter"
+            GUID = Begin
+                0xe8b1e51c724f66429aa57b63eb4cc5a4
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Report_Open(Cancel As Integer)
+    ' =====================
+    ' Abrir Arquivo Sistema
+    ' =====================
+    
+    Dim con As Object
+    Dim rs As Object
+    Dim stSql As String
+    
+    Set con = Application.CurrentProject.Connection
+    stSql = "SELECT * FROM [Arquivo Sistema]"
+    stSql = stSql & " WHERE [IDSistema] = 1"
+    stSql = stSql & " ORDER BY [IDSistema];"
+    Set rs = CreateObject("ADODB.Recordset")
+    rs.Open stSql, con, 1
+    
+    If (rs.EOF) Then
+        Me![NomeCliente].Caption = "Personalizar Cliente"
+    Else
+        Me![NomeCliente].Caption = rs![Cliente]
+    End If
+
+    rs.Close
+    Set rs = Nothing
+    Set con = Nothing
+End Sub

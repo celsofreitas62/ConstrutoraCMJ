@@ -1,0 +1,762 @@
+Version =19
+VersionRequired =19
+Checksum =45982200
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    TabularFamily =0
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =8787
+    DatasheetFontHeight =10
+    ItemSuffix =82
+    Left =4695
+    Top =405
+    Right =4695
+    Bottom =405
+    DatasheetGridlinesColor =12632256
+    OnNoData ="SemDados"
+    RecSrcDt = Begin
+        0x3d050e557d7ee340
+    End
+    GUID = Begin
+        0xf37fbb1f347a8b46b7eb9021cbe789b1
+    End
+    NameMap = Begin
+        0x0acc0e5500000000a8278c59385e3f49ba2d4b70b7e166e200000000ff65a928 ,
+        0x18a5e3402065190032ec9e6848006900730074006f007200690063006f000000 ,
+        0x0000000084544e4673d33a4fb0e1f81cbf82bcd6000000006cee862818a5e340 ,
+        0x01000000c4619e6846002000540065006d00700020004d006f00760069006d00 ,
+        0x65006e0074006f00200043006f006e007400610073000000000000008f62d3b8 ,
+        0x24edbb479fce7b0009fc2dba0000000093ca9e2818a5e34001000000c4619e68 ,
+        0x4600200043006f006e007400610073002000460069006e0061006e0063006500 ,
+        0x6900720061007300000000000000665f886ba83270448ff856741ef6bb510700 ,
+        0x000084544e4673d33a4fb0e1f81cbf82bcd643006f006400690067006f004300 ,
+        0x6f006e0074006100000000000000bbb0db3183ab4648a88b8a58928b08fb0700 ,
+        0x000084544e4673d33a4fb0e1f81cbf82bcd64d006f00760074006f004f007200 ,
+        0x6900670065006d000000000000004eed4c198fce644a98b9acab8f5433b10700 ,
+        0x000084544e4673d33a4fb0e1f81cbf82bcd64500660065007400750061006400 ,
+        0x6f00000000000000856f68213711fb40b12def233b176ef90700000084544e46 ,
+        0x73d33a4fb0e1f81cbf82bcd648006900730074006f007200690063006f004500 ,
+        0x780074007200610074006f00000000000000964ff2caa5598e46b5fc5c6dca18 ,
+        0x29670700000084544e4673d33a4fb0e1f81cbf82bcd64e0075006d0044006f00 ,
+        0x63000000000000008cf379d20b7e674fa8066a7eaf5c577907000000a8278c59 ,
+        0x385e3f49ba2d4b70b7e166e2440065007300630072006900630061006f000000 ,
+        0x0000000050b56d7e88141648b05000ef2baeb4c1070000008f62d3b824edbb47 ,
+        0x9fce7b0009fc2dba4c0069006d00690074006500200043007200650064006900 ,
+        0x74006f000000000000009013ed9838fbae4996e034823ce50238070000008454 ,
+        0x4e4673d33a4fb0e1f81cbf82bcd645006d00410062006500720074006f000000 ,
+        0x00000000535e5f993f3e2d499fbd48309a9105390700000084544e4673d33a4f ,
+        0xb0e1f81cbf82bcd643006f006e006600690072006d00610064006f0000000000 ,
+        0x000005d07c28b7d8394f9b4ed72c3f8626900700000084544e4673d33a4fb0e1 ,
+        0xf81cbf82bcd643006f006d0070006c0065006d0065006e0074006f0000000000 ,
+        0x00009b8cb3c77055c54d9199500a3d64d5360700000084544e4673d33a4fb0e1 ,
+        0xf81cbf82bcd6560061006c006f0072004300720065006400690074006f000000 ,
+        0x000000004ca963ccd5286b4da59e1d611db7f6e60700000084544e4673d33a4f ,
+        0xb0e1f81cbf82bcd6560061006c006f007200440065006200690074006f000000 ,
+        0x000000004da567760c70c1429e9a533fd3fa81ec0700000084544e4673d33a4f ,
+        0xb0e1f81cbf82bcd64e0075006d004d006f00760069006d0065006e0074006f00 ,
+        0x0000000000004b1aa58b7f34b045b5054d2aab073db00700000084544e4673d3 ,
+        0x3a4fb0e1f81cbf82bcd644006100740061004d006f00760074006f0000000000 ,
+        0x0000246fb76e3eebcf49b9b364f6fba78404070000008f62d3b824edbb479fce ,
+        0x7b0009fc2dba43006f006400690067006f0043006f006e007400610000000000 ,
+        0x00009a37b1c8a606194e8dba5044fd0f58ae07000000a8278c59385e3f49ba2d ,
+        0x4b70b7e166e243006f00640048006900730074006f007200690063006f000000 ,
+        0x00000000c8e48e2df6936440b71d35f8885bb2680700000084544e4673d33a4f ,
+        0xb0e1f81cbf82bcd648006900730074006f007200690063006f00000000000000 ,
+        0xc8f4a47f8e57684bbbd0566f2849513401000000e8d1672a18a5e34000000000 ,
+        0x000000004500780074007200610074006f00200043006f006e00740061007300 ,
+        0x200050006100720063006500690072006f0000000000000007e06334e4e1fa43 ,
+        0x823f2fe51855b7d306000000c8f4a47f8e57684bbbd0566f2849513444005400 ,
+        0x49006e0069006300690061006c00000000000000046fb234c291674f89a3ce87 ,
+        0x04e64c3a06000000c8f4a47f8e57684bbbd0566f284951344e006f006d006500 ,
+        0x50006100720063006500690072006f000000000000001dfeb495a0449949947b ,
+        0xb0ac4dbfaa2106000000f37fbb1f347a8b46b7eb9021cbe789b143006f006e00 ,
+        0x6600690072006d00610064006f0000000000000065ede2b9e5d42445b5492b79 ,
+        0x8a1b719106000000f37fbb1f347a8b46b7eb9021cbe789b14400610074006100 ,
+        0x4d006f00760074006f000000000000001a6e030b18a59e44bf70aff2d5765115 ,
+        0x06000000f37fbb1f347a8b46b7eb9021cbe789b1530061006c0064006f004400 ,
+        0x690061000000000000007198521a70109946816e94c03316dbc606000000f37f ,
+        0xbb1f347a8b46b7eb9021cbe789b14c0069006d00690074006500200043007200 ,
+        0x65006400690074006f000000000000003d081ef9552cc44bb0646682c6b659dc ,
+        0x06000000f37fbb1f347a8b46b7eb9021cbe789b1560061006c006f0072004300 ,
+        0x720065006400690074006f000000000000000000000000000000000000000000 ,
+        0x00000c000000040000000000000000000000000000000000
+    End
+    RecordSource ="SELECT [F Temp Movimento Contas].[CodigoConta], [F Temp Movimento Contas].[Movto"
+        "Origem], [F Temp Movimento Contas].[Efetuado], [F Temp Movimento Contas].[Histor"
+        "icoExtrato], [F Temp Movimento Contas].[NumDoc], [Historico].[Descricao], [F Con"
+        "tas Financeiras].[Limite Credito], [F Temp Movimento Contas].[EmAberto], [F Temp"
+        " Movimento Contas].[Confirmado], [F Temp Movimento Contas].[Complemento], [F Tem"
+        "p Movimento Contas].[ValorCredito], [F Temp Movimento Contas].[ValorDebito], [F "
+        "Temp Movimento Contas].[NumMovimento], [F Temp Movimento Contas].[DataMovto] FRO"
+        "M Historico RIGHT JOIN ([F Temp Movimento Contas] LEFT JOIN [F Contas Financeira"
+        "s] ON [F Temp Movimento Contas].[CodigoConta]=[F Contas Financeiras].[CodigoCont"
+        "a]) ON [Historico].[CodHistorico]=[F Temp Movimento Contas].[Historico]; "
+    Caption ="Extrato Conta Parceiro"
+    OnOpen ="[Event Procedure]"
+    MenuBar ="Relatorio"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x8905000089050000890500008905000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400049c00900043ef80070100090000000000640001000f002c0101000100 ,
+        0x2c01020001004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077706e6f ,
+        0x00000000010000000000000000000000fe0000000100000000000000c8000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800290044000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000053656e6420546f204d6963726f736f6674204f6e654e6f746520506f ,
+        0x72743a00
+    End
+    OnDeactivate ="[Event Procedure]"
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin Line
+            Width =1701
+        End
+        Begin Image
+            OldBorderStyle =0
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+        End
+        Begin CheckBox
+            LabelX =230
+            LabelY =-30
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontFamily =2
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin ComboBox
+            OldBorderStyle =0
+            TextFontFamily =2
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin Subform
+            Width =1701
+            Height =1701
+        End
+        Begin UnboundObjectFrame
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+        End
+        Begin BreakLevel
+            ControlSource ="Confirmado"
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            GroupOn =4
+            ControlSource ="DataMovto"
+        End
+        Begin BreakLevel
+            ControlSource ="DataMovto"
+        End
+        Begin BreakLevel
+            SortOrder = NotDefault
+            ControlSource ="EmAberto"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Height =0
+            Name ="ReportHeader"
+            GUID = Begin
+                0x1a5097a39b7299419014781717d33232
+            End
+        End
+        Begin PageHeader
+            Height =1155
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0xcd60ad3239f8b541930fcf6dd1e28e06
+            End
+            Begin
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =7560
+                    Top =165
+                    Width =1131
+                    Height =286
+                    ColumnOrder =0
+                    FontSize =10
+                    FontWeight =700
+                    Name ="Text4"
+                    ControlSource ="=[Forms]![Extrato Contas Parceiro]![DTInicial]"
+                    GUID = Begin
+                        0xfa48c51790d39c46946ff423274f4e31
+                    End
+                End
+                Begin Label
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =52
+                    Top =840
+                    Width =930
+                    Height =225
+                    FontWeight =700
+                    Name ="Label10"
+                    Caption ="Data/Movto"
+                    GUID = Begin
+                        0x5d62881d94f2e4429211a32cea6d6144
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =1065
+                    Top =840
+                    Width =3615
+                    Height =270
+                    FontSize =10
+                    FontWeight =700
+                    Name ="Label11"
+                    Caption ="Historico"
+                    GUID = Begin
+                        0x36b9bf0e5bc5334397d3a1723e61078b
+                    End
+                End
+                Begin Label
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =4860
+                    Top =840
+                    Width =1110
+                    Height =270
+                    FontSize =10
+                    FontWeight =700
+                    Name ="Label13"
+                    Caption ="Valor"
+                    GUID = Begin
+                        0xe6f60b2adc66b441b915b6fdbfbf67ec
+                    End
+                End
+                Begin Line
+                    LineSlant = NotDefault
+                    Left =75
+                    Top =1140
+                    Width =8675
+                    BorderColor =4210752
+                    Name ="Line16"
+                    GUID = Begin
+                        0x97f1413c885f234c8f4ff4b55338b8b4
+                    End
+                End
+                Begin Label
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =6660
+                    Top =855
+                    Width =885
+                    Height =240
+                    FontSize =10
+                    FontWeight =700
+                    Name ="Label60"
+                    Caption ="Saldo"
+                    GUID = Begin
+                        0x6c072500458dd54584e0e7ecea48b47e
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =7653
+                    Top =855
+                    Width =1026
+                    TabIndex =1
+                    ForeColor =16711680
+                    Name ="Limite Credito"
+                    ControlSource ="Limite Credito"
+                    Format ="Standard"
+                    EventProcPrefix ="Limite_Credito"
+                    GUID = Begin
+                        0x7198521a70109946816e94c03316dbc6
+                    End
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =7771
+                    Top =566
+                    Width =900
+                    Height =255
+                    FontSize =10
+                    FontWeight =700
+                    Name ="Rótulo66"
+                    Caption ="Limite"
+                    GUID = Begin
+                        0xd98a4ba17b3015448ec54ef59a6e0d29
+                    End
+                End
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    TextFontFamily =34
+                    Left =60
+                    Top =165
+                    Width =4476
+                    Height =285
+                    FontSize =10
+                    FontWeight =700
+                    TabIndex =2
+                    Name ="Texto73"
+                    ControlSource ="=[Forms]![Extrato Contas Parceiro]![NomeParceiro]"
+                    GUID = Begin
+                        0x3fc3ebb6f287ca408f286ced136f2d71
+                    End
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    TextFontFamily =34
+                    Left =5745
+                    Top =165
+                    Width =1785
+                    Height =286
+                    FontSize =10
+                    FontWeight =700
+                    Name ="Rótulo78"
+                    Caption ="Extrato a partir de"
+                    GUID = Begin
+                        0x30ed8fbd8680b94d8708ef9c642d1d91
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    Left =6030
+                    Top =885
+                    Width =195
+                    Height =225
+                    Name ="Rótulo80"
+                    Caption ="C"
+                    GUID = Begin
+                        0xd20e9950480719498bb9674b3cf31a80
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    Left =6300
+                    Top =885
+                    Width =195
+                    Height =225
+                    Name ="Rótulo81"
+                    Caption ="E"
+                    GUID = Begin
+                        0xb8fbf50e5ce0974abcec52aca1e4a0f2
+                    End
+                End
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =283
+            BreakLevel =1
+            Name ="CabeçalhoDoGrupo0"
+            GUID = Begin
+                0xe908a62c60d96845916b2106f5873c7a
+            End
+            Begin
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    BorderWidth =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4815
+                    Top =30
+                    Width =2745
+                    Height =225
+                    BorderColor =4210752
+                    Name ="Label54"
+                    ControlSource ="=IIf([Confirmado]=True,\"Saldo Atual\",\"Saldo \" & Format$([DataMovto],\"mmmm y"
+                        "yyy\",0,0))"
+                    GUID = Begin
+                        0xa48bad0cc656c044b74896a1c6f09767
+                    End
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =480
+            Name ="Detail"
+            GUID = Begin
+                0x50477a5b0378004987d498459d651829
+            End
+            Begin
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Top =30
+                    Width =1041
+                    Name ="DataMovto"
+                    ControlSource ="DataMovto"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0x65ede2b9e5d42445b5492b798a1b7191
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4863
+                    Top =30
+                    Width =1101
+                    TabIndex =1
+                    Name ="ValorCredito"
+                    ControlSource ="ValorCredito"
+                    Format ="#,###[Blue];-#,###[Red];#,###[Blue];#,###[Blue]"
+                    GUID = Begin
+                        0x3d081ef9552cc44bb0646682c6b659dc
+                    End
+                End
+                Begin CheckBox
+                    Left =6030
+                    Top =75
+                    Width =185
+                    Height =180
+                    TabIndex =2
+                    Name ="Confirmado"
+                    ControlSource ="Confirmado"
+                    GUID = Begin
+                        0x1dfeb495a0449949947bb0ac4dbfaa21
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    RunningSum =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =6525
+                    Top =30
+                    Width =1026
+                    TabIndex =3
+                    Name ="SaldoDia"
+                    ControlSource ="ValorCredito"
+                    Format ="#,###[Blue];-#,###[Red];#,###[Blue];#,###[Blue]"
+                    GUID = Begin
+                        0x1a6e030b18a59e44bf70aff2d5765115
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =7651
+                    Top =15
+                    Width =966
+                    TabIndex =4
+                    Name ="Texto64"
+                    ControlSource ="=[SaldoDia]+[Limite Credito]"
+                    Format ="#,###[Blue];-#,###[Red];#,###[Blue];#,###[Blue]"
+                    GUID = Begin
+                        0xb3f00a72f279c0458320b0db77658f2f
+                    End
+                End
+                Begin Line
+                    Left =7605
+                    Top =15
+                    Width =0
+                    Height =244
+                    Name ="Linha67"
+                    GUID = Begin
+                        0xd148a9a8cd3b2049b4252e8bed2f6f6f
+                    End
+                End
+                Begin Line
+                    Left =8685
+                    Top =15
+                    Width =0
+                    Height =244
+                    Name ="Linha68"
+                    GUID = Begin
+                        0xe141e8a0efd65f4a8e309ac6c37838a7
+                    End
+                End
+                Begin TextBox
+                    Left =1080
+                    Top =30
+                    Width =3681
+                    Height =450
+                    TabIndex =5
+                    Name ="HistoricoExtrato"
+                    ControlSource ="HistoricoExtrato"
+                    GUID = Begin
+                        0xd381dba74bbb094ab1a41cc97a1d55a4
+                    End
+                End
+                Begin Line
+                    Left =4815
+                    Top =15
+                    Width =0
+                    Height =244
+                    Name ="Linha78"
+                    GUID = Begin
+                        0xef728beacde2534294984fd9b348b93a
+                    End
+                End
+                Begin CheckBox
+                    Left =6285
+                    Top =75
+                    TabIndex =6
+                    Name ="Efetuado"
+                    ControlSource ="Efetuado"
+                    GUID = Begin
+                        0x9f9e3abc6b890546a5e0a7f447da647e
+                    End
+                End
+                Begin TextBox
+                    TextAlign =1
+                    Top =240
+                    Width =1041
+                    Height =210
+                    TabIndex =7
+                    Name ="MovtoOrigem"
+                    ControlSource ="MovtoOrigem"
+                    GUID = Begin
+                        0xe5971081f42e3b4490360094f4c9aeb4
+                    End
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =283
+            BreakLevel =1
+            Name ="GroupFooter1"
+            GUID = Begin
+                0x5410c18f103865408e4da0f11cdff139
+            End
+            Begin
+                Begin TextBox
+                    Visible = NotDefault
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    BorderWidth =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =7653
+                    Width =1026
+                    Height =226
+                    ColumnOrder =0
+                    BorderColor =4210752
+                    Name ="Text53"
+                    ControlSource ="=Sum([ValorCredito])"
+                    Format ="#,###[Blue];-#,###[Red];#,###[Blue];#,###[Blue]"
+                    GUID = Begin
+                        0x939a0816c0d6a84f962d27a95f6936c8
+                    End
+                End
+            End
+        End
+        Begin PageFooter
+            Height =373
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x5a118a71fe257a47abb59735d511a96a
+            End
+            Begin
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Top =45
+                    Width =1201
+                    Height =300
+                    FontSize =9
+                    Name ="Text3"
+                    ControlSource ="=Now()"
+                    Format ="Short Date"
+                    GUID = Begin
+                        0x81ead4988d89ff4d905af3908994f772
+                    End
+                End
+                Begin TextBox
+                    TextAlign =3
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =6900
+                    Top =60
+                    Width =1486
+                    Height =300
+                    FontSize =9
+                    TabIndex =1
+                    Name ="Text61"
+                    ControlSource ="=\"Pagina \" & [Page] & \" de \" & [Pages]"
+                    GUID = Begin
+                        0x61bed040023af04aa9bcea0bd5ea5ced
+                    End
+                End
+                Begin Label
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1260
+                    Top =58
+                    Width =5583
+                    Height =285
+                    FontSize =9
+                    ForeColor =8388608
+                    Name ="NomeCliente"
+                    GUID = Begin
+                        0xfbf17d285bb7234eaec2b6ec5125ca97
+                    End
+                End
+                Begin Line
+                    LineSlant = NotDefault
+                    Left =15
+                    Top =30
+                    Width =8675
+                    BorderColor =4210752
+                    Name ="Linha69"
+                    GUID = Begin
+                        0x2dee297764579d438c3eb71212a253e5
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =315
+            Name ="ReportFooter"
+            GUID = Begin
+                0x4fd1e0cc2872a04da048b2b61fd98c3f
+            End
+            Begin
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    BorderWidth =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4725
+                    Top =45
+                    Width =996
+                    ColumnOrder =0
+                    Name ="Text55"
+                    ControlSource ="=Sum([ValorCredito])"
+                    Format ="#,###[Blue];-#,###[Red];#,###[Blue];#,###[Blue]"
+                    GUID = Begin
+                        0x306f6111d575404b960b333325dea555
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =1
+                    TextFontFamily =34
+                    Left =1455
+                    Top =30
+                    Width =3165
+                    Height =255
+                    ForeColor =32768
+                    Name ="Text56"
+                    Caption ="Saldo Futuro"
+                    GUID = Begin
+                        0xe245af67d597db4087a5ae9ea5197564
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Report_Open(Cancel As Integer)
+On Error GoTo Report_Open_Err
+
+    ' =====================
+    ' Abrir Arquivo Sistema
+    ' =====================
+    
+    Dim con As Object
+    Dim rs As Object
+    Dim stSql As String
+    
+    Set con = Application.CurrentProject.Connection
+    stSql = "SELECT * FROM [Arquivo Sistema]"
+    stSql = stSql & " WHERE [IDSistema] = 1"
+    stSql = stSql & " ORDER BY [IDSistema];"
+    Set rs = CreateObject("ADODB.Recordset")
+    rs.Open stSql, con, 1
+    
+    If (rs.EOF) Then
+        Me![NomeCliente].Caption = "Personalizar Cliente"
+    Else
+        Me![NomeCliente].Caption = rs![Cliente]
+    End If
+
+    rs.Close
+    Set rs = Nothing
+    Set con = Nothing
+    
+    DoCmd.OpenQuery "F Zerar Temp Movimento Contas", acViewNormal, acEdit
+    DoCmd.OpenQuery "F Mov Contas Extrato A Parceiro", acViewNormal, acEdit
+    DoCmd.OpenQuery "F Mov Contas Extrato B Parceiro", acViewNormal, acEdit
+    DoCmd.OpenQuery "F Mov Contas Extrato C Parceiro", acViewNormal, acEdit
+    DoCmd.OpenQuery "F Mov Contas Extrato D Parceiro", acViewNormal, acEdit
+    DoCmd.OpenQuery "Extrato Monta Historico Parceiro", acViewNormal, acEdit
+
+Report_Open_Exit:
+    Exit Sub
+
+Report_Open_Err:
+    MsgBox Error$
+    Resume Report_Open_Exit
+
+End Sub
+
+Private Sub Report_Deactivate()
+On Error GoTo Report_Deactivate_Err
+
+    DoCmd.OpenQuery "F Zerar Temp Movimento Contas", acViewNormal, acEdit
+
+Report_Deactivate_Exit:
+    Exit Sub
+
+Report_Deactivate_Err:
+    MsgBox Error$
+    Resume Report_Deactivate_Exit
+
+End Sub

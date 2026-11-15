@@ -1,0 +1,785 @@
+Version =19
+VersionRequired =19
+Checksum =-52928779
+Begin Form
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    NavigationButtons = NotDefault
+    AllowDeletions = NotDefault
+    DividingLines = NotDefault
+    AllowAdditions = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    RecordLocks =2
+    TabularFamily =0
+    BorderStyle =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =5442
+    DatasheetFontHeight =10
+    ItemSuffix =47
+    Top =600
+    Right =7230
+    Bottom =6060
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0x18ac107f2b7ee340
+    End
+    GUID = Begin
+        0xf86a7008d6dba644b9d3c79f589f48dd
+    End
+    NameMap = Begin
+        0x0acc0e5500000000d166cb716e9da0478a1c505d8749454500000000df379728 ,
+        0x18a5e3403c318d00008b571b41006e006f004d006500730020004f0063006f00 ,
+        0x7200720065006e00630069006100730020004d0065006e007300610069007300 ,
+        0x0000000000000deea9b35a26a545b934b2a2b73d2b0707000000d166cb716e9d ,
+        0xa0478a1c505d8749454555006c00740069006d006f0041006e006f0047006500 ,
+        0x7200610064006f000000000000009942ae23d5b3ad44b737ceff9165e2110700 ,
+        0x0000d166cb716e9da0478a1c505d8749454555006c00740069006d006f004d00 ,
+        0x65007300470065007200610064006f0000000000000000000000000000000000 ,
+        0x0000000000000c000000040000000000000000000000000000000000
+    End
+    RecordSource ="AnoMes Ocorrencias Mensais"
+    Caption ="Gerar Ocorrencias Mensais"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0xa7050000a2050000a2050000a205000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400149c00f80343ef80070100010000000000000001000f002c0102000100 ,
+        0x2c01020001000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000010000000300000000000000000000000000000000000000e2a497bc ,
+        0x00010102ff020200010000000000004c65786d61726b20543633320000000000 ,
+        0x0000000000000000000000000000004c65786d61726b20543633320000000000 ,
+        0x00000000000000000000000000000000320200004c65786d61726b2054363332 ,
+        0x002052000000000000000000ccdab7009e672a7440004001ff7fff7f00002800 ,
+        0x01000c000d000500060004000700030006000100000000000000000000000600 ,
+        0x05000900000000008901c300bfc602007339010001001c001000200025001200 ,
+        0x000041003e010000e2a497bc02000100ff004000b00458022c01000000005802 ,
+        0x0000000000010000000000000000f10000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000100000700 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000a0000000a0000000a000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000001000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000001000000000000000000 ,
+        0x0000011000010000000000000400000001000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000003c4f00000000000000000000e2a497bc
+    End
+    PrtDevNames = Begin
+        0x080015001d00010000000000000000000000000000000000000000000049505f ,
+        0x3139322e3136382e322e323300
+    End
+    OnActivate ="[Event Procedure]"
+    OnLoad ="[Event Procedure]"
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontName ="Tahoma"
+        End
+        Begin CommandButton
+            Width =1701
+            Height =283
+            FontSize =8
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="Tahoma"
+        End
+        Begin OptionButton
+            SpecialEffect =2
+            LabelX =230
+            LabelY =-30
+        End
+        Begin OptionGroup
+            SpecialEffect =3
+            Width =1701
+            Height =1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            SpecialEffect =2
+            OldBorderStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Tahoma"
+        End
+        Begin Section
+            Height =3401
+            Name ="Detail"
+            GUID = Begin
+                0x6b83ee4b58ccbb4d9a3e1e41e0a24dca
+            End
+            Begin
+                Begin OptionGroup
+                    SpecialEffect =0
+                    OverlapFlags =85
+                    Left =435
+                    Top =1485
+                    Width =4760
+                    Height =1348
+                    TabIndex =3
+                    BorderColor =16711680
+                    Name ="MesOcorrencia"
+                    GUID = Begin
+                        0x6b01c8f4fb06cd40b80c7fa8098ef16d
+                    End
+                    Begin
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =795
+                            Top =1723
+                            OptionValue =1
+                            Name ="Mes1"
+                            GUID = Begin
+                                0x55e84f1f2ae1e640a549186ab34f3897
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =1025
+                                    Top =1695
+                                    Width =450
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label4"
+                                    Caption ="JAN"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0xd01055a239324a48b05551f102947f51
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =1920
+                            Top =1723
+                            OptionValue =4
+                            Name ="Mes4"
+                            GUID = Begin
+                                0xaf46f0b4c4566b47b20ec7d852003ed3
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =2150
+                                    Top =1695
+                                    Width =435
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label10"
+                                    Caption ="ABR"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0x62b52c2cc8611a41a8f1f907fb8aa70c
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =3060
+                            Top =1723
+                            OptionValue =7
+                            Name ="Mes7"
+                            GUID = Begin
+                                0xbf45c85329cd1147ab222d6acb62ad8c
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =3290
+                                    Top =1695
+                                    Width =465
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label16"
+                                    Caption ="JUL"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0x094c9060daa0a64fb34dcd4bc6b605bc
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =4200
+                            Top =1723
+                            OptionValue =10
+                            Name ="Mes10"
+                            GUID = Begin
+                                0xefe867b61251d54cbde5afda0248c7c2
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =4430
+                                    Top =1695
+                                    Width =465
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label22"
+                                    Caption ="OUT"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0x033d0d89ae3ca348b0c6f730f109b18a
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =795
+                            Top =2053
+                            OptionValue =2
+                            Name ="Mes2"
+                            GUID = Begin
+                                0x0c22a15adb268b4ba766303995be6be4
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =1025
+                                    Top =2025
+                                    Width =450
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label6"
+                                    Caption ="FEV"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0xd298cca1c0a5094dabbf1da435470053
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =1920
+                            Top =2053
+                            OptionValue =5
+                            Name ="Mes5"
+                            GUID = Begin
+                                0xb90633204ec8aa4282f704dbccaf869b
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =2150
+                                    Top =2025
+                                    Width =435
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label12"
+                                    Caption ="MAI"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0xdfbba1b877874944b9585c43eb4b42dc
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =3060
+                            Top =2053
+                            OptionValue =8
+                            Name ="Mes8"
+                            GUID = Begin
+                                0x01eb075a33ebab41b1268134bfacff13
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =3290
+                                    Top =2025
+                                    Width =465
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label18"
+                                    Caption ="AGO"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0x4b8b823eb555434d968f4a97941bf0cb
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =4200
+                            Top =2053
+                            OptionValue =11
+                            Name ="Mes11"
+                            GUID = Begin
+                                0xe73aeaef3ec33448b69582e0ba8d3e5e
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =4430
+                                    Top =2025
+                                    Width =465
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label24"
+                                    Caption ="NOV"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0x9314a703c65f47479f06d7d864d5385c
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =795
+                            Top =2383
+                            OptionValue =3
+                            Name ="Mes3"
+                            GUID = Begin
+                                0x4a2138ff5195e845b16d08395ad74a44
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =1025
+                                    Top =2355
+                                    Width =450
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label8"
+                                    Caption ="MAR"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0x3be845e23afb814483059d3ae56b7e0a
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =1920
+                            Top =2383
+                            OptionValue =6
+                            Name ="Mes6"
+                            GUID = Begin
+                                0x357a75d07eebdf4981bb6f9b72a69782
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =2150
+                                    Top =2355
+                                    Width =450
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label14"
+                                    Caption ="JUN"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0xf8f3ff8411367f4f875897b918320395
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =3060
+                            Top =2383
+                            OptionValue =9
+                            Name ="Mes9"
+                            GUID = Begin
+                                0x0ab0d4d2b103da4697f08ed4c148c58d
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =3290
+                                    Top =2355
+                                    Width =495
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label20"
+                                    Caption ="SET"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0x55a08c0a316e1f4f9b0e3202c5057717
+                                    End
+                                End
+                            End
+                        End
+                        Begin OptionButton
+                            OverlapFlags =87
+                            Left =4200
+                            Top =2383
+                            OptionValue =12
+                            Name ="Mes12"
+                            GUID = Begin
+                                0x18c64d008594bf48a18e590e50b8ff96
+                            End
+                            Begin
+                                Begin Label
+                                    OverlapFlags =247
+                                    Left =4430
+                                    Top =2355
+                                    Width =450
+                                    Height =240
+                                    FontWeight =700
+                                    ForeColor =13209
+                                    Name ="Label26"
+                                    Caption ="DEZ"
+                                    FontName ="Arial"
+                                    GUID = Begin
+                                        0xa9159806b0b0a641acd5c6882a580b85
+                                    End
+                                End
+                            End
+                        End
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    Left =1146
+                    Top =1077
+                    Width =4056
+                    Height =328
+                    FontWeight =700
+                    ForeColor =13209
+                    Name ="GerarOcorrencia"
+                    Caption ="Gerar ocorrencias no mes e ano selecionados"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xa773f5e821fb024abf7745f972120f9d
+                    End
+                End
+                Begin TextBox
+                    SpecialEffect =0
+                    OldBorderStyle =1
+                    OverlapFlags =85
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =441
+                    Top =1140
+                    Width =651
+                    FontWeight =700
+                    TabIndex =2
+                    BorderColor =16711680
+                    ForeColor =13209
+                    Name ="AnoOcorrencia"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xde214ffcc9c529449cc66c876c7ba534
+                    End
+                    Begin
+                        Begin Label
+                            FontUnderline = NotDefault
+                            OverlapFlags =85
+                            TextAlign =2
+                            Left =435
+                            Top =870
+                            Width =660
+                            Height =240
+                            FontWeight =700
+                            ForeColor =16711680
+                            Name ="AnoLabel"
+                            Caption ="ANO"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x4a8cb31a8907bf4ebcd9394b70e61afa
+                            End
+                        End
+                    End
+                End
+                Begin CommandButton
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    AccessKey =83
+                    Left =4705
+                    Top =170
+                    Width =426
+                    Height =426
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =4
+                    ForeColor =10040115
+                    Name ="Command14"
+                    Caption ="&Sair"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadad0dadadadadaadad00adadadadaddad030dadadadada ,
+                        0xad0330adadadadad0033300000000adaa03330ff0dadadadd03300ff0adad4da ,
+                        0xa03330ff0dad44add03330ff0ad44444a03330ff0d444444d03330ff0ad44444 ,
+                        0xa0330fff0dad44add030ffff0adad4daa00fffff0dadadadd00000000adadada ,
+                        0xadadadadadadadad
+                    End
+                    FontName ="Arial"
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    ControlTipText ="Sair"
+                    GUID = Begin
+                        0xbba32b11fb26ea45b72aee6615958151
+                    End
+                End
+                Begin TextBox
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    SpecialEffect =0
+                    OverlapFlags =85
+                    TextAlign =2
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =2160
+                    Top =285
+                    Width =1041
+                    Height =255
+                    FontWeight =700
+                    TabIndex =1
+                    ForeColor =16711935
+                    Name ="UltimoMesExtenso"
+                    GUID = Begin
+                        0xbb6cd7d3b3b6274da090427898d7a0a9
+                    End
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    OverlapFlags =85
+                    Left =450
+                    Top =285
+                    Width =1665
+                    Height =255
+                    FontWeight =700
+                    ForeColor =16711680
+                    Name ="Label39"
+                    Caption ="Ultimo Mês Gerado"
+                    GUID = Begin
+                        0xfdc4870f4c8e33408abde26042ad4b8d
+                    End
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =3240
+                    Top =285
+                    Width =345
+                    Height =255
+                    FontWeight =700
+                    ForeColor =16711680
+                    Name ="Label40"
+                    Caption ="de"
+                    GUID = Begin
+                        0x78d9c9e7cd455044aac3601623ef189d
+                    End
+                End
+                Begin TextBox
+                    Locked = NotDefault
+                    SpecialEffect =0
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =3645
+                    Top =285
+                    Width =501
+                    Height =255
+                    FontWeight =700
+                    TabIndex =5
+                    ForeColor =16711935
+                    Name ="UltimoAnoGerado"
+                    ControlSource ="UltimoAnoGerado"
+                    GUID = Begin
+                        0x57e87643ca7f724c9883722f95456b9e
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    Locked = NotDefault
+                    SpecialEffect =0
+                    OverlapFlags =85
+                    Left =2144
+                    Top =599
+                    Width =1041
+                    TabIndex =6
+                    Name ="UltimoMesGerado"
+                    ControlSource ="UltimoMesGerado"
+                    GUID = Begin
+                        0xae0ef2811a7f0c4aa5331364b044f317
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    Left =1133
+                    Top =623
+                    Width =726
+                    TabIndex =7
+                    Name ="ProximoMes"
+                    GUID = Begin
+                        0x7b5531dfeaf9a648a4ca8a7c22311ff7
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Command14_Click()
+    DoCmd.Close
+    
+End Sub
+
+Private Sub Form_Activate()
+    Dim iMeses As Integer
+    
+    Me![AnoOcorrencia].Value = Me![UltimoAnoGerado]
+    Me![ProximoMes].Value = Me![UltimoMesGerado]
+    If Me!UltimoMesGerado = 1 Then Me!UltimoMesExtenso = "Janeiro"
+    If Me!UltimoMesGerado = 2 Then Me!UltimoMesExtenso = "Fevereiro"
+    If Me!UltimoMesGerado = 3 Then Me!UltimoMesExtenso = "Março"
+    If Me!UltimoMesGerado = 4 Then Me!UltimoMesExtenso = "Abril"
+    If Me!UltimoMesGerado = 5 Then Me!UltimoMesExtenso = "Maio"
+    If Me!UltimoMesGerado = 6 Then Me!UltimoMesExtenso = "Junho"
+    If Me!UltimoMesGerado = 7 Then Me!UltimoMesExtenso = "Julho"
+    If Me!UltimoMesGerado = 8 Then Me!UltimoMesExtenso = "Agosto"
+    If Me!UltimoMesGerado = 9 Then Me!UltimoMesExtenso = "Setembro"
+    If Me!UltimoMesGerado = 10 Then Me!UltimoMesExtenso = "Outubro"
+    If Me!UltimoMesGerado = 11 Then Me!UltimoMesExtenso = "Novembro"
+    If Me!UltimoMesGerado = 12 Then
+        Me!UltimoMesExtenso = "Dezembro"
+        Me![ProximoMes].Value = 1
+        Me![MesOcorrencia].Value = 1
+        Me![AnoOcorrencia].Value = Me!UltimoAnoGerado + 1
+    End If
+    
+    If Me!UltimoMesGerado <> 12 Then
+        Me![MesOcorrencia].Value = Me!UltimoMesGerado + 1
+        Me![ProximoMes].Value = Me![ProximoMes] + 1
+    End If
+    
+    iMeses = 1
+    Do While iMeses <= 12
+        If (iMeses = 1 And iMeses < Me![MesOcorrencia]) Then Me![Mes1].Enabled = False
+        If (iMeses = 2 And iMeses < Me![MesOcorrencia]) Then Me![Mes2].Enabled = False
+        If (iMeses = 3 And iMeses < Me![MesOcorrencia]) Then Me![Mes3].Enabled = False
+        If (iMeses = 4 And iMeses < Me![MesOcorrencia]) Then Me![Mes4].Enabled = False
+        If (iMeses = 5 And iMeses < Me![MesOcorrencia]) Then Me![Mes5].Enabled = False
+        If (iMeses = 6 And iMeses < Me![MesOcorrencia]) Then Me![Mes6].Enabled = False
+        If (iMeses = 7 And iMeses < Me![MesOcorrencia]) Then Me![Mes7].Enabled = False
+        If (iMeses = 8 And iMeses < Me![MesOcorrencia]) Then Me![Mes8].Enabled = False
+        If (iMeses = 9 And iMeses < Me![MesOcorrencia]) Then Me![Mes9].Enabled = False
+        If (iMeses = 10 And iMeses < Me![MesOcorrencia]) Then Me![Mes10].Enabled = False
+        If (iMeses = 11 And iMeses < Me![MesOcorrencia]) Then Me![Mes11].Enabled = False
+        If (iMeses = 12 And iMeses < Me![MesOcorrencia]) Then Me![Mes12].Enabled = False
+        iMeses = iMeses + 1
+    Loop
+End Sub
+
+Private Sub GerarOcorrencia_Click()
+On Error GoTo GerarOcorrencia_Click_Err
+
+    Dim Mensagem, Estilo, Resposta
+    Mensagem = "Confirma Gerar Ocorrencias no Mes ?"
+    Estilo = vbYesNo + vbQuestion + vbDefaultButton2
+    Resposta = MsgBox(Mensagem, Estilo)
+    
+    If Resposta = vbNo Then
+       GoTo GerarOcorrencia_Click_Exit
+    End If
+    
+    Me![ProximoMes] = Me![MesOcorrencia]
+    DoCmd.OpenQuery "Gerar AnoMes Ocorrencia", acViewNormal, acAdd
+    DoCmd.OpenQuery "Gerar Ocorrencias Mensais no Movto", acViewNormal, acAdd
+    
+    MsgBox "Movimento gerado com sucesso !"
+
+GerarOcorrencia_Click_Exit:
+    DoCmd.Close
+    Exit Sub
+
+GerarOcorrencia_Click_Err:
+    MsgBox Error$
+    Resume GerarOcorrencia_Click_Exit
+
+End Sub
+
+Private Sub Form_Load()
+    
+    Dim iMeses
+    Dim strPrimeiroMes As String
+    Dim PrimeiroAno As String
+    Dim Conexao As Object
+    Dim Arquivo As Object
+    Dim Selecao As String
+    Dim MesValido
+    Dim Mensagem, Estilo, Resposta
+    
+    Set Conexao = Application.CurrentProject.Connection
+    Selecao = "SELECT * FROM [AnoMes Ocorrencias Mensais]"
+    Set Arquivo = CreateObject("ADODB.Recordset")
+    Arquivo.Open Selecao, Conexao, 1
+        
+    If (Arquivo.EOF) Then
+        Me![AnoOcorrencia].Value = Year(Date)
+        Me![ProximoMes].Value = (Month(Date) - 1) 'PrimeiroMes
+        
+        DoCmd.OpenQuery "Gerar AnoMes Ocorrencia", acViewNormal, acAdd
+        
+        Arquivo.Close
+        Set Arquivo = Nothing
+        Set Conexao = Nothing
+        DoCmd.Close
+        DoCmd.OpenForm "F Gerar Ocorrencias Mensais"
+    Else
+        Arquivo.Close
+        Set Arquivo = Nothing
+        Set Conexao = Nothing
+        DoCmd.GoToRecord , , acLast
+    End If
+    
+End Sub

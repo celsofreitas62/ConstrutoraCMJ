@@ -1,0 +1,509 @@
+Version =19
+VersionRequired =19
+Checksum =45963712
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    RecordLocks =2
+    TabularFamily =124
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =8964
+    DatasheetFontHeight =10
+    ItemSuffix =43
+    Top =600
+    Right =10755
+    Bottom =5865
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xf17e1718ef84e340
+    End
+    GUID = Begin
+        0xd7f131ae4a15a44bba4d8dae4e8ee151
+    End
+    NameMap = Begin
+        0x0acc0e5500000000d977f9db408ff1468afa96e82ee280e800000000a0153fb8 ,
+        0x2a3ee640000000000000000050006f0073006900630061006f0049006d006f00 ,
+        0x760065006c0050006100720063006500690072006f00200054006f0074006100 ,
+        0x6c0000000000000016ac49e3e4b5e14790dfff869bed94a207000000d977f9db ,
+        0x408ff1468afa96e82ee280e84e006f006d006500560069006e00630075006c00 ,
+        0x610064006100000000000000bee395f93638984285a5a112f8476d5a06000000 ,
+        0xd7f131ae4a15a44bba4d8dae4e8ee15153006f006d0061005400540049006d00 ,
+        0x6f00760065006c00000000000000eb8595a058e9664eb7131f113cd771b20600 ,
+        0x0000d7f131ae4a15a44bba4d8dae4e8ee15153006f006d006100540054005000 ,
+        0x610067006100730000000000000075b3cba2fc236e4b997b39223abb99be0600 ,
+        0x0000d7f131ae4a15a44bba4d8dae4e8ee15154005400530061006c0064006f00 ,
+        0x00000000000055cdb13b4c75144b95f19a7186df854707000000d977f9db408f ,
+        0xf1468afa96e82ee280e84e006f006d0065005000610072006300650069007200 ,
+        0x6f00000000000000a797a8f2f0813f4897600af8cff7b1de07000000d977f9db ,
+        0x408ff1468afa96e82ee280e854006f00740061006c0044006500620069007400 ,
+        0x6f000000000000000deb55fcf87234469107def628779a7507000000d977f9db ,
+        0x408ff1468afa96e82ee280e854006f00740061006c0043007200650064006900 ,
+        0x74006f00000000000000b99b66dd1dfb264597d59d69f45c523907000000d977 ,
+        0xf9db408ff1468afa96e82ee280e8530061006c0064006f00000000000000ebec ,
+        0x8f17e3344e4993e14e35895a3c3c07000000d977f9db408ff1468afa96e82ee2 ,
+        0x80e84e006f006d00650049006d006f00760065006c000000000000004fcbd919 ,
+        0x30b2714e86e676b71fb3667506000000d7f131ae4a15a44bba4d8dae4e8ee151 ,
+        0x54006f00740061006c00440065006200690074006f000000000000008a48c39c ,
+        0x36c68e4a83abe756a6c528e706000000d7f131ae4a15a44bba4d8dae4e8ee151 ,
+        0x54006f00740061006c004300720065006400690074006f000000000000000d4c ,
+        0x02d8e93a12468bcd40fcf1c075eb06000000d7f131ae4a15a44bba4d8dae4e8e ,
+        0xe151530061006c0064006f000000000000000000000000000000000000000000 ,
+        0x00000c000000050000000000000000000000000000000000
+    End
+    RecordSource ="PosicaoImovelParceiro Total"
+    Caption ="Posicao dos Proprietarios"
+    OnOpen ="[Event Procedure]"
+    MenuBar ="Relatorio"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x8905000089050000890500008905000000000000042300002801000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x00f7d7d3b801000017000000000000000100000000000000b030adb6b8010000 ,
+        0x010403069c00880343ef8007010009009a0b3408640001000f002c0101000100 ,
+        0x2c01020001004134005c90b6b8010000b00185b4b8010000937a978bf87f0000 ,
+        0x20f6a1c7b8010000000000000000000000000000010000000000000001000000 ,
+        0x0200000001000000ffffffff4749533400000000000000000000000044494e55 ,
+        0x220010016c031c003bd76afa0000000000000000000000000000000000000000 ,
+        0x0000000000000000080000000000000000000000070000000000020000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000010010000534d544a ,
+        0x00000000100000017b00630063006300360062003500390032002d0036006500 ,
+        0x630037002d0034003000350035002d0039003100340030002d00390039003400 ,
+        0x3700340061006600350035003500640033007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f525452414954005265736f6c7574696f6e004f7074696f ,
+        0x6e3100506170657253697a65004c4554544552004475706c6578004e4f4e4500 ,
+        0x494856537461706c696e67004f666600436f6c6f724d6f646500436f6c6f7200 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000001c0000005634444d01000000000000000000000000000000 ,
+        0x00000000
+    End
+    PrtDevNames = Begin
+        0x0800220032000100000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000041445f506f727400
+    End
+    OnDeactivate ="[Event Procedure]"
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin Line
+            BorderLineStyle =0
+            Width =1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontFamily =2
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin ComboBox
+            OldBorderStyle =0
+            TextFontFamily =2
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin BreakLevel
+            ControlSource ="NomeParceiro"
+        End
+        Begin BreakLevel
+            ControlSource ="NomeImovel"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =0
+            Name ="CabeçalhoDoRelatório"
+            GUID = Begin
+                0xbfae0e43c66ca54a8fded196cbc1789d
+            End
+        End
+        Begin PageHeader
+            Height =1200
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0xa598386cae548249af2ef5660ef01b73
+            End
+            Begin
+                Begin Label
+                    TextFontFamily =34
+                    Left =60
+                    Top =120
+                    Width =4080
+                    Height =225
+                    FontWeight =700
+                    Name ="Rótulo0"
+                    Caption ="Posicao do Pagamento de Imovel - Proprietarios"
+                    GUID = Begin
+                        0x1275b83b63041f40b790c48506e987ec
+                    End
+                End
+                Begin Label
+                    Left =75
+                    Top =870
+                    Width =2070
+                    Height =225
+                    Name ="Rótulo6"
+                    Caption ="Proprietario"
+                    GUID = Begin
+                        0x6def5b3590424c4ab2b8d5334c0b40b7
+                    End
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =4993
+                    Top =570
+                    Width =1050
+                    Height =225
+                    FontWeight =700
+                    Name ="Rótulo7"
+                    Caption ="TT Debitos"
+                    GUID = Begin
+                        0x0e39f1a449e0704a8f7d7351e9e06493
+                    End
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =6309
+                    Top =570
+                    Width =1035
+                    Height =225
+                    FontWeight =700
+                    Name ="Rótulo8"
+                    Caption ="TT Creditos"
+                    GUID = Begin
+                        0x7f7cabf725de054e9988610850220b53
+                    End
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =7653
+                    Top =566
+                    Width =1260
+                    Height =225
+                    FontWeight =700
+                    Name ="Rótulo9"
+                    Caption ="Saldo Atual"
+                    GUID = Begin
+                        0x4b5194cc5634cf4cb9f1ada698d1f222
+                    End
+                End
+                Begin TextBox
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =4571
+                    Top =113
+                    Width =4326
+                    FontWeight =700
+                    Name ="Texto10"
+                    ControlSource ="NomeVinculada"
+                    GUID = Begin
+                        0xbee10cc38b1a2b40819c862b7395db6a
+                    End
+                End
+                Begin Line
+                    BorderWidth =1
+                    Top =1185
+                    Width =8964
+                    Name ="Linha5"
+                    GUID = Begin
+                        0x9f7d2131406c564cbf9ff383bd05ecee
+                    End
+                End
+                Begin Label
+                    Left =3300
+                    Top =855
+                    Width =1185
+                    Height =240
+                    Name ="Rótulo22"
+                    Caption ="Imovel"
+                    GUID = Begin
+                        0x4c2996921d47844e97c09376dde9b0e0
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextAlign =3
+                    Left =4913
+                    Top =850
+                    Width =1131
+                    TabIndex =1
+                    Name ="Texto26"
+                    ControlSource ="=[SomaTTImovel]"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x28e728a6d971cd4eb012cb01a0734dfd
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    Left =6309
+                    Top =855
+                    Width =1086
+                    TabIndex =2
+                    Name ="Texto31"
+                    ControlSource ="=[SomaTTPagas]"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xdd48485cfc07ec498072fca3ca8b23c6
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    Left =7650
+                    Top =855
+                    Width =1266
+                    TabIndex =3
+                    Name ="Texto32"
+                    ControlSource ="=[TTSaldo]"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x9264e6ac7c914b48beab989eacafa073
+                    End
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =296
+            Name ="Detalhe"
+            GUID = Begin
+                0x8facbdefc575974dbd165e50a137ef5d
+            End
+            Begin
+                Begin TextBox
+                    Left =75
+                    Top =30
+                    Width =3156
+                    ColumnWidth =2655
+                    Name ="NomeParceiro"
+                    ControlSource ="NomeParceiro"
+                    GUID = Begin
+                        0x6227d56cdc34d2438d40014f062df091
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    Left =4995
+                    Top =15
+                    Width =1056
+                    Height =255
+                    TabIndex =1
+                    Name ="TotalDebito"
+                    ControlSource ="TotalDebito"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x4fcbd91930b2714e86e676b71fb36675
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    Left =6340
+                    Top =15
+                    Width =1026
+                    TabIndex =3
+                    Name ="TotalCredito"
+                    ControlSource ="TotalCredito"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x8a48c39c36c68e4a83abe756a6c528e7
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    Left =7650
+                    Top =15
+                    Width =1251
+                    TabIndex =4
+                    Name ="Saldo"
+                    ControlSource ="Saldo"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x0d4c02d8e93a12468bcd40fcf1c075eb
+                    End
+                End
+                Begin TextBox
+                    Left =3306
+                    Top =15
+                    Width =1611
+                    Height =255
+                    TabIndex =2
+                    Name ="NomeImovel"
+                    ControlSource ="NomeImovel"
+                    GUID = Begin
+                        0xde3d927dfddd3644a4bea6a49060d0e4
+                    End
+                End
+            End
+        End
+        Begin PageFooter
+            Height =340
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x6eac75dae5c7a34ea4d2616bb266d94f
+            End
+            Begin
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =34
+                    BackStyle =0
+                    Left =45
+                    Top =47
+                    Width =3345
+                    Height =255
+                    Name ="Texto43"
+                    ControlSource ="=Now()"
+                    Format ="Long Date"
+                    GUID = Begin
+                        0x73bc6fe64276cc47b43e6ae27bfe8b6d
+                    End
+                End
+                Begin TextBox
+                    TextAlign =3
+                    TextFontFamily =34
+                    BackStyle =0
+                    Left =6677
+                    Top =45
+                    Width =2235
+                    Height =255
+                    TabIndex =1
+                    Name ="Texto44"
+                    ControlSource ="=\"Página \" & [Page] & \" de \" & [Pages]"
+                    GUID = Begin
+                        0x42b23bf6e2fa1745882689bd4defb0de
+                    End
+                End
+                Begin Line
+                    BorderWidth =1
+                    Width =8964
+                    Name ="Linha58"
+                    GUID = Begin
+                        0xb232392b3ea7fc40b140be4af841c4ed
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =340
+            Name ="RodapéDoRelatório"
+            GUID = Begin
+                0x322cf4a6272d4649b02cb620c154eb8f
+            End
+            Begin
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextFontFamily =34
+                    Left =5045
+                    Top =56
+                    Width =1011
+                    FontWeight =700
+                    Name ="SomaTTImovel"
+                    ControlSource ="=Sum([TotalDebito])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xbee395f93638984285a5a112f8476d5a
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextFontFamily =34
+                    Left =6300
+                    Top =60
+                    Width =1071
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="SomaTTPagas"
+                    ControlSource ="=Sum([TotalCredito])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xeb8595a058e9664eb7131f113cd771b2
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextFontFamily =34
+                    Left =7709
+                    Top =60
+                    Width =1191
+                    FontWeight =700
+                    TabIndex =2
+                    Name ="TTSaldo"
+                    ControlSource ="=Sum([Saldo])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x75b3cba2fc236e4b997b39223abb99be
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Report_Open(Cancel As Integer)
+    DoCmd.OpenQuery "Zerar PosicaoImovelParceiro", acViewNormal, acEdit
+    DoCmd.OpenQuery "PosicaoImovelParceiro Pagas", acViewNormal, acEdit
+    DoCmd.OpenQuery "PosicaoImovelParceiro Saldo", acViewNormal, acEdit
+    DoCmd.OpenQuery "PosicaoImovelParceiro RJPagas", acViewNormal, acEdit
+    DoCmd.OpenQuery "PosicaoImovelParceiro RJSaldo", acViewNormal, acEdit
+    'DoCmd.OpenQuery "PosicaoImovelParceiro Total", acViewNormal, acEdit
+    
+
+End Sub
+Private Sub Report_Deactivate()
+On Error GoTo Report_Deactivate_Err
+
+    DoCmd.OpenQuery "Zerar PosicaoImovelParceiro", acViewNormal, acEdit
+
+Report_Deactivate_Exit:
+    Exit Sub
+
+Report_Deactivate_Err:
+    MsgBox Error$
+    Resume Report_Deactivate_Exit
+
+End Sub

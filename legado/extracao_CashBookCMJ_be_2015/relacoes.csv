@@ -1,0 +1,16 @@
+﻿Origem;Relacao;TabelaPrincipal;TabelaRelacionada;Campos;Unica;SemIntegridade;CascataAtualiza;CascataExclui;Atributos
+BE;{5BC6E2B3-9E69-4B25-A878-6C6138B19B22};F Contas Financeiras;F Movimento Contas;CodigoConta -> ContaFinanceira;False;False;True;True;4352
+BE;{BA68A09F-84E6-4372-BD62-58FD8CFD3B8F};F Tipos Conta Financeira;F Contas Financeiras;CodTipoConta -> Tipo Conta;False;False;True;True;4352
+BE;EmpMasterEmpVinculada;EmpMaster;EmpVinculada;CodigoMaster -> CodigoMaster;False;False;True;True;4352
+BE;EmpVinculadaF Movimento Contas;EmpVinculada;F Movimento Contas;CodigoVinculada -> EmpVinculada;False;False;True;True;4352
+BE;HistoricoF Movimento Contas;Historico;F Movimento Contas;CodHistorico -> CodHistorico;False;False;True;True;4352
+BE;ImoveisCondPagtoImovel;Imoveis;CondPagtoImovel;CodImovel -> CodImovel;False;False;True;True;4352
+BE;ImoveisF Movimento Contas;Imoveis;F Movimento Contas;CodImovel -> CodImovel;False;False;True;True;4352
+BE;IndicesF Movimento Contas;Indices;F Movimento Contas;CodIndice -> IndiceReajuste;False;False;True;True;4352
+BE;IndicesValorIndices;Indices;ValorIndices;CodIndice -> CodIndice;False;False;True;True;4352
+BE;MaterialMovMaterial;Material;MovMaterial;CodMaterial -> CodMaterial;False;False;True;True;4352
+BE;ParceirosF Movimento Contas;Parceiros;F Movimento Contas;CodigoParceiro -> CodigoParceiro;False;False;True;True;4352
+BE;PeriodicidadeIndices;Periodicidade;Indices;CodPeriodicidade -> Periodicidade;False;False;True;True;4352
+BE;Plano1Plano2;Plano1;Plano2;Plano1 -> Plano1;False;False;True;True;4352
+BE;Plano2Plano3;Plano2;Plano3;Plano2 -> Plano2;False;False;True;True;4352
+BE;Plano3F Movimento Contas;Plano3;F Movimento Contas;Plano3 -> Plano3;False;False;True;True;4352

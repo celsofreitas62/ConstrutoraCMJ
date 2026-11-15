@@ -1,0 +1,531 @@
+Version =19
+VersionRequired =19
+Checksum =45937066
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowAdditions = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    RecordLocks =2
+    TabularFamily =124
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =9010
+    DatasheetFontHeight =10
+    ItemSuffix =38
+    Left =1395
+    Top =6390
+    Right =10380
+    Bottom =9330
+    DatasheetGridlinesColor =12632256
+    OnNoData ="[Event Procedure]"
+    RecSrcDt = Begin
+        0x4f08e2927983e340
+    End
+    GUID = Begin
+        0x7e46627ebb34b64ebe171a97ca900cbe
+    End
+    NameMap = Begin
+        0x0acc0e550000000030c32bc8b68a274a8dc13c3b96e63df800000000d2a87175 ,
+        0x2b2be6400000000000000000460020004d006f00760074006f00200050006100 ,
+        0x720063006500690072006f002000410050006100670061007200000000000000 ,
+        0x00a4414d9298a24ba5eaccc76ae6a1e10700000030c32bc8b68a274a8dc13c3b ,
+        0x96e63df845006d007000560069006e00630075006c0061006400610000000000 ,
+        0x00007868cfc273f2114eb293d5636a02113e00000000e6e59c2818a5e3400000 ,
+        0x00000000000045006d007000560069006e00630075006c006100640061000000 ,
+        0x000000004fb9722fc60dc64eabe2cbed4e7c7865070000007868cfc273f2114e ,
+        0xb293d5636a02113e43006f006400690067006f00560069006e00630075006c00 ,
+        0x610064006100000000000000fbec953840aedd4fb8f11a329a2c7e7007000000 ,
+        0x30c32bc8b68a274a8dc13c3b96e63df84400610074006100560065006e006300 ,
+        0x74006f0000000000000093c22bf5e1895a46a0e0aa0d127451fd0700000030c3 ,
+        0x2bc8b68a274a8dc13c3b96e63df8440061007400610050006100670074006f00 ,
+        0x000000000000f9d29dcaf0ebb5408b46b016991b65d00700000030c32bc8b68a ,
+        0x274a8dc13c3b96e63df843006f006e0074006100460069006e0061006e006300 ,
+        0x650069007200610000000000000033f2700b8480324c94b67e173d5e5f7d0000 ,
+        0x0000f341a82818a5e3400000000000000000460020005400690070006f007300 ,
+        0x200043006f006e00740061002000460069006e0061006e006300650069007200 ,
+        0x61000000000000008f62d3b824edbb479fce7b0009fc2dba0000000093ca9e28 ,
+        0x18a5e34000000000000000004600200043006f006e0074006100730020004600 ,
+        0x69006e0061006e00630065006900720061007300000000000000246fb76e3eeb ,
+        0xcf49b9b364f6fba78404070000008f62d3b824edbb479fce7b0009fc2dba4300 ,
+        0x6f006400690067006f0043006f006e007400610000000000000030f674aea2bf ,
+        0xac4cb0b2674b64f5cecb070000008f62d3b824edbb479fce7b0009fc2dba4400 ,
+        0x65007300630072006900630061006f00000000000000456689f74547aa43b9ef ,
+        0x9287b569b6b10700000033f2700b8480324c94b67e173d5e5f7d440065007300 ,
+        0x630072006900630061006f000000000000006db9dbd2032c41498d3afea7a511 ,
+        0x7f970700000033f2700b8480324c94b67e173d5e5f7d43006f00640054006900 ,
+        0x70006f0043006f006e00740061000000000000002e12478bfab45a48ac39bd8a ,
+        0xd7c43f7e070000008f62d3b824edbb479fce7b0009fc2dba5400690070006f00 ,
+        0x200043006f006e0074006100000000000000db65dbc41a9b874ba66338d9ded9 ,
+        0x48b90700000030c32bc8b68a274a8dc13c3b96e63df84e0075006d0044006f00 ,
+        0x6300000000000000ff4706a28aa27548bf1548e944fb1c930700000030c32bc8 ,
+        0xb68a274a8dc13c3b96e63df843006f00640048006900730074006f0072006900 ,
+        0x63006f00000000000000a8278c59385e3f49ba2d4b70b7e166e200000000ff65 ,
+        0xa92818a5e340000000000000000048006900730074006f007200690063006f00 ,
+        0x0000000000009a37b1c8a606194e8dba5044fd0f58ae07000000a8278c59385e ,
+        0x3f49ba2d4b70b7e166e243006f00640048006900730074006f00720069006300 ,
+        0x6f000000000000008cf379d20b7e674fa8066a7eaf5c577907000000a8278c59 ,
+        0x385e3f49ba2d4b70b7e166e2440065007300630072006900630061006f000000 ,
+        0x000000006b4dc47b956d2b41851505b042a3d53b0700000030c32bc8b68a274a ,
+        0x8dc13c3b96e63df843006f006d0070006c0065006d0065006e0074006f000000 ,
+        0x000000007b455ccc378c5f448d6f26f59ca1f2bc0700000030c32bc8b68a274a ,
+        0x8dc13c3b96e63df8560061006c006f007200440065006200690074006f000000 ,
+        0x00000000f85def09268f1145a0fdbafdb4e9dc4d0700000030c32bc8b68a274a ,
+        0x8dc13c3b96e63df8560061006c006f0072004300720065006400690074006f00 ,
+        0x00000000000018148e2b22849e4aab3fee7a35322bc5060000007e46627ebb34 ,
+        0xb64ebe171a97ca900cbe560061006c006f007200430072006500640069007400 ,
+        0x6f00000000000000b7c1ebd308d772429b8bac0bc74363e1060000007e46627e ,
+        0xbb34b64ebe171a97ca900cbe560061006c006f00720044006500620069007400 ,
+        0x6f000000000000007427635f1a6d8d4e866a25cea0787a19060000007e46627e ,
+        0xbb34b64ebe171a97ca900cbe54006f00740061006c0043007200650064006900 ,
+        0x74006f0000000000000047a0e29a78ec4443b8adfcfd0c4dcd05060000007e46 ,
+        0x627ebb34b64ebe171a97ca900cbe54006f00740061006c004400650062006900 ,
+        0x74006f00000000000000000000000000000000000000000000000c0000000500 ,
+        0x00000000000000000000000000000000
+    End
+    RecordSource ="F Movto Parceiro APagar"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x000000000000000000000000000000000000000032230000c201000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x00199d2b0a02000070be5e97ff7f0000ff30bf2b0a0200006601000000000000 ,
+        0x010400149c00f80343ef80070100010000000000000001000f002c0102000100 ,
+        0x2c0102000100000083bbe939f77f000050485e97b30000004c9da53af77f0000 ,
+        0x50485e97b3000000000000000000000000000000000000000000000000000000 ,
+        0x00000000010000000300000000000000000000000000000000000000e2a497bc ,
+        0x00010102ff020200010000000000004c65786d61726b20543633320000000000 ,
+        0x0000000000000000000000000000004c65786d61726b20543633320000000000 ,
+        0x00000000000000000000000000000000320200004c65786d61726b2054363332 ,
+        0x002052000000000000000000ccdab7009e672a7440004001ff7fff7f00002800 ,
+        0x01000c000d000500060004000700030006000100000000000000000000000600 ,
+        0x05000900000000008901c300bfc602007339010001001c001000200025001200 ,
+        0x000041003e010000e2a497bc02000100ff004000b00458022c01000000005802 ,
+        0x0000000000010000000000000000f10000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000100000700 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000a0000000a0000000a000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000001000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000001000000000000000000 ,
+        0x0000011000010000000000000400000001000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000003c4f00000000000000000000e2a497bc
+    End
+    PrtDevNames = Begin
+        0x080015001d00010000000000000000000000000000000000000000000049505f ,
+        0x3139322e3136382e322e32330000000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin Rectangle
+            BorderLineStyle =0
+            Width =850
+            Height =850
+        End
+        Begin Line
+            BorderLineStyle =0
+            Width =1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontFamily =2
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin ComboBox
+            OldBorderStyle =0
+            TextFontFamily =2
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            ControlSource ="EmpVinculada"
+        End
+        Begin BreakLevel
+            ControlSource ="DataPagto"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =0
+            Name ="CabeçalhoDoRelatório"
+            GUID = Begin
+                0x349b338556326a4f871268590ee5ee17
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =345
+            Name ="CabeçalhoDoGrupo0"
+            GUID = Begin
+                0xab3bc985ceeeea4cb28cbc14a4588cac
+            End
+            Begin
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    FontUnderline = NotDefault
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    ColumnCount =2
+                    ListWidth =3345
+                    Left =1695
+                    Top =60
+                    Width =3636
+                    Height =255
+                    ColumnWidth =3015
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0xf4d1095d1dc48e4ebff2b061fd6612d0
+                    End
+                    Name ="EmpVinculada"
+                    ControlSource ="EmpVinculada"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM Emp"
+                        "Vinculada WHERE ((([EmpVinculada].[NomeVinculada])<>\"sistema\")); "
+                    ColumnWidths ="0;3345"
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    OverlapFlags =81
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =510
+                    Top =60
+                    Width =750
+                    Height =240
+                    ForeColor =255
+                    Name ="Rótulo18"
+                    Caption ="A PAGAR"
+                    GUID = Begin
+                        0xfbec9e1af5abd445942bba25e51f72ca
+                    End
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =450
+            Name ="Detalhe"
+            GUID = Begin
+                0xc9b8e17dfda2da4eaa1782dae7363b86
+            End
+            Begin
+                Begin TextBox
+                    OverlapFlags =81
+                    TextAlign =2
+                    Top =56
+                    Width =876
+                    Name ="DataVencto"
+                    ControlSource ="DataVencto"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0x82092f0fe6f0f44dbeb3f1f062bc5927
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =243
+                    TextAlign =2
+                    Left =850
+                    Top =56
+                    Width =801
+                    TabIndex =1
+                    Name ="DataPagto"
+                    ControlSource ="DataPagto"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0xd3e87f2f1f436f43a8dfd09f5d7e3ec8
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =81
+                    ColumnCount =3
+                    ListWidth =4536
+                    Left =7564
+                    Top =60
+                    Width =1446
+                    Height =390
+                    ColumnWidth =2250
+                    TabIndex =2
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"60\""
+                    GUID = Begin
+                        0xb892ccafc9397e43bcc2d6ecc10b9d08
+                    End
+                    Name ="ContaFinanceira"
+                    ControlSource ="ContaFinanceira"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao],"
+                        " [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JO"
+                        "IN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas"
+                        " Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>\"siste"
+                        "ma\")); "
+                    ColumnWidths ="0;1560;2115"
+                    BaseInfo ="\"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao"
+                        "], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER "
+                        "JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Cont"
+                        "as Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>\"\"s"
+                        "istema\"\")); \";\"F Tipos Conta Financeira\";\"F Contas Financeiras\";\"\""
+                End
+                Begin TextBox
+                    OverlapFlags =81
+                    Left =3000
+                    Top =60
+                    Width =906
+                    Height =390
+                    TabIndex =3
+                    Name ="NumDoc"
+                    ControlSource ="NumDoc"
+                    GUID = Begin
+                        0xc7665dfec160e04cabd6ce4af98995f3
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =81
+                    ColumnCount =2
+                    Left =1700
+                    Top =60
+                    Width =1236
+                    Height =390
+                    ColumnWidth =1740
+                    TabIndex =4
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"30\""
+                    GUID = Begin
+                        0x4dcba969c7ebaa41adb761c1670dd9f6
+                    End
+                    Name ="CodHistorico"
+                    ControlSource ="CodHistorico"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE "
+                        "((([Historico].[Descricao])<>\"sistema\")); "
+                    ColumnWidths ="0;2835"
+                End
+                Begin TextBox
+                    OverlapFlags =81
+                    Left =3971
+                    Top =60
+                    Width =1356
+                    Height =390
+                    ColumnWidth =1485
+                    TabIndex =5
+                    Name ="Complemento"
+                    ControlSource ="Complemento"
+                    GUID = Begin
+                        0xa24c0f4bec68b045bf8c442b5eea950b
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =81
+                    Left =5400
+                    Top =56
+                    Width =1041
+                    TabIndex =6
+                    ForeColor =255
+                    Name ="ValorDebito"
+                    ControlSource ="ValorDebito"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xb7c1ebd308d772429b8bac0bc74363e1
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =81
+                    Left =6510
+                    Top =56
+                    Width =1011
+                    TabIndex =7
+                    ForeColor =16711680
+                    Name ="ValorCredito"
+                    ControlSource ="ValorCredito"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x18148e2b22849e4aab3fee7a35322bc5
+                    End
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            Height =259
+            Name ="RodapéDoGrupo1"
+            GUID = Begin
+                0x7491213a8cb0cf4d858a83af966db63c
+            End
+            Begin
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    DecimalPlaces =2
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =6495
+                    Top =19
+                    Width =1026
+                    ForeColor =16711680
+                    Name ="Texto11"
+                    ControlSource ="=Sum([ValorCredito])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x5ccff76e73a17141b1e0f08a1ec82f79
+                    End
+                End
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    DecimalPlaces =2
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =5415
+                    Top =15
+                    Width =1026
+                    TabIndex =1
+                    ForeColor =255
+                    Name ="Texto13"
+                    ControlSource ="=Sum([ValorDebito])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x7790f0883907e44c9b680a83b3abf077
+                    End
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =3975
+                    Top =19
+                    Width =1365
+                    Height =240
+                    Name ="Rótulo14"
+                    Caption ="Total Empresa"
+                    GUID = Begin
+                        0xb9e59b153c57364d948d9b42963385d3
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =396
+            Name ="RodapéDoRelatório"
+            GUID = Begin
+                0x03b59601a8c9ef4992663f97b3a054a5
+            End
+            Begin
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    OverlapFlags =81
+                    Left =6495
+                    Top =124
+                    Width =1026
+                    ForeColor =16711680
+                    Name ="TotalCredito"
+                    ControlSource ="=Sum([ValorCredito])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x7427635f1a6d8d4e866a25cea0787a19
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    OverlapFlags =81
+                    Left =5415
+                    Top =120
+                    Width =1026
+                    TabIndex =1
+                    ForeColor =255
+                    Name ="TotalDebito"
+                    ControlSource ="=Sum([ValorDebito])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x47a0e29a78ec4443b8adfcfd0c4dcd05
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    OverlapFlags =81
+                    Left =3975
+                    Top =124
+                    Width =1365
+                    Height =240
+                    Name ="Rótulo29"
+                    Caption ="Total A PAGAR"
+                    GUID = Begin
+                        0xb47f9102e237fb408a26462dcbe42d9d
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    OverlapFlags =81
+                    Left =7992
+                    Top =113
+                    Width =951
+                    TabIndex =2
+                    Name ="Texto50"
+                    ControlSource ="=[TotalCredito]-[TotalDebito]"
+                    Format ="#,###[Blue];-#,###[Red];#,###[Blue];#,###[Blue]"
+                    GUID = Begin
+                        0xe66c40968ce5ff4f997348d5d5ea85c1
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    OverlapFlags =81
+                    Left =7596
+                    Top =113
+                    Width =360
+                    Height =240
+                    Name ="Rótulo52"
+                    Caption ="Sdo"
+                    GUID = Begin
+                        0x4b6c3b8ac818524c9ad61f1a7345ddfc
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Report_NoData(Cancel As Integer)
+    Cancel = True
+End Sub

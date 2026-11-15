@@ -1,0 +1,456 @@
+Version =19
+VersionRequired =19
+Checksum =-50605939
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    TabularFamily =55
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =9018
+    DatasheetFontHeight =10
+    ItemSuffix =19
+    Left =630
+    Top =120
+    Right =630
+    Bottom =120
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xdd26a1621575e340
+    End
+    GUID = Begin
+        0x5a89fc46e31c0c4b95b2d9516d3c8615
+    End
+    NameMap = Begin
+        0x0acc0e55000000009d75fb6839832f4399e7f85d5030fb8600000000e88dbb28 ,
+        0x18a5e3402065190032ec9e6850006100720063006500690072006f0073000000 ,
+        0x00000000707248a17eadc94e8ee9abeb98980c0f070000009d75fb6839832f43 ,
+        0x99e7f85d5030fb8643006f006400690067006f00500061007200630065006900 ,
+        0x72006f0000000000000055cdb13b4c75144b95f19a7186df8547070000009d75 ,
+        0xfb6839832f4399e7f85d5030fb864e006f006d00650050006100720063006500 ,
+        0x690072006f00000000000000a706512e4093db40ba3dd80c55d1c15e07000000 ,
+        0x9d75fb6839832f4399e7f85d5030fb8643006c00690065006e00740065000000 ,
+        0x000000003c7d8ef49f3dda40b453ad1fde0b524a070000009d75fb6839832f43 ,
+        0x99e7f85d5030fb8646006f0072006e0065006300650064006f00720000000000 ,
+        0x0000d52a9a8a802ed448aa5834ece59b3cb6070000009d75fb6839832f4399e7 ,
+        0xf85d5030fb8649006e0061007400690076006f00000000000000a3fe7b37e233 ,
+        0x4d4abe5e5294c232705f070000009d75fb6839832f4399e7f85d5030fb864600 ,
+        0x75006e00630069006f006e006100720069006f00000000000000f691d009bc4d ,
+        0xab4099aa5e667ada23ae070000009d75fb6839832f4399e7f85d5030fb864d00 ,
+        0x6100730074006500720000000000000044a044523ae97044891b4e5fc0e59f1f ,
+        0x070000009d75fb6839832f4399e7f85d5030fb86540065006c00650066006f00 ,
+        0x6e006500000000000000000000000000000000000000000000000c0000000400 ,
+        0x00000000000000000000000000000000
+    End
+    RecordSource ="SELECT [Parceiros].[CodigoParceiro], [Parceiros].[CodigoParceiro], [Parceiros].["
+        "NomeParceiro], [Parceiros].[Cliente], [Parceiros].[Fornecedor], [Parceiros].[Ina"
+        "tivo], [Parceiros].[Funcionario], [Parceiros].[Master], [Parceiros].[Telefone] F"
+        "ROM Parceiros WHERE ((([Parceiros].[Master])=False)); "
+    Caption ="Parceiros"
+    MenuBar ="Relatorio"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x8905000089050000890500008905000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400049c009000032f000001000900000000006400010001002c0102000100 ,
+        0x2c01010000004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077706e6f ,
+        0x00000000010000000000000000000000fe0000000100000000000000c8000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800290044000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000053656e6420546f204d6963726f736f6674204f6e654e6f746520506f ,
+        0x72743a00
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            FontItalic = NotDefault
+            BackStyle =0
+            TextAlign =1
+            TextFontFamily =18
+            FontSize =11
+            FontWeight =700
+            ForeColor =8388608
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            BorderWidth =1
+            Width =850
+            Height =850
+            BorderColor =8388608
+        End
+        Begin Line
+            Width =1701
+            BorderColor =8388608
+        End
+        Begin Image
+            OldBorderStyle =0
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+        End
+        Begin CheckBox
+            LabelX =230
+            LabelY =-30
+        End
+        Begin BoundObjectFrame
+            Width =4536
+            Height =2835
+            LabelX =-1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin ListBox
+            OldBorderStyle =0
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin ComboBox
+            OldBorderStyle =0
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin Subform
+            OldBorderStyle =0
+            Width =1701
+            Height =1701
+        End
+        Begin UnboundObjectFrame
+            Width =4536
+            Height =2835
+        End
+        Begin BreakLevel
+            ControlSource ="NomeParceiro"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =0
+            Name ="CabeçalhoDoRelatório"
+            GUID = Begin
+                0xa08127335b6ee34ab85eeacea7b7a2b9
+            End
+        End
+        Begin PageHeader
+            Height =387
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0x8247a46482d7f94cb365747473828bb6
+            End
+            Begin
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontFamily =34
+                    Left =57
+                    Top =57
+                    Width =3513
+                    Height =270
+                    FontSize =8
+                    ForeColor =0
+                    Name ="NomeParceiro_Rótulo"
+                    Caption ="Nome"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x16bb58a425efb74898aedcab6ddeae3d
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =3645
+                    Top =60
+                    Width =750
+                    Height =270
+                    FontSize =8
+                    ForeColor =0
+                    Name ="CodigoParceiro_Rótulo"
+                    Caption ="Codigo"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x6bc661a789d46240ae7e3b4536d66406
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontFamily =34
+                    Left =4488
+                    Top =57
+                    Width =2211
+                    Height =270
+                    FontSize =8
+                    ForeColor =0
+                    Name ="Telefone_Rótulo"
+                    Caption ="Telefone"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xdd91876a1463c04caefb20625b695fe6
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontFamily =34
+                    Left =6803
+                    Top =57
+                    Width =423
+                    Height =270
+                    FontSize =8
+                    ForeColor =0
+                    Name ="Cliente_Rótulo"
+                    Caption ="Cli"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x69f98a5412f7d14297589537791d4536
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontFamily =34
+                    Left =7280
+                    Top =56
+                    Width =423
+                    Height =270
+                    FontSize =8
+                    ForeColor =0
+                    Name ="Fornecedor_Rótulo"
+                    Caption ="For"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x37aea22ae9731c40bc477e8e6f880ef3
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontFamily =34
+                    Left =7790
+                    Top =56
+                    Width =465
+                    Height =270
+                    FontSize =8
+                    ForeColor =0
+                    Name ="Funcionario_Rótulo"
+                    Caption ="Fun"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x03c1cdcbbb73d544a886693442bab424
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontFamily =34
+                    Left =8300
+                    Top =56
+                    Width =687
+                    Height =270
+                    FontSize =8
+                    ForeColor =0
+                    Name ="Inativo_Rótulo"
+                    Caption ="Inativo"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xc78499f125344c4db3370c9e507694b0
+                    End
+                End
+                Begin Line
+                    BorderWidth =1
+                    Left =57
+                    Top =372
+                    Width =8961
+                    BorderColor =4210752
+                    Name ="Linha17"
+                    GUID = Begin
+                        0x3aa2873f82a87f4c95fe949322ebab4e
+                    End
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =240
+            Name ="Detalhe"
+            GUID = Begin
+                0x3f8d23ac931bce4a800dc85431eaf3a8
+            End
+            Begin
+                Begin TextBox
+                    Left =56
+                    Width =3513
+                    Height =225
+                    ColumnWidth =2655
+                    Name ="NomeParceiro"
+                    ControlSource ="NomeParceiro"
+                    GUID = Begin
+                        0x0398655fac5abf41bca2baba138c4c5c
+                    End
+                End
+                Begin TextBox
+                    Left =3626
+                    Width =762
+                    Height =226
+                    TabIndex =1
+                    Name ="CodigoParceiro"
+                    ControlSource ="Expr1000"
+                    GUID = Begin
+                        0x8eeaa50a40b56d4abe3e1e6c8a6203e2
+                    End
+                End
+                Begin TextBox
+                    Left =4487
+                    Width =2211
+                    Height =225
+                    TabIndex =2
+                    Name ="Telefone"
+                    ControlSource ="Telefone"
+                    GUID = Begin
+                        0x9f60811d05dd2b4ba0913ce7b5456586
+                    End
+                End
+                Begin CheckBox
+                    Left =6940
+                    Width =200
+                    TabIndex =3
+                    Name ="Cliente"
+                    ControlSource ="Cliente"
+                    GUID = Begin
+                        0x8c21a5e5ede20044b69dd0e19e52e899
+                    End
+                End
+                Begin CheckBox
+                    Left =7400
+                    Width =200
+                    TabIndex =4
+                    Name ="Fornecedor"
+                    ControlSource ="Fornecedor"
+                    GUID = Begin
+                        0xd427f472f2df6944afe56b959cd80f80
+                    End
+                End
+                Begin CheckBox
+                    Left =7937
+                    Width =200
+                    TabIndex =5
+                    Name ="Funcionario"
+                    ControlSource ="Funcionario"
+                    GUID = Begin
+                        0xf59c5f315aa70545aceafd6620588cdc
+                    End
+                End
+                Begin CheckBox
+                    Left =8527
+                    Width =200
+                    TabIndex =6
+                    Name ="Inativo"
+                    ControlSource ="Inativo"
+                    GUID = Begin
+                        0x87afc9011904944d9f0bc13f7f3c586d
+                    End
+                End
+            End
+        End
+        Begin PageFooter
+            Height =283
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x5c31031a52dd3340ad315f013ef42f10
+            End
+            Begin
+                Begin TextBox
+                    TextAlign =1
+                    Top =56
+                    Width =3629
+                    Height =225
+                    FontWeight =700
+                    Name ="Texto15"
+                    ControlSource ="=Now()"
+                    Format ="Long Date"
+                    GUID = Begin
+                        0xfeb24fad89fb464fa5fb11ed6af61af2
+                    End
+                End
+                Begin TextBox
+                    TextAlign =3
+                    Left =6465
+                    Top =56
+                    Width =2534
+                    Height =225
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="Texto16"
+                    ControlSource ="=\"Página \" & [Page] & \" de \" & [Pages]"
+                    GUID = Begin
+                        0xf55efe518c282245bed2286a85a68293
+                    End
+                End
+                Begin Line
+                    BorderWidth =1
+                    Left =113
+                    Top =56
+                    Width =8886
+                    BorderColor =12632256
+                    Name ="Linha18"
+                    GUID = Begin
+                        0x468d90375687124ebb3c318b21b6af9a
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    BackStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =4308
+                    Top =56
+                    Width =1680
+                    Height =225
+                    FontSize =8
+                    ForeColor =0
+                    Name ="Rótulo14"
+                    Caption ="Parceiros"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x86a6e29f12046e45a90ddbf4a175b556
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =0
+            Name ="RodapéDoRelatório"
+            GUID = Begin
+                0xbe6388935602584f8980116d11cf61d6
+            End
+        End
+    End
+End

@@ -1,0 +1,154 @@
+Version =19
+VersionRequired =19
+Checksum =-54280761
+Begin Form
+    PopUp = NotDefault
+    Modal = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    ControlBox = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    AllowDeletions = NotDefault
+    CloseButton = NotDefault
+    DividingLines = NotDefault
+    AllowAdditions = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    RecordLocks =2
+    TabularFamily =124
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =3118
+    DatasheetFontHeight =10
+    ItemSuffix =12
+    Left =4425
+    Top =1380
+    Right =8985
+    Bottom =3450
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0x5e37e1ad1dbde240
+    End
+    GUID = Begin
+        0x598a846dcdf5d341a211474236f177d3
+    End
+    NameMap = Begin
+        0x0acc0e5500000000648fa8b686756243abaaed88f0afbeba0000000021b99828 ,
+        0x18a5e34000000000f80300004100720071007500690076006f00200053006900 ,
+        0x7300740065006d006100000000000000cd71474aa9ce4e40a922503afaf3c096 ,
+        0x07000000648fa8b686756243abaaed88f0afbeba530065004400690067006900 ,
+        0x7400610064006f00000000000000000000000000000000000000000000000c00 ,
+        0x0000040000000000000000000000000000000000
+    End
+    RecordSource ="Arquivo Sistema"
+    Caption ="Digite a Senha"
+    DatasheetFontName ="Arial"
+    OnLoad ="[Event Procedure]"
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontName ="Tahoma"
+        End
+        Begin CommandButton
+            Width =1701
+            Height =283
+            FontSize =8
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="Tahoma"
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            SpecialEffect =2
+            OldBorderStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Tahoma"
+        End
+        Begin Section
+            Height =623
+            BackColor =8454143
+            Name ="Detail"
+            GUID = Begin
+                0x1ff9911d6ab7a949b5354bd413def6cc
+            End
+            Begin
+                Begin TextBox
+                    SpecialEffect =0
+                    OldBorderStyle =1
+                    BorderWidth =1
+                    OverlapFlags =85
+                    IMESentenceMode =3
+                    Left =113
+                    Top =170
+                    Width =2151
+                    Height =330
+                    FontSize =10
+                    FontWeight =700
+                    Name ="SenhaDigitada"
+                    ControlSource ="SeDigitado"
+                    OnExit ="[Event Procedure]"
+                    InputMask ="Password"
+                    GUID = Begin
+                        0xd8bfae1617364344ae3c1f36e0f6a4d7
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    Left =2324
+                    Top =170
+                    Width =666
+                    Height =336
+                    FontSize =10
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="Command11"
+                    Caption ="OK"
+                    OnClick ="[Event Procedure]"
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    ControlTipText ="Close Form"
+                    GUID = Begin
+                        0xf42606675115b647a948c0ce7330d3cd
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Form_Load()
+    SenhaDigitada = ""
+End Sub
+
+Private Sub SenhaDigitada_Exit(Cancel As Integer)
+    DoCmd.DoMenuItem acFormBar, acRecordsMenu, acSaveRecord, , acMenuVer70
+End Sub
+
+Private Sub Command11_Click()
+On Error GoTo Err_Command11_Click
+
+
+    DoCmd.Close
+
+Exit_Command11_Click:
+    Exit Sub
+
+Err_Command11_Click:
+    MsgBox Err.Description
+    Resume Exit_Command11_Click
+    
+End Sub

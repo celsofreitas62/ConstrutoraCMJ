@@ -1,0 +1,9 @@
+﻿-- Consulta: Reajuste de Parcelas Parceiro
+-- Tipo: Seleção (0)
+-- Parâmetros: Formulários!ReajusteParceiros!EmpresaSelecionada (Texto), Formulários!ReajusteParceiros!IndiceSelecionado (Texto)
+-- Descrição: 
+
+SELECT [F Movimento Contas].CodAtribuiEmpresa, Imoveis.IndiceReajuste, [F Movimento Contas].ValorDebito, [F Movimento Contas].PagoAntecipado, [F Movimento Contas].DataPagto, [F Movimento Contas].SofreReajuste, [F Movimento Contas].Confirmado, [F Movimento Contas].ValorOriginalImovel, Parceiros.NomeParceiro, [F Movimento Contas].ValorReajustado, [F Movimento Contas].CodigoParceiro, [F Movimento Contas].NumMovimento, [F Movimento Contas].EmpVinculada, [F Movimento Contas].CodHistorico, [F Movimento Contas].ValorCredito, [F Movimento Contas].Complemento, [F Movimento Contas].Plano3, [F Movimento Contas].ContaFinanceira, [F Movimento Contas].DataVencto, [F Movimento Contas].NumDoc, [F Movimento Contas].CodImovel, [F Movimento Contas].AgrupadorVenda, [F Movimento Contas].LinkVenda, [F Movimento Contas].CodAtribuiParceiro
+FROM Parceiros INNER JOIN (Indices INNER JOIN (Imoveis INNER JOIN (EmpVinculada INNER JOIN [F Movimento Contas] ON EmpVinculada.CodigoVinculada=[F Movimento Contas].EmpVinculada) ON Imoveis.CodImovel=[F Movimento Contas].CodImovel) ON Indices.CodIndice=[F Movimento Contas].IndiceReajuste) ON Parceiros.CodigoParceiro=[F Movimento Contas].CodigoParceiro
+WHERE ((([F Movimento Contas].CodAtribuiEmpresa)=Formulários!ReajusteParceiros!EmpresaSelecionada) And ((Imoveis.IndiceReajuste)=Formulários!ReajusteParceiros!IndiceSelecionado) And (([F Movimento Contas].ValorDebito)<>0) And (([F Movimento Contas].PagoAntecipado)=False) And (([F Movimento Contas].DataPagto) Is Null) And (([F Movimento Contas].SofreReajuste)=True) And (([F Movimento Contas].Confirmado)=False))
+ORDER BY Parceiros.NomeParceiro, [F Movimento Contas].DataVencto;

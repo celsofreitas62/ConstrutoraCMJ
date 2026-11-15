@@ -1,0 +1,343 @@
+Version =19
+VersionRequired =19
+Checksum =-54485233
+Begin Form
+    AllowFilters = NotDefault
+    AllowDeletions = NotDefault
+    DividingLines = NotDefault
+    AllowAdditions = NotDefault
+    OrderByOn = NotDefault
+    ScrollBars =2
+    TabularCharSet =238
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =6689
+    ItemSuffix =12
+    Left =11790
+    Top =3600
+    Right =11790
+    Bottom =3600
+    Filter ="((Lookup_CodigoParceiro.NomeParceiro=\"Casa das Torneiras Ltda\"))"
+    OrderBy ="[F Movimento Contas].NumMovimento"
+    RecSrcDt = Begin
+        0x001a9128aebce340
+    End
+    GUID = Begin
+        0x5b29bda76e82f64c80446ea7174d62aa
+    End
+    NameMap = Begin
+        0x0acc0e5500000000c74db24e5ec5304682778477deebcce000000000856675ae ,
+        0xadbce34000000000f8030000500061007200630065006c006100730049006d00 ,
+        0x6f00760065006c00000000000000234efff34ccd0f439ad2f5798260187e0700 ,
+        0x0000c74db24e5ec5304682778477deebcce04e0075006d004d006f0076006900 ,
+        0x6d0065006e0074006f000000000000007b455ccc378c5f448d6f26f59ca1f2bc ,
+        0x07000000c74db24e5ec5304682778477deebcce0560061006c006f0072004400 ,
+        0x65006200690074006f00000000000000f85def09268f1145a0fdbafdb4e9dc4d ,
+        0x07000000c74db24e5ec5304682778477deebcce0560061006c006f0072004300 ,
+        0x720065006400690074006f00000000000000fbec953840aedd4fb8f11a329a2c ,
+        0x7e7007000000c74db24e5ec5304682778477deebcce044006100740061005600 ,
+        0x65006e00630074006f0000000000000093c22bf5e1895a46a0e0aa0d127451fd ,
+        0x07000000c74db24e5ec5304682778477deebcce0440061007400610050006100 ,
+        0x670074006f0000000000000034998d7af7eed14a97e76b8a50463ee807000000 ,
+        0xc74db24e5ec5304682778477deebcce0560061006c006f0072004f0072006900 ,
+        0x670069006e0061006c0049006d006f00760065006c000000000000004712e4f1 ,
+        0x1a2e0944813347138125827d07000000c74db24e5ec5304682778477deebcce0 ,
+        0x43006f006400690067006f0043006f006e00640050006100670074006f000000 ,
+        0x00000000c146d9905d42664e8bb81af60397de9907000000c74db24e5ec53046 ,
+        0x82778477deebcce041006700720075007000610064006f007200560065006e00 ,
+        0x64006100000000000000000000000000000000000000000000000c0000000400 ,
+        0x00000000000000000000000000000000
+    End
+    RecordSource ="ParcelasImovel"
+    DatasheetFontName ="Arial"
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =11
+            FontName ="Calibri"
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            Width =1701
+            LabelX =-1701
+            FontSize =11
+            BorderColor =12632256
+            FontName ="Calibri"
+        End
+        Begin FormHeader
+            Height =283
+            BackColor =-2147483633
+            Name ="CabeçalhoDoFormulário"
+            GUID = Begin
+                0x55760c7328c20a4b870fc12ef580c67e
+            End
+            Begin
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =45
+                    Top =15
+                    Width =1035
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =13209
+                    Name ="Rótulo22"
+                    Caption ="Débito"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x18445ed0384f3349b5228f680e219693
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =1110
+                    Top =15
+                    Width =1185
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =13209
+                    Name ="Rótulo6"
+                    Caption ="Crédito"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xd6c4fb5267f3744895261f74b5f64a41
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =2310
+                    Top =15
+                    Width =1095
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =13209
+                    Name ="Rótulo7"
+                    Caption ="Vencto"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xbb8d8becf934834eb3d326a385960096
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =3450
+                    Top =15
+                    Width =1095
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =13209
+                    Name ="Rótulo8"
+                    Caption ="Pagto"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x15d8437a8513a440a5db71eaf52013e1
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =4575
+                    Top =15
+                    Width =1095
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =13209
+                    Name ="Rótulo9"
+                    Caption ="Vlr Original"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xb105fa93e2a52c40b88457d90d1103f0
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =5745
+                    Top =15
+                    Width =555
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =13209
+                    Name ="Rótulo10"
+                    Caption ="C.Pg"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x0ea4e2d3bf8e664888e8fd817e488ae4
+                    End
+                End
+            End
+        End
+        Begin Section
+            Height =340
+            Name ="Detalhe"
+            GUID = Begin
+                0x7704978b94c2f240a7279019ff9634ee
+            End
+            Begin
+                Begin TextBox
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextFontCharSet =204
+                    IMESentenceMode =3
+                    Left =56
+                    Top =56
+                    Width =1086
+                    ColumnWidth =1095
+                    FontSize =8
+                    ForeColor =2366701
+                    Name ="ValorDebito"
+                    ControlSource ="ValorDebito"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xf522935fe11b5240ae3fab07e9183958
+                    End
+                End
+                Begin TextBox
+                    TabStop = NotDefault
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontCharSet =204
+                    IMESentenceMode =3
+                    Left =1190
+                    Top =56
+                    Width =1071
+                    ColumnWidth =1095
+                    FontSize =8
+                    TabIndex =1
+                    Name ="ValorCredito"
+                    ControlSource ="ValorCredito"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x71325fe8b5d3284c8ec33f30bd66a633
+                    End
+                End
+                Begin TextBox
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextFontCharSet =204
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =2324
+                    Top =56
+                    Width =1086
+                    ColumnWidth =990
+                    FontSize =8
+                    TabIndex =2
+                    Name ="DataVencto"
+                    ControlSource ="DataVencto"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0xf5062d66b9cf5b4691db8a5a06f497c9
+                    End
+                End
+                Begin TextBox
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextFontCharSet =204
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =3458
+                    Top =56
+                    Width =1071
+                    ColumnWidth =960
+                    FontSize =8
+                    TabIndex =3
+                    Name ="DataPagto"
+                    ControlSource ="DataPagto"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0xfb2cec7d94155141aee9b7d2b21d9daf
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontCharSet =204
+                    IMESentenceMode =3
+                    Left =4592
+                    Top =56
+                    Width =1071
+                    ColumnWidth =1185
+                    FontSize =8
+                    TabIndex =4
+                    ForeColor =16711680
+                    Name ="ValorOriginalImovel"
+                    ControlSource ="ValorOriginalImovel"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x4d65161acdb22a4c867dba3c598a5bea
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontCharSet =204
+                    IMESentenceMode =3
+                    Left =5730
+                    Top =60
+                    Width =501
+                    ColumnWidth =1110
+                    FontSize =8
+                    TabIndex =5
+                    Name ="CodigoCondPagto"
+                    ControlSource ="CodigoCondPagto"
+                    GUID = Begin
+                        0x74a8028bfa011840bb9d500e27959d24
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            Visible = NotDefault
+            Height =453
+            Name ="RodapéDoFormulário"
+            GUID = Begin
+                0x493dc5174eaa5c4aa7d649494a19f12b
+            End
+            Begin
+                Begin TextBox
+                    OverlapFlags =87
+                    IMESentenceMode =3
+                    Left =2097
+                    Top =56
+                    Height =315
+                    Name ="AgrupadorVenda"
+                    ControlSource ="AgrupadorVenda"
+                    GUID = Begin
+                        0xd0d9b7ab0b18a141b737c4396506a8a4
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            Left =396
+                            Top =56
+                            Width =1710
+                            Height =315
+                            Name ="Rótulo11"
+                            Caption ="AgrupadorVenda:"
+                            GUID = Begin
+                                0x3c84327b9074b847b2c28cff58587cef
+                            End
+                        End
+                    End
+                End
+            End
+        End
+    End
+End

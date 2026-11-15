@@ -1,0 +1,108 @@
+﻿Tipo;Objeto;Arquivo;Exportado;UltimaAlteracao
+Formulário;SelecionaEmpresaPosicaoCompradores2;objetos\Formularios\SelecionaEmpresaPosicaoCompradores2.txt;True;2011-12-21 13:26:34
+Formulário;Filtro Movimento Contas;objetos\Formularios\Filtro Movimento Contas.txt;True;2011-12-21 13:21:55
+Formulário;ArquivoMorto;objetos\Formularios\ArquivoMorto.txt;True;2016-04-17 13:07:38
+Formulário;SeManutencao;objetos\Formularios\SeManutencao.txt;True;2010-02-23 18:07:25
+Formulário;Historico;objetos\Formularios\Historico.txt;True;2011-12-07 07:20:36
+Formulário;Periodo Relatorio CReceber Abertas;objetos\Formularios\Periodo Relatorio CReceber Abertas.txt;True;2020-08-18 19:33:24
+Formulário;F Movimento Contas;objetos\Formularios\F Movimento Contas.txt;True;2026-11-10 17:23:55
+Formulário;Extrato Contas Financeiras;objetos\Formularios\Extrato Contas Financeiras.txt;True;2011-12-21 13:20:00
+Formulário;F Contas Financeiras;objetos\Formularios\F Contas Financeiras.txt;True;2010-02-23 18:07:24
+Formulário;ParcelasImovelCred;objetos\Formularios\ParcelasImovelCred.txt;True;2016-04-26 09:26:11
+Formulário;RelatorioContabil;objetos\Formularios\RelatorioContabil.txt;True;2011-12-21 13:26:34
+Formulário;Pagto Lote Detail;objetos\Formularios\Pagto Lote Detail.txt;True;2012-12-07 12:48:23
+Formulário;Pagto Lote Movto Cta Finan;objetos\Formularios\Pagto Lote Movto Cta Finan.txt;True;2024-01-17 11:00:30
+Formulário;Extrato Contas Parceiro;objetos\Formularios\Extrato Contas Parceiro.txt;True;2011-12-21 13:20:00
+Formulário;F Manutencao Agrupada Lote;objetos\Formularios\F Manutencao Agrupada Lote.txt;True;2010-02-23 18:07:28
+Formulário;EmissaoCheque;objetos\Formularios\EmissaoCheque.txt;True;2024-02-02 11:42:07
+Formulário;Imoveis;objetos\Formularios\Imoveis.txt;True;2012-01-09 13:23:46
+Formulário;F Movto Parceiro APagar;objetos\Formularios\F Movto Parceiro APagar.txt;True;2016-05-23 10:43:27
+Formulário;VendaCondPagto;objetos\Formularios\VendaCondPagto.txt;True;2011-12-21 13:32:18
+Formulário;F Movto Parceiro;objetos\Formularios\F Movto Parceiro.txt;True;2011-12-21 13:21:55
+Formulário;Ocorrencias Mensais;objetos\Formularios\Ocorrencias Mensais.txt;True;2026-11-13 14:55:37
+Formulário;SelecionaEmpresaPosicaoCompradores;objetos\Formularios\SelecionaEmpresaPosicaoCompradores.txt;True;2024-08-01 08:30:26
+Formulário;F Gerar Ocorrencias Mensais;objetos\Formularios\F Gerar Ocorrencias Mensais.txt;True;2011-12-21 13:28:32
+Formulário;Relatorio Custos Empresa;objetos\Formularios\Relatorio Custos Empresa.txt;True;2021-07-18 09:24:56
+Formulário;F Movto Empresa;objetos\Formularios\F Movto Empresa.txt;True;2011-12-21 13:20:00
+Formulário;Pagto Lote Header;objetos\Formularios\Pagto Lote Header.txt;True;2016-04-20 11:12:28
+Formulário;SelecionaEmpresaPosicaoImovel;objetos\Formularios\SelecionaEmpresaPosicaoImovel.txt;True;2011-12-21 13:26:34
+Formulário;Pagto Lote Header Finan;objetos\Formularios\Pagto Lote Header Finan.txt;True;2012-01-09 13:19:03
+Formulário;Pagto Lote Detail Finan;objetos\Formularios\Pagto Lote Detail Finan.txt;True;2016-05-03 16:31:44
+Formulário;VendaImovelVendido;objetos\Formularios\VendaImovelVendido.txt;True;2025-08-04 16:02:04
+Formulário;F Manutencao Agrupada Vendas;objetos\Formularios\F Manutencao Agrupada Vendas.txt;True;2010-02-23 18:07:23
+Formulário;EmpVinculada Subformulário;objetos\Formularios\EmpVinculada Subformulário.txt;True;2010-02-23 18:07:24
+Formulário;ReajusteParceiros;objetos\Formularios\ReajusteParceiros.txt;True;2015-05-25 08:45:28
+Formulário;Parceiros;objetos\Formularios\Parceiros.txt;True;2025-11-17 07:56:33
+Formulário;Imoveis Subformulário;objetos\Formularios\Imoveis Subformulário.txt;True;2025-09-16 08:48:08
+Formulário;Plano2 Subformulário;objetos\Formularios\Plano2 Subformulário.txt;True;2021-07-17 11:37:16
+Formulário;Plano3 Subformulário;objetos\Formularios\Plano3 Subformulário.txt;True;2010-02-23 18:07:25
+Formulário;MovMaterial Subformulário;objetos\Formularios\MovMaterial Subformulário.txt;True;2011-12-21 13:21:55
+Formulário;ValorIndices Subformulário;objetos\Formularios\ValorIndices Subformulário.txt;True;2010-02-23 18:07:24
+Formulário;CondPagtoImovel Subformulário;objetos\Formularios\CondPagtoImovel Subformulário.txt;True;2010-02-23 18:10:20
+Formulário;EmDesenvolvimento;objetos\Formularios\EmDesenvolvimento.txt;True;2011-12-21 13:20:00
+Formulário;AgendaFinanceraMenu;objetos\Formularios\AgendaFinanceraMenu.txt;True;2021-07-17 12:34:10
+Formulário;AgrupadaLoteViaMovto;objetos\Formularios\AgrupadaLoteViaMovto.txt;True;2025-06-17 17:41:57
+Formulário;Periodo Relatorio CPagar Abertas;objetos\Formularios\Periodo Relatorio CPagar Abertas.txt;True;2011-12-21 13:26:34
+Formulário;AgrupadaVendasViaMovto;objetos\Formularios\AgrupadaVendasViaMovto.txt;True;2024-08-29 08:48:00
+Formulário;Plano2 Relatorio Custos;objetos\Formularios\Plano2 Relatorio Custos.txt;True;2021-07-18 09:24:07
+Formulário;F Movimento Contas Vendas;objetos\Formularios\F Movimento Contas Vendas.txt;True;2024-02-15 13:27:18
+Formulário;Plano1;objetos\Formularios\Plano1.txt;True;2021-07-17 11:35:13
+Formulário;F Movto Empresa APagar;objetos\Formularios\F Movto Empresa APagar.txt;True;2016-06-06 16:23:22
+Formulário;Material;objetos\Formularios\Material.txt;True;2010-04-26 18:35:47
+Formulário;TiposContaFinanceira;objetos\Formularios\TiposContaFinanceira.txt;True;2011-12-07 07:20:07
+Formulário;Switchboard Sistema;objetos\Formularios\Switchboard Sistema.txt;True;2012-01-09 13:23:38
+Formulário;Menu Principal;objetos\Formularios\Menu Principal.txt;True;2024-08-01 08:32:49
+Formulário;Extrato Contas Empresa;objetos\Formularios\Extrato Contas Empresa.txt;True;2011-12-21 13:20:00
+Formulário;Arquivo Sistema;objetos\Formularios\Arquivo Sistema.txt;True;2016-01-21 08:50:02
+Formulário;Pagto Lote Movto Cta;objetos\Formularios\Pagto Lote Movto Cta.txt;True;2024-01-17 11:04:34
+Formulário;EmpMaster;objetos\Formularios\EmpMaster.txt;True;2010-02-23 18:07:23
+Formulário;Indices;objetos\Formularios\Indices.txt;True;2010-08-19 20:00:43
+Formulário;ReajusteImoveis;objetos\Formularios\ReajusteImoveis.txt;True;2011-12-21 13:26:34
+Formulário;Extrato Movimento Contabil;objetos\Formularios\Extrato Movimento Contabil.txt;True;2011-12-21 13:20:00
+Formulário;F Movto Parceiro Efetuado;objetos\Formularios\F Movto Parceiro Efetuado.txt;True;2024-10-02 08:32:08
+Formulário;F Movto Empresa Efetuado;objetos\Formularios\F Movto Empresa Efetuado.txt;True;2016-06-06 16:23:22
+Formulário;Relacao Notas Ficais;objetos\Formularios\Relacao Notas Ficais.txt;True;2011-12-21 13:26:34
+Formulário;ParcelasImovel;objetos\Formularios\ParcelasImovel.txt;True;2016-04-26 09:26:11
+Formulário;Relatorio Custos Empresa2;objetos\Formularios\Relatorio Custos Empresa2.txt;True;2016-06-27 13:30:59
+Relatório;Custos Empresa Anterior;objetos\Relatorios\Custos Empresa Anterior.txt;True;2021-07-17 10:37:18
+Relatório;PosicaoParceiros;objetos\Relatorios\PosicaoParceiros.txt;True;2024-09-18 08:02:23
+Relatório;Custos Permuta Despesas;objetos\Relatorios\Custos Permuta Despesas.txt;True;2021-05-13 10:41:35
+Relatório;CPagar Anterior Periodo;objetos\Relatorios\CPagar Anterior Periodo.txt;True;2016-04-22 07:30:12
+Relatório;CReceber Anterior Periodo;objetos\Relatorios\CReceber Anterior Periodo.txt;True;2016-04-25 08:07:54
+Relatório;CReceber Abertas Periodo;objetos\Relatorios\CReceber Abertas Periodo.txt;True;2020-08-18 19:05:27
+Relatório;CPagar Abertas Periodo;objetos\Relatorios\CPagar Abertas Periodo.txt;True;2024-07-31 08:04:40
+Relatório;PosicaoParceiros2;objetos\Relatorios\PosicaoParceiros2.txt;True;2011-12-21 13:26:34
+Relatório;CReceber Abertas Periodo Geral;objetos\Relatorios\CReceber Abertas Periodo Geral.txt;True;2020-08-18 19:27:24
+Relatório;Custos Empresa Sintetico;objetos\Relatorios\Custos Empresa Sintetico.txt;True;2021-07-17 13:05:42
+Relatório;PosicaoImoveis;objetos\Relatorios\PosicaoImoveis.txt;True;2024-04-26 08:51:42
+Relatório;F Movto Parceiro APagar;objetos\Relatorios\F Movto Parceiro APagar.txt;True;2024-04-19 08:35:38
+Relatório;F Tipos Conta Financeira;objetos\Relatorios\F Tipos Conta Financeira.txt;True;2010-02-23 18:07:31
+Relatório;Custos Empresa Sem Financeira;objetos\Relatorios\Custos Empresa Sem Financeira.txt;True;2021-07-08 10:22:21
+Relatório;TotalImovel;objetos\Relatorios\TotalImovel.txt;True;2010-02-23 18:07:33
+Relatório;ExtratoMovContabil SdoAcum;objetos\Relatorios\ExtratoMovContabil SdoAcum.txt;True;2016-07-25 18:54:12
+Relatório;Custos Empresa Anterior2;objetos\Relatorios\Custos Empresa Anterior2.txt;True;2016-07-04 11:15:07
+Relatório;Custos Empresa Sem Financeira2;objetos\Relatorios\Custos Empresa Sem Financeira2.txt;True;2025-08-12 07:55:51
+Relatório;Emissao de Cheque;objetos\Relatorios\Emissao de Cheque.txt;True;2012-01-09 13:23:21
+Relatório;Custos Empresa Sem Financeira Sintetico;objetos\Relatorios\Custos Empresa Sem Financeira Sintetico.txt;True;2021-07-17 11:46:56
+Relatório;F Contas Financeiras;objetos\Relatorios\F Contas Financeiras.txt;True;2010-02-23 18:07:32
+Relatório;Extrato Contas Financeiras;objetos\Relatorios\Extrato Contas Financeiras.txt;True;2024-07-18 07:26:42
+Relatório;SaldoAtualCustos;objetos\Relatorios\SaldoAtualCustos.txt;True;2016-05-23 07:35:08
+Relatório;ExtratoMovContabil SdoAnterior;objetos\Relatorios\ExtratoMovContabil SdoAnterior.txt;True;2016-07-25 18:31:33
+Relatório;Custos Empresa Sem Financeira3;objetos\Relatorios\Custos Empresa Sem Financeira3.txt;True;2016-05-23 10:59:53
+Relatório;Notas Fiscais Periodo;objetos\Relatorios\Notas Fiscais Periodo.txt;True;2024-04-03 17:00:08
+Relatório;Parceiros;objetos\Relatorios\Parceiros.txt;True;2010-02-23 18:07:31
+Relatório;CReceber Posterior Periodo;objetos\Relatorios\CReceber Posterior Periodo.txt;True;2016-04-25 08:07:55
+Relatório;CPagar Posterior Periodo;objetos\Relatorios\CPagar Posterior Periodo.txt;True;2016-04-22 07:30:13
+Relatório;Extrato Contas Parceiro;objetos\Relatorios\Extrato Contas Parceiro.txt;True;2010-02-23 18:07:33
+Relatório;Plano de Contas;objetos\Relatorios\Plano de Contas.txt;True;2010-02-23 18:07:32
+Relatório;Extrato Contas Empresa;objetos\Relatorios\Extrato Contas Empresa.txt;True;2010-02-23 18:07:31
+Relatório;Custos Empresa;objetos\Relatorios\Custos Empresa.txt;True;2024-05-10 07:35:33
+Relatório;Custos Permuta Receitas;objetos\Relatorios\Custos Permuta Receitas.txt;True;2021-05-13 10:16:54
+Relatório;Etiquetas Cadastro Parceiros;objetos\Relatorios\Etiquetas Cadastro Parceiros.txt;True;2010-02-23 18:07:30
+Relatório;F Movto Parceiro Pago;objetos\Relatorios\F Movto Parceiro Pago.txt;True;2025-03-12 07:50:54
+Relatório;F Movto Parceiro PagoPagar;objetos\Relatorios\F Movto Parceiro PagoPagar.txt;True;2024-05-19 10:35:40
+Relatório;RelatorioContabil;objetos\Relatorios\RelatorioContabil.txt;True;2011-12-21 13:26:34
+Relatório;Extrato Movimento Contabil;objetos\Relatorios\Extrato Movimento Contabil.txt;True;2025-07-31 07:38:54
+Macro;SemDados;objetos\Macros\SemDados.txt;True;2009-11-27 08:11:45
+Macro;AgendaMenu;objetos\Macros\AgendaMenu.txt;True;2009-11-27 08:11:45
+Módulo;ValorPorExtenso;objetos\Modulos\ValorPorExtenso.txt;True;2026-11-15 09:55:01

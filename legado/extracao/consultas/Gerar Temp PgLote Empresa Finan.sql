@@ -1,0 +1,11 @@
+﻿-- Consulta: Gerar Temp PgLote Empresa Finan
+-- Tipo: Acréscimo (64)
+-- Parâmetros: Formulários![Pagto Lote Header Finan]!Movimento.Formulário!Efetuado (Texto), Formulários![Pagto Lote Header Finan]!DataParaPagamento (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!DescricaoHistorico (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NumDoc (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!FinanceiraDescricao (Texto), Formulários![Pagto Lote Header Finan]![Pagto Lote Detail].Formulário!Integracao (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NumMovimento (Texto)
+-- Descrição: 
+
+INSERT INTO TempLoteMovContas ( EmpVinculada, ValorCredito, SelPagtoLote, ValorDebito, Efetuado, CodigoParceiro, CodHistorico, DataMovto, Complemento, Plano3, ContaFinanceira, Confirmado, Integracao, DataPagto, DataVencto, MovPagtoLote, Observacao, NumDoc )
+SELECT [Movto Pagto Lote Financeira].EmpVinculada, Sum([Movto Pagto Lote Financeira].ValorDebito) AS TotalCreditoEmpresa, [Movto Pagto Lote Financeira].SelPagtoLote, 0 AS ValorDebito, Formulários![Pagto Lote Header Finan]!Movimento.Formulário!Efetuado AS Efetuado, "1" AS CodigoParceiro, "4" AS CodHistorico, Formulários![Pagto Lote Header Finan]!DataParaPagamento AS DataMovto, Formulários![Pagto Lote Header Finan]!Movimento.Formulário!DescricaoHistorico & " " & Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NumDoc & " " & Formulários![Pagto Lote Header Finan]!Movimento.Formulário!FinanceiraDescricao AS Complemento, "1" AS Plano3, "1" AS ContaFinanceira, True AS Confirmado, Formulários![Pagto Lote Header Finan]![Pagto Lote Detail].Formulário!Integracao AS Integracao, Formulários![Pagto Lote Header Finan]!DataParaPagamento AS DataPagto, Formulários![Pagto Lote Header Finan]!DataParaPagamento AS DataVencto, Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NumMovimento AS MovPagtoLote, "[MA]" AS Observacao, "Pagto Lote" AS NumDoc
+FROM [Movto Pagto Lote Financeira]
+WHERE ((([Movto Pagto Lote Financeira].SelPagtoLote)=True))
+GROUP BY [Movto Pagto Lote Financeira].EmpVinculada, [Movto Pagto Lote Financeira].SelPagtoLote
+HAVING ((([Movto Pagto Lote Financeira].SelPagtoLote)=True));

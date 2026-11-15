@@ -1,0 +1,8 @@
+﻿-- Consulta: Movto Pagto Lote Financeira
+-- Tipo: Seleção (0)
+-- Descrição: 
+
+SELECT [F Movimento Contas].[DataPagto], [F Movimento Contas].[Confirmado], [F Movimento Contas].[ContaFinanceira], [F Movimento Contas].[ValorDebito], [F Movimento Contas].[CodigoParceiro], [F Movimento Contas].[SomenteIntegracao], [F Movimento Contas].[DataVencto], [F Contas Financeiras].[Descricao], [F Movimento Contas].[Integracao], [F Movimento Contas].[NumMovimento], [EmpVinculada].[FinanceiraPadrao], [Parceiros].[NomeParceiro], [F Movimento Contas].[SelPagtoLote], [F Movimento Contas].[EmpVinculada], [F Movimento Contas].[MovPagtoLote], [F Movimento Contas].[CodHistorico], [F Movimento Contas].[Complemento], [F Movimento Contas].[DataMovto], [F Movimento Contas].[Efetuado], [F Movimento Contas].[NumDoc]
+FROM Parceiros INNER JOIN (EmpVinculada INNER JOIN ([F Contas Financeiras] INNER JOIN [F Movimento Contas] ON [F Contas Financeiras].[CodigoConta]=[F Movimento Contas].[ContaFinanceira]) ON [EmpVinculada].[CodigoVinculada]=[F Movimento Contas].[EmpVinculada]) ON [Parceiros].[CodigoParceiro]=[F Movimento Contas].[CodigoParceiro]
+WHERE ((([F Movimento Contas].[DataPagto]) Is Null) And (([F Movimento Contas].[Confirmado])=False) And (([F Movimento Contas].[ContaFinanceira])<>1 And ([F Movimento Contas].[ContaFinanceira])<>2) And (([F Movimento Contas].[ValorDebito])<>0) And (([F Movimento Contas].[CodigoParceiro])<>1) And (([F Movimento Contas].[SomenteIntegracao])=False))
+ORDER BY [F Movimento Contas].[Confirmado], [F Movimento Contas].[DataVencto], [F Movimento Contas].[EmpVinculada], [F Movimento Contas].[DataMovto];

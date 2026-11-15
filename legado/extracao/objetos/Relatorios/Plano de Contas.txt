@@ -1,0 +1,338 @@
+Version =19
+VersionRequired =19
+Checksum =-55459315
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    TabularFamily =124
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =9075
+    DatasheetFontHeight =10
+    ItemSuffix =14
+    Left =705
+    Top =435
+    Right =705
+    Bottom =435
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0x7a4226025571e340
+    End
+    GUID = Begin
+        0xe8bbf2443372404ea4c66f308a308d2d
+    End
+    NameMap = Begin
+        0x0acc0e5500000000aaeead42a1ef79479fd788441d2c1b0d00000000191ec028 ,
+        0x18a5e3402065190032ec9e6850006c0061006e006f0031000000000000003bc4 ,
+        0x74b5ec33d140bc1b91cef19b391f00000000ef3bc12818a5e34001000000c461 ,
+        0x9e6850006c0061006e006f0032000000000000008f4e00e9981a0b459175d528 ,
+        0x555c7fcf00000000c602c22818a5e34001000000c4619e6850006c0061006e00 ,
+        0x6f0033000000000000007d42b4c7ce3573488d4b80722028df8007000000aaee ,
+        0xad42a1ef79479fd788441d2c1b0d440065007300630072006900630061006f00 ,
+        0x50006c0061006e006f0031000000000000008dfd700b8fa95140823a51ea0c2e ,
+        0xc7f3070000003bc474b5ec33d140bc1b91cef19b391f44006500730063007200 ,
+        0x6900630061006f0050006c0061006e006f0032000000000000009e749a79998a ,
+        0x5d488792c77a0115ba10070000008f4e00e9981a0b459175d528555c7fcf4400 ,
+        0x65007300630072006900630061006f0050006c0061006e006f00330000000000 ,
+        0x0000ed9b92bab884a24cb97270d43f750f7d07000000aaeead42a1ef79479fd7 ,
+        0x88441d2c1b0d50006c0061006e006f003100000000000000b528278a7e6ba646 ,
+        0xa2f50800ae8fa724070000003bc474b5ec33d140bc1b91cef19b391f50006c00 ,
+        0x61006e006f003200000000000000d42becce35996542bd0d7e3c6d74175a0700 ,
+        0x00003bc474b5ec33d140bc1b91cef19b391f50006c0061006e006f0031000000 ,
+        0x00000000716c6db38670ff4487dee12528e89705070000008f4e00e9981a0b45 ,
+        0x9175d528555c7fcf50006c0061006e006f003200000000000000000000000000 ,
+        0x000000000000000000000c000000040000000000000000000000000000000000
+    End
+    RecordSource ="SELECT [Plano1].[DescricaoPlano1], [Plano2].[DescricaoPlano2], [Plano3].[Descric"
+        "aoPlano3], [Plano1].[Plano1], [Plano2].[Plano2] FROM (Plano1 INNER JOIN Plano2 O"
+        "N [Plano1].[Plano1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[P"
+        "lano3].[Plano2]; "
+    Caption ="Plano de Contas"
+    MenuBar ="Relatorio"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x890500008905000089050000890500000000000073230000e200000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400049c009000032f00000100090000000000640001000100c80001000100 ,
+        0xc800010000004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077706e6f ,
+        0x00000000010000000000000000000000fe0000000100000000000000c8000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800290044000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000053656e6420546f204d6963726f736f6674204f6e654e6f746520506f ,
+        0x72743a00
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextAlign =1
+            TextFontFamily =18
+            FontSize =9
+            FontWeight =700
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            Width =850
+            Height =850
+        End
+        Begin Line
+            Width =1701
+        End
+        Begin Image
+            OldBorderStyle =0
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+        End
+        Begin CheckBox
+            LabelX =230
+            LabelY =-30
+        End
+        Begin BoundObjectFrame
+            Width =4536
+            Height =2835
+            LabelX =-1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontFamily =18
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Times New Roman"
+        End
+        Begin ListBox
+            TextFontFamily =18
+            OldBorderStyle =0
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontName ="Times New Roman"
+        End
+        Begin ComboBox
+            OldBorderStyle =0
+            TextFontFamily =18
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Times New Roman"
+        End
+        Begin Subform
+            OldBorderStyle =0
+            Width =1701
+            Height =1701
+        End
+        Begin UnboundObjectFrame
+            Width =4536
+            Height =2835
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            ControlSource ="Plano1"
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            ControlSource ="Plano2"
+        End
+        Begin BreakLevel
+            ControlSource ="DescricaoPlano3"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Height =510
+            Name ="CabeçalhoDoRelatório"
+            GUID = Begin
+                0xe8b96ae687222d4a85060a705ced0d09
+            End
+            Begin
+                Begin Label
+                    BackStyle =1
+                    Left =57
+                    Top =57
+                    Width =1755
+                    Height =345
+                    FontSize =12
+                    FontWeight =400
+                    Name ="Rótulo6"
+                    Caption ="Plano de Contas"
+                    GUID = Begin
+                        0xb95f833d661c9f44a17a257a9bd6360e
+                    End
+                End
+                Begin Line
+                    BorderWidth =1
+                    Top =453
+                    Width =9075
+                    Name ="Linha13"
+                    GUID = Begin
+                        0x92b012de2d8b624e9d95cf544c7f0537
+                    End
+                End
+            End
+        End
+        Begin PageHeader
+            Visible = NotDefault
+            Height =15
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0xd8a1cb4473a1e145aa9598919842d641
+            End
+            Begin
+                Begin Line
+                    BorderWidth =1
+                    Width =9075
+                    Name ="Linha10"
+                    GUID = Begin
+                        0x8f2adcdba528d74d928e48db4027f7e3
+                    End
+                End
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =283
+            Name ="CabeçalhoDoGrupo0"
+            GUID = Begin
+                0xd1aa9fce267a15428afd349456d1ae94
+            End
+            Begin
+                Begin TextBox
+                    FontItalic = NotDefault
+                    FontUnderline = NotDefault
+                    TextFontFamily =34
+                    Left =57
+                    Width =2775
+                    Height =225
+                    ColumnWidth =3270
+                    Name ="DescricaoPlano1"
+                    ControlSource ="DescricaoPlano1"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x8a10c98bf0f2d64b90e954ae10f0ce26
+                    End
+                End
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =283
+            BreakLevel =1
+            Name ="CabeçalhoDoGrupo1"
+            GUID = Begin
+                0x0636d1e9946eab4b8805aac82e56b87f
+            End
+            Begin
+                Begin TextBox
+                    TextFontFamily =34
+                    Left =1133
+                    Top =56
+                    Width =3405
+                    Height =225
+                    ColumnWidth =2715
+                    Name ="DescricaoPlano2"
+                    ControlSource ="DescricaoPlano2"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xe77987593c473d4aa78ca49119018c87
+                    End
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =226
+            Name ="Detalhe"
+            GUID = Begin
+                0xe99bc4f9786eab4991ab924a2c598edb
+            End
+            Begin
+                Begin TextBox
+                    TextFontFamily =34
+                    Left =1700
+                    Width =3405
+                    Height =225
+                    ColumnWidth =2130
+                    Name ="DescricaoPlano3"
+                    ControlSource ="DescricaoPlano3"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x93fb3f4a0732c84dabd4faf5d1cb5687
+                    End
+                End
+            End
+        End
+        Begin PageFooter
+            Height =566
+            Name ="PageFooterSection"
+            GUID = Begin
+                0xe7fc97bd8c9ed54eb98e308385822d72
+            End
+            Begin
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =57
+                    Top =247
+                    Width =4424
+                    Height =270
+                    Name ="Texto7"
+                    ControlSource ="=Now()"
+                    Format ="Long Date"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x34c36f78bf96124488e42f1ed35cfbf6
+                    End
+                End
+                Begin TextBox
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =4594
+                    Top =247
+                    Width =4424
+                    Height =270
+                    TabIndex =1
+                    Name ="Texto8"
+                    ControlSource ="=\"Página \" & [Page] & \" de \" & [Pages]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x2bd6c868711ced41902a9b51e2f50e72
+                    End
+                End
+                Begin Line
+                    BorderWidth =1
+                    Top =75
+                    Width =9075
+                    Name ="Linha12"
+                    GUID = Begin
+                        0x33a6a97e3c968d43bb72160ea5b4519a
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =0
+            Name ="RodapéDoRelatório"
+            GUID = Begin
+                0xe8691a61bcddeb469b79a06d3448f91e
+            End
+        End
+    End
+End

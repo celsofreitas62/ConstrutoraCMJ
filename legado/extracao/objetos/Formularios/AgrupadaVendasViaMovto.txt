@@ -1,0 +1,1081 @@
+Version =19
+VersionRequired =19
+Checksum =-47150422
+Begin Form
+    AutoResize = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    AutoCenter = NotDefault
+    PictureTiling = NotDefault
+    AllowAdditions = NotDefault
+    FilterOn = NotDefault
+    AllowDesignChanges = NotDefault
+    ScrollBars =2
+    TabularFamily =124
+    BorderStyle =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =13039
+    ItemSuffix =48
+    Left =600
+    Top =465
+    Right =19455
+    Bottom =8235
+    DatasheetGridlinesColor =12632256
+    PaintPalette = Begin
+        0x00030100ffffff0000000000
+    End
+    Filter ="[AgrupadorVenda]=400"
+    RecSrcDt = Begin
+        0x173f2aecae76e340
+    End
+    GUID = Begin
+        0x35545131c9781d418817d2e865cc4599
+    End
+    NameMap = Begin
+        0x0acc0e55000000001c1587c1102be1429ef83d77ab14e2a700000000e169d0bb ,
+        0xab3be64000000000000000004100670072007500700061006400610056006500 ,
+        0x6e006400610073005600690061004d006f00760074006f00200043006f006e00 ,
+        0x730075006c0074006100000000000000c30e2864dc029447913d440daca4659d ,
+        0x0600000035545131c9781d418817d2e865cc4599410067007200750070006100 ,
+        0x64006f007200560065006e0064006100000000000000234efff34ccd0f439ad2 ,
+        0xf5798260187e070000001c1587c1102be1429ef83d77ab14e2a74e0075006d00 ,
+        0x4d006f00760069006d0065006e0074006f0000000000000000a4414d9298a24b ,
+        0xa5eaccc76ae6a1e1070000001c1587c1102be1429ef83d77ab14e2a745006d00 ,
+        0x7000560069006e00630075006c006100640061000000000000007868cfc273f2 ,
+        0x114eb293d5636a02113e00000000e6e59c2818a5e34000000000000000004500 ,
+        0x6d007000560069006e00630075006c006100640061000000000000004fb9722f ,
+        0xc60dc64eabe2cbed4e7c7865070000007868cfc273f2114eb293d5636a02113e ,
+        0x43006f006400690067006f00560069006e00630075006c006100640061000000 ,
+        0x00000000470ba9b5c23bd249bf0a7d87b57051bc070000001c1587c1102be142 ,
+        0x9ef83d77ab14e2a743006f006400690067006f00500061007200630065006900 ,
+        0x72006f000000000000009d75fb6839832f4399e7f85d5030fb8600000000e88d ,
+        0xbb2818a5e340000000000000000050006100720063006500690072006f007300 ,
+        0x000000000000707248a17eadc94e8ee9abeb98980c0f070000009d75fb683983 ,
+        0x2f4399e7f85d5030fb8643006f006400690067006f0050006100720063006500 ,
+        0x690072006f0000000000000055cdb13b4c75144b95f19a7186df854707000000 ,
+        0x9d75fb6839832f4399e7f85d5030fb864e006f006d0065005000610072006300 ,
+        0x6500690072006f00000000000000a706512e4093db40ba3dd80c55d1c15e0700 ,
+        0x00009d75fb6839832f4399e7f85d5030fb8643006c00690065006e0074006500 ,
+        0x0000000000003c7d8ef49f3dda40b453ad1fde0b524a070000009d75fb683983 ,
+        0x2f4399e7f85d5030fb8646006f0072006e0065006300650064006f0072000000 ,
+        0x00000000a3fe7b37e2334d4abe5e5294c232705f070000009d75fb6839832f43 ,
+        0x99e7f85d5030fb86460075006e00630069006f006e006100720069006f000000 ,
+        0x00000000ff4706a28aa27548bf1548e944fb1c93070000001c1587c1102be142 ,
+        0x9ef83d77ab14e2a743006f00640048006900730074006f007200690063006f00 ,
+        0x000000000000a8278c59385e3f49ba2d4b70b7e166e200000000ff65a92818a5 ,
+        0xe340000000000000000048006900730074006f007200690063006f0000000000 ,
+        0x00009a37b1c8a606194e8dba5044fd0f58ae07000000a8278c59385e3f49ba2d ,
+        0x4b70b7e166e243006f00640048006900730074006f007200690063006f000000 ,
+        0x000000008cf379d20b7e674fa8066a7eaf5c577907000000a8278c59385e3f49 ,
+        0xba2d4b70b7e166e2440065007300630072006900630061006f00000000000000 ,
+        0x7b455ccc378c5f448d6f26f59ca1f2bc070000001c1587c1102be1429ef83d77 ,
+        0xab14e2a7560061006c006f007200440065006200690074006f00000000000000 ,
+        0xf85def09268f1145a0fdbafdb4e9dc4d070000001c1587c1102be1429ef83d77 ,
+        0xab14e2a7560061006c006f0072004300720065006400690074006f0000000000 ,
+        0x00006b4dc47b956d2b41851505b042a3d53b070000001c1587c1102be1429ef8 ,
+        0x3d77ab14e2a743006f006d0070006c0065006d0065006e0074006f0000000000 ,
+        0x0000fbec953840aedd4fb8f11a329a2c7e70070000001c1587c1102be1429ef8 ,
+        0x3d77ab14e2a74400610074006100560065006e00630074006f00000000000000 ,
+        0xdb65dbc41a9b874ba66338d9ded948b9070000001c1587c1102be1429ef83d77 ,
+        0xab14e2a74e0075006d0044006f006300000000000000f9d29dcaf0ebb5408b46 ,
+        0xb016991b65d0070000001c1587c1102be1429ef83d77ab14e2a743006f006e00 ,
+        0x74006100460069006e0061006e006300650069007200610000000000000033f2 ,
+        0x700b8480324c94b67e173d5e5f7d00000000f341a82818a5e340000000000000 ,
+        0x0000460020005400690070006f007300200043006f006e007400610020004600 ,
+        0x69006e0061006e00630065006900720061000000000000008f62d3b824edbb47 ,
+        0x9fce7b0009fc2dba0000000093ca9e2818a5e340000000000000000046002000 ,
+        0x43006f006e007400610073002000460069006e0061006e006300650069007200 ,
+        0x61007300000000000000246fb76e3eebcf49b9b364f6fba78404070000008f62 ,
+        0xd3b824edbb479fce7b0009fc2dba43006f006400690067006f0043006f006e00 ,
+        0x7400610000000000000030f674aea2bfac4cb0b2674b64f5cecb070000008f62 ,
+        0xd3b824edbb479fce7b0009fc2dba440065007300630072006900630061006f00 ,
+        0x000000000000456689f74547aa43b9ef9287b569b6b10700000033f2700b8480 ,
+        0x324c94b67e173d5e5f7d440065007300630072006900630061006f0000000000 ,
+        0x00006db9dbd2032c41498d3afea7a5117f970700000033f2700b8480324c94b6 ,
+        0x7e173d5e5f7d43006f0064005400690070006f0043006f006e00740061000000 ,
+        0x000000002e12478bfab45a48ac39bd8ad7c43f7e070000008f62d3b824edbb47 ,
+        0x9fce7b0009fc2dba5400690070006f00200043006f006e007400610000000000 ,
+        0x0000a6ebb1f7629c1b459621511b16f1d21c070000001c1587c1102be1429ef8 ,
+        0x3d77ab14e2a744006100740061004d006f00760074006f00000000000000e131 ,
+        0x80388ff69c428a79f4afc6dbee8b070000001c1587c1102be1429ef83d77ab14 ,
+        0xe2a750006c0061006e006f003300000000000000aaeead42a1ef79479fd78844 ,
+        0x1d2c1b0d00000000e78d09452ca5e540000000000000000050006c0061006e00 ,
+        0x6f0031000000000000003bc474b5ec33d140bc1b91cef19b391f00000000fd23 ,
+        0x0d734fade540000000000000000050006c0061006e006f003200000000000000 ,
+        0x8f4e00e9981a0b459175d528555c7fcf00000000c602c22818a5e34000000000 ,
+        0x0000000050006c0061006e006f00330000000000000028ce83c875e7a443938e ,
+        0x6c61fbcf7eee070000008f4e00e9981a0b459175d528555c7fcf50006c006100 ,
+        0x6e006f003300000000000000b528278a7e6ba646a2f50800ae8fa72407000000 ,
+        0x3bc474b5ec33d140bc1b91cef19b391f50006c0061006e006f00320000000000 ,
+        0x0000ed9b92bab884a24cb97270d43f750f7d07000000aaeead42a1ef79479fd7 ,
+        0x88441d2c1b0d50006c0061006e006f00310000000000000094a54a09adf85740 ,
+        0x96f392128d2d73a9070000001c1587c1102be1429ef83d77ab14e2a743006f00 ,
+        0x6e006600690072006d00610064006f00000000000000e8d0f89eae27e54fbdcf ,
+        0x6ca8cee05e65070000001c1587c1102be1429ef83d77ab14e2a749006e007400 ,
+        0x6500670072006100630061006f0000000000000093c22bf5e1895a46a0e0aa0d ,
+        0x127451fd070000001c1587c1102be1429ef83d77ab14e2a74400610074006100 ,
+        0x50006100670074006f00000000000000aa59dc909867da419a02113e7f467824 ,
+        0x070000001c1587c1102be1429ef83d77ab14e2a753006f006600720065005200 ,
+        0x650061006a0075007300740065000000000000009c58f520326c5347b790abff ,
+        0x338b6d1a070000001c1587c1102be1429ef83d77ab14e2a743006f0064004900 ,
+        0x6d006f00760065006c00000000000000b17737edfb45bb418fbab6976b15f011 ,
+        0x000000008e8cad2818a5e340000000000000000049006d006f00760065006900 ,
+        0x73000000000000003109ad4dfb812943a520cfea9be9be1c07000000b17737ed ,
+        0xfb45bb418fbab6976b15f01143006f00640049006d006f00760065006c000000 ,
+        0x00000000ebec8f17e3344e4993e14e35895a3c3c07000000b17737edfb45bb41 ,
+        0x8fbab6976b15f0114e006f006d00650049006d006f00760065006c0000000000 ,
+        0x0000c146d9905d42664e8bb81af60397de99070000001c1587c1102be1429ef8 ,
+        0x3d77ab14e2a741006700720075007000610064006f007200560065006e006400 ,
+        0x61000000000000006acf5df1bd8a9142b178cf2b654d9675070000001c1587c1 ,
+        0x102be1429ef83d77ab14e2a745006600650074007500610064006f0000000000 ,
+        0x00004a2a134ae88f5b4b98247b4364a391cb070000001c1587c1102be1429ef8 ,
+        0x3d77ab14e2a749006e0064006900630065005200650061006a00750073007400 ,
+        0x65000000000000004449f42bb360604b9ddd8a59a01fafbf000000000614af28 ,
+        0x18a5e340000000000000000049006e0064006900630065007300000000000000 ,
+        0x66574fc2bf2c5c45b464884ce298d5fe070000004449f42bb360604b9ddd8a59 ,
+        0xa01fafbf43006f00640049006e006400690063006500000000000000dbd2f612 ,
+        0x1c67a04fbe3f2a06d4175729070000004449f42bb360604b9ddd8a59a01fafbf ,
+        0x4e006f006d00650049006e006400690063006500000000000000000000000000 ,
+        0x000000000000000000000c000000050000000000000000000000000000000000
+    End
+    RecordSource ="AgrupadaVendasViaMovto Consulta"
+    Caption ="Manutenção agrupada da venda de imóvel"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x6801000068010000680100006801000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x00152e8c9801000050c36063ff7f00005faecb9f980100008f00000000000000 ,
+        0x010400149c00f80303f700040100090000000000000001000700580201000100 ,
+        0x580202000000000002000002980100000000000000000000f060d69f98010000 ,
+        0x0400000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000010000000300000000000000000000000000000000000000e2a497bc ,
+        0x00010102ff020200010000000000004c65786d61726b20543633320000000000 ,
+        0x0000000000000000000000000000004c65786d61726b20543633320000000000 ,
+        0x00000000000000000000000000000000320200004c65786d61726b2054363332 ,
+        0x002052000000000000000000ccdab7009e672a7440004001ff7fff7f00002800 ,
+        0x01000c000d000500060004000700030006000100000000000000000000000600 ,
+        0x05000900000000008901c300bfc602007339010001001c001000200025001200 ,
+        0x000041003e010000e2a497bc02000100ff004000b00458022c01000000005802 ,
+        0x0000000000010000000000000000f10000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000100000700 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000a0000000a0000000a000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000001000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000001000000000000000000 ,
+        0x0000011000010000000000000400000001000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000003c4f00000000000000000000e2a497bc
+    End
+    PrtDevNames = Begin
+        0x080015001d00010000000000000000000000000000000000000000000049505f ,
+        0x3139322e3136382e322e32330000000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =18
+            FontSize =10
+            FontWeight =700
+            BackColor =13209
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            BorderLineStyle =0
+            Width =850
+            Height =850
+            BorderColor =8421504
+        End
+        Begin Line
+            BorderWidth =2
+            BorderLineStyle =0
+            Width =1701
+            BorderColor =8421504
+        End
+        Begin CommandButton
+            TextFontFamily =18
+            Width =1701
+            Height =283
+            FontName ="Times New Roman"
+        End
+        Begin OptionButton
+            BorderWidth =3
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin CheckBox
+            BorderWidth =3
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin OptionGroup
+            BorderLineStyle =0
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin BoundObjectFrame
+            BorderLineStyle =0
+            Width =4536
+            Height =2835
+            LabelX =-1701
+            BorderColor =8421504
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            TextFontFamily =18
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ListBox
+            TextFontFamily =18
+            BorderLineStyle =0
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ComboBox
+            TextFontFamily =18
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin Subform
+            BorderLineStyle =0
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin UnboundObjectFrame
+            BackStyle =0
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+            BorderColor =8421504
+        End
+        Begin ToggleButton
+            TextFontFamily =18
+            Width =283
+            Height =283
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="Times New Roman"
+        End
+        Begin Tab
+            Width =5103
+            Height =3402
+        End
+        Begin FormHeader
+            Height =340
+            BackColor =-2147483633
+            Name ="CabeçalhoDoFormulário"
+            GUID = Begin
+                0x8525f6602dc19941b2dc37b6a47261c5
+            End
+            Begin
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =60
+                    Top =60
+                    Width =690
+                    Height =225
+                    FontSize =8
+                    Name ="NumMovimento_Rótulo"
+                    Caption ="Movto"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x393008bb0f40ba4e9462569f84832f72
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =858
+                    Top =57
+                    Width =1575
+                    Height =225
+                    FontSize =8
+                    Name ="EmpVinculada_Rótulo"
+                    Caption ="Empresa"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x49d019d377bae446a47607cec0f82bf3
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =2494
+                    Top =57
+                    Width =1545
+                    Height =225
+                    FontSize =8
+                    Name ="CodigoParceiro_Rótulo"
+                    Caption ="Parceiro"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x119ce79c74ed5242830ecab26c94f571
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =5382
+                    Top =57
+                    Width =1230
+                    Height =225
+                    FontSize =8
+                    Name ="CodHistorico_Rótulo"
+                    Caption ="Histórico"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xbe79ae31f0cad44ba81eedd9bec5c279
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =9795
+                    Top =60
+                    Width =1035
+                    Height =225
+                    FontSize =8
+                    Name ="ValorDebito_Rótulo"
+                    Caption ="Débito"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xccdf8532e300c84bb7cc17b97c0ab6ea
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =10935
+                    Top =60
+                    Width =969
+                    Height =225
+                    FontSize =8
+                    Name ="ValorCredito_Rótulo"
+                    Caption ="Crédito"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xb2aed5071278104eb4e2d82693f1fd29
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =7935
+                    Top =57
+                    Width =1833
+                    Height =225
+                    FontSize =8
+                    Name ="Complemento_Rótulo"
+                    Caption ="Complemento"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x78137546cef985458fdc7a983331663f
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =11985
+                    Top =57
+                    Width =855
+                    Height =225
+                    FontSize =8
+                    Name ="DataVencto_Rótulo"
+                    Caption ="Vencto"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x42ea89c49dea30458be58232f373443b
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =6689
+                    Top =56
+                    Width =1182
+                    Height =225
+                    FontSize =8
+                    Name ="NumDoc_Rótulo"
+                    Caption ="Documento"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x68508352771bca48a7fea4478a4e8b0d
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =4081
+                    Top =56
+                    Width =1185
+                    Height =225
+                    FontSize =8
+                    Name ="ContaFinanceira_Rótulo"
+                    Caption ="Financeira"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x1357a2ad7fc4124ca7cf5fe7800137a1
+                    End
+                End
+            End
+        End
+        Begin Section
+            Height =566
+            Name ="Detalhe"
+            GUID = Begin
+                0x1072b75c6e8f634c823f3fb671651556
+            End
+            Begin
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =60
+                    Top =45
+                    Width =684
+                    Height =225
+                    ColumnWidth =900
+                    FontSize =8
+                    Name ="NumMovimento"
+                    ControlSource ="NumMovimento"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x4113a54d8fc30b4a9179be4bfcf2c0e9
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =2
+                    ListWidth =3345
+                    Left =858
+                    Top =46
+                    Width =1575
+                    Height =465
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =1
+                    ForeColor =128
+                    ColumnInfo ="\"\";\"\";\"Empresa Vinculada\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x99870c1267d20943bd33bd41bf71760a
+                    End
+                    Name ="EmpVinculada"
+                    ControlSource ="EmpVinculada"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM Emp"
+                        "Vinculada WHERE ((([EmpVinculada].[NomeVinculada])<>\"sistema\")); "
+                    ColumnWidths ="0;3345"
+                    FontName ="Arial"
+                End
+                Begin ComboBox
+                    ColumnHeads = NotDefault
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =5
+                    ListWidth =4820
+                    Left =2494
+                    Top =46
+                    Width =1545
+                    Height =465
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =2
+                    ForeColor =128
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x8a30c33bf8ee114ab991709f76efe7cf
+                    End
+                    Name ="CodigoParceiro"
+                    ControlSource ="CodigoParceiro"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cl"
+                        "iente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros WHERE"
+                        " ((([Parceiros].[NomeParceiro])<>\"sistema\")); "
+                    ColumnWidths ="0;2835;525;555;496"
+                    FontName ="Arial"
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =2
+                    Left =5382
+                    Top =46
+                    Width =1230
+                    Height =465
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =3
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"30\""
+                    GUID = Begin
+                        0x507cd874d4d2d64c876b75228c710629
+                    End
+                    Name ="CodHistorico"
+                    ControlSource ="CodHistorico"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE "
+                        "((([Historico].[Descricao])<>\"sistema\")); "
+                    ColumnWidths ="0;2835"
+                    FontName ="Arial"
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =9855
+                    Top =46
+                    Width =969
+                    ColumnWidth =1260
+                    FontSize =8
+                    TabIndex =4
+                    ForeColor =255
+                    Name ="ValorDebito"
+                    ControlSource ="ValorDebito"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x15e8068b35a7a343a0610dbc5b3227f0
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =10920
+                    Top =49
+                    Width =969
+                    ColumnWidth =1260
+                    FontSize =8
+                    TabIndex =5
+                    ForeColor =16711680
+                    Name ="ValorCredito"
+                    ControlSource ="ValorCredito"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x517a4398656b734b8d6ac8cff4b054ec
+                    End
+                End
+                Begin TextBox
+                    EnterKeyBehavior = NotDefault
+                    ScrollBars =2
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =7935
+                    Top =46
+                    Width =1833
+                    Height =465
+                    ColumnWidth =3000
+                    FontSize =8
+                    TabIndex =6
+                    Name ="Complemento"
+                    ControlSource ="Complemento"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xb2d6e45956810442a10edd962874c6cd
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =11985
+                    Top =46
+                    Width =945
+                    ColumnWidth =1155
+                    FontSize =8
+                    TabIndex =7
+                    Name ="DataVencto"
+                    ControlSource ="DataVencto"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0xe24561b53f8f3c47bc41684097b6474c
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =6689
+                    Top =56
+                    Width =1182
+                    Height =450
+                    ColumnWidth =1560
+                    FontSize =8
+                    TabIndex =8
+                    Name ="NumDoc"
+                    ControlSource ="NumDoc"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xfde9295b32425548a70dca3f7515e85f
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =3
+                    ListWidth =4536
+                    Left =4081
+                    Top =56
+                    Width =1245
+                    Height =450
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =9
+                    ForeColor =128
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"60\""
+                    GUID = Begin
+                        0x60c6d1466b08a04798cf5abebc54ec23
+                    End
+                    Name ="ContaFinanceira"
+                    ControlSource ="ContaFinanceira"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao],"
+                        " [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JO"
+                        "IN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas"
+                        " Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>\"siste"
+                        "ma\")); "
+                    ColumnWidths ="0;1560;2115"
+                    FontName ="Arial"
+                    BaseInfo ="\"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao"
+                        "], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER "
+                        "JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Cont"
+                        "as Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>\"\"s"
+                        "istema\"\")); \";\"F Tipos Conta Financeira\";\"F Contas Financeiras\";\"\""
+                End
+            End
+        End
+        Begin FormFooter
+            Height =623
+            BackColor =-2147483633
+            Name ="RodapéDoFormulário"
+            GUID = Begin
+                0xa5cfec319b48d7429b923cfe5397df7a
+            End
+            Begin
+                Begin TextBox
+                    OverlapFlags =93
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =12018
+                    Top =294
+                    Width =900
+                    Height =225
+                    ColumnWidth =1155
+                    FontSize =8
+                    Name ="DataMovto"
+                    ControlSource ="DataMovto"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0x03b5f8ca8be2d543b8d26aa5626610e1
+                    End
+                End
+                Begin Label
+                    OverlapFlags =87
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =12000
+                    Top =60
+                    Width =915
+                    Height =240
+                    FontSize =8
+                    Name ="DataMovto_Rótulo"
+                    Caption ="Movto"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x79ba4817e5f29e498610c7d637711497
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =93
+                    TextFontFamily =34
+                    ColumnCount =4
+                    ListWidth =8505
+                    Left =5400
+                    Top =287
+                    Width =1815
+                    Height =225
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =1
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0xa1a16cfa292d0b4d9c1c05e4d02eb5e9
+                    End
+                    Name ="Plano3"
+                    ControlSource ="Plano3"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano2]"
+                        ", [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano1]"
+                        "=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] WHE"
+                        "RE ((([Plano3].[DescricaoPlano3])<>\"sistema\")); "
+                    ColumnWidths ="0;2835;2835;2835"
+                    FontName ="Arial"
+                    BaseInfo ="\"SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano"
+                        "2], [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano"
+                        "1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] W"
+                        "HERE ((([Plano3].[DescricaoPlano3])<>\"\"sistema\"\")); \";\"Plano1\";\"Plano2\""
+                        ";\"Plano3\";\"\""
+                End
+                Begin Label
+                    OverlapFlags =87
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =5400
+                    Top =60
+                    Width =1800
+                    Height =225
+                    FontSize =8
+                    Name ="Plano3_Rótulo"
+                    Caption ="Plano de Contas"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x5be42a506efd5b4280c1f9f0acd10d3b
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =2607
+                    Top =339
+                    Height =165
+                    TabIndex =2
+                    Name ="Confirmado"
+                    ControlSource ="Confirmado"
+                    GUID = Begin
+                        0xeb763d227694df4a81aa2a8b4660940a
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =2207
+                    Top =56
+                    Width =1023
+                    Height =225
+                    FontSize =8
+                    Name ="Confirmado_Rótulo"
+                    Caption ="Confirmado"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x0cea569e6943724aa6d5251bde5d7a08
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1050
+                    Top =60
+                    Width =951
+                    Height =225
+                    FontSize =8
+                    Name ="Integracao_Rótulo"
+                    Caption ="Integração"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x302b1857dcafdb49821734d9013eccdf
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =1417
+                    Top =339
+                    Height =165
+                    TabIndex =3
+                    Name ="Integracao"
+                    ControlSource ="Integracao"
+                    GUID = Begin
+                        0xab214bfad0518546ab42380c2d443e02
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =93
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =10929
+                    Top =279
+                    Width =960
+                    Height =225
+                    ColumnWidth =1155
+                    FontSize =8
+                    TabIndex =4
+                    Name ="DataPagto"
+                    ControlSource ="DataPagto"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0xa931d6e93e029b47ad2699f26adc850c
+                    End
+                End
+                Begin Label
+                    OverlapFlags =87
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =10938
+                    Top =56
+                    Width =960
+                    Height =225
+                    FontSize =8
+                    Name ="DataPagto_Rótulo"
+                    Caption ="Pagto"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xa0d819797593e8488154d0a9184c4792
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =345
+                    Top =345
+                    Height =165
+                    TabIndex =5
+                    Name ="SofreReajuste"
+                    ControlSource ="SofreReajuste"
+                    GUID = Begin
+                        0xb734b9dc17b73240abc2204bb11b4bdf
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =93
+                    TextFontFamily =34
+                    ColumnCount =2
+                    Left =8805
+                    Top =287
+                    Width =2040
+                    Height =225
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =6
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"200\""
+                    GUID = Begin
+                        0xe73fadafc975d141ae1cbb88699d5366
+                    End
+                    Name ="CodImovel"
+                    ControlSource ="CodImovel"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Imoveis].[CodImovel], [Imoveis].[NomeImovel] FROM Imoveis ORDER BY [Imov"
+                        "eis].[NomeImovel]; "
+                    ColumnWidths ="0;2835"
+                    FontName ="Arial"
+                    BaseInfo ="\"SELECT [Imoveis].[CodImovel], [Imoveis].[NomeImovel] FROM Imoveis ORDER BY [Im"
+                        "oveis].[NomeImovel]; \";\"Imoveis\";\"\";\"CodImovel\";\"NomeImovel\";\"PrimaryK"
+                        "ey\""
+                End
+                Begin Label
+                    OverlapFlags =87
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =8805
+                    Top =60
+                    Width =1140
+                    Height =225
+                    FontSize =8
+                    Name ="CodImovel_Rótulo"
+                    Caption ="Imóvel"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xa64807545113104e8fb3dccba86c145e
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =56
+                    Top =56
+                    Width =750
+                    Height =225
+                    FontSize =8
+                    Name ="SofreReajuste_Rótulo"
+                    Caption ="Reajuste"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x90bef99e50327e45aafb88d99d68bacf
+                    End
+                End
+                Begin TextBox
+                    Locked = NotDefault
+                    OverlapFlags =93
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =4434
+                    Top =283
+                    Width =678
+                    Height =225
+                    ColumnWidth =1230
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =7
+                    ForeColor =8421376
+                    Name ="AgrupadorVenda"
+                    ControlSource ="AgrupadorVenda"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xc30e2864dc029447913d440daca4659d
+                    End
+                End
+                Begin Label
+                    OverlapFlags =87
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =4320
+                    Top =60
+                    Width =960
+                    Height =225
+                    FontSize =8
+                    ForeColor =8421376
+                    Name ="Rótulo45"
+                    Caption ="Agrupador"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xc97145bbd32d274193bef766f10d8cb6
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =3668
+                    Top =325
+                    TabIndex =8
+                    Name ="Efetuado"
+                    ControlSource ="Efetuado"
+                    GUID = Begin
+                        0x7733893b04e9ec4eb231b91dcb4fb150
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =3390
+                            Top =60
+                            Width =765
+                            Height =225
+                            FontSize =8
+                            Name ="Rótulo46"
+                            Caption ="Efetuado"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x74f4d44d26d6d74a9a417a95019b39ce
+                            End
+                        End
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =215
+                    TextFontFamily =34
+                    ColumnCount =2
+                    Left =7326
+                    Top =270
+                    Width =1371
+                    FontSize =8
+                    TabIndex =9
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"40\""
+                    GUID = Begin
+                        0x87bf8c90f9dacb47b2fc67fbba41e02c
+                    End
+                    Name ="IndiceReajuste"
+                    ControlSource ="IndiceReajuste"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Indices].[CodIndice], [Indices].[NomeIndice] FROM Indices; "
+                    ColumnWidths ="0;2268"
+                    FontName ="Arial"
+                    BaseInfo ="\"SELECT [Indices].[CodIndice], [Indices].[NomeIndice] FROM Indices; \";\"Indice"
+                        "s\";\"\";\"CodIndice\";\"NomeIndice\";\"PrimaryKey\""
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            TextFontFamily =34
+                            Left =7313
+                            Top =60
+                            Width =1350
+                            Height =225
+                            FontSize =8
+                            Name ="Rótulo47"
+                            Caption ="Indice Reajuste"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xfb31efe2d8681941850303a18ef1acdf
+                            End
+                        End
+                    End
+                End
+            End
+        End
+    End
+End

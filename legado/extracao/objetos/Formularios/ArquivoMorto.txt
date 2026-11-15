@@ -1,0 +1,341 @@
+Version =19
+VersionRequired =19
+Checksum =-55458963
+Begin Form
+    AutoResize = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    AllowDeletions = NotDefault
+    PictureTiling = NotDefault
+    DividingLines = NotDefault
+    AllowAdditions = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    ViewsAllowed =1
+    TabularFamily =55
+    BorderStyle =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =3810
+    DatasheetFontHeight =10
+    ItemSuffix =11
+    Left =4065
+    Top =825
+    Right =8625
+    Bottom =3495
+    DatasheetGridlinesColor =12632256
+    PaintPalette = Begin
+        0x00030100ffffff0000000000
+    End
+    RecSrcDt = Begin
+        0x8534ee3efb74e340
+    End
+    GUID = Begin
+        0x8df9b9a275ba2f479ee750f6eb748452
+    End
+    NameMap = Begin
+        0x0acc0e5500000000000000000000000000000000000000000c00000004000000 ,
+        0x0000000000000000000000000000
+    End
+    Caption ="Período para Arquivar Movimento"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x8905000089050000890500008905000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400049c00900003df00000100090000000000640001000700580202000100 ,
+        0x2c01030001004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077706e6f ,
+        0x00000000010000000000000000000000fe0000000100000000000000c8000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800290044000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000053656e6420546f204d6963726f736f6674204f6e654e6f746520506f ,
+        0x72743a00
+    End
+    OnActivate ="[Event Procedure]"
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =18
+            FontSize =10
+            FontWeight =700
+            BackColor =13209
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            Width =850
+            Height =850
+            BorderColor =8421504
+        End
+        Begin Line
+            BorderWidth =2
+            Width =1701
+            BorderColor =8421504
+        End
+        Begin CommandButton
+            TextFontFamily =18
+            Width =1701
+            Height =283
+            FontName ="Times New Roman"
+        End
+        Begin OptionButton
+            BorderWidth =3
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin CheckBox
+            BorderWidth =3
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin OptionGroup
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin BoundObjectFrame
+            Width =4536
+            Height =2835
+            LabelX =-1701
+            BorderColor =8421504
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            TextFontFamily =18
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ListBox
+            TextFontFamily =18
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ComboBox
+            TextFontFamily =18
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin Subform
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin UnboundObjectFrame
+            BackStyle =0
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+            BorderColor =8421504
+        End
+        Begin ToggleButton
+            TextFontFamily =18
+            Width =283
+            Height =283
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="Times New Roman"
+        End
+        Begin Tab
+            Width =5103
+            Height =3402
+        End
+        Begin Section
+            Height =2607
+            BackColor =15858167
+            Name ="Detalhe"
+            GUID = Begin
+                0xfebd802b987141498f6a3e63b237eb1b
+            End
+            Begin
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =345
+                    Top =470
+                    Width =1296
+                    Height =285
+                    FontSize =9
+                    Name ="DataIniRel"
+                    Format ="Short Date"
+                    DefaultValue ="=Date()"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0x8d4c0c563a97454692fde702fc35bf22
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontCharSet =238
+                            TextAlign =2
+                            TextFontFamily =34
+                            Left =1762
+                            Top =470
+                            Width =210
+                            Height =285
+                            FontSize =9
+                            Name ="Rótulo1"
+                            Caption ="à"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x25fd62d653cb69449d29cf35d60ffa5f
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =2045
+                    Top =470
+                    Width =1296
+                    Height =285
+                    FontSize =9
+                    TabIndex =1
+                    Name ="DataFimRel"
+                    Format ="Short Date"
+                    DefaultValue ="=Date()"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0xa26a56e1ca8c6c4abbc67306e50a59ce
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =1245
+                    Top =915
+                    Width =1296
+                    Height =396
+                    FontSize =8
+                    TabIndex =2
+                    Name ="ExecutarRelatorio"
+                    Caption ="Arquivar"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    OnGotFocus ="[Event Procedure]"
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    ControlTipText ="Visualizar relatório"
+                    GUID = Begin
+                        0xb10f4f751448bb438cf4b76e42de7782
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =2040
+                    Top =120
+                    Width =1296
+                    Height =285
+                    FontSize =9
+                    TabIndex =3
+                    Name ="DTProxMov"
+                    Format ="Short Date"
+                    DefaultValue ="=Date()"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0xed22316830d1d5438945593e2b75e864
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =170
+                    Top =1430
+                    Width =3465
+                    Height =1005
+                    FontSize =12
+                    ForeColor =255
+                    Name ="Rótulo10"
+                    Caption ="Faça backup dos arquivos em pasta diferente da que usa para o sistema"
+                    GUID = Begin
+                        0x8135714da9cda848a9fa45266ee31186
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub ExecutarRelatorio_Click()
+On Error GoTo Err_ExecutarRelatorio_Click
+
+    DoCmd.OpenQuery "ArquivoMorto Arquivar", acViewNormal, acAdd
+    DoCmd.OpenQuery "ArquivoMorto Gerar Mov Acum", acViewNormal, acAdd
+    DoCmd.OpenQuery "ArquivoMorto Excluir Mov", acViewNormal, acEdit
+    
+    MsgBox "Movimento arquivado com sucesso !", vbInformation, "CashBook"
+
+Exit_ExecutarRelatorio_Click:
+    Exit Sub
+
+Err_ExecutarRelatorio_Click:
+    MsgBox Err.Description
+    Resume Exit_ExecutarRelatorio_Click
+    
+End Sub
+
+Private Sub ExecutarRelatorio_GotFocus()
+    DTProxMov = DataFimRel + 1
+
+End Sub
+
+Private Sub Form_Activate()
+ '   DataFimRel = Date
+ '   Do While Day(DataFimRel) <= 31
+ '       DataFimRel = DataFimRel + 1
+ '      If Month(DataFimRel) <> Month(Date) Then
+ '           DataFimRel = DataFimRel - 1
+ '           Exit Do
+ '       End If
+ '   Loop
+'    DataIniRel = DateSerial(Year(Date), Month(Date), ((Day(Date)) - (Day(Date)) + 1))
+    
+    DataIniRel = DateSerial((Year(Date) - 1), 1, 1)
+    DataFimRel = DateSerial((Year(Date) - 1), 12, 31)
+    DTProxMov = DataFimRel + 1
+End Sub

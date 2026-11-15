@@ -1,0 +1,1201 @@
+Version =19
+VersionRequired =19
+Checksum =45148844
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    RecordLocks =2
+    TabularFamily =124
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =9070
+    DatasheetFontHeight =10
+    ItemSuffix =60
+    Left =585
+    Top =1320
+    Right =585
+    Bottom =1320
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xf43c914d8d7be340
+    End
+    GUID = Begin
+        0xaa563a612f242b49b03a3b3ba245dddc
+    End
+    NameMap = Begin
+        0x0acc0e5500000000ce65c5aaf1b05242abce8c9678e50e9b0000000011decf07 ,
+        0xcd3be64000000000000000004500780074007200610074006f004d006f007600 ,
+        0x43006f006e0074006100620069006c00200043006f006e00730075006c007400 ,
+        0x610000000000000016ac49e3e4b5e14790dfff869bed94a207000000ce65c5aa ,
+        0xf1b05242abce8c9678e50e9b4e006f006d006500560069006e00630075006c00 ,
+        0x610064006100000000000000903fef119f611e4c961b981b5adbe0f106000000 ,
+        0xaa563a612f242b49b03a3b3ba245dddc560061006c006f007200440065006200 ,
+        0x690074006f000000000000003e30a403c7e5f147a3b691acae99d48106000000 ,
+        0xaa563a612f242b49b03a3b3ba245dddc560061006c006f007200430072006500 ,
+        0x6400690074006f00000000000000c343214c9b03ef4fbc8df348ad1f94980600 ,
+        0x0000aa563a612f242b49b03a3b3ba245dddc41006e0074006500720069006f00 ,
+        0x72000000000000003dc480952fc27540986a46d5c8f308e206000000aa563a61 ,
+        0x2f242b49b03a3b3ba245dddc4100630075006d0075006c00610064006f000000 ,
+        0x000000004b10dd7e53d5ae4d8fe3a7ce2e3c009f06000000aa563a612f242b49 ,
+        0xb03a3b3ba245dddc530061006c0064006f0041006e0074006500720069006f00 ,
+        0x72000000000000006123692e2fcf7b429309991931b8bf9f06000000aa563a61 ,
+        0x2f242b49b03a3b3ba245dddc4300720065006400690074006f00730000000000 ,
+        0x0000107582d14e07cd48941d3f2381c777b406000000aa563a612f242b49b03a ,
+        0x3b3ba245dddc440065006200690074006f00730000000000000073e475b80864 ,
+        0x114b96bc3c7eb3e19bc501000000b28520c751f8e34000000000000000004500 ,
+        0x780074007200610074006f0020004d006f00760069006d0065006e0074006f00 ,
+        0x200043006f006e0074006100620069006c00000000000000dd2926fe51e8434d ,
+        0x9f496d6141db7bb70600000073e475b80864114b96bc3c7eb3e19bc544005400 ,
+        0x49006e0069006300690061006c000000000000004eaa8f18a1c45e4ca888325b ,
+        0x01dc62a80600000073e475b80864114b96bc3c7eb3e19bc54400540046006900 ,
+        0x6e0061006c0000000000000017e0eac7ba2a8c4db616a9494df0f45306000000 ,
+        0xaa563a612f242b49b03a3b3ba245dddc4500780074007200610074006f004d00 ,
+        0x6f00760043006f006e0074006100620069006c002000530064006f0041006e00 ,
+        0x74006500720069006f0072000000000000003f726dc611db854fba2a76a7ce8e ,
+        0xc6cb06000000aa563a612f242b49b03a3b3ba245dddc45007800740072006100 ,
+        0x74006f004d006f00760043006f006e0074006100620069006c00200053006400 ,
+        0x6f004100630075006d0000000000000045637f61edcf4143bf9a28ff1814aded ,
+        0x0200000043fd90b318cae4400000000000000000450078007400720061007400 ,
+        0x6f004d006f00760043006f006e0074006100620069006c002000530064006f00 ,
+        0x41006e0074006500720069006f0072000000000000005d5b4ba6072d3e45badf ,
+        0xfd8c48ae6d8c02000000439a633419cae4400000000000000000450078007400 ,
+        0x7200610074006f004d006f00760043006f006e0074006100620069006c002000 ,
+        0x530064006f004100630075006d0000000000000093c22bf5e1895a46a0e0aa0d ,
+        0x127451fd07000000ce65c5aaf1b05242abce8c9678e50e9b4400610074006100 ,
+        0x50006100670074006f00000000000000e13180388ff69c428a79f4afc6dbee8b ,
+        0x07000000ce65c5aaf1b05242abce8c9678e50e9b50006c0061006e006f003300 ,
+        0x000000000000aaeead42a1ef79479fd788441d2c1b0d00000000e78d09452ca5 ,
+        0xe540000000000000000050006c0061006e006f0031000000000000003bc474b5 ,
+        0xec33d140bc1b91cef19b391f00000000fd230d734fade5400000000000000000 ,
+        0x50006c0061006e006f0032000000000000008f4e00e9981a0b459175d528555c ,
+        0x7fcf00000000c602c22818a5e340000000000000000050006c0061006e006f00 ,
+        0x330000000000000028ce83c875e7a443938e6c61fbcf7eee070000008f4e00e9 ,
+        0x981a0b459175d528555c7fcf50006c0061006e006f003300000000000000b528 ,
+        0x278a7e6ba646a2f50800ae8fa724070000003bc474b5ec33d140bc1b91cef19b ,
+        0x391f50006c0061006e006f003200000000000000ed9b92bab884a24cb97270d4 ,
+        0x3f750f7d07000000aaeead42a1ef79479fd788441d2c1b0d50006c0061006e00 ,
+        0x6f003100000000000000d5e5223ccb052c44986ef81acc95e92b07000000ce65 ,
+        0xc5aaf1b05242abce8c9678e50e9b5200650066006500720065006e0074006500 ,
+        0x4e006f0074006100460069007300630061006c00000000000000ff4706a28aa2 ,
+        0x7548bf1548e944fb1c9307000000ce65c5aaf1b05242abce8c9678e50e9b4300 ,
+        0x6f00640048006900730074006f007200690063006f00000000000000a8278c59 ,
+        0x385e3f49ba2d4b70b7e166e200000000ff65a92818a5e3400000000000000000 ,
+        0x48006900730074006f007200690063006f000000000000009a37b1c8a606194e ,
+        0x8dba5044fd0f58ae07000000a8278c59385e3f49ba2d4b70b7e166e243006f00 ,
+        0x640048006900730074006f007200690063006f000000000000008cf379d20b7e ,
+        0x674fa8066a7eaf5c577907000000a8278c59385e3f49ba2d4b70b7e166e24400 ,
+        0x65007300630072006900630061006f000000000000007b455ccc378c5f448d6f ,
+        0x26f59ca1f2bc07000000ce65c5aaf1b05242abce8c9678e50e9b560061006c00 ,
+        0x6f007200440065006200690074006f00000000000000f85def09268f1145a0fd ,
+        0xbafdb4e9dc4d07000000ce65c5aaf1b05242abce8c9678e50e9b560061006c00 ,
+        0x6f0072004300720065006400690074006f000000000000006b4dc47b956d2b41 ,
+        0x851505b042a3d53b07000000ce65c5aaf1b05242abce8c9678e50e9b43006f00 ,
+        0x6d0070006c0065006d0065006e0074006f00000000000000db65dbc41a9b874b ,
+        0xa66338d9ded948b907000000ce65c5aaf1b05242abce8c9678e50e9b4e007500 ,
+        0x6d0044006f006300000000000000470ba9b5c23bd249bf0a7d87b57051bc0700 ,
+        0x0000ce65c5aaf1b05242abce8c9678e50e9b43006f006400690067006f005000 ,
+        0x6100720063006500690072006f000000000000009d75fb6839832f4399e7f85d ,
+        0x5030fb8600000000e88dbb2818a5e34000000000000000005000610072006300 ,
+        0x6500690072006f007300000000000000707248a17eadc94e8ee9abeb98980c0f ,
+        0x070000009d75fb6839832f4399e7f85d5030fb8643006f006400690067006f00 ,
+        0x50006100720063006500690072006f0000000000000055cdb13b4c75144b95f1 ,
+        0x9a7186df8547070000009d75fb6839832f4399e7f85d5030fb864e006f006d00 ,
+        0x650050006100720063006500690072006f00000000000000a706512e4093db40 ,
+        0xba3dd80c55d1c15e070000009d75fb6839832f4399e7f85d5030fb8643006c00 ,
+        0x690065006e00740065000000000000003c7d8ef49f3dda40b453ad1fde0b524a ,
+        0x070000009d75fb6839832f4399e7f85d5030fb8646006f0072006e0065006300 ,
+        0x650064006f007200000000000000a3fe7b37e2334d4abe5e5294c232705f0700 ,
+        0x00009d75fb6839832f4399e7f85d5030fb86460075006e00630069006f006e00 ,
+        0x6100720069006f00000000000000b90470233a340c4696ab7ba1644954100600 ,
+        0x0000aa563a612f242b49b03a3b3ba245dddc45006d007000560069006e006300 ,
+        0x75006c0061006400610000000000000000a4414d9298a24ba5eaccc76ae6a1e1 ,
+        0x07000000ce65c5aaf1b05242abce8c9678e50e9b45006d007000560069006e00 ,
+        0x630075006c006100640061000000000000000000000000000000000000000000 ,
+        0x00000c000000050000000000000000000000000000000000
+    End
+    RecordSource ="ExtratoMovContabil Consulta"
+    Caption ="Extrato Movimento Contabil"
+    MenuBar ="Relatorio"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x89050000890500008905000089050000000000006e2300001b01000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x009dd726130200001eafc842f77f000000004024130200000000000000000000 ,
+        0x010403069c00880343b70002010001009a0b3408640001000f00580201000100 ,
+        0x58020300010041340000000000000000f0742e45130200000000332413020000 ,
+        0x0000010000000000000000000000000000000000010000000000000001000000 ,
+        0x0200000001000000ffffffff4749533400000000000000000000000044494e55 ,
+        0x220010016c031c003bd76afa0000000000000000000000000000000000000000 ,
+        0x0000000000000000080000000000000000000000070000000000020000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000010010000534d544a ,
+        0x00000000100000017b00630063006300360062003500390032002d0036006500 ,
+        0x630037002d0034003000350035002d0039003100340030002d00390039003400 ,
+        0x3700340061006600350035003500640033007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f525452414954005265736f6c7574696f6e004f7074696f ,
+        0x6e3100506170657253697a65004c4554544552004475706c6578004e4f4e4500 ,
+        0x494856537461706c696e67004f666600436f6c6f724d6f646500436f6c6f7200 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000001c0000005634444d01000000000000000000000000000000 ,
+        0x00000000
+    End
+    PrtDevNames = Begin
+        0x0800220032000100000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000041445f506f727400
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextAlign =1
+            TextFontFamily =18
+            FontSize =9
+            FontWeight =700
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            BorderLineStyle =0
+            Width =850
+            Height =850
+        End
+        Begin Line
+            BorderLineStyle =0
+            Width =1701
+        End
+        Begin Image
+            OldBorderStyle =0
+            BorderLineStyle =0
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+        End
+        Begin CheckBox
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+        End
+        Begin BoundObjectFrame
+            BorderLineStyle =0
+            Width =4536
+            Height =2835
+            LabelX =-1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontFamily =18
+            BorderLineStyle =0
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Times New Roman"
+        End
+        Begin ListBox
+            TextFontFamily =18
+            OldBorderStyle =0
+            BorderLineStyle =0
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontName ="Times New Roman"
+        End
+        Begin ComboBox
+            OldBorderStyle =0
+            TextFontFamily =18
+            BorderLineStyle =0
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Times New Roman"
+        End
+        Begin Subform
+            OldBorderStyle =0
+            BorderLineStyle =0
+            Width =1701
+            Height =1701
+        End
+        Begin UnboundObjectFrame
+            Width =4536
+            Height =2835
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            ControlSource ="EmpVinculada"
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            ControlSource ="DataPagto"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =1361
+            Name ="CabeçalhoDoRelatório"
+            GUID = Begin
+                0x6300fb257013ac41858f03607b569e01
+            End
+            Begin
+                Begin Label
+                    FontUnderline = NotDefault
+                    BackStyle =1
+                    OverlapFlags =81
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =165
+                    Top =75
+                    Width =8745
+                    Height =225
+                    FontSize =8
+                    Name ="Rótulo36"
+                    Caption ="Resumo Contabil da Empresa"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x4fc6ca55266a8b4cb3d38d9dd98341e7
+                    End
+                End
+                Begin Rectangle
+                    OverlapFlags =211
+                    Top =30
+                    Width =9006
+                    Height =1331
+                    Name ="Caixa37"
+                    GUID = Begin
+                        0x7693338c0717e74f8389141609e0d3b8
+                    End
+                End
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    DecimalPlaces =0
+                    OverlapFlags =211
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =172
+                    Top =359
+                    Width =8748
+                    Height =285
+                    FontSize =10
+                    FontWeight =700
+                    Name ="Texto38"
+                    ControlSource ="NomeVinculada"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x9766dda70134c24eba4e4a1480516ebb
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =211
+                    TextFontFamily =34
+                    Left =113
+                    Top =737
+                    Width =2806
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="Texto42"
+                    ControlSource ="=\"Lancamentos no Periodo [ \" & Count(*) & \" ]\""
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xa88281a9608ebc40a7f1fd3516d87030
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =211
+                    TextFontFamily =34
+                    Left =4525
+                    Top =1020
+                    Width =1245
+                    Height =270
+                    FontWeight =700
+                    TabIndex =2
+                    Name ="Debitos"
+                    ControlSource ="=Sum([ValorDebito])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x107582d14e07cd48941d3f2381c777b4
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =211
+                    TextFontFamily =34
+                    Left =5895
+                    Top =1020
+                    Width =1305
+                    Height =270
+                    FontWeight =700
+                    TabIndex =3
+                    Name ="Creditos"
+                    ControlSource ="=Sum([ValorCredito])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x6123692e2fcf7b429309991931b8bf9f
+                    End
+                End
+                Begin Label
+                    OverlapFlags =211
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =3118
+                    Top =737
+                    Width =1260
+                    Height =225
+                    FontSize =8
+                    Name ="Rótulo43"
+                    Caption ="Saldo Anterior"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xa96cc2d38c69bb4d9079871f587b845f
+                    End
+                End
+                Begin Label
+                    OverlapFlags =211
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =4535
+                    Top =737
+                    Width =1245
+                    Height =225
+                    FontSize =8
+                    Name ="Rótulo44"
+                    Caption ="Debitos"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xab5800cc9b63cc498b8f40b0960eeb17
+                    End
+                End
+                Begin Label
+                    OverlapFlags =211
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =5896
+                    Top =737
+                    Width =1305
+                    Height =225
+                    FontSize =8
+                    Name ="Rótulo45"
+                    Caption ="Creditos"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x4047b30e02a5ff40a74ed9e5b290a402
+                    End
+                End
+                Begin Label
+                    OverlapFlags =211
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =7313
+                    Top =737
+                    Width =1260
+                    Height =225
+                    FontSize =8
+                    Name ="Rótulo46"
+                    Caption ="Saldo Atual"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x0843b92c3ff0ef418c4e64688cbb0c22
+                    End
+                End
+                Begin Subform
+                    Visible = NotDefault
+                    Locked = NotDefault
+                    OverlapFlags =211
+                    Left =450
+                    Width =1752
+                    Height =282
+                    TabIndex =4
+                    Name ="ExtratoMovContabil SdoAnterior"
+                    SourceObject ="Report.ExtratoMovContabil SdoAnterior"
+                    EventProcPrefix ="ExtratoMovContabil_SdoAnterior"
+                    GUID = Begin
+                        0x17e0eac7ba2a8c4db616a9494df0f453
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =211
+                    TextFontFamily =34
+                    Left =3126
+                    Top =1020
+                    Width =1251
+                    Height =285
+                    FontWeight =700
+                    TabIndex =5
+                    Name ="SaldoAnterior"
+                    ControlSource ="=[Anterior]+[Acumulado]"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x4b10dd7e53d5ae4d8fe3a7ce2e3c009f
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =211
+                    TextFontFamily =34
+                    Left =7313
+                    Top =1020
+                    Width =1266
+                    Height =285
+                    FontWeight =700
+                    TabIndex =6
+                    Name ="Texto51"
+                    ControlSource ="=[SaldoAnterior]+[Creditos]-[Debitos]"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x2d3446c8b0ab5c4b97c95588e63df109
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =211
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =240
+                    Top =1020
+                    Width =921
+                    FontWeight =700
+                    TabIndex =7
+                    Name ="Texto52"
+                    ControlSource ="=[Forms]![Extrato Movimento Contabil]![DTInicial]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xf576fb953ff98a4abd24462cd38015d4
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =211
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1320
+                    Top =1035
+                    Width =921
+                    FontWeight =700
+                    TabIndex =8
+                    Name ="Texto53"
+                    ControlSource ="=[Forms]![Extrato Movimento Contabil]![DTFinal]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xceee8b595a8b3f469d1ada3f15b34286
+                    End
+                End
+                Begin Label
+                    OverlapFlags =243
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1140
+                    Top =1035
+                    Width =165
+                    Height =240
+                    FontSize =8
+                    Name ="Rótulo54"
+                    Caption ="à"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x0903d5080aceab49bb5d39cfa455f9c3
+                    End
+                End
+                Begin Subform
+                    Visible = NotDefault
+                    Locked = NotDefault
+                    OverlapFlags =243
+                    Left =510
+                    Top =340
+                    Width =1017
+                    Height =237
+                    TabIndex =9
+                    Name ="ExtratoMovContabil SdoAcum"
+                    SourceObject ="Report.ExtratoMovContabil SdoAcum"
+                    EventProcPrefix ="ExtratoMovContabil_SdoAcum"
+                    GUID = Begin
+                        0x3f726dc611db854fba2a76a7ce8ec6cb
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =211
+                    IMESentenceMode =3
+                    Width =291
+                    Height =225
+                    TabIndex =10
+                    Name ="Anterior"
+                    ControlSource ="=IIf(IsError([ExtratoMovContabil SdoAnterior].[Report]![SaldoAnterior]),0,[Extra"
+                        "toMovContabil SdoAnterior].[Report]![SaldoAnterior])"
+                    GUID = Begin
+                        0xc343214c9b03ef4fbc8df348ad1f9498
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =243
+                    IMESentenceMode =3
+                    Top =345
+                    Width =396
+                    Height =225
+                    TabIndex =11
+                    Name ="Acumulado"
+                    ControlSource ="=IIf(IsError([ExtratoMovContabil SdoAcum].[Report]![SaldoAcum]),0,[ExtratoMovCon"
+                        "tabil SdoAcum].[Report]![SaldoAcum])"
+                    GUID = Begin
+                        0x3dc480952fc27540986a46d5c8f308e2
+                    End
+                End
+            End
+        End
+        Begin PageHeader
+            Height =1133
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0xea8912186942ca47a360bd1bb0a0e917
+            End
+            Begin
+                Begin Label
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Top =566
+                    Width =915
+                    Height =225
+                    FontSize =8
+                    Name ="DataMovto_Rótulo"
+                    Caption ="Data "
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x0ee53b68c5d46441a10405090a06b4f8
+                    End
+                End
+                Begin Label
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =4826
+                    Top =793
+                    Width =2265
+                    Height =225
+                    FontSize =8
+                    Name ="CodigoParceiro_Rótulo"
+                    Caption ="Parceiro"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xb0c2395e82f0b348ab8dfdabeda00866
+                    End
+                End
+                Begin Label
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =60
+                    Top =810
+                    Width =855
+                    Height =240
+                    FontSize =8
+                    Name ="CodHistorico_Rótulo"
+                    Caption ="Historico"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xe3d991e1e57a614581cdbffeef3a5ff2
+                    End
+                End
+                Begin Label
+                    OverlapFlags =211
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =6931
+                    Top =825
+                    Width =1005
+                    Height =225
+                    FontSize =8
+                    Name ="ValorDebito_Rótulo"
+                    Caption ="Vlr Debito"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xf5ff47d8eb2e5641bdf94b4e783985ab
+                    End
+                End
+                Begin Label
+                    OverlapFlags =81
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =8011
+                    Top =825
+                    Width =1005
+                    Height =225
+                    FontSize =8
+                    Name ="ValorCredito_Rótulo"
+                    Caption ="Vlr Credito"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x0bc2fbfe6906984498df812233770ed9
+                    End
+                End
+                Begin Label
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =2728
+                    Top =793
+                    Width =1590
+                    Height =225
+                    FontSize =8
+                    Name ="Complemento_Rótulo"
+                    Caption ="Complemento"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xa8469fd400517e44ab2ecfe55281a6be
+                    End
+                End
+                Begin Label
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =1424
+                    Top =850
+                    Width =1110
+                    Height =225
+                    FontSize =8
+                    Name ="NumDoc_Rótulo"
+                    Caption ="Documento"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x04b200bb297e2b469b90098a8a4df262
+                    End
+                End
+                Begin Line
+                    BorderWidth =1
+                    OverlapFlags =83
+                    Top =1080
+                    Width =9070
+                    Name ="Linha33"
+                    GUID = Begin
+                        0xcb9a51dfb253c64fb21723fd71008b8b
+                    End
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =56
+                    Top =56
+                    Width =2430
+                    Height =210
+                    FontSize =8
+                    Name ="Rótulo28"
+                    Caption ="Extrato Movimento Contabil"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x8bf41a250b498246af89c3f09a17a7fc
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    OverlapFlags =81
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =2948
+                    Top =56
+                    Width =3918
+                    Height =225
+                    ColumnWidth =3015
+                    FontWeight =700
+                    Name ="EmpVinculada"
+                    ControlSource ="NomeVinculada"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xb90470233a340c4696ab7ba164495410
+                    End
+                End
+                Begin Label
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =7665
+                    Top =60
+                    Width =690
+                    Height =240
+                    FontSize =8
+                    Name ="Rótulo31"
+                    Caption ="Período"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xe2bcfa7bb60820459382fab51d30e453
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =81
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =6975
+                    Top =345
+                    Width =876
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="Texto32"
+                    ControlSource ="=[Forms]![Extrato Movimento Contabil]![DTInicial]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xf70a1038cb80854fafd566e738f0cbb4
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =81
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =8115
+                    Top =345
+                    Width =861
+                    FontWeight =700
+                    TabIndex =2
+                    Name ="Texto47"
+                    ControlSource ="=[Forms]![Extrato Movimento Contabil]![DTFinal]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x820ee06369c40a4c93163290240c7081
+                    End
+                End
+                Begin Label
+                    OverlapFlags =81
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =7890
+                    Top =345
+                    Width =165
+                    Height =240
+                    FontSize =8
+                    Name ="Rótulo35"
+                    Caption ="à"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x0f50715637bc5443ad9eddc765159e93
+                    End
+                End
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =0
+            Name ="CabeçalhoDoGrupo0"
+            GUID = Begin
+                0x9ca2dcb5adc56343a8ee6763c00e7f3f
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =340
+            BreakLevel =1
+            Name ="CabeçalhoDoGrupo1"
+            GUID = Begin
+                0x1e5c38c58282c744857eeba81ebad053
+            End
+            Begin
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    OverlapFlags =81
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =75
+                    Top =60
+                    Width =963
+                    Height =225
+                    FontWeight =700
+                    Name ="DataPagto"
+                    ControlSource ="DataPagto"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0xfc20f711eb38234e813217b63db9c159
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    Visible = NotDefault
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    ColumnCount =4
+                    ListWidth =8505
+                    Left =1052
+                    Width =1845
+                    ColumnWidth =3375
+                    TabIndex =1
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0xf16cbde599375b4489aa1ac444c44b56
+                    End
+                    Name ="Plano3"
+                    ControlSource ="Plano3"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano2]"
+                        ", [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano1]"
+                        "=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] WHE"
+                        "RE ((([Plano3].[DescricaoPlano3])<>\"sistema\")); "
+                    ColumnWidths ="0;2835;2835;2835"
+                    FontName ="Arial"
+                    BaseInfo ="\"SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano"
+                        "2], [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano"
+                        "1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] W"
+                        "HERE ((([Plano3].[DescricaoPlano3])<>\"\"sistema\"\")); \";\"Plano1\";\"Plano2\""
+                        ";\"Plano3\";\"\""
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =2948
+                    Width =1027
+                    Height =225
+                    TabIndex =2
+                    Name ="ReferenteNotaFiscal"
+                    ControlSource ="ReferenteNotaFiscal"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xd53ce6bac81ac8439d71f7cf7ea6fff7
+                    End
+                End
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =6930
+                    Top =34
+                    Width =1005
+                    FontWeight =700
+                    TabIndex =3
+                    Name ="Texto34"
+                    ControlSource ="=Sum([ValorDebito])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x001ee3be90864f49be7dc8a56de37f6a
+                    End
+                End
+                Begin TextBox
+                    FontUnderline = NotDefault
+                    DecimalPlaces =2
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =7993
+                    Top =30
+                    Width =1020
+                    FontWeight =700
+                    TabIndex =4
+                    Name ="Texto35"
+                    ControlSource ="=Sum([ValorCredito])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xc22d78ef0eb3bb40bf4f44b7f9069dde
+                    End
+                End
+                Begin Label
+                    FontUnderline = NotDefault
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =5220
+                    Top =30
+                    Width =1605
+                    Height =240
+                    FontSize =8
+                    Name ="Rótulo39"
+                    Caption ="Total na data"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xceb6160f9c9c2a49944c932db8a388bb
+                    End
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =283
+            Name ="Detalhe"
+            GUID = Begin
+                0x97f49066964aa14d8e3fb6f18c4e6c89
+            End
+            Begin
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    ColumnCount =2
+                    Left =56
+                    Width =1320
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"30\""
+                    GUID = Begin
+                        0x32b4309f7854c64e95b0e2ec0ffc207d
+                    End
+                    Name ="CodHistorico"
+                    ControlSource ="CodHistorico"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE "
+                        "((([Historico].[Descricao])<>\"sistema\")); "
+                    ColumnWidths ="0;2835"
+                    FontName ="Arial"
+                End
+                Begin TextBox
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =6926
+                    Width =1005
+                    Height =270
+                    TabIndex =1
+                    Name ="ValorDebito"
+                    ControlSource ="ValorDebito"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x903fef119f611e4c961b981b5adbe0f1
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =8004
+                    Width =1005
+                    Height =270
+                    TabIndex =2
+                    Name ="ValorCredito"
+                    ControlSource ="ValorCredito"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x3e30a403c7e5f147a3b691acae99d481
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =2671
+                    Width =1725
+                    Height =225
+                    ColumnWidth =3105
+                    TabIndex =3
+                    Name ="Complemento"
+                    ControlSource ="Complemento"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xf1ad379d43848b4482033c749a1390de
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    Left =1424
+                    Width =1155
+                    Height =225
+                    TabIndex =4
+                    Name ="NumDoc"
+                    ControlSource ="NumDoc"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x88776d8ad6584044b7affceb7319d763
+                    End
+                End
+                Begin ComboBox
+                    ColumnHeads = NotDefault
+                    LimitToList = NotDefault
+                    OverlapFlags =81
+                    TextFontFamily =34
+                    ColumnCount =5
+                    ListWidth =4820
+                    Left =4590
+                    Width =2280
+                    Height =225
+                    TabIndex =5
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x1f35abcf6a27aa48a3eef69ef69c19de
+                    End
+                    Name ="CodigoParceiro"
+                    ControlSource ="CodigoParceiro"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cl"
+                        "iente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros WHERE"
+                        " ((([Parceiros].[NomeParceiro])<>\"sistema\")); "
+                    ColumnWidths ="0;2835;525;555;496"
+                    FontName ="Arial"
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            Height =56
+            BreakLevel =1
+            Name ="RodapéDoGrupo0"
+            GUID = Begin
+                0xdd820211fc57494195b733133417a95d
+            End
+            Begin
+                Begin Line
+                    BorderWidth =1
+                    OverlapFlags =81
+                    Width =9070
+                    Name ="Linha40"
+                    GUID = Begin
+                        0x7498c429a871b14f88693ca5433fcf31
+                    End
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =507
+            Name ="RodapéDoGrupo1"
+            GUID = Begin
+                0x17e10f242ec0a34fb0cec6ccf53d7bfb
+            End
+            Begin
+                Begin TextBox
+                    TextFontFamily =34
+                    Width =9013
+                    Name ="Texto20"
+                    ControlSource ="=\"Resumo para \" & \"'EmpVinculada' = \" & \" \" & [EmpVinculada] & \" (\" & Co"
+                        "unt(*) & \" \" & IIf(Count(*)=1,\"registro de detalhe\",\"registros de detalhe\""
+                        ") & \")\""
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xd66c6e9b70a35c4a893dd932d7093009
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =57
+                    Top =225
+                    Width =450
+                    Height =225
+                    FontSize =8
+                    Name ="Rótulo21"
+                    Caption ="Soma"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xd52ca0f3d10db7498b9c4b96680ffcad
+                    End
+                End
+                Begin TextBox
+                    TextFontFamily =34
+                    Left =3591
+                    Top =225
+                    Width =570
+                    Height =225
+                    TabIndex =1
+                    Name ="Soma De ValorDebito"
+                    ControlSource ="=Sum([ValorDebito])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    EventProcPrefix ="Soma_De_ValorDebito"
+                    GUID = Begin
+                        0xf6ba307e9193d1488e7e05009967de22
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextFontFamily =34
+                    Left =4218
+                    Top =225
+                    Width =570
+                    Height =225
+                    TabIndex =2
+                    Name ="Soma De ValorCredito"
+                    ControlSource ="=Sum([ValorCredito])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    EventProcPrefix ="Soma_De_ValorCredito"
+                    GUID = Begin
+                        0xd39f78a9ceb89e4b9fd254d8b40f35d0
+                    End
+                End
+            End
+        End
+        Begin PageFooter
+            Height =340
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x3464c8071bb66846beceb915a47c8fdc
+            End
+            Begin
+                Begin TextBox
+                    OverlapFlags =81
+                    TextAlign =1
+                    TextFontFamily =34
+                    Top =45
+                    Width =4481
+                    Height =270
+                    Name ="Texto29"
+                    ControlSource ="=Now()"
+                    Format ="Long Date"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x65946b5a2acf914aab0a1459e38a298a
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =81
+                    TextAlign =3
+                    TextFontFamily =34
+                    Left =4595
+                    Top =45
+                    Width =4421
+                    Height =270
+                    TabIndex =1
+                    Name ="Texto30"
+                    ControlSource ="=\"Página \" & [Page] & \" de \" & [Pages]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x9c160b0722472c4a8f683567e0740cbe
+                    End
+                End
+                Begin Line
+                    BorderWidth =1
+                    OverlapFlags =81
+                    Width =9070
+                    Name ="Linha41"
+                    GUID = Begin
+                        0x2410d59ad4aa814484b8d0fe7f915306
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =0
+            Name ="RodapéDoRelatório"
+            GUID = Begin
+                0xf12d75ec9aad9b4b8699f4894996f5da
+            End
+        End
+    End
+End

@@ -1,0 +1,341 @@
+﻿Consulta;Tipo;TipoCodigo;EmbutidaEmTela;Parametros;Descricao;Arquivo;UltimaAlteracao
+~sq_cA teste~sq_cContaFinanceira;Seleção;0;True;;;~sq_cA teste~sq_cContaFinanceira.sql;2007-07-10 10:58:36
+~sq_cA teste~sq_cNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cA teste~sq_cNivel2.sql;2007-07-10 10:58:36
+~sq_cAgenda~sq_cListaDatas;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cAgenda~sq_cListaDatas.sql;2005-02-12 14:33:35
+~sq_cAgrupadaLoteViaMovto~sq_cCodHistorico;Seleção;0;True;;;~sq_cAgrupadaLoteViaMovto~sq_cCodHistorico.sql;2010-01-24 10:39:42
+~sq_cAgrupadaLoteViaMovto~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cAgrupadaLoteViaMovto~sq_cCodigoParceiro.sql;2010-01-24 10:39:42
+~sq_cAgrupadaLoteViaMovto~sq_cCodImovel;Seleção;0;True;;;~sq_cAgrupadaLoteViaMovto~sq_cCodImovel.sql;2010-01-24 10:39:42
+~sq_cAgrupadaLoteViaMovto~sq_cContaFinanceira;Seleção;0;True;;;~sq_cAgrupadaLoteViaMovto~sq_cContaFinanceira.sql;2010-01-24 10:39:42
+~sq_cAgrupadaLoteViaMovto~sq_cEmpVinculada;Seleção;0;True;;;~sq_cAgrupadaLoteViaMovto~sq_cEmpVinculada.sql;2010-01-24 10:39:42
+~sq_cAgrupadaLoteViaMovto~sq_cPlano3;Seleção;0;True;;;~sq_cAgrupadaLoteViaMovto~sq_cPlano3.sql;2010-01-24 10:39:42
+~sq_cAgrupadaVendasViaMovto~sq_cCodHistorico;Seleção;0;True;;;~sq_cAgrupadaVendasViaMovto~sq_cCodHistorico.sql;2003-03-03 18:43:21
+~sq_cAgrupadaVendasViaMovto~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cAgrupadaVendasViaMovto~sq_cCodigoParceiro.sql;2003-03-03 18:43:21
+~sq_cAgrupadaVendasViaMovto~sq_cCodImovel;Seleção;0;True;;;~sq_cAgrupadaVendasViaMovto~sq_cCodImovel.sql;2003-03-03 18:43:21
+~sq_cAgrupadaVendasViaMovto~sq_cContaFinanceira;Seleção;0;True;;;~sq_cAgrupadaVendasViaMovto~sq_cContaFinanceira.sql;2003-03-03 18:43:21
+~sq_cAgrupadaVendasViaMovto~sq_cEmpVinculada;Seleção;0;True;;;~sq_cAgrupadaVendasViaMovto~sq_cEmpVinculada.sql;2003-03-03 18:43:21
+~sq_cAgrupadaVendasViaMovto~sq_cIndiceReajuste;Seleção;0;True;;;~sq_cAgrupadaVendasViaMovto~sq_cIndiceReajuste.sql;2003-03-03 18:43:21
+~sq_cAgrupadaVendasViaMovto~sq_cPlano3;Seleção;0;True;;;~sq_cAgrupadaVendasViaMovto~sq_cPlano3.sql;2003-03-03 18:43:21
+~sq_cConciliacao Financiamento~sq_cConciliacao Finan SubForm;Seleção;0;True;__CodigoConta (Texto), [F Movimento Contas].[DataVinculada] (Texto), [F Movimento Contas].[EmAberto] (Texto);;~sq_cConciliacao Financiamento~sq_cConciliacao Finan SubForm.sql;2008-05-23 10:32:21
+~sq_cEmpMaster~sq_cEmpVinculada Subformulário;Seleção;0;True;__CodigoMaster (Texto);;~sq_cEmpMaster~sq_cEmpVinculada Subformulário.sql;2009-04-07 19:47:48
+~sq_cEmpVinculada Subformulário~sq_cCombinação16;Seleção;0;True;;;~sq_cEmpVinculada Subformulário~sq_cCombinação16.sql;2010-02-23 18:07:24
+~sq_cEmpVinculada Subformulário~sq_cFinanceiraPadrao;Seleção;0;True;;;~sq_cEmpVinculada Subformulário~sq_cFinanceiraPadrao.sql;2010-02-23 18:07:24
+~sq_cF Conciliacao~sq_cF Conciliacao SubForm;Seleção;0;True;__CodigoConta (Texto), [F Movimento Contas].[DataVinculada] (Texto), [F Movimento Contas].[EmAberto] (Texto);;~sq_cF Conciliacao~sq_cF Conciliacao SubForm.sql;2008-05-23 10:35:31
+~sq_cF Confirmar Lancamentos Base~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Confirmar Lancamentos Base~sq_cContaFinanceira.sql;2005-01-24 18:59:52
+~sq_cF Contas Financeiras~sq_cTipo Conta;Seleção;0;True;;;~sq_cF Contas Financeiras~sq_cTipo Conta.sql;2009-01-26 21:24:22
+~sq_cF Manutencao Agrupada Lote~sq_cCodHistorico;Seleção;0;True;;;~sq_cF Manutencao Agrupada Lote~sq_cCodHistorico.sql;2009-02-16 18:33:17
+~sq_cF Manutencao Agrupada Lote~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cF Manutencao Agrupada Lote~sq_cCodigoParceiro.sql;2009-02-16 18:33:17
+~sq_cF Manutencao Agrupada Lote~sq_cCodImovel;Seleção;0;True;;;~sq_cF Manutencao Agrupada Lote~sq_cCodImovel.sql;2009-02-16 18:33:17
+~sq_cF Manutencao Agrupada Lote~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Manutencao Agrupada Lote~sq_cContaFinanceira.sql;2009-02-16 18:33:17
+~sq_cF Manutencao Agrupada Lote~sq_cEmpVinculada;Seleção;0;True;;;~sq_cF Manutencao Agrupada Lote~sq_cEmpVinculada.sql;2009-02-16 18:33:17
+~sq_cF Manutencao Agrupada Lote~sq_cPlano3;Seleção;0;True;;;~sq_cF Manutencao Agrupada Lote~sq_cPlano3.sql;2009-02-16 18:33:17
+~sq_cF Manutencao Agrupada Vendas~sq_cCodHistorico;Seleção;0;True;;;~sq_cF Manutencao Agrupada Vendas~sq_cCodHistorico.sql;2003-03-03 18:40:40
+~sq_cF Manutencao Agrupada Vendas~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cF Manutencao Agrupada Vendas~sq_cCodigoParceiro.sql;2003-03-03 18:40:40
+~sq_cF Manutencao Agrupada Vendas~sq_cCodImovel;Seleção;0;True;;;~sq_cF Manutencao Agrupada Vendas~sq_cCodImovel.sql;2003-03-03 18:40:40
+~sq_cF Manutencao Agrupada Vendas~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Manutencao Agrupada Vendas~sq_cContaFinanceira.sql;2003-03-03 18:40:40
+~sq_cF Manutencao Agrupada Vendas~sq_cEmpVinculada;Seleção;0;True;;;~sq_cF Manutencao Agrupada Vendas~sq_cEmpVinculada.sql;2003-03-03 18:40:40
+~sq_cF Manutencao Agrupada Vendas~sq_cIndiceReajuste;Seleção;0;True;;;~sq_cF Manutencao Agrupada Vendas~sq_cIndiceReajuste.sql;2003-03-03 18:40:40
+~sq_cF Manutencao Agrupada Vendas~sq_cPlano3;Seleção;0;True;;;~sq_cF Manutencao Agrupada Vendas~sq_cPlano3.sql;2003-03-03 18:40:40
+~sq_cF Movimento Contas Analise~sq_cContasFinanceiras;Seleção;0;True;[Forms]![F Movimento Contas Analise]![TiposContaFinanceira] (Texto);;~sq_cF Movimento Contas Analise~sq_cContasFinanceiras.sql;2008-12-02 20:01:39
+~sq_cF Movimento Contas Analise~sq_cNivel1;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cF Movimento Contas Analise~sq_cNivel1.sql;2008-12-02 20:01:39
+~sq_cF Movimento Contas Analise~sq_cNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cF Movimento Contas Analise~sq_cNivel2.sql;2008-12-02 20:01:39
+~sq_cF Movimento Contas Analise~sq_cTiposContaFinanceira;Seleção;0;True;;;~sq_cF Movimento Contas Analise~sq_cTiposContaFinanceira.sql;2008-12-02 20:01:39
+~sq_cF Movimento Contas Mensais~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Movimento Contas Mensais~sq_cContaFinanceira.sql;2008-12-02 20:06:19
+~sq_cF Movimento Contas Mensais~sq_cNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cF Movimento Contas Mensais~sq_cNivel2.sql;2008-12-02 20:06:19
+~sq_cF Movimento Contas Vendas~sq_cCodHistorico;Seleção;0;True;;;~sq_cF Movimento Contas Vendas~sq_cCodHistorico.sql;2009-02-17 12:57:41
+~sq_cF Movimento Contas Vendas~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cF Movimento Contas Vendas~sq_cCodigoParceiro.sql;2009-02-17 12:57:41
+~sq_cF Movimento Contas Vendas~sq_cCodImovel;Seleção;0;True;;;~sq_cF Movimento Contas Vendas~sq_cCodImovel.sql;2009-02-17 12:57:41
+~sq_cF Movimento Contas Vendas~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Movimento Contas Vendas~sq_cContaFinanceira.sql;2009-02-17 12:57:41
+~sq_cF Movimento Contas Vendas~sq_cEmpVinculada;Seleção;0;True;;;~sq_cF Movimento Contas Vendas~sq_cEmpVinculada.sql;2009-02-17 12:57:41
+~sq_cF Movimento Contas Vendas~sq_cPlano3;Seleção;0;True;;;~sq_cF Movimento Contas Vendas~sq_cPlano3.sql;2009-02-17 12:57:41
+~sq_cF Movimento Contas xxx~sq_cCodHistorico;Seleção;0;True;;;~sq_cF Movimento Contas xxx~sq_cCodHistorico.sql;2009-01-26 20:07:25
+~sq_cF Movimento Contas xxx~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cF Movimento Contas xxx~sq_cCodigoParceiro.sql;2009-01-26 20:07:25
+~sq_cF Movimento Contas xxx~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Movimento Contas xxx~sq_cContaFinanceira.sql;2009-01-26 20:07:25
+~sq_cF Movimento Contas xxx~sq_cEmpVinculada;Seleção;0;True;;;~sq_cF Movimento Contas xxx~sq_cEmpVinculada.sql;2009-01-26 20:07:25
+~sq_cF Movimento Contas xxx~sq_cPlano3;Seleção;0;True;;;~sq_cF Movimento Contas xxx~sq_cPlano3.sql;2009-01-26 20:07:25
+~sq_cF Movimento Contas~sq_cNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cF Movimento Contas~sq_cNivel2.sql;2008-12-16 18:39:16
+~sq_cF Movto Empresa APagar~sq_cCodHistorico;Seleção;0;True;;;~sq_cF Movto Empresa APagar~sq_cCodHistorico.sql;2011-12-21 14:19:59
+~sq_cF Movto Empresa APagar~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cF Movto Empresa APagar~sq_cCodigoParceiro.sql;2011-12-21 14:19:59
+~sq_cF Movto Empresa APagar~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Movto Empresa APagar~sq_cContaFinanceira.sql;2011-12-21 14:19:59
+~sq_cF Movto Empresa Efetuado~sq_cCodHistorico;Seleção;0;True;;;~sq_cF Movto Empresa Efetuado~sq_cCodHistorico.sql;2011-12-21 14:19:59
+~sq_cF Movto Empresa Efetuado~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cF Movto Empresa Efetuado~sq_cCodigoParceiro.sql;2011-12-21 14:19:59
+~sq_cF Movto Empresa Efetuado~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Movto Empresa Efetuado~sq_cContaFinanceira.sql;2011-12-21 14:19:59
+~sq_cF Movto Empresa~sq_cEmpVinculada;Seleção;0;True;;;~sq_cF Movto Empresa~sq_cEmpVinculada.sql;2024-08-30 15:48:23
+~sq_cF Movto Parceiro APagar~sq_cCodHistorico;Seleção;0;True;;;~sq_cF Movto Parceiro APagar~sq_cCodHistorico.sql;2011-12-21 14:21:53
+~sq_cF Movto Parceiro APagar~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Movto Parceiro APagar~sq_cContaFinanceira.sql;2011-12-21 14:21:53
+~sq_cF Movto Parceiro APagar~sq_cEmpVinculada;Seleção;0;True;;;~sq_cF Movto Parceiro APagar~sq_cEmpVinculada.sql;2011-12-21 14:21:53
+~sq_cF Movto Parceiro Efetuado~sq_cCodHistorico;Seleção;0;True;;;~sq_cF Movto Parceiro Efetuado~sq_cCodHistorico.sql;2011-12-21 14:21:53
+~sq_cF Movto Parceiro Efetuado~sq_cContaFinanceira;Seleção;0;True;;;~sq_cF Movto Parceiro Efetuado~sq_cContaFinanceira.sql;2011-12-21 14:21:53
+~sq_cF Movto Parceiro Efetuado~sq_cEmpVinculada;Seleção;0;True;;;~sq_cF Movto Parceiro Efetuado~sq_cEmpVinculada.sql;2011-12-21 14:21:53
+~sq_cF Movto Parceiro~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cF Movto Parceiro~sq_cCodigoParceiro.sql;2025-03-12 07:51:54
+~sq_cF Nivel1~sq_cF Nivel2 Subform;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cF Nivel1~sq_cF Nivel2 Subform.sql;2005-01-17 10:12:38
+~sq_cF Nivel2 Subform~sq_cCodAgrupamento;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cF Nivel2 Subform~sq_cCodAgrupamento.sql;2008-12-03 20:15:21
+~sq_cFiltro Movimento Contas~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cFiltro Movimento Contas~sq_cCodigoParceiro.sql;2009-04-21 17:39:49
+~sq_cFiltro Movimento Contas~sq_cContaFinanceira;Seleção;0;True;;;~sq_cFiltro Movimento Contas~sq_cContaFinanceira.sql;2009-04-21 17:39:49
+~sq_cFiltro Movimento Contas~sq_cEmpVinculada;Seleção;0;True;;;~sq_cFiltro Movimento Contas~sq_cEmpVinculada.sql;2009-04-21 17:39:49
+~sq_cImoveis~sq_cCondPagtoImovel Subformulário;Seleção;0;True;__Imoveis Subformulário.Form!CodImovel (Texto);;~sq_cImoveis~sq_cCondPagtoImovel Subformulário.sql;2010-08-31 10:37:07
+~sq_cImoveis~sq_cImoveis Subformulário;Seleção;0;True;__CodigoVinculada (Texto);;~sq_cImoveis~sq_cImoveis Subformulário.sql;2010-08-31 10:38:43
+~sq_cImoveisVinculada~sq_cImoveisParceiro;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cImoveisVinculada~sq_cImoveisParceiro.sql;2009-02-07 11:25:09
+~sq_cIndices~sq_cPeriodicidade;Seleção;0;True;;;~sq_cIndices~sq_cPeriodicidade.sql;2010-08-19 20:00:43
+~sq_cIndices~sq_cValorIndices Subformulário;Seleção;0;True;__CodIndice (Texto);;~sq_cIndices~sq_cValorIndices Subformulário.sql;2009-02-26 19:55:38
+~sq_cMovimento Sel Conta~sq_cMovimento Contas;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cMovimento Sel Conta~sq_cMovimento Contas.sql;2007-09-19 09:48:36
+~sq_cMovimento Sel Conta~sq_cSelConta;Seleção;0;True;;;~sq_cMovimento Sel Conta~sq_cSelConta.sql;2007-12-04 15:28:46
+~sq_cMovimento Sel Conta2~sq_cContaFinanceira;Seleção;0;True;;;~sq_cMovimento Sel Conta2~sq_cContaFinanceira.sql;2008-12-02 20:02:17
+~sq_cMovimento Sel Conta2~sq_cNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cMovimento Sel Conta2~sq_cNivel2.sql;2008-12-02 20:02:17
+~sq_cMovMaterial1~sq_cCodMaterial;Seleção;0;True;;;~sq_cMovMaterial1~sq_cCodMaterial.sql;2009-01-25 23:05:33
+~sq_cOcorrencias Mensais~sq_cCodHistorico;Seleção;0;True;;;~sq_cOcorrencias Mensais~sq_cCodHistorico.sql;2009-06-17 20:19:06
+~sq_cOcorrencias Mensais~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cOcorrencias Mensais~sq_cCodigoParceiro.sql;2009-06-17 20:19:06
+~sq_cOcorrencias Mensais~sq_cContaFinanceira;Seleção;0;True;;;~sq_cOcorrencias Mensais~sq_cContaFinanceira.sql;2009-06-17 20:19:06
+~sq_cOcorrencias Mensais~sq_cEmpVinculada;Seleção;0;True;;;~sq_cOcorrencias Mensais~sq_cEmpVinculada.sql;2009-06-17 20:19:06
+~sq_cOcorrencias Mensais~sq_cPlano3;Seleção;0;True;;;~sq_cOcorrencias Mensais~sq_cPlano3.sql;2009-06-17 20:19:06
+~sq_cPagto Lote Detail Finan~sq_cCodHistorico;Seleção;0;True;;;~sq_cPagto Lote Detail Finan~sq_cCodHistorico.sql;2012-01-09 14:21:54
+~sq_cPagto Lote Detail Finan~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cPagto Lote Detail Finan~sq_cCodigoParceiro.sql;2012-01-09 14:21:54
+~sq_cPagto Lote Detail Finan~sq_cContaFinanceira;Seleção;0;True;;;~sq_cPagto Lote Detail Finan~sq_cContaFinanceira.sql;2012-01-09 14:21:54
+~sq_cPagto Lote Detail Finan~sq_cEmpVinculada;Seleção;0;True;;;~sq_cPagto Lote Detail Finan~sq_cEmpVinculada.sql;2012-01-09 14:21:54
+~sq_cPagto Lote Detail Finan~sq_cFinanceiraPadrao;Seleção;0;True;;;~sq_cPagto Lote Detail Finan~sq_cFinanceiraPadrao.sql;2012-01-09 14:21:54
+~sq_cPagto Lote Header~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cPagto Lote Header~sq_cCodigoParceiro.sql;2024-09-03 08:17:22
+~sq_cPagto Lote Header~sq_cPagto Lote Detail;Seleção;0;True;__CodigoParceiro (Texto), Formulários![Pagto Lote Header]!CodigoParceiro (Texto);;~sq_cPagto Lote Header~sq_cPagto Lote Detail.sql;2009-05-27 20:10:48
+~sq_cPagto Lote Movto Cta Finan~sq_cCodHistorico;Seleção;0;True;;;~sq_cPagto Lote Movto Cta Finan~sq_cCodHistorico.sql;2012-01-09 14:21:54
+~sq_cPagto Lote Movto Cta Finan~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cPagto Lote Movto Cta Finan~sq_cCodigoParceiro.sql;2012-01-09 14:21:54
+~sq_cPagto Lote Movto Cta Finan~sq_cContaFinanceira;Seleção;0;True;;;~sq_cPagto Lote Movto Cta Finan~sq_cContaFinanceira.sql;2012-01-09 14:21:54
+~sq_cPagto Lote Movto Cta Finan~sq_cEmpVinculada;Seleção;0;True;;;~sq_cPagto Lote Movto Cta Finan~sq_cEmpVinculada.sql;2012-01-09 14:21:54
+~sq_cPagto Lote Movto Cta Finan~sq_cPlano3;Seleção;0;True;;;~sq_cPagto Lote Movto Cta Finan~sq_cPlano3.sql;2012-01-09 14:21:54
+~sq_cPeriodo Relatorio CReceber Abertas~sq_cFinanceiraPadrao;Seleção;0;True;;;~sq_cPeriodo Relatorio CReceber Abertas~sq_cFinanceiraPadrao.sql;2026-11-12 10:16:48
+~sq_cPlano1~sq_cPlano2 Subformulário;Seleção;0;True;__Plano1 (Texto);;~sq_cPlano1~sq_cPlano2 Subformulário.sql;2009-01-26 21:30:57
+~sq_cPlano1~sq_cPlano3 Subformulário;Seleção;0;True;__Plano2 Subformulário.Form!Plano2 (Texto);;~sq_cPlano1~sq_cPlano3 Subformulário.sql;2009-01-26 21:30:57
+~sq_cReajusteImoveis~sq_cEmpresaSelecionada;Seleção;0;True;;;~sq_cReajusteImoveis~sq_cEmpresaSelecionada.sql;2009-04-08 19:52:48
+~sq_cReajusteImoveis~sq_cIndiceSelecionado;Seleção;0;True;;;~sq_cReajusteImoveis~sq_cIndiceSelecionado.sql;2009-04-08 19:52:48
+~sq_cReajusteParceiros~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cReajusteParceiros~sq_cCodigoParceiro.sql;2024-08-30 14:12:17
+~sq_cReajusteParceiros~sq_cEmpresaSelecionada;Seleção;0;True;;;~sq_cReajusteParceiros~sq_cEmpresaSelecionada.sql;2024-08-30 14:12:17
+~sq_cReajusteParceiros~sq_cEmpVinculada;Seleção;0;True;;;~sq_cReajusteParceiros~sq_cEmpVinculada.sql;2024-08-30 14:12:17
+~sq_cReajusteParceiros~sq_cIndiceReajuste;Seleção;0;True;;;~sq_cReajusteParceiros~sq_cIndiceReajuste.sql;2024-08-30 14:12:17
+~sq_cReajusteParceiros~sq_cIndiceSelecionado;Seleção;0;True;;;~sq_cReajusteParceiros~sq_cIndiceSelecionado.sql;2024-08-30 14:12:17
+~sq_cRelatorio Custos Empresa~sq_cFinanceiraPadrao;Seleção;0;True;;;~sq_cRelatorio Custos Empresa~sq_cFinanceiraPadrao.sql;2026-11-09 13:00:04
+~sq_cRelatorio Custos Empresa~sq_cPlano2 Subformulário;Seleção;0;True;Formulários![Relatorio Custos Empresa]!SemFiltro (Texto);;~sq_cRelatorio Custos Empresa~sq_cPlano2 Subformulário.sql;2021-07-18 09:24:56
+~sq_cRelatorio Custos Empresa2~sq_cFinanceiraPadrao;Seleção;0;True;;;~sq_cRelatorio Custos Empresa2~sq_cFinanceiraPadrao.sql;2025-08-12 07:56:15
+~sq_cSwitchboard Sistema~sq_cSeManutencao;Seleção;0;True;__SwitchboardID (Texto);;~sq_cSwitchboard Sistema~sq_cSeManutencao.sql;2009-01-26 21:45:57
+~sq_cTesteDetail~sq_cCodMaterial;Seleção;0;True;;;~sq_cTesteDetail~sq_cCodMaterial.sql;2009-01-25 15:01:41
+~sq_cTesteHeader~sq_cCodHistorico;Seleção;0;True;;;~sq_cTesteHeader~sq_cCodHistorico.sql;2009-01-25 22:45:41
+~sq_cTesteHeader~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cTesteHeader~sq_cCodigoParceiro.sql;2009-01-25 22:45:41
+~sq_cTesteHeader~sq_cContaFinanceira;Seleção;0;True;;;~sq_cTesteHeader~sq_cContaFinanceira.sql;2009-01-25 22:45:41
+~sq_cTesteHeader~sq_cEmpVinculada;Seleção;0;True;;;~sq_cTesteHeader~sq_cEmpVinculada.sql;2009-01-25 22:45:41
+~sq_cTesteHeader~sq_cPlano3;Seleção;0;True;;;~sq_cTesteHeader~sq_cPlano3.sql;2009-01-25 22:45:41
+~sq_cVenda Imovel~sq_cCodHistorico;Seleção;0;True;;;~sq_cVenda Imovel~sq_cCodHistorico.sql;2009-02-11 22:29:32
+~sq_cVenda Imovel~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cVenda Imovel~sq_cCodigoParceiro.sql;2009-02-11 22:29:33
+~sq_cVenda Imovel~sq_cCodImovel;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_cVenda Imovel~sq_cCodImovel.sql;2009-02-11 22:29:32
+~sq_cVenda Imovel~sq_cCombinação42;Seleção;0;True;;;~sq_cVenda Imovel~sq_cCombinação42.sql;2009-02-11 22:29:32
+~sq_cVenda Imovel~sq_cComprador;Seleção;0;True;;;~sq_cVenda Imovel~sq_cComprador.sql;2009-02-11 22:29:32
+~sq_cVenda Imovel~sq_cContaFinanceira;Seleção;0;True;;;~sq_cVenda Imovel~sq_cContaFinanceira.sql;2009-02-11 22:29:32
+~sq_cVenda Imovel~sq_cEmpVinculada;Seleção;0;True;;;~sq_cVenda Imovel~sq_cEmpVinculada.sql;2009-02-11 22:29:32
+~sq_cVenda Imovel~sq_cFinanceiraRecebedora;Seleção;0;True;;;~sq_cVenda Imovel~sq_cFinanceiraRecebedora.sql;2009-02-11 22:29:32
+~sq_cVenda Imovel~sq_cImovelVendido;Seleção;0;True;;;~sq_cVenda Imovel~sq_cImovelVendido.sql;2009-02-11 22:29:32
+~sq_cVenda Imovel~sq_cPlano3;Seleção;0;True;;;~sq_cVenda Imovel~sq_cPlano3.sql;2009-02-11 22:29:32
+~sq_cVenda Imovel~sq_cVendedor;Seleção;0;True;;;~sq_cVenda Imovel~sq_cVendedor.sql;2009-02-11 22:29:32
+~sq_cVendaImovelVendido~sq_cVendaCondPagto;Seleção;0;True;__CodImovel (Texto), Formulários!VendaImovelVendido!CodImovel (Texto);;~sq_cVendaImovelVendido~sq_cVendaCondPagto.sql;2024-08-01 08:31:35
+~sq_cxxxTesteMovtoContas~sq_cCodHistorico;Seleção;0;True;;;~sq_cxxxTesteMovtoContas~sq_cCodHistorico.sql;2009-04-22 18:22:45
+~sq_cxxxTesteMovtoContas~sq_cCodigoParceiro;Seleção;0;True;;;~sq_cxxxTesteMovtoContas~sq_cCodigoParceiro.sql;2009-04-22 18:22:45
+~sq_cxxxTesteMovtoContas~sq_cCodImovel;Seleção;0;True;;;~sq_cxxxTesteMovtoContas~sq_cCodImovel.sql;2009-04-22 18:22:45
+~sq_cxxxTesteMovtoContas~sq_cContaFinanceira;Seleção;0;True;;;~sq_cxxxTesteMovtoContas~sq_cContaFinanceira.sql;2009-04-22 18:22:45
+~sq_cxxxTesteMovtoContas~sq_cEmpVinculada;Seleção;0;True;;;~sq_cxxxTesteMovtoContas~sq_cEmpVinculada.sql;2009-04-22 18:22:45
+~sq_cxxxTesteMovtoContas~sq_cMovMaterial Subformulário;Seleção;0;True;__NumMovimento (Texto);;~sq_cxxxTesteMovtoContas~sq_cMovMaterial Subformulário.sql;2009-04-22 18:22:45
+~sq_cxxxTesteMovtoContas~sq_cPlano3;Seleção;0;True;;;~sq_cxxxTesteMovtoContas~sq_cPlano3.sql;2009-04-22 18:22:45
+~sq_dCPagar Abertas Periodo~sq_dCodigoParceiro;Seleção;0;True;;;~sq_dCPagar Abertas Periodo~sq_dCodigoParceiro.sql;2009-04-05 10:09:06
+~sq_dCPagar Abertas Periodo~sq_dCombinação53;Seleção;0;True;;;~sq_dCPagar Abertas Periodo~sq_dCombinação53.sql;2009-04-05 10:09:06
+~sq_dCPagar Abertas Periodo~sq_dContaFinanceira;Seleção;0;True;;;~sq_dCPagar Abertas Periodo~sq_dContaFinanceira.sql;2009-04-05 10:09:06
+~sq_dCReceber Abertas Periodo Geral~sq_dContaFinanceira;Seleção;0;True;;;~sq_dCReceber Abertas Periodo Geral~sq_dContaFinanceira.sql;2020-08-18 19:23:28
+~sq_dCReceber Abertas Periodo Geral~sq_dEmpVinculada;Seleção;0;True;;;~sq_dCReceber Abertas Periodo Geral~sq_dEmpVinculada.sql;2020-08-18 19:23:28
+~sq_dCReceber Abertas Periodo~sq_dContaFinanceira;Seleção;0;True;;;~sq_dCReceber Abertas Periodo~sq_dContaFinanceira.sql;2009-04-26 12:38:27
+~sq_dCReceber Abertas Periodo~sq_dEmpVinculada;Seleção;0;True;;;~sq_dCReceber Abertas Periodo~sq_dEmpVinculada.sql;2009-04-26 12:38:27
+~sq_dExtrato Bradesco~sq_dFilho85;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dExtrato Bradesco~sq_dFilho85.sql;2008-12-02 20:18:27
+~sq_dExtrato Bradesco~sq_dFilho88;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dExtrato Bradesco~sq_dFilho88.sql;2008-12-02 20:18:27
+~sq_dExtrato Bradesco~sq_dFilho96;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dExtrato Bradesco~sq_dFilho96.sql;2008-12-02 20:18:27
+~sq_dExtrato Bradesco~sq_dSaldo Poupanca brad;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dExtrato Bradesco~sq_dSaldo Poupanca brad.sql;2008-12-02 20:18:27
+~sq_dExtrato Geral~sq_dFilho86;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dExtrato Geral~sq_dFilho86.sql;2007-07-03 19:29:30
+~sq_dExtrato Movimento Contabil~sq_dCodHistorico;Seleção;0;True;;;~sq_dExtrato Movimento Contabil~sq_dCodHistorico.sql;2021-07-04 11:46:17
+~sq_dExtrato Movimento Contabil~sq_dCodigoParceiro;Seleção;0;True;;;~sq_dExtrato Movimento Contabil~sq_dCodigoParceiro.sql;2021-07-04 11:46:17
+~sq_dExtrato Movimento Contabil~sq_dPlano3;Seleção;0;True;;;~sq_dExtrato Movimento Contabil~sq_dPlano3.sql;2021-07-04 11:46:17
+~sq_dF Mov Contas Extrato~sq_dDescricao;Seleção;0;True;;;~sq_dF Mov Contas Extrato~sq_dDescricao.sql;2007-07-03 10:49:34
+~sq_dF Mov Contas Extrato1~sq_dDescricao;Seleção;0;True;;;~sq_dF Mov Contas Extrato1~sq_dDescricao.sql;2005-02-06 15:31:18
+~sq_dF Movimento Contas Conferencia~sq_dContaFinanceira;Seleção;0;True;;;~sq_dF Movimento Contas Conferencia~sq_dContaFinanceira.sql;2008-12-02 20:23:25
+~sq_dF Movimento Contas Conferencia~sq_dNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dF Movimento Contas Conferencia~sq_dNivel2.sql;2008-12-02 20:23:25
+~sq_dF Movimento Contas Fin 0s~sq_dResumo Cartao Credito;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dF Movimento Contas Fin 0s~sq_dResumo Cartao Credito.sql;2008-05-30 19:53:45
+~sq_dF Movimento Contas Rel 0~sq_dContaFinanceira;Seleção;0;True;;;~sq_dF Movimento Contas Rel 0~sq_dContaFinanceira.sql;2008-12-02 20:24:19
+~sq_dF Movimento Contas Rel 0s~sq_dContaFinanceira;Seleção;0;True;;;~sq_dF Movimento Contas Rel 0s~sq_dContaFinanceira.sql;2005-01-24 16:10:35
+~sq_dF Movimento Contas Rel 1~sq_dContaFinanceira;Seleção;0;True;;;~sq_dF Movimento Contas Rel 1~sq_dContaFinanceira.sql;2005-01-24 11:05:22
+~sq_dF Movimento Contas Rel 1~sq_dNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dF Movimento Contas Rel 1~sq_dNivel2.sql;2005-01-24 11:05:22
+~sq_dF Movimento Contas Rel 1s~sq_dContaFinanceira;Seleção;0;True;;;~sq_dF Movimento Contas Rel 1s~sq_dContaFinanceira.sql;2005-01-24 12:14:01
+~sq_dF Movimento Contas Rel 1s~sq_dNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dF Movimento Contas Rel 1s~sq_dNivel2.sql;2005-01-24 12:14:01
+~sq_dF Movimento Contas Rel 2~sq_dContaFinanceira;Seleção;0;True;;;~sq_dF Movimento Contas Rel 2~sq_dContaFinanceira.sql;2005-01-24 11:06:12
+~sq_dF Movimento Contas Rel 2~sq_dNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dF Movimento Contas Rel 2~sq_dNivel2.sql;2005-01-24 11:06:12
+~sq_dF Movimento Contas Rel 2s~sq_dContaFinanceira;Seleção;0;True;;;~sq_dF Movimento Contas Rel 2s~sq_dContaFinanceira.sql;2005-12-08 18:42:16
+~sq_dF Movimento Contas Rel 2s~sq_dNivel2;Seleção;0;True;(não foi possível ler: consulta depende de tabela vinculada ou de outra consulta);;~sq_dF Movimento Contas Rel 2s~sq_dNivel2.sql;2005-01-24 12:14:45
+~sq_dF Movto Parceiro Pago~sq_dCodHistorico;Seleção;0;True;;;~sq_dF Movto Parceiro Pago~sq_dCodHistorico.sql;2025-03-12 07:50:54
+~sq_dF Movto Parceiro Pago~sq_dContaFinanceira;Seleção;0;True;;;~sq_dF Movto Parceiro Pago~sq_dContaFinanceira.sql;2025-03-12 07:50:54
+~sq_dF Movto Parceiro Pago~sq_dEmpVinculada;Seleção;0;True;;;~sq_dF Movto Parceiro Pago~sq_dEmpVinculada.sql;2025-03-12 07:50:54
+~sq_dF Movto Parceiro PagoPagar~sq_dCodigoParceiro;Seleção;0;True;;;~sq_dF Movto Parceiro PagoPagar~sq_dCodigoParceiro.sql;2024-05-15 10:28:55
+~sq_dNotas Fiscais Periodo~sq_dCodigoParceiro;Seleção;0;True;;;~sq_dNotas Fiscais Periodo~sq_dCodigoParceiro.sql;2010-01-24 12:58:40
+~sq_dNotas Fiscais Periodo~sq_dEmpVinculada;Seleção;0;True;;;~sq_dNotas Fiscais Periodo~sq_dEmpVinculada.sql;2010-01-24 12:58:40
+~sq_dPosicaoImoveis~sq_dEmpVinculada;Seleção;0;True;;;~sq_dPosicaoImoveis~sq_dEmpVinculada.sql;2009-06-11 20:46:11
+~sq_dPosicaoImoveis~sq_dProprietario;Seleção;0;True;;;~sq_dPosicaoImoveis~sq_dProprietario.sql;2009-06-11 20:46:11
+~sq_dRelatorioContabil~sq_dCodigoParceiro;Seleção;0;True;;;~sq_dRelatorioContabil~sq_dCodigoParceiro.sql;2010-01-24 20:41:14
+~sq_dRelatorioContabil~sq_dEmpVinculada;Seleção;0;True;;;~sq_dRelatorioContabil~sq_dEmpVinculada.sql;2010-01-24 20:41:14
+~sq_dResumo Geral~sq_dExtrato Conta Financeira;Seleção;0;True;;;~sq_dResumo Geral~sq_dExtrato Conta Financeira.sql;2008-05-23 11:02:02
+~sq_fArquivo Sistema;Seleção;0;True;;;~sq_fArquivo Sistema.sql;2005-01-24 22:35:54
+~sq_fEmissaoCheque;Seleção;0;True;;;~sq_fEmissaoCheque.sql;2012-01-09 14:26:02
+~sq_fEmpVinculada Subformulário;Seleção;0;True;;;~sq_fEmpVinculada Subformulário.sql;2010-02-23 18:07:24
+~sq_fExtrato Contas Empresa;Seleção;0;True;;;~sq_fExtrato Contas Empresa.sql;2010-02-25 16:10:54
+~sq_fExtrato Contas Financeiras;Seleção;0;True;;;~sq_fExtrato Contas Financeiras.sql;2024-07-18 07:27:14
+~sq_fExtrato Contas Parceiro;Seleção;0;True;;;~sq_fExtrato Contas Parceiro.sql;2010-02-24 10:10:35
+~sq_fExtrato Movimento Contabil;Seleção;0;True;;;~sq_fExtrato Movimento Contabil.sql;2024-08-30 09:47:25
+~sq_fF Contas Financeiras;Seleção;0;True;;;~sq_fF Contas Financeiras.sql;2009-01-26 21:24:22
+~sq_fF Gerar Ocorrencias Mensais;Seleção;0;True;;;~sq_fF Gerar Ocorrencias Mensais.sql;2011-12-21 14:28:32
+~sq_fImoveis;Seleção;0;True;;;~sq_fImoveis.sql;2024-08-29 18:21:23
+~sq_fIndices;Seleção;0;True;;;~sq_fIndices.sql;2009-03-06 19:24:12
+~sq_fMaterial;Seleção;0;True;;;~sq_fMaterial.sql;2009-11-08 10:21:44
+~sq_fMenu Principal;Seleção;0;True;;;~sq_fMenu Principal.sql;2009-11-20 07:56:19
+~sq_fPeriodo Relatorio CReceber Abertas;Seleção;0;True;;;~sq_fPeriodo Relatorio CReceber Abertas.sql;2026-11-12 10:16:48
+~sq_fRelacao Notas Ficais;Seleção;0;True;;;~sq_fRelacao Notas Ficais.sql;2024-09-04 09:02:52
+~sq_fRelatorio Custos Empresa;Seleção;0;True;;;~sq_fRelatorio Custos Empresa.sql;2026-11-09 13:00:04
+~sq_fRelatorio Custos Empresa2;Seleção;0;True;;;~sq_fRelatorio Custos Empresa2.sql;2025-08-12 07:56:15
+~sq_fRelatorioContabil;Seleção;0;True;;;~sq_fRelatorioContabil.sql;2011-12-21 14:33:42
+~sq_fSelecionaEmpresaPosicaoCompradores;Seleção;0;True;;;~sq_fSelecionaEmpresaPosicaoCompradores.sql;2010-01-24 11:21:37
+~sq_fSelecionaEmpresaPosicaoCompradores2;Seleção;0;True;;;~sq_fSelecionaEmpresaPosicaoCompradores2.sql;2011-12-21 14:33:42
+~sq_fSelecionaEmpresaPosicaoImovel;Seleção;0;True;;;~sq_fSelecionaEmpresaPosicaoImovel.sql;2025-04-10 09:28:49
+~sq_fSeManutencao;Seleção;0;True;;;~sq_fSeManutencao.sql;2012-01-09 14:26:03
+~sq_fTiposContaFinanceira;Seleção;0;True;;;~sq_fTiposContaFinanceira.sql;2009-02-18 14:19:01
+~sq_fValorIndices Subformulário;Seleção;0;True;;;~sq_fValorIndices Subformulário.sql;2011-12-13 15:58:32
+~sq_rEmissao de Cheque;Seleção;0;True;;;~sq_rEmissao de Cheque.sql;2009-05-24 19:56:58
+~sq_rExtrato Contas Empresa;Seleção;0;True;;;~sq_rExtrato Contas Empresa.sql;2009-04-20 22:15:56
+~sq_rExtrato Contas Financeiras;Seleção;0;True;;;~sq_rExtrato Contas Financeiras.sql;2009-04-20 22:13:35
+~sq_rExtrato Contas Parceiro;Seleção;0;True;;;~sq_rExtrato Contas Parceiro.sql;2009-04-20 22:14:16
+~sq_rF Contas Financeiras;Seleção;0;True;;;~sq_rF Contas Financeiras.sql;2008-12-09 20:59:14
+~sq_rF Tipos Conta Financeira;Seleção;0;True;;;~sq_rF Tipos Conta Financeira.sql;2005-03-17 19:41:03
+~sq_rNotas Fiscais Periodo;Seleção;0;True;Formulários![Relacao Notas Ficais]!DTInicial (Texto), Formulários![Relacao Notas Ficais]!DTFinal (Texto), Formulários![Relacao Notas Ficais]!CodigoVinculada (Texto);;~sq_rNotas Fiscais Periodo.sql;2010-02-26 16:05:09
+~sq_rParceiros;Seleção;0;True;;;~sq_rParceiros.sql;2009-01-26 21:33:57
+~sq_rPlano de Contas;Seleção;0;True;;;~sq_rPlano de Contas.sql;2009-01-05 18:39:36
+~sq_rRelatorioContabil;Seleção;0;True;Formulários!RelatorioContabil!DTInicial (Texto), Formulários!RelatorioContabil!DTFinal (Texto), Formulários!RelatorioContabil!CodigoVinculada (Texto);;~sq_rRelatorioContabil.sql;2010-01-24 21:23:31
+AgendaFinanceraMenu;Seleção;0;False;;;AgendaFinanceraMenu.sql;2024-08-29 18:17:15
+AgrupadaLoteViaMovto Consulta;Seleção;0;False;;;AgrupadaLoteViaMovto Consulta.sql;2025-06-17 17:41:57
+AgrupadaVendasViaMovto Consulta;Seleção;0;False;;;AgrupadaVendasViaMovto Consulta.sql;2024-08-29 18:18:17
+ArquivoMorto Arquivar;Acréscimo;64;False;Formulários!ArquivoMorto!DataIniRel (Texto), Formulários!ArquivoMorto!DataFimRel (Texto);;ArquivoMorto Arquivar.sql;2016-04-17 11:35:20
+ArquivoMorto Excluir Mov;Exclusão;32;False;Formulários!ArquivoMorto!DataIniRel (Texto), Formulários!ArquivoMorto!DataFimRel (Texto);;ArquivoMorto Excluir Mov.sql;2016-04-16 12:55:14
+ArquivoMorto Gerar Mov Acum;Acréscimo;64;False;[Formulários]![ArquivoMorto]![DTProxMov] (Texto), [Formulários]![ArquivoMorto]![DataIniRel] (Texto), [Formulários]![ArquivoMorto]![DataFimRel] (Texto);;ArquivoMorto Gerar Mov Acum.sql;2016-04-18 18:19:47
+AtualizaConfirmadoLote;Atualização;48;False;Formulários![F Movimento Contas]!Confirmado (Texto), Formulários![F Movimento Contas]!DataPagto (Texto), Formulários![F Movimento Contas]!MovPagtoLote (Texto), Formulários![F Movimento Contas]!DataVencto (Texto);;AtualizaConfirmadoLote.sql;2010-01-24 11:02:09
+AtualizaConfirmadoLoteAgenda;Atualização;48;False;Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!Confirmado (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!DataPagto (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!MovPagtoLote (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Form!DataVencto (Texto);;AtualizaConfirmadoLoteAgenda.sql;2010-01-24 10:56:02
+AtualizaConfirmadoVenda;Atualização;48;False;Formulários![F Movimento Contas]!Confirmado (Texto), Formulários![F Movimento Contas]!DataPagto (Texto), Formulários![F Movimento Contas]!LinkVenda (Texto), Formulários![F Movimento Contas]!NumMovimento (Texto), Formulários![F Movimento Contas]!DataVencto (Texto);;AtualizaConfirmadoVenda.sql;2010-01-24 11:01:26
+AtualizaConfirmadoVendaAgenda;Atualização;48;False;Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!Confirmado (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!DataPagto (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!LinkVenda (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!NumMovimento (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Form!DataVencto (Texto);;AtualizaConfirmadoVendaAgenda.sql;2010-01-24 10:55:06
+AtualizaEfetuadoLote;Atualização;48;False;Formulários![F Movimento Contas]!Efetuado (Texto), Formulários![F Movimento Contas]!MovPagtoLote (Texto), Formulários![F Movimento Contas]!DataVencto (Texto);;AtualizaEfetuadoLote.sql;2010-01-24 11:00:37
+AtualizaEfetuadoLoteAgenda;Atualização;48;False;Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!Efetuado (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!MovPagtoLote (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Form!DataVencto (Texto);;AtualizaEfetuadoLoteAgenda.sql;2010-01-24 10:57:17
+AtualizaEfetuadoVenda;Atualização;48;False;Formulários![F Movimento Contas]!Efetuado (Texto), Formulários![F Movimento Contas]!AgrupadorVenda (Texto), Formulários![F Movimento Contas]!NumMovimento (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Form!DataVencto (Texto);;AtualizaEfetuadoVenda.sql;2010-01-24 10:57:34
+AtualizaEfetuadoVendaAgenda;Atualização;48;False;Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!Efetuado (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!LinkVenda (Texto), Formulários![Menu Principal]!AgendaFinanceraMenu.Formulário!NumMovimento (Texto), [F Movimento Contas] (Texto);;AtualizaEfetuadoVendaAgenda.sql;2010-01-24 10:58:51
+Cadastro Contas Financeiras;Seleção;0;False;;;Cadastro Contas Financeiras.sql;2010-02-23 18:07:10
+Cadastro EmpMaster;Seleção;0;False;;;Cadastro EmpMaster.sql;2010-02-23 18:07:10
+Cadastro Historico;Seleção;0;False;;;Cadastro Historico.sql;2010-02-23 18:07:10
+Cadastro Parceiros;Seleção;0;False;;;Cadastro Parceiros.sql;2010-02-23 18:07:10
+Cadastro Plano Contas;Seleção;0;False;;;Cadastro Plano Contas.sql;2010-02-23 18:07:10
+CondPagtoConsulta;Seleção;0;False;Formulários!VendaImovelVendido!CodImovel (Texto);;CondPagtoConsulta.sql;2025-08-04 16:02:08
+ControleImoveis;Seleção;0;False;;;ControleImoveis.sql;2025-09-16 08:48:08
+Cópia de Reajuste de Parcelas Empresa;Seleção;0;False;[Formulários]![ReajusteParceiros]![EmpresaSelecionada] (Texto), [Formulários]![ReajusteParceiros]![IndiceSelecionado] (Texto);;Cópia de Reajuste de Parcelas Empresa.sql;2010-08-31 10:25:00
+CPagar Abertas Periodo;Seleção;0;False;Formulários![Periodo Relatorio CPagar Abertas]!DataIniRel (Texto), Formulários![Periodo Relatorio CPagar Abertas]!DataFimRel (Texto);;CPagar Abertas Periodo.sql;2024-09-06 08:23:24
+CPagar Anterior Periodo;Seleção;0;False;Formulários![Periodo Relatorio CPagar Abertas]!DataIniRel (Texto);;CPagar Anterior Periodo.sql;2024-09-06 08:23:24
+CPagar Posterior Periodo;Seleção;0;False;Formulários![Periodo Relatorio CPagar Abertas]!DataFimRel (Texto);;CPagar Posterior Periodo.sql;2024-09-06 08:23:24
+CReceber Abertas Periodo;Seleção;0;False;Formulários![Periodo Relatorio CReceber Abertas]!DataIniRel (Texto), Formulários![Periodo Relatorio CReceber Abertas]!DataFimRel (Texto), Formulários![Periodo Relatorio CReceber Abertas]!CodigoVinculada (Texto);;CReceber Abertas Periodo.sql;2024-08-30 08:09:03
+CReceber Abertas Periodo Geral;Seleção;0;False;Formulários![Periodo Relatorio CReceber Abertas]!DataIniRel (Texto), Formulários![Periodo Relatorio CReceber Abertas]!DataFimRel (Texto);;CReceber Abertas Periodo Geral.sql;2024-09-03 08:40:54
+CReceber Anterior Periodo;Seleção;0;False;Formulários![Periodo Relatorio CReceber Abertas]!DataIniRel (Texto);;CReceber Anterior Periodo.sql;2024-08-30 08:09:03
+CReceber Posterior Periodo;Seleção;0;False;Formulários![Periodo Relatorio CReceber Abertas]!DataFimRel (Texto);;CReceber Posterior Periodo.sql;2024-08-30 08:09:04
+CustoEmpresaArquivoAtual;Acréscimo;64;False;Formulários![Relatorio Custos Empresa]!CodigoVinculada (Texto), Formulários![Relatorio Custos Empresa]!DTInicial (Texto), Formulários![Relatorio Custos Empresa]!DTFinal (Texto);;CustoEmpresaArquivoAtual.sql;2016-05-22 20:50:06
+CustoEmpresaArquivoAtual2;Acréscimo;64;False;Formulários![Relatorio Custos Empresa2]!CodigoVinculada (Texto), Formulários![Relatorio Custos Empresa2]!DTFinal (Texto);;CustoEmpresaArquivoAtual2.sql;2016-07-04 11:14:38
+CustoEmpresaArquivoMorto;Acréscimo;64;False;Formulários![Relatorio Custos Empresa]!CodigoVinculada (Texto);;CustoEmpresaArquivoMorto.sql;2016-07-01 10:53:24
+CustoEmpresaArquivoMorto2;Acréscimo;64;False;Formulários![Relatorio Custos Empresa2]!CodigoVinculada (Texto);;CustoEmpresaArquivoMorto2.sql;2016-07-01 10:53:38
+CustoEmpresaZerar;Exclusão;32;False;;;CustoEmpresaZerar.sql;2016-05-22 20:14:10
+Custos Empresa;Seleção;0;False;Formulários![Relatorio Custos Empresa]!CodigoVinculada (Texto), Formulários![Relatorio Custos Empresa]!DTInicial (Texto), Formulários![Relatorio Custos Empresa]!DTFinal (Texto);;Custos Empresa.sql;2024-05-10 07:35:33
+Custos Empresa Anterior;Seleção;0;False;Formulários![Relatorio Custos Empresa]!DataInicialCustos (Texto), Formulários![Relatorio Custos Empresa]!DTInicial (Texto), [Formulários]![Relatorio Custos Empresa]![CodigoVinculada] (Texto);;Custos Empresa Anterior.sql;2024-08-30 08:01:11
+Custos Empresa Anterior2;Seleção;0;False;Formulários![Relatorio Custos Empresa2]!DTInicial (Texto), [Formulários]![Relatorio Custos Empresa2]![CodigoVinculada] (Texto);;Custos Empresa Anterior2.sql;2016-07-04 11:15:01
+Custos Empresa2;Seleção;0;False;Formulários![Relatorio Custos Empresa2]!CodigoVinculada (Texto), Formulários![Relatorio Custos Empresa2]!DTInicial (Texto), Formulários![Relatorio Custos Empresa2]!DTFinal (Texto);;Custos Empresa2.sql;2025-08-12 07:55:51
+Custos Permuta Despesas;Seleção;0;False;Formulários![Relatorio Custos Empresa]!DTInicial (Texto), Formulários![Relatorio Custos Empresa]!DTFinal (Texto), [Formulários]![Relatorio Custos Empresa]![CodigoVinculada] (Texto);;Custos Permuta Despesas.sql;2021-05-13 10:40:39
+Custos Permuta Receita;Seleção;0;False;Formulários![Relatorio Custos Empresa]!DTInicial (Texto), Formulários![Relatorio Custos Empresa]!DTFinal (Texto), [Formulários]![Relatorio Custos Empresa]![CodigoVinculada] (Texto);;Custos Permuta Receita.sql;2021-05-13 10:16:39
+Custos Sdo Financeira;Seleção;0;False;Formulários![Relatorio Custos Empresa]!FinanceiraPadrao (Texto), Formulários![Relatorio Custos Empresa]!DTFinal (Texto);;Custos Sdo Financeira.sql;2016-05-23 07:32:59
+EfetuaReajusteParceiros;Atualização;48;False;[Formulários]![ReajusteParceiros]![EmpresaSelecionada] (Texto);;EfetuaReajusteParceiros.sql;2010-02-23 18:07:11
+EmissaoChequeViaFinan;Atualização;48;False;Formulários![Pagto Lote Header Finan]!Movimento.Formulário![Numero Conta] (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NomeVinculada (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!FinanceiraDescricao (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NumDoc (Texto), Formulários![Pagto Lote Header Finan]!DataParaPagamento (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!ValorDebito (Texto);;EmissaoChequeViaFinan.sql;2010-02-23 18:07:12
+EmissaoChequeViaMovto;Atualização;48;False;Formulários![F Movimento Contas]!NomeVinculada (Texto), Formulários![F Movimento Contas]!NomeBanco (Texto), Formulários![F Movimento Contas]!NumDoc (Texto), Formulários![F Movimento Contas]![Numero Conta] (Texto), Formulários![F Movimento Contas]!DataPagto (Texto), Formulários![F Movimento Contas]!ValorDebito (Texto);;EmissaoChequeViaMovto.sql;2010-02-23 18:07:12
+EmissaoChequeViaPgLote;Atualização;48;False;Formulários![Pagto Lote Header]!Movimento.Formulário!Complemento (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário![Numero Conta] (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!NomeVinculada (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!FinanceiraDescricao (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!NumDoc (Texto), Formulários![Pagto Lote Header]!DataParaPagamento (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!ValorDebito (Texto);;EmissaoChequeViaPgLote.sql;2010-02-23 18:07:12
+EmpVinculada Consulta;Seleção;0;False;[EmpVinculada].Imoveis (Texto);;EmpVinculada Consulta.sql;2010-02-23 18:07:12
+ExcluirPadraoRelatorioCPagar;Exclusão;32;False;;;ExcluirPadraoRelatorioCPagar.sql;2010-02-23 18:07:12
+ExcluirPadraoRelatorioCReceber;Exclusão;32;False;;;ExcluirPadraoRelatorioCReceber.sql;2010-02-23 18:07:12
+Extrato Monta Historico Empresa;Atualização;48;False;;;Extrato Monta Historico Empresa.sql;2010-02-23 18:07:12
+Extrato Monta Historico Parceiro;Atualização;48;False;;;Extrato Monta Historico Parceiro.sql;2010-02-23 18:07:12
+ExtratoMovContabil Consulta;Seleção;0;False;Formulários![Extrato Movimento Contabil]!CodigoVinculada (Texto), Formulários![Extrato Movimento Contabil]!DTInicial (Texto), Formulários![Extrato Movimento Contabil]!DTFinal (Texto);;ExtratoMovContabil Consulta.sql;2024-08-30 09:46:22
+ExtratoMovContabil SdoAcum;Seleção;0;False;Formulários![Extrato Movimento Contabil]!CodigoVinculada (Texto), Formulários![Extrato Movimento Contabil]!DTInicial (Texto);;ExtratoMovContabil SdoAcum.sql;2016-07-25 18:53:42
+ExtratoMovContabil SdoAnterior;Seleção;0;False;Formulários![Extrato Movimento Contabil]!CodigoVinculada (Texto), Formulários![Extrato Movimento Contabil]!DTInicial (Texto);;ExtratoMovContabil SdoAnterior.sql;2024-08-30 09:46:23
+F Mov Contas Extrato A Empresa;Acréscimo;64;False;Formulários![Extrato Contas Empresa]!DTInicial (Texto), Formulários![Extrato Contas Empresa]!CodigoVinculada (Texto);;F Mov Contas Extrato A Empresa.sql;2010-02-23 18:07:13
+F Mov Contas Extrato A Financeiras;Acréscimo;64;False;Formulários![Extrato Contas Financeiras]!DTInicial (Texto), Formulários![Extrato Contas Financeiras]!CodigoConta (Texto);;F Mov Contas Extrato A Financeiras.sql;2010-02-23 18:07:13
+F Mov Contas Extrato A Parceiro;Acréscimo;64;False;Formulários![Extrato Contas Parceiro]!DTInicial (Texto), Formulários![Extrato Contas Parceiro]!CodigoParceiro (Texto);;F Mov Contas Extrato A Parceiro.sql;2010-02-23 18:07:13
+F Mov Contas Extrato B Empresa;Acréscimo;64;False;Formulários![Extrato Contas Empresa]!DTInicial (Texto), Formulários![Extrato Contas Empresa]!CodigoVinculada (Texto);;F Mov Contas Extrato B Empresa.sql;2010-02-23 18:07:14
+F Mov Contas Extrato B Financeiras;Acréscimo;64;False;Formulários![Extrato Contas Financeiras]!DTInicial (Texto), Formulários![Extrato Contas Financeiras]!CodigoConta (Texto);;F Mov Contas Extrato B Financeiras.sql;2010-02-23 18:07:14
+F Mov Contas Extrato B Parceiro;Acréscimo;64;False;Formulários![Extrato Contas Parceiro]!DTInicial (Texto), Formulários![Extrato Contas Parceiro]!CodigoParceiro (Texto);;F Mov Contas Extrato B Parceiro.sql;2010-02-23 18:07:14
+F Mov Contas Extrato C Empresa;Acréscimo;64;False;Formulários![Extrato Contas Empresa]!DTInicial (Texto), Formulários![Extrato Contas Empresa]!CodigoVinculada (Texto);;F Mov Contas Extrato C Empresa.sql;2010-02-23 18:07:14
+F Mov Contas Extrato C Financeiras;Acréscimo;64;False;Formulários![Extrato Contas Financeiras]!DTInicial (Texto), Formulários![Extrato Contas Financeiras]!CodigoConta (Texto);;F Mov Contas Extrato C Financeiras.sql;2010-02-23 18:07:14
+F Mov Contas Extrato C Parceiro;Acréscimo;64;False;Formulários![Extrato Contas Parceiro]!DTInicial (Texto), Formulários![Extrato Contas Parceiro]!CodigoParceiro (Texto);;F Mov Contas Extrato C Parceiro.sql;2010-02-23 18:07:15
+F Mov Contas Extrato D Empresa;Acréscimo;64;False;Formulários![Extrato Contas Empresa]!DTInicial (Texto), Formulários![Extrato Contas Empresa]!CodigoVinculada (Texto);;F Mov Contas Extrato D Empresa.sql;2010-02-23 18:07:15
+F Mov Contas Extrato D Financeiras;Acréscimo;64;False;Formulários![Extrato Contas Financeiras]!DTInicial (Texto), Formulários![Extrato Contas Financeiras]!CodigoConta (Texto);;F Mov Contas Extrato D Financeiras.sql;2010-02-23 18:07:15
+F Mov Contas Extrato D Parceiro;Acréscimo;64;False;Formulários![Extrato Contas Parceiro]!DTInicial (Texto), Formulários![Extrato Contas Parceiro]!CodigoParceiro (Texto);;F Mov Contas Extrato D Parceiro.sql;2010-02-23 18:07:15
+F Mov Contas Extrato Monta Historico;Atualização;48;False;;;F Mov Contas Extrato Monta Historico.sql;2010-02-23 18:07:16
+F Movimento Contas Consulta;Seleção;0;False;;;F Movimento Contas Consulta.sql;2025-11-27 10:09:02
+F Movto Empresa APagar;Seleção;0;False;Formulários![F Movto Empresa]!EmpVinculada (Texto), Formulários![F Movto Empresa]!DataIni (Texto), Formulários![F Movto Empresa]!DataFim (Texto);;F Movto Empresa APagar.sql;2024-08-30 15:48:22
+F Movto Empresa Efetuado;Seleção;0;False;Formulários![F Movto Empresa]!EmpVinculada (Texto), Formulários![F Movto Empresa]!DataIni (Texto), Formulários![F Movto Empresa]!DataFim (Texto);;F Movto Empresa Efetuado.sql;2024-08-30 15:48:22
+F Movto Parceiro APagar;Seleção;0;False;Formulários![F Movto Parceiro]!CodigoParceiro (Texto), Formulários![F Movto Parceiro]!DataIni (Texto), Formulários![F Movto Parceiro]!DataFim (Texto);;F Movto Parceiro APagar.sql;2024-08-29 18:17:35
+F Movto Parceiro Efetuado;Seleção;0;False;Formulários![F Movto Parceiro]!CodigoParceiro (Texto), Formulários![F Movto Parceiro]!DataIni (Texto), Formulários![F Movto Parceiro]!DataFim (Texto);;F Movto Parceiro Efetuado.sql;2025-03-12 07:50:54
+F Zerar Temp Movimento Contas;Exclusão;32;False;;;F Zerar Temp Movimento Contas.sql;2010-02-23 18:07:16
+Gerar AnoMes Ocorrencia;Acréscimo;64;False;Formulários![F Gerar Ocorrencias Mensais]!AnoOcorrencia (Texto), Formulários![F Gerar Ocorrencias Mensais]!ProximoMes (Texto);;Gerar AnoMes Ocorrencia.sql;2010-02-23 18:07:16
+Gerar Ocorrencias Mensais no Movto;Acréscimo;64;False;[Forms]![F Gerar Ocorrencias Mensais]![AnoOcorrencia] (Texto), [Forms]![F Gerar Ocorrencias Mensais]![ProximoMes] (Texto), Formulários![F Gerar Ocorrencias Mensais]!AnoOcorrencia (Texto), Formulários![F Gerar Ocorrencias Mensais]!ProximoMes (Texto);;Gerar Ocorrencias Mensais no Movto.sql;2010-02-23 18:07:16
+Gerar Temp Pagto Lote no Movto;Acréscimo;64;False;;;Gerar Temp Pagto Lote no Movto.sql;2012-12-07 13:41:40
+Gerar Temp Parcelas Movto;Acréscimo;64;False;Formulários![F Movimento Contas]!ProximoVencto (Texto), Formulários![F Movimento Contas]!ComplementoProximaParcela (Texto), [Formulários]![F Movimento Contas]![NumMovimento] (Texto);;Gerar Temp Parcelas Movto.sql;2010-02-23 18:07:16
+Gerar Temp Parcelas No Movto;Acréscimo;64;False;;;Gerar Temp Parcelas No Movto.sql;2010-02-23 18:07:17
+Gerar Temp PgLote Empresa Finan;Acréscimo;64;False;Formulários![Pagto Lote Header Finan]!Movimento.Formulário!Efetuado (Texto), Formulários![Pagto Lote Header Finan]!DataParaPagamento (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!DescricaoHistorico (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NumDoc (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!FinanceiraDescricao (Texto), Formulários![Pagto Lote Header Finan]![Pagto Lote Detail].Formulário!Integracao (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NumMovimento (Texto);;Gerar Temp PgLote Empresa Finan.sql;2010-02-23 18:07:17
+Gerar Temp PgLote Empresa Parceiro;Acréscimo;64;False;Formulários![Pagto Lote Header]![Pagto Lote Detail].Formulário!EmpVinculada (Texto), Formulários![Pagto Lote Header]!CodigoParceiro (Texto), Formulários![Pagto Lote Header]!DataParaPagamento (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!ValorDebito (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!FinanceiraDescricao (Texto), Formulários![Pagto Lote Header]![Pagto Lote Detail].Formulário!Integracao (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!NumMovimento (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!DescricaoHistorico (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!NumDoc (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!Efetuado (Texto);;Gerar Temp PgLote Empresa Parceiro.sql;2012-12-07 13:43:09
+Gerar Temp PgLote Parceiro Finan;Acréscimo;64;False;Formulários![Pagto Lote Header Finan]!Movimento.Formulário!Efetuado (Texto), Formulários![Pagto Lote Header Finan]!DataParaPagamento (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!DescricaoHistorico (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NumDoc (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!FinanceiraDescricao (Texto), Formulários![Pagto Lote Header Finan]![Pagto Lote Detail].Formulário!Integracao (Texto), Formulários![Pagto Lote Header Finan]!Movimento.Formulário!NumMovimento (Texto);;Gerar Temp PgLote Parceiro Finan.sql;2010-02-23 18:07:17
+GravarLinkVenda;Atualização;48;False;Formulários!VendaImovelVendido!VendaCondPagto.Formulário!LinkVenda (Texto);;GravarLinkVenda.sql;2010-02-23 18:07:17
+GravaZeroReajusteImoveis;Atualização;48;False;[Formulários]![ReajusteImoveis]![EmpresaSelecionada] (Texto);;GravaZeroReajusteImoveis.sql;2010-02-23 18:07:17
+GravaZeroReajusteParceiro;Atualização;48;False;[Formulários]![ReajusteParceiros]![EmpresaSelecionada] (Texto);;GravaZeroReajusteParceiro.sql;2010-02-23 18:07:18
+IncluirPadraoRelatorioCPagar;Acréscimo;64;False;;;IncluirPadraoRelatorioCPagar.sql;2010-02-23 18:07:18
+IncluirPadraoRelatorioCReceber;Acréscimo;64;False;;;IncluirPadraoRelatorioCReceber.sql;2010-02-23 18:07:18
+LimparCamposDoCheque;Atualização;48;False;;;LimparCamposDoCheque.sql;2010-02-23 18:07:18
+Manutencao Agrupada Lote;Seleção;0;False;[Movimento Lote] (Texto);;Manutencao Agrupada Lote.sql;2010-02-23 18:07:18
+Manutencao Agrupada Vendas;Seleção;0;False;[Movto Agrupador] (Texto);;Manutencao Agrupada Vendas.sql;2024-08-29 10:14:11
+Manutencao Vendas Consulta;Seleção;0;False;;;Manutencao Vendas Consulta.sql;2024-08-30 15:13:46
+Movto Pagto Lote Financeira;Seleção;0;False;;;Movto Pagto Lote Financeira.sql;2024-09-05 08:08:19
+Ocorrencias Mensais Consulta;Seleção;0;False;;;Ocorrencias Mensais Consulta.sql;2009-05-04 20:28:49
+Pagto Lote Consulta;Seleção;0;False;Formulários![Pagto Lote Header]!CodigoParceiro (Texto);;Pagto Lote Consulta.sql;2024-09-03 08:17:06
+Pagto Lote Financeira;Seleção;0;False;;;Pagto Lote Financeira.sql;2024-09-03 08:17:06
+Parceiros Pagto Lote;Seleção;0;False;;;Parceiros Pagto Lote.sql;2010-02-23 18:07:19
+ParcelasImovel;Seleção;0;False;[Formulários]![Imoveis]![Imoveis Subformulário].[Form]![CodImovel] (Texto);;ParcelasImovel.sql;2024-08-29 18:20:48
+ParcelasImovelCred;Seleção;0;False;Formulários!Imoveis!ParcelasImovel.Form!AgrupadorVenda (Texto);;ParcelasImovelCred.sql;2024-08-29 18:20:48
+Plano1Consulta;Seleção;0;False;;;Plano1Consulta.sql;2025-11-27 10:09:02
+Plano2 Desmarcar Todos;Atualização;48;False;;;Plano2 Desmarcar Todos.sql;2021-07-17 13:17:26
+Plano2 Marcar Todos;Atualização;48;False;;;Plano2 Marcar Todos.sql;2021-07-17 13:12:17
+Plano2Consulta;Seleção;0;False;[Formulários]![F Movimento Contas]![Plano1] (Texto);;Plano2Consulta.sql;2010-02-23 18:07:19
+Plano3Consulta;Seleção;0;False;;;Plano3Consulta.sql;2010-02-23 18:07:19
+PosicaoImoveisRelatorio;Seleção;0;False;Formulários!SelecionaEmpresaPosicaoImovel!CodigoVinculada (Texto);;PosicaoImoveisRelatorio.sql;2025-04-10 09:18:36
+PosicaoImovelParceiro Pagas;Acréscimo;64;False;[Formulários]![SelecionaEmpresaPosicaoCompradores]![CodigoVinculada] (Texto);;PosicaoImovelParceiro Pagas.sql;2010-01-24 11:20:25
+PosicaoImovelParceiro Pagas2;Acréscimo;64;False;Formulários!SelecionaEmpresaPosicaoCompradores2!CodigoVinculada (Texto), Formulários!SelecionaEmpresaPosicaoCompradores2!AnoDesejado (Texto);;PosicaoImovelParceiro Pagas2.sql;2010-01-24 11:32:37
+PosicaoImovelParceiro RJPagas;Acréscimo;64;False;Formulários!SelecionaEmpresaPosicaoCompradores!CodigoVinculada (Texto);;PosicaoImovelParceiro RJPagas.sql;2010-02-23 18:07:20
+PosicaoImovelParceiro RJPagas2;Acréscimo;64;False;Formulários!SelecionaEmpresaPosicaoCompradores2!CodigoVinculada (Texto), Formulários!SelecionaEmpresaPosicaoCompradores2!AnoDesejado (Texto);;PosicaoImovelParceiro RJPagas2.sql;2010-01-24 11:33:23
+PosicaoImovelParceiro RJSaldo;Acréscimo;64;False;[Formulários]![SelecionaEmpresaPosicaoCompradores]![CodigoVinculada] (Texto);;PosicaoImovelParceiro RJSaldo.sql;2010-01-24 11:25:47
+PosicaoImovelParceiro RJSaldo2;Acréscimo;64;False;Formulários!SelecionaEmpresaPosicaoCompradores2!CodigoVinculada (Texto), Formulários!SelecionaEmpresaPosicaoCompradores2!AnoDesejado (Texto);;PosicaoImovelParceiro RJSaldo2.sql;2010-01-24 11:41:00
+PosicaoImovelParceiro Saldo;Acréscimo;64;False;Formulários!SelecionaEmpresaPosicaoCompradores!CodigoVinculada (Texto);;PosicaoImovelParceiro Saldo.sql;2010-02-23 18:07:20
+PosicaoImovelParceiro Saldo2;Acréscimo;64;False;Formulários!SelecionaEmpresaPosicaoCompradores2!CodigoVinculada (Texto), Formulários!SelecionaEmpresaPosicaoCompradores2!AnoDesejado (Texto);;PosicaoImovelParceiro Saldo2.sql;2010-01-24 11:40:12
+PosicaoImovelParceiro Total;Seleção;0;False;;;PosicaoImovelParceiro Total.sql;2024-09-18 08:02:23
+PosicaoImovelParceiroPeriodo;Seleção;0;False;;;PosicaoImovelParceiroPeriodo.sql;2010-01-24 11:16:56
+Reajuste de Parcelas Empresa;Atualização;48;False;[Formulários]![ReajusteParceiros]![FatorReajuste] (Texto), [Formulários]![ReajusteParceiros]![PercentualReajuste] (Texto), Formulários!ReajusteParceiros!EmpresaSelecionada (Texto), Formulários!ReajusteParceiros!IndiceSelecionado (Texto);;Reajuste de Parcelas Empresa.sql;2010-08-31 10:43:42
+Reajuste de Parcelas Parceiro;Seleção;0;False;Formulários!ReajusteParceiros!EmpresaSelecionada (Texto), Formulários!ReajusteParceiros!IndiceSelecionado (Texto);;Reajuste de Parcelas Parceiro.sql;2024-08-30 14:12:03
+ReajusteImoveis;Seleção;0;False;Formulários!ReajusteImoveis!EmpresaSelecionada (Texto), Formulários!ReajusteImoveis!IndiceSelecionado (Texto);;ReajusteImoveis.sql;2010-02-23 18:07:21
+Switchboard Items 0;Seleção;0;False;;;Switchboard Items 0.sql;2010-02-23 18:07:21
+TotalImovel;Seleção;0;False;;;TotalImovel.sql;2024-04-26 08:51:42
+VendaComissaoFinanceira;Acréscimo;64;False;Formulários!VendaImovelVendido!VendaCondPagto.Formulário!LinkVenda (Texto), Formulários!VendaImovelVendido!EmpVinculada (Texto), Formulários!VendaImovelVendido!FinanceiraPadrao (Texto), Formulários!VendaImovelVendido!ValorParcelaComissao (Texto), Formulários!VendaImovelVendido!DataVenda (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Documento (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Complemento (Texto), Formulários!VendaImovelVendido!CodImovel (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!VenctoParcela (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Integracao (Texto), Formulários!VendaImovelVendido!Vendedor (Texto);;VendaComissaoFinanceira.sql;2010-02-23 18:07:21
+VendaComissaoVendedor;Acréscimo;64;False;Formulários!VendaImovelVendido!VendaCondPagto.Formulário!LinkVenda (Texto), Formulários!VendaImovelVendido!Vendedor (Texto), Formulários!VendaImovelVendido!ValorParcelaComissao (Texto), Formulários!VendaImovelVendido!DataVenda (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Documento (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Complemento (Texto), Formulários!VendaImovelVendido!NomeVinculada (Texto), Formulários!VendaImovelVendido!CodImovel (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!VenctoParcela (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Integracao (Texto), Formulários!VendaImovelVendido!EmpVinculada (Texto);;VendaComissaoVendedor.sql;2010-02-23 18:07:21
+VendaGeraMovimento;Acréscimo;64;False;;;VendaGeraMovimento.sql;2010-02-23 18:07:21
+VendaImovelVendido;Seleção;0;False;;;VendaImovelVendido.sql;2025-08-04 16:02:04
+VendaMovtoFinanceira;Acréscimo;64;False;Formulários!VendaImovelVendido!VendaCondPagto.Formulário!LinkVenda (Texto), Formulários!VendaImovelVendido!EmpVinculada (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!VenctoParcela (Texto), Formulários!VendaImovelVendido!FinanceiraPadrao (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Documento (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Complemento (Texto), Formulários!VendaImovelVendido!NomeParceiro (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!ValorInicial (Texto), Formulários!VendaImovelVendido!CodImovel (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Integracao (Texto), Formulários!VendaImovelVendido!Proprietario (Texto), Formulários!VendaImovelVendido!IndiceReajuste (Texto), Formulários!VendaImovelVendido!AplicarReajuste (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!CodPagtoImovel (Texto);;VendaMovtoFinanceira.sql;2010-02-23 18:07:21
+VendaMovtoParceiro;Acréscimo;64;False;Formulários!VendaImovelVendido!VendaCondPagto.Formulário!LinkVenda (Texto), Formulários!VendaImovelVendido!EmpVinculada (Texto), Formulários!VendaImovelVendido!Proprietario (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!VenctoParcela (Texto), Formulários!VendaImovelVendido!CodImovel (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Documento (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Complemento (Texto), Formulários!VendaImovelVendido!NomeVinculada (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!ValorInicial (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!Integracao (Texto), Formulários!VendaImovelVendido!AplicarReajuste (Texto), Formulários!VendaImovelVendido!IndiceReajuste (Texto), Formulários!VendaImovelVendido!VendaCondPagto.Formulário!CodPagtoImovel (Texto);;VendaMovtoParceiro.sql;2010-02-23 18:07:21
+Zerar PosicaoImovelParceiro;Exclusão;32;False;;;Zerar PosicaoImovelParceiro.sql;2010-02-23 18:07:21
+Zerar Temp Movto Lote;Exclusão;32;False;;;Zerar Temp Movto Lote.sql;2010-02-23 18:07:21
+Zerar TempVendaImovel;Exclusão;32;False;;;Zerar TempVendaImovel.sql;2010-02-23 18:07:21

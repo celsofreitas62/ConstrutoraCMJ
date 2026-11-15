@@ -1,0 +1,2552 @@
+Version =19
+VersionRequired =19
+Checksum =-45148696
+Begin Form
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    AutoCenter = NotDefault
+    PictureTiling = NotDefault
+    DividingLines = NotDefault
+    FilterOn = NotDefault
+    DefaultView =0
+    ScrollBars =2
+    ViewsAllowed =1
+    TabularFamily =124
+    BorderStyle =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =9751
+    DatasheetFontHeight =10
+    ItemSuffix =112
+    Left =9300
+    Top =2115
+    Right =19305
+    Bottom =9585
+    DatasheetGridlinesColor =12632256
+    PaintPalette = Begin
+        0x00030100ffffff0000000000
+    End
+    Filter ="((([Lookup_ContaFinanceira].[F Contas Financeiras].[Descricao]=\"Caixa Opera\"))"
+        ") AND ([F Movimento Contas Consulta].[DataPagto]=#10/6/2026#)"
+    OrderBy ="[F Movimento Contas Consulta].[DataPagto]"
+    RecSrcDt = Begin
+        0xefdf1e108fbde440
+    End
+    GUID = Begin
+        0x3fd45b24e251de468c7744a95d432040
+    End
+    NameMap = Begin
+        0x0acc0e55000000003db5caabb2832d479c5916a0c7194a0c00000000191ec088 ,
+        0x8d74e6400000000000000000460020004d006f00760069006d0065006e007400 ,
+        0x6f00200043006f006e00740061007300200043006f006e00730075006c007400 ,
+        0x610000000000000093c22bf5e1895a46a0e0aa0d127451fd070000003db5caab ,
+        0xb2832d479c5916a0c7194a0c440061007400610050006100670074006f000000 ,
+        0x00000000db65dbc41a9b874ba66338d9ded948b9070000003db5caabb2832d47 ,
+        0x9c5916a0c7194a0c4e0075006d0044006f006300000000000000487a901097c2 ,
+        0x4c4bb0e844b5613201c30100000028560cd251f8e34000000000000000004d00 ,
+        0x6f0076004d006100740065007200690061006c00200053007500620066006f00 ,
+        0x72006d0075006c00e100720069006f00000000000000a1cd88f32a5c2c42b4eb ,
+        0x5d6100d2ceb400000000a6d4af2818a5e34000000000000000004d0061007400 ,
+        0x65007200690061006c00000000000000b3526a1b6dbeb84fb11debe3c5d9a6ec ,
+        0x00000000e755b12818a5e34000000000000000004d006f0076004d0061007400 ,
+        0x65007200690061006c00000000000000b213ab11382c964ba1a995e725fcf629 ,
+        0x07000000b3526a1b6dbeb84fb11debe3c5d9a6ec4d006f0076004d0061007400 ,
+        0x65007200690061006c0000000000000081eef8f9134ccb44b30d1ce450f0ca71 ,
+        0x07000000a1cd88f32a5c2c42b4eb5d6100d2ceb455006e006900640061006400 ,
+        0x6500000000000000d448bfd8084f084c89dc1b0552620d2b07000000a1cd88f3 ,
+        0x2a5c2c42b4eb5d6100d2ceb443006f0064004d00610074006500720069006100 ,
+        0x6c00000000000000234efff34ccd0f439ad2f5798260187e070000003db5caab ,
+        0xb2832d479c5916a0c7194a0c4e0075006d004d006f00760069006d0065006e00 ,
+        0x74006f0000000000000000a4414d9298a24ba5eaccc76ae6a1e1070000003db5 ,
+        0xcaabb2832d479c5916a0c7194a0c45006d007000560069006e00630075006c00 ,
+        0x6100640061000000000000007868cfc273f2114eb293d5636a02113e00000000 ,
+        0xe6e59c2818a5e340000000000000000045006d007000560069006e0063007500 ,
+        0x6c006100640061000000000000004fb9722fc60dc64eabe2cbed4e7c78650700 ,
+        0x00007868cfc273f2114eb293d5636a02113e43006f006400690067006f005600 ,
+        0x69006e00630075006c00610064006100000000000000470ba9b5c23bd249bf0a ,
+        0x7d87b57051bc070000003db5caabb2832d479c5916a0c7194a0c43006f006400 ,
+        0x690067006f0050006100720063006500690072006f000000000000009d75fb68 ,
+        0x39832f4399e7f85d5030fb8600000000e88dbb2818a5e3400000000000000000 ,
+        0x50006100720063006500690072006f007300000000000000707248a17eadc94e ,
+        0x8ee9abeb98980c0f070000009d75fb6839832f4399e7f85d5030fb8643006f00 ,
+        0x6400690067006f0050006100720063006500690072006f0000000000000055cd ,
+        0xb13b4c75144b95f19a7186df8547070000009d75fb6839832f4399e7f85d5030 ,
+        0xfb864e006f006d00650050006100720063006500690072006f00000000000000 ,
+        0xa706512e4093db40ba3dd80c55d1c15e070000009d75fb6839832f4399e7f85d ,
+        0x5030fb8643006c00690065006e00740065000000000000003c7d8ef49f3dda40 ,
+        0xb453ad1fde0b524a070000009d75fb6839832f4399e7f85d5030fb8646006f00 ,
+        0x72006e0065006300650064006f007200000000000000a3fe7b37e2334d4abe5e ,
+        0x5294c232705f070000009d75fb6839832f4399e7f85d5030fb86460075006e00 ,
+        0x630069006f006e006100720069006f00000000000000f9d29dcaf0ebb5408b46 ,
+        0xb016991b65d0070000003db5caabb2832d479c5916a0c7194a0c43006f006e00 ,
+        0x74006100460069006e0061006e006300650069007200610000000000000033f2 ,
+        0x700b8480324c94b67e173d5e5f7d00000000f341a82818a5e340000000000000 ,
+        0x0000460020005400690070006f007300200043006f006e007400610020004600 ,
+        0x69006e0061006e00630065006900720061000000000000008f62d3b824edbb47 ,
+        0x9fce7b0009fc2dba0000000093ca9e2818a5e340000000000000000046002000 ,
+        0x43006f006e007400610073002000460069006e0061006e006300650069007200 ,
+        0x61007300000000000000246fb76e3eebcf49b9b364f6fba78404070000008f62 ,
+        0xd3b824edbb479fce7b0009fc2dba43006f006400690067006f0043006f006e00 ,
+        0x7400610000000000000030f674aea2bfac4cb0b2674b64f5cecb070000008f62 ,
+        0xd3b824edbb479fce7b0009fc2dba440065007300630072006900630061006f00 ,
+        0x000000000000456689f74547aa43b9ef9287b569b6b10700000033f2700b8480 ,
+        0x324c94b67e173d5e5f7d440065007300630072006900630061006f0000000000 ,
+        0x00006db9dbd2032c41498d3afea7a5117f970700000033f2700b8480324c94b6 ,
+        0x7e173d5e5f7d43006f0064005400690070006f0043006f006e00740061000000 ,
+        0x000000002e12478bfab45a48ac39bd8ad7c43f7e070000008f62d3b824edbb47 ,
+        0x9fce7b0009fc2dba5400690070006f00200043006f006e007400610000000000 ,
+        0x0000ff4706a28aa27548bf1548e944fb1c93070000003db5caabb2832d479c59 ,
+        0x16a0c7194a0c43006f00640048006900730074006f007200690063006f000000 ,
+        0x00000000a8278c59385e3f49ba2d4b70b7e166e200000000ff65a92818a5e340 ,
+        0x000000000000000048006900730074006f007200690063006f00000000000000 ,
+        0x9a37b1c8a606194e8dba5044fd0f58ae07000000a8278c59385e3f49ba2d4b70 ,
+        0xb7e166e243006f00640048006900730074006f007200690063006f0000000000 ,
+        0x00008cf379d20b7e674fa8066a7eaf5c577907000000a8278c59385e3f49ba2d ,
+        0x4b70b7e166e2440065007300630072006900630061006f000000000000006b4d ,
+        0xc47b956d2b41851505b042a3d53b070000003db5caabb2832d479c5916a0c719 ,
+        0x4a0c43006f006d0070006c0065006d0065006e0074006f000000000000007b45 ,
+        0x5ccc378c5f448d6f26f59ca1f2bc070000003db5caabb2832d479c5916a0c719 ,
+        0x4a0c560061006c006f007200440065006200690074006f00000000000000f85d ,
+        0xef09268f1145a0fdbafdb4e9dc4d070000003db5caabb2832d479c5916a0c719 ,
+        0x4a0c560061006c006f0072004300720065006400690074006f00000000000000 ,
+        0xa6ebb1f7629c1b459621511b16f1d21c070000003db5caabb2832d479c5916a0 ,
+        0xc7194a0c44006100740061004d006f00760074006f00000000000000fbec9538 ,
+        0x40aedd4fb8f11a329a2c7e70070000003db5caabb2832d479c5916a0c7194a0c ,
+        0x4400610074006100560065006e00630074006f0000000000000094a54a09adf8 ,
+        0x574096f392128d2d73a9070000003db5caabb2832d479c5916a0c7194a0c4300 ,
+        0x6f006e006600690072006d00610064006f00000000000000e8d0f89eae27e54f ,
+        0xbdcf6ca8cee05e65070000003db5caabb2832d479c5916a0c7194a0c49006e00 ,
+        0x74006500670072006100630061006f0000000000000077b4d6cae05a184abd66 ,
+        0x6c635e18a2ac070000003db5caabb2832d479c5916a0c7194a0c4f0062007300 ,
+        0x6500720076006100630061006f000000000000003741dcaa8226e148b7322ef1 ,
+        0x1dcc7b1b070000003db5caabb2832d479c5916a0c7194a0c4d006f0076005000 ,
+        0x6100670074006f004c006f00740065000000000000009c58f520326c5347b790 ,
+        0xabff338b6d1a070000003db5caabb2832d479c5916a0c7194a0c43006f006400 ,
+        0x49006d006f00760065006c00000000000000b17737edfb45bb418fbab6976b15 ,
+        0xf011000000008e8cad2818a5e340000000000000000049006d006f0076006500 ,
+        0x690073000000000000003109ad4dfb812943a520cfea9be9be1c07000000b177 ,
+        0x37edfb45bb418fbab6976b15f01143006f00640049006d006f00760065006c00 ,
+        0x000000000000ebec8f17e3344e4993e14e35895a3c3c07000000b17737edfb45 ,
+        0xbb418fbab6976b15f0114e006f006d00650049006d006f00760065006c000000 ,
+        0x00000000aa59dc909867da419a02113e7f467824070000003db5caabb2832d47 ,
+        0x9c5916a0c7194a0c53006f006600720065005200650061006a00750073007400 ,
+        0x6500000000000000c146d9905d42664e8bb81af60397de99070000003db5caab ,
+        0xb2832d479c5916a0c7194a0c41006700720075007000610064006f0072005600 ,
+        0x65006e0064006100000000000000cf0b3feed9d6fc49af7b9f7e807c88d30700 ,
+        0x00003db5caabb2832d479c5916a0c7194a0c43006f0064004100740072006900 ,
+        0x62007500690050006100720063006500690072006f0000000000000035a0acca ,
+        0x84a7d54d821f818f14c1a3f9070000003db5caabb2832d479c5916a0c7194a0c ,
+        0x43006f006400410074007200690062007500690045006d007000720065007300 ,
+        0x61000000000000002e5bc95cc5f4074d8a6291ba9d3b1c34070000003db5caab ,
+        0xb2832d479c5916a0c7194a0c43006f00640041006e0074006500720069006f00 ,
+        0x720050006100720063006500690072006f00000000000000527c5fcabf62064b ,
+        0xba9aec9a73f3d989070000003db5caabb2832d479c5916a0c7194a0c43006f00 ,
+        0x640041006e0074006500720069006f00720045006d0070007200650073006100 ,
+        0x0000000000006acf5df1bd8a9142b178cf2b654d9675070000003db5caabb283 ,
+        0x2d479c5916a0c7194a0c45006600650074007500610064006f00000000000000 ,
+        0x0c6f81d5025abd46970a1eb7969b024f070000003db5caabb2832d479c5916a0 ,
+        0xc7194a0c5000610067006f0041006e0074006500630069007000610064006f00 ,
+        0x000000000000d5e5223ccb052c44986ef81acc95e92b070000003db5caabb283 ,
+        0x2d479c5916a0c7194a0c5200650066006500720065006e00740065004e006f00 ,
+        0x74006100460069007300630061006c000000000000001d5545164b9ac14a9b06 ,
+        0x8c9ab69c0fc2070000003db5caabb2832d479c5916a0c7194a0c500061006700 ,
+        0x61006d0065006e0074006f004c006f0074006500000000000000c1696557e685 ,
+        0x944da6c2e20142af5c19070000003db5caabb2832d479c5916a0c7194a0c5300 ,
+        0x6f006d0065006e007400650049006e0074006500670072006100630061006f00 ,
+        0x000000000000d3be379aa1407c499a8f09b8560785ea070000003db5caabb283 ,
+        0x2d479c5916a0c7194a0c50006c0061006e006f003100000000000000b1fde253 ,
+        0xeffae34b87d638528e3e056d00000000f436c0888d74e6400000000000000000 ,
+        0x50006c0061006e006f00310043006f006e00730075006c007400610000000000 ,
+        0x0000ed9b92bab884a24cb97270d43f750f7d07000000b1fde253effae34b87d6 ,
+        0x38528e3e056d50006c0061006e006f0031000000000000007d42b4c7ce357348 ,
+        0x8d4b80722028df8007000000b1fde253effae34b87d638528e3e056d44006500 ,
+        0x7300630072006900630061006f0050006c0061006e006f003100000000000000 ,
+        0xec3e38a55a905b41a4d0096884c610a7070000003db5caabb2832d479c5916a0 ,
+        0xc7194a0c50006c0061006e006f0032000000000000003bc474b5ec33d140bc1b ,
+        0x91cef19b391f00000000fd230d734fade540000000000000000050006c006100 ,
+        0x6e006f003200000000000000b528278a7e6ba646a2f50800ae8fa72407000000 ,
+        0x3bc474b5ec33d140bc1b91cef19b391f50006c0061006e006f00320000000000 ,
+        0x00003fd45b24e251de468c7744a95d432040010000007b81bb888d74e6400000 ,
+        0x000000000000460020004d006f00760069006d0065006e0074006f0020004300 ,
+        0x6f006e00740061007300000000000000c15c21538deb6d45893de770cfd0cc8c ,
+        0x060000003fd45b24e251de468c7744a95d43204050006c0061006e006f003100 ,
+        0x000000000000e13180388ff69c428a79f4afc6dbee8b070000003db5caabb283 ,
+        0x2d479c5916a0c7194a0c50006c0061006e006f0033000000000000008f4e00e9 ,
+        0x981a0b459175d528555c7fcf00000000c602c22818a5e3400000000000000000 ,
+        0x50006c0061006e006f00330000000000000028ce83c875e7a443938e6c61fbcf ,
+        0x7eee070000008f4e00e9981a0b459175d528555c7fcf50006c0061006e006f00 ,
+        0x3300000000000000fe97b93506d01c4dbd72d6e21b73b627060000003fd45b24 ,
+        0xe251de468c7744a95d43204050006c0061006e006f00320000000000000055cd ,
+        0xb13b4c75144b95f19a7186df8547070000003db5caabb2832d479c5916a0c719 ,
+        0x4a0c4e006f006d00650050006100720063006500690072006f00000000000000 ,
+        0xf4f0198850db124e801de6966228c759070000003db5caabb2832d479c5916a0 ,
+        0xc7194a0c4e0075006d00650072006f00200043006f006e007400610000000000 ,
+        0x000030f674aea2bfac4cb0b2674b64f5cecb070000003db5caabb2832d479c59 ,
+        0x16a0c7194a0c440065007300630072006900630061006f0000000000000016ac ,
+        0x49e3e4b5e14790dfff869bed94a2070000003db5caabb2832d479c5916a0c719 ,
+        0x4a0c4e006f006d006500560069006e00630075006c0061006400610000000000 ,
+        0x0000000000000000000000000000000000000c00000005000000000000000000 ,
+        0x0000000000000000
+    End
+    RecordSource ="F Movimento Contas Consulta"
+    Caption ="Movimento"
+    OnCurrent ="[Event Procedure]"
+    BeforeInsert ="[Event Procedure]"
+    OnOpen ="[Event Procedure]"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x8905000089050000890500008905000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x002fae8cc5000000247d435cfc7f0000806ce674120200000010000000000000 ,
+        0x010403069c00880343ff8007010001009a0b3408640001000f00580202000100 ,
+        0x580202000100413400070d751202000000000000000000000000000000000000 ,
+        0x10daa0fff67f0000000000000000000000000000010000000000000001000000 ,
+        0x0200000001000000ffffffff4749533400000000000000000000000044494e55 ,
+        0x220010016c031c003bd76afa0000000000000000000000000000000000000000 ,
+        0x0000000000000000080000000000000000000000070000000000020000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000010010000534d544a ,
+        0x00000000100000017b00630063006300360062003500390032002d0036006500 ,
+        0x630037002d0034003000350035002d0039003100340030002d00390039003400 ,
+        0x3700340061006600350035003500640033007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f525452414954005265736f6c7574696f6e004f7074696f ,
+        0x6e3100506170657253697a65004c4554544552004475706c6578004e4f4e4500 ,
+        0x494856537461706c696e67004f666600436f6c6f724d6f646500436f6c6f7200 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000001c0000005634444d01000000000000000000000000000000 ,
+        0x00000000
+    End
+    PrtDevNames = Begin
+        0x0800220032000100000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000041445f506f727400000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000000000000000000000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =18
+            FontSize =10
+            FontWeight =700
+            BackColor =13209
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            BorderLineStyle =0
+            Width =850
+            Height =850
+            BorderColor =8421504
+        End
+        Begin Line
+            BorderWidth =2
+            BorderLineStyle =0
+            Width =1701
+            BorderColor =8421504
+        End
+        Begin CommandButton
+            TextFontFamily =18
+            Width =1701
+            Height =283
+            FontName ="Times New Roman"
+        End
+        Begin OptionButton
+            BorderWidth =3
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin CheckBox
+            BorderWidth =3
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin OptionGroup
+            BorderLineStyle =0
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin BoundObjectFrame
+            BorderLineStyle =0
+            Width =4536
+            Height =2835
+            LabelX =-1701
+            BorderColor =8421504
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            TextFontFamily =18
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ListBox
+            TextFontFamily =18
+            BorderLineStyle =0
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ComboBox
+            TextFontFamily =18
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin Subform
+            BorderLineStyle =0
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin UnboundObjectFrame
+            BackStyle =0
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+            BorderColor =8421504
+        End
+        Begin ToggleButton
+            TextFontFamily =18
+            Width =283
+            Height =283
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="Times New Roman"
+        End
+        Begin Tab
+            Width =5103
+            Height =3402
+        End
+        Begin FormHeader
+            Height =0
+            BackColor =-2147483633
+            Name ="CabeçalhoDoFormulário"
+            GUID = Begin
+                0xfe1b9e861b658345b2a64d47abdb901d
+            End
+        End
+        Begin Section
+            Height =6576
+            BackColor =15858167
+            Name ="Detalhe"
+            GUID = Begin
+                0xe1c10db2ce795f4cb19760f90f9b2d58
+            End
+            Begin
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =114
+                    Width =1296
+                    ColumnWidth =1701
+                    FontSize =8
+                    Name ="NumMovimento"
+                    ControlSource ="NumMovimento"
+                    FontName ="Arial"
+                    ControlTipText ="Numero do movimento gerado automaticamente"
+                    GUID = Begin
+                        0x91f70d634b8c4948928a70744710f3db
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =114
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="NumMovimento_Rótulo"
+                            Caption ="Movto"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xb9cf2e588e67204f8ebed33cf46a0b1c
+                            End
+                        End
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =2
+                    ListWidth =3345
+                    Left =952
+                    Top =513
+                    Width =4596
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =1
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x54fc9b2caec98f4e900fe27d55362d9a
+                    End
+                    Name ="EmpVinculada"
+                    ControlSource ="EmpVinculada"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM Emp"
+                        "Vinculada WHERE ((([EmpVinculada].[CodigoVinculada])<>2) And (([EmpVinculada].[N"
+                        "omeVinculada])<>\"sistema\")) ORDER BY [EmpVinculada].[NomeVinculada]; "
+                    ColumnWidths ="0;3345"
+                    OnDblClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    ControlTipText ="Empresa que recebera o Credito ou Debito referente ao lancamento (N/A)=nao aplic"
+                        "avel"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =513
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="EmpVinculada_Rótulo"
+                            Caption ="Empresa"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x5b15e827833909489a1eac346be6d9d5
+                            End
+                        End
+                    End
+                End
+                Begin ComboBox
+                    ColumnHeads = NotDefault
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =5
+                    ListWidth =4820
+                    Left =952
+                    Top =907
+                    Width =4596
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =2
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x83a2f0e1c41b714aa3cf8a2222fb25ef
+                    End
+                    Name ="CodigoParceiro"
+                    ControlSource ="CodigoParceiro"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cl"
+                        "iente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros WHERE"
+                        " ((([Parceiros].[NomeParceiro])<>\"sistema\")) ORDER BY [Parceiros].[NomeParceir"
+                        "o]; "
+                    ColumnWidths ="0;2835;525;555;496"
+                    OnDblClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    ControlTipText ="Parceiro que recebera o Credito ou Debito referente ao lancamento (N/A)=nao apli"
+                        "cavel"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =912
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="CodigoParceiro_Rótulo"
+                            Caption ="Parceiro"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x585e1535ed1c7449aaee0fbbaf5e562b
+                            End
+                        End
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =2
+                    ListWidth =4536
+                    Left =952
+                    Top =1320
+                    Width =2421
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =3
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"60\""
+                    GUID = Begin
+                        0xcf4773e5871bd84aa367bdbf2fbcdaa8
+                    End
+                    Name ="ContaFinanceira"
+                    ControlSource ="ContaFinanceira"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao],"
+                        " [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JO"
+                        "IN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas"
+                        " Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>\"siste"
+                        "ma\")) ORDER BY [F Contas Financeiras].[Descricao]; "
+                    ColumnWidths ="0;1560;2115"
+                    OnDblClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    ControlTipText ="Cta financeira que recebera o Credito ou Debito. (N/A)=nao aplicavel"
+                    BaseInfo ="\"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao"
+                        "], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER "
+                        "JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Cont"
+                        "as Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>\"\"s"
+                        "istema\"\")) ORDER BY [F Contas Financeiras].[Descricao]; \";\"F Tipos Conta Fin"
+                        "anceira\";\"F Contas Financeiras\";\"\""
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =1320
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="ContaFinanceira_Rótulo"
+                            Caption ="Conta"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x63bf0fad3414ce429068558c5f101f06
+                            End
+                        End
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =2
+                    Left =952
+                    Top =2700
+                    Width =2421
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =7
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"30\""
+                    GUID = Begin
+                        0x7c15f450ef4bd343a68ce3c3b1a94580
+                    End
+                    Name ="CodHistorico"
+                    ControlSource ="CodHistorico"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE "
+                        "((([Historico].[Descricao])<>\"sistema\")) ORDER BY [Historico].[Descricao]; "
+                    ColumnWidths ="0;2835"
+                    OnDblClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    ControlTipText ="Historico que corresponde ao documento"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =2700
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="CodHistorico_Rótulo"
+                            Caption ="Hist."
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x93e9b2d319789b4a9644dc9cb945b5c7
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =3015
+                    Width =2421
+                    ColumnWidth =1185
+                    FontSize =8
+                    TabIndex =8
+                    Name ="NumDoc"
+                    ControlSource ="NumDoc"
+                    FontName ="Arial"
+                    ControlTipText ="Num do documento ou movto. Ex.: Num do cheque"
+                    GUID = Begin
+                        0xf888c1b920093741a734bb814be62a93
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =3031
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="NumDoc_Rótulo"
+                            Caption ="Doc"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xc4442ac74be6ed488495cc9dcf9d9ca2
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    ScrollBars =2
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =3300
+                    Width =2421
+                    Height =645
+                    ColumnWidth =2310
+                    FontSize =8
+                    TabIndex =9
+                    Name ="Complemento"
+                    ControlSource ="Complemento"
+                    FontName ="Arial"
+                    ControlTipText ="Complemento do lancamento ou documento"
+                    GUID = Begin
+                        0x392c356291f8d6409cf41896860d6a02
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =3311
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="Complemento_Rótulo"
+                            Caption ="Compl."
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xf0df374f870b0d49b4855939f45d1a29
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =4320
+                    Width =1290
+                    ColumnWidth =1260
+                    FontSize =8
+                    TabIndex =11
+                    ForeColor =255
+                    Name ="ValorDebito"
+                    ControlSource ="ValorDebito"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    ControlTipText ="Valor do debito"
+                    GUID = Begin
+                        0xff169721d5b7f343b23798192cfdd0d5
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =4320
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="ValorDebito_Rótulo"
+                            Caption ="Débito"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xb34ca57cd14c0546bcfc0c19f3b19540
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =4652
+                    Width =1290
+                    ColumnWidth =1260
+                    FontSize =8
+                    TabIndex =12
+                    ForeColor =16711680
+                    Name ="ValorCredito"
+                    ControlSource ="ValorCredito"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    ControlTipText ="Valor do credito"
+                    GUID = Begin
+                        0xfa7064c9f59d9940841565ad110eac94
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =4650
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="ValorCredito_Rótulo"
+                            Caption ="Crédito"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xd4dc5e18bf6d494d9a329031eb89ad27
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =4984
+                    Width =1290
+                    ColumnWidth =1140
+                    FontSize =8
+                    TabIndex =13
+                    Name ="DataMovto"
+                    ControlSource ="DataMovto"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    ControlTipText ="Data da entrada do movimento no sistema"
+                    GUID = Begin
+                        0x3bfd8be0439ada409c4bb87dd03a6008
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =4980
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="DataMovto_Rótulo"
+                            Caption ="Movto"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xe1174fa873c7e24a853e888cf319f013
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =5316
+                    Width =1290
+                    ColumnWidth =1140
+                    FontSize =8
+                    TabIndex =14
+                    Name ="DataVencto"
+                    ControlSource ="DataVencto"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    ControlTipText ="Data do vencimento"
+                    GUID = Begin
+                        0xe6b9dda33ca54b46ab1e4a0534ceb35f
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =5310
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="DataVencto_Rótulo"
+                            Caption ="Vencto"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xb54c3b991926da42bf7afc34658dda11
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =5634
+                    Width =1290
+                    ColumnWidth =1140
+                    FontSize =8
+                    TabIndex =15
+                    Name ="DataPagto"
+                    ControlSource ="DataPagto"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    ControlTipText ="Data em que o pagto ou recebto ocorreu"
+                    GUID = Begin
+                        0x938337ae411f944b9eca6078e6949be8
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =5625
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="DataPagto_Rótulo"
+                            Caption ="Pagto"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x83b4d9b54af8d84ab2bd996c9696961e
+                            End
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =3195
+                    Top =4680
+                    Width =185
+                    TabIndex =18
+                    Name ="Confirmado"
+                    ControlSource ="Confirmado"
+                    OnClick ="[Event Procedure]"
+                    ControlTipText ="Indica que o lancamento foi concretizado apos ser efetuado"
+                    GUID = Begin
+                        0x55da4dd8b6b7f946bee9883ded8d77b5
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =3195
+                    Top =5040
+                    Width =185
+                    Height =225
+                    TabIndex =19
+                    Name ="Integracao"
+                    ControlSource ="Integracao"
+                    OnClick ="[Event Procedure]"
+                    ControlTipText ="Indica que o lancamento e contabil e tem efeito sobre custos e outros relatorios"
+                    GUID = Begin
+                        0x1cc2b37e385f8c4b8b4ff85c3e1f43af
+                    End
+                End
+                Begin TextBox
+                    TabStop = NotDefault
+                    EnterKeyBehavior = NotDefault
+                    ScrollBars =2
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =5970
+                    Width =8676
+                    Height =525
+                    ColumnWidth =3000
+                    FontSize =8
+                    TabIndex =21
+                    Name ="Observacao"
+                    ControlSource ="Observacao"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x602daaabf2d85f4b90fd40bd1ae8e916
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =5970
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="Observacao_Rótulo"
+                            Caption ="Obs"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x45946b46797f484596b9ac17c83c8351
+                            End
+                        End
+                    End
+                End
+                Begin Subform
+                    OverlapFlags =85
+                    Left =3461
+                    Top =1323
+                    Width =6126
+                    Height =4512
+                    TabIndex =22
+                    Name ="MovMaterial Subformulário"
+                    SourceObject ="Form.MovMaterial Subformulário"
+                    LinkChildFields ="NumMovimento"
+                    LinkMasterFields ="NumMovimento"
+                    EventProcPrefix ="MovMaterial_Subformulário"
+                    GUID = Begin
+                        0x02dcfc716c7c8e43b5b1772512cafa67
+                    End
+                End
+                Begin TextBox
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =8475
+                    Top =600
+                    Width =696
+                    FontSize =8
+                    TabIndex =23
+                    ForeColor =8421376
+                    Name ="MovPagtoLote"
+                    ControlSource ="MovPagtoLote"
+                    FontName ="Arial"
+                    ControlTipText ="Numero do controle do pagamento efetuado em lote"
+                    GUID = Begin
+                        0xa8c5b014937b8b47b71fecb418365cc5
+                    End
+                    Begin
+                        Begin Label
+                            FontUnderline = NotDefault
+                            OverlapFlags =85
+                            TextAlign =1
+                            TextFontFamily =34
+                            Left =7875
+                            Top =615
+                            Width =525
+                            Height =225
+                            FontSize =8
+                            FontWeight =400
+                            Name ="Rótulo51"
+                            Caption ="Lote"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x5d84c2b89575414faf773f3fa01a93d9
+                            End
+                        End
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =2
+                    Left =5612
+                    Top =907
+                    Width =2151
+                    FontSize =8
+                    TabIndex =24
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"200\""
+                    GUID = Begin
+                        0x2eea30deeda1f54e821a2ac1ac9df753
+                    End
+                    Name ="CodImovel"
+                    ControlSource ="CodImovel"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Imoveis].[CodImovel], [Imoveis].[NomeImovel] FROM Imoveis ORDER BY [Imov"
+                        "eis].[NomeImovel]; "
+                    ColumnWidths ="0;2835"
+                    FontName ="Arial"
+                    OnChange ="[Event Procedure]"
+                    BaseInfo ="\"SELECT [Imoveis].[CodImovel], [Imoveis].[NomeImovel] FROM Imoveis ORDER BY [Im"
+                        "oveis].[NomeImovel]; \";\"Imoveis\";\"\";\"CodImovel\";\"NomeImovel\";\"PrimaryK"
+                        "ey\""
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            TextFontFamily =34
+                            Left =5612
+                            Top =570
+                            Width =570
+                            Height =225
+                            FontSize =8
+                            FontWeight =400
+                            Name ="Rótulo47"
+                            Caption ="Imóvel"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xb78261cc24285c45b340eb24aceae39b
+                            End
+                        End
+                    End
+                End
+                Begin CheckBox
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    Left =6359
+                    Top =635
+                    TabIndex =25
+                    Name ="SofreReajuste"
+                    ControlSource ="SofreReajuste"
+                    ControlTipText ="Indica se o movimento referente ao imovel sofrera reajuste"
+                    GUID = Begin
+                        0xa6c06595b18b264791e50850f7a1857b
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =87
+                            TextFontFamily =34
+                            Left =6105
+                            Top =315
+                            Width =705
+                            Height =255
+                            FontSize =8
+                            FontWeight =400
+                            Name ="Rótulo48"
+                            Caption ="Reajuste"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x8d1bdd4d8d91ec44a23c56dde116556d
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =8480
+                    Top =915
+                    Width =681
+                    Height =225
+                    FontSize =8
+                    TabIndex =26
+                    ForeColor =8421376
+                    Name ="AgrupadorVenda"
+                    ControlSource ="AgrupadorVenda"
+                    FontName ="Arial"
+                    ControlTipText ="Numero do controle dos lancamentos da venda do imovel"
+                    GUID = Begin
+                        0x15cc71270302734281376ce88f2722cc
+                    End
+                    Begin
+                        Begin Label
+                            FontUnderline = NotDefault
+                            OverlapFlags =85
+                            TextAlign =1
+                            TextFontFamily =34
+                            Left =7875
+                            Top =915
+                            Width =555
+                            Height =240
+                            FontSize =8
+                            FontWeight =400
+                            Name ="Rótulo65"
+                            Caption ="Venda"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x3521e5465fecd747a57c7f72026cd135
+                            End
+                        End
+                    End
+                End
+                Begin CommandButton
+                    Enabled = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    Left =9240
+                    Top =585
+                    Width =336
+                    Height =276
+                    TabIndex =27
+                    Name ="AbrirAgrupadaLote"
+                    Caption ="Comando54"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadadd0000000000000da ,
+                        0xa08f8f8f8f8f80add0f8f8f00000f0daa08f8f80fff080add0f000f00000f0da ,
+                        0xa08f8f8f8f8f80add0f8f8f00000f0daa08f8f80fff080add0f000f00000f0da ,
+                        0xa08f8f8f8f8f80add4444444444444daa4444444444444addadadadadadadada ,
+                        0xadadadadadadadad000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    ControlTipText ="Abrir formulário"
+                    GUID = Begin
+                        0x96a765c6462b2148a4de712093185a50
+                    End
+                End
+                Begin CommandButton
+                    Enabled = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    Left =9240
+                    Top =915
+                    Width =336
+                    Height =261
+                    TabIndex =28
+                    Name ="AbrirAgrupadaVendas"
+                    Caption ="Comando55"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadadd0000000000000da ,
+                        0xa08f8f8f8f8f80add0f8f8f00000f0daa08f8f80fff080add0f000f00000f0da ,
+                        0xa08f8f8f8f8f80add0f8f8f00000f0daa08f8f80fff080add0f000f00000f0da ,
+                        0xa08f8f8f8f8f80add4444444444444daa4444444444444addadadadadadadada ,
+                        0xadadadadadadadad000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    ControlTipText ="Abrir formulário"
+                    GUID = Begin
+                        0xcfcc489a5934f2469b47feebc3bdae3c
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =6870
+                    Top =30
+                    Width =456
+                    FontSize =8
+                    TabIndex =29
+                    Name ="CodAtribuiParceiro"
+                    ControlSource ="CodAtribuiParceiro"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x3e01e20577477d4c84507de1ba9cac1d
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =7380
+                    Top =30
+                    Width =456
+                    FontSize =8
+                    TabIndex =30
+                    Name ="CodAtribuiEmpresa"
+                    ControlSource ="CodAtribuiEmpresa"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xfe9ddcf8eab3994d84df7027878a3440
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =8445
+                    Top =30
+                    Width =501
+                    FontSize =8
+                    TabIndex =31
+                    Name ="CodAnteriorParceiro"
+                    ControlSource ="CodAnteriorParceiro"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x223eb9628ed1874da8a11f9f91d775d2
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =7890
+                    Top =30
+                    Width =501
+                    FontSize =8
+                    TabIndex =32
+                    Name ="CodAnteriorEmpresa"
+                    ControlSource ="CodAnteriorEmpresa"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xed0c3de07c8e9d42b747e0ef15c6523f
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =3195
+                    Top =4350
+                    Width =200
+                    Height =210
+                    TabIndex =17
+                    Name ="Efetuado"
+                    ControlSource ="Efetuado"
+                    OnClick ="[Event Procedure]"
+                    ControlTipText ="Indica que o pagto ou recebto foi realizado"
+                    GUID = Begin
+                        0x35e7fdad61ec2d49b9cce0ddfe39cc9e
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =8445
+                    Top =315
+                    Width =1080
+                    Height =225
+                    FontSize =8
+                    FontWeight =400
+                    Name ="Rótulo61"
+                    Caption ="Agrupadores"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xc724f470aad48c42a1101390968657dc
+                    End
+                End
+                Begin CheckBox
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    Left =7207
+                    Top =635
+                    TabIndex =33
+                    Name ="PagoAntecipado"
+                    ControlSource ="PagoAntecipado"
+                    ControlTipText ="Indica se o pagamento de parcela foi antecipado (nao sofrera outros reajustes)"
+                    GUID = Begin
+                        0xe23b613dc526be4b9a06fa1e2b77c686
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextAlign =2
+                            TextFontFamily =34
+                            Left =6855
+                            Top =315
+                            Width =945
+                            Height =240
+                            FontSize =8
+                            FontWeight =400
+                            Name ="Rótulo62"
+                            Caption ="Antecipado"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x2b3d68072942714182eceaf8d8195f04
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =952
+                    Top =3987
+                    Width =1281
+                    FontSize =8
+                    TabIndex =10
+                    Name ="ReferenteNotaFiscal"
+                    ControlSource ="ReferenteNotaFiscal"
+                    FontName ="Arial"
+                    ControlTipText ="Num. da NF ou Doc referente a pagamentos efetuados"
+                    GUID = Begin
+                        0xe9975aa912a0764a8cbfe05b3cd63945
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =3960
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="Rótulo63"
+                            Caption ="N.Fiscal"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x131ee3483faffc4ba31689b05b4c63bf
+                            End
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =3195
+                    Top =4035
+                    Width =200
+                    Height =225
+                    TabIndex =16
+                    Name ="PagamentoLote"
+                    ControlSource ="PagamentoLote"
+                    OnClick ="[Event Procedure]"
+                    ControlTipText ="Indica que o pagto sera efetuado em lote"
+                    GUID = Begin
+                        0x491da74464558a488b147b61724fc78d
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =2295
+                    Top =5010
+                    Width =870
+                    Height =225
+                    FontSize =8
+                    FontWeight =400
+                    Name ="Rótulo66"
+                    Caption ="Integração"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xacbfb15cfeaa1d498ed40b730d0eeae8
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =3195
+                    Top =5355
+                    Width =200
+                    TabIndex =20
+                    Name ="SomenteIntegracao"
+                    ControlSource ="SomenteIntegracao"
+                    OnClick ="[Event Procedure]"
+                    ControlTipText ="Indica que o lancamento e contabil mas sem efeito sobre custos ou outros relator"
+                        "ios"
+                    GUID = Begin
+                        0x1909575a85a6694db59f7e738fdb3950
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =2295
+                    Top =3990
+                    Width =870
+                    Height =225
+                    FontSize =8
+                    FontWeight =400
+                    Name ="Rótulo68"
+                    Caption ="Pgto Lote"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x9178f7bfa938ac43b90741d05020c794
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =2295
+                    Top =4320
+                    Width =870
+                    Height =225
+                    FontSize =8
+                    FontWeight =400
+                    Name ="Rótulo69"
+                    Caption ="Efetuado"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x9362f123b8737b448aba6fb23e6065e0
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =2295
+                    Top =4650
+                    Width =870
+                    Height =225
+                    FontSize =8
+                    FontWeight =400
+                    Name ="Rótulo70"
+                    Caption ="Confirmado"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x66a8ab39d2782d43b096d6a335432bb0
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =2295
+                    Top =5325
+                    Width =870
+                    Height =225
+                    FontSize =8
+                    FontWeight =400
+                    Name ="Rótulo72"
+                    Caption ="S.C."
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xc33ffddc662b854b8f4f4c52cd96039c
+                    End
+                End
+                Begin ComboBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =2
+                    ListWidth =1440
+                    Left =952
+                    Top =1680
+                    Width =2421
+                    Height =255
+                    FontSize =8
+                    TabIndex =4
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0xc15c21538deb6d45893de770cfd0cc8c
+                    End
+                    Name ="Plano1"
+                    ControlSource ="Plano1"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Plano1Consulta].[Plano1], [Plano1Consulta].[DescricaoPlano1] FROM Plano1"
+                        "Consulta; "
+                    ColumnWidths ="0;1440"
+                    AfterUpdate ="[Event Procedure]"
+                    OnDblClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =1701
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="Plano 1_Label"
+                            Caption ="Plano 1"
+                            FontName ="Arial"
+                            EventProcPrefix ="Plano_1_Label"
+                            GUID = Begin
+                                0x2e227f05d82edc4099486cbbdab1172c
+                            End
+                        End
+                    End
+                End
+                Begin ComboBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =3
+                    ListWidth =1440
+                    Left =952
+                    Top =2025
+                    Width =2421
+                    FontSize =8
+                    TabIndex =5
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0xfe97b93506d01c4dbd72d6e21b73b627
+                    End
+                    Name ="Plano2"
+                    ControlSource ="Plano2"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Plano2].[Plano2], [Plano2].[DescricaoPlano2], [Plano2].[Plano1] FROM Pla"
+                        "no2 WHERE ((([Plano2].[DescricaoPlano2])<>\"sistema\") And (([Plano2].[Plano1])="
+                        "Formulários![F Movimento Contas]!Plano1)) ORDER BY [Plano2].[DescricaoPlano2]; "
+                    ColumnWidths ="0;1440;0"
+                    AfterUpdate ="[Event Procedure]"
+                    OnDblClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =2025
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="Plano 2_Label"
+                            Caption ="Plano 2"
+                            FontName ="Arial"
+                            EventProcPrefix ="Plano_2_Label"
+                            GUID = Begin
+                                0x6795fe0b5cb99049afd8b903c296c80c
+                            End
+                        End
+                    End
+                End
+                Begin ComboBox
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    ColumnCount =3
+                    ListWidth =1441
+                    Left =952
+                    Top =2370
+                    Width =2421
+                    FontSize =8
+                    TabIndex =6
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x7d4e6a1de29ede43918341015ab852e8
+                    End
+                    Name ="Plano3"
+                    ControlSource ="Plano3"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano3].[Plano2] FROM Pla"
+                        "no3 WHERE ((([Plano3].[DescricaoPlano3])<>\"sistema\") And (([Plano3].[Plano2])="
+                        "Formulários![F Movimento Contas]!Plano2)) ORDER BY [Plano3].[DescricaoPlano3]; "
+                    ColumnWidths ="0;1441;0"
+                    OnDblClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextFontFamily =34
+                            Left =75
+                            Top =2381
+                            Width =781
+                            Height =240
+                            FontSize =8
+                            Name ="Plano 3_Label"
+                            Caption ="Plano 3"
+                            FontName ="Arial"
+                            EventProcPrefix ="Plano_3_Label"
+                            GUID = Begin
+                                0xeefcd7f1599340448b77c1710169873c
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =3270
+                    Top =165
+                    Width =561
+                    ColumnWidth =2655
+                    FontSize =8
+                    TabIndex =34
+                    Name ="NomeParceiro"
+                    ControlSource ="NomeParceiro"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xd8dc358e8fc56a459a4c6597217fd89d
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =4177
+                    Top =165
+                    Width =501
+                    ColumnWidth =945
+                    FontSize =8
+                    TabIndex =35
+                    Name ="Numero Conta"
+                    ControlSource ="Numero Conta"
+                    FontName ="Arial"
+                    EventProcPrefix ="Numero_Conta"
+                    GUID = Begin
+                        0x07af56b83e1fe24791043e9d04503918
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =5028
+                    Top =165
+                    Width =486
+                    ColumnWidth =2355
+                    FontSize =8
+                    TabIndex =36
+                    Name ="NomeBanco"
+                    ControlSource ="Descricao"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xd02dea004693804eb2a9dab9c34e1a08
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =2550
+                    Top =165
+                    Width =501
+                    ColumnWidth =3810
+                    FontSize =8
+                    TabIndex =37
+                    Name ="NomeVinculada"
+                    ControlSource ="NomeVinculada"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x0f6cae6522f85f4a8ac69176a279fb98
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            Height =916
+            BackColor =-2147483633
+            Name ="RodapéDoFormulário"
+            GUID = Begin
+                0x696fa25043eca241b4a278aedeefea47
+            End
+            Begin
+                Begin CommandButton
+                    OverlapFlags =93
+                    TextFontFamily =34
+                    Left =8130
+                    Top =330
+                    Width =1395
+                    Height =345
+                    FontSize =8
+                    FontWeight =400
+                    TabIndex =3
+                    ForeColor =128
+                    Name ="GerarParcelas"
+                    Caption ="Gerar Parcelas"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xc63269ef030f8a4aa74c4df7c714fda2
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    OverlapFlags =93
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =5490
+                    Top =435
+                    Width =606
+                    FontSize =8
+                    Name ="QtdParcelas"
+                    Format ="General Number"
+                    FontName ="Arial"
+                    ControlTipText ="Quantidade total de parcelas a gerar (obrigatorio) !"
+                    GUID = Begin
+                        0xa2585c5091caf642a30a69c14bb191f2
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            TextAlign =2
+                            TextFontFamily =34
+                            Left =5385
+                            Top =165
+                            Width =795
+                            Height =225
+                            FontSize =8
+                            FontWeight =400
+                            ForeColor =128
+                            Name ="Rótulo78"
+                            Caption ="Qtd Parc."
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xaa4582685741ca4cbefe9ee9ddcd40d4
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    OverlapFlags =93
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =6405
+                    Top =435
+                    Width =606
+                    FontSize =8
+                    TabIndex =1
+                    Name ="DiaVencto"
+                    Format ="General Number"
+                    FontName ="Arial"
+                    ControlTipText ="Digite o dia caso o vencto seja sempre na mesma data (opcional)"
+                    GUID = Begin
+                        0x0eb63fe6f6c5e542948f5712674950b8
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            TextAlign =2
+                            TextFontFamily =34
+                            Left =6300
+                            Top =165
+                            Width =795
+                            Height =225
+                            FontSize =8
+                            FontWeight =400
+                            ForeColor =128
+                            Name ="Rótulo80"
+                            Caption ="Dia Vcto"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x5b7b49d35c483e478448dc56243aec0b
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    OverlapFlags =93
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =7275
+                    Top =435
+                    Width =606
+                    FontSize =8
+                    TabIndex =2
+                    Name ="QtdDias"
+                    Format ="General Number"
+                    FontName ="Arial"
+                    ControlTipText ="Quantidade de dias para o proximo vencto (obrigatorio)"
+                    GUID = Begin
+                        0x807a43ad29de2b43a25c1507e5af9554
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            TextAlign =2
+                            TextFontFamily =34
+                            Left =7170
+                            Top =165
+                            Width =795
+                            Height =225
+                            FontSize =8
+                            FontWeight =400
+                            ForeColor =128
+                            Name ="Rótulo82"
+                            Caption ="Qtd Dias"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x4d56d545c32cab4b8bfc6b0d43ad3c84
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =93
+                    TextFontFamily =34
+                    Left =8055
+                    Top =60
+                    Width =675
+                    Height =210
+                    FontSize =8
+                    TabIndex =4
+                    Name ="ProximoVencto"
+                    FontName ="Arial"
+                    InputMask ="00/00/0000;0;_"
+                    ControlTipText ="Data do vencimento"
+                    GUID = Begin
+                        0x4fbf5e8fab697d43b90ea615c66b408d
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =93
+                    TextFontFamily =34
+                    Left =8792
+                    Top =60
+                    Width =726
+                    Height =210
+                    FontSize =8
+                    TabIndex =5
+                    Name ="ComplementoProximaParcela"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x4be5c73f30eed74980a5c9734f0c5b02
+                    End
+                End
+                Begin Rectangle
+                    OverlapFlags =247
+                    Left =5265
+                    Top =105
+                    Width =4343
+                    Height =672
+                    Name ="Caixa89"
+                    GUID = Begin
+                        0x27a8459bb5635c43ab3a142305663d7e
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =93
+                    TextFontFamily =34
+                    Left =1770
+                    Top =240
+                    Width =840
+                    Height =450
+                    FontSize =8
+                    TabIndex =6
+                    ForeColor =16737843
+                    Name ="FiltrarRegistros"
+                    Caption ="Filtrar"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x6661ab568edee04aaae385e6a48c41f4
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =93
+                    TextFontFamily =34
+                    Left =165
+                    Top =240
+                    Width =1305
+                    Height =450
+                    FontSize =8
+                    TabIndex =7
+                    ForeColor =255
+                    Name ="EmissaoCheques"
+                    Caption ="Emitir Cheque"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xe1a1fb6c8ca118488766d0e97fe3857e
+                    End
+                End
+                Begin Rectangle
+                    OverlapFlags =215
+                    Left =1665
+                    Top =105
+                    Width =1036
+                    Height =677
+                    Name ="Caixa104"
+                    GUID = Begin
+                        0x853b913414ab7a4a9bdde2ac4fd49e83
+                    End
+                End
+                Begin Rectangle
+                    OverlapFlags =215
+                    Left =60
+                    Top =105
+                    Width =1489
+                    Height =680
+                    Name ="Caixa105"
+                    GUID = Begin
+                        0x73f25ec8e2a7ca448c6b6f2a26a75927
+                    End
+                End
+                Begin Rectangle
+                    OverlapFlags =93
+                    Left =2835
+                    Top =120
+                    Width =2329
+                    Height =680
+                    Name ="Caixa110"
+                    GUID = Begin
+                        0x7f22bc8464c4c64bbc323538ccca61a5
+                    End
+                End
+                Begin CommandButton
+                    TabStop = NotDefault
+                    OverlapFlags =215
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    Left =3675
+                    Top =180
+                    Width =567
+                    Height =567
+                    FontSize =8
+                    TabIndex =8
+                    Name ="DuplicarRegistro"
+                    Caption ="Duplicar Registro"
+                    StatusBarText ="Duplicar registro"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    ControlTipText ="Duplicar registro"
+                    GUID = Begin
+                        0x04db5cd032a07a4ba9ae112e07c70c7a
+                    End
+                End
+                Begin CommandButton
+                    TabStop = NotDefault
+                    OverlapFlags =215
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    Left =4410
+                    Top =182
+                    Width =567
+                    Height =567
+                    FontSize =8
+                    TabIndex =9
+                    Name ="CopiarRegistro"
+                    Caption ="Copiar Registro"
+                    StatusBarText ="Copiar registro"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Arial"
+                    ControlTipText ="Copiar registro"
+                    GUID = Begin
+                        0x16d90d59a6396447a3b420b728619a20
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =215
+                    Left =2955
+                    Top =182
+                    Width =567
+                    Height =567
+                    TabIndex =10
+                    Name ="ExcluirLancamento"
+                    Caption ="Comando111"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadaddada177adada77da1dad1177adad17ad11da7117dad71ada ,
+                        0x111da1177d117dad1111d7117711dada11111d11111dadad1111da71117adada ,
+                        0x111d77111177adad11d711da71177ada1dadadada71177addadadadadad11ada ,
+                        0xadadadadadadadad000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    ControlTipText ="Excluir registro"
+                    GUID = Begin
+                        0x0a3ea1624e146740ac3166629345b842
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+
+Private Sub CodHistorico_DblClick(Cancel As Integer)
+    DoCmd.OpenForm "Historico", , , , , acDialog
+    DoCmd.Requery "CodHistorico"
+End Sub
+
+Private Sub CodigoParceiro_DblClick(Cancel As Integer)
+    Dim CodParceiro As Integer
+    
+    CodParceiro = [CodigoParceiro]
+    
+    DoCmd.OpenForm "Parceiros", , , , , acDialog, CodigoParceiro = CodParceiro
+    DoCmd.Requery "CodigoParceiro"
+End Sub
+
+Private Sub CodImovel_Change()
+    If (Not (IsNull(AgrupadorVenda))) Then
+        MsgBox "Alteracao do imovel nao e permitida !"
+        Exit Sub
+    End If
+End Sub
+
+Private Sub CopiarRegistro_Click()
+    Dim Mensagem, Estilo, Resposta
+    Mensagem = "Confirma copiar registro ?"
+    Estilo = vbYesNo + vbQuestion + vbDefaultButton2
+    Resposta = MsgBox(Mensagem, Estilo, "CashBook")
+    
+    If Resposta = vbNo Then Exit Sub
+        
+    DoCmd.RunCommand acCmdSelectRecord
+    DoCmd.RunCommand acCmdCopy
+    DoCmd.RunCommand acCmdRecordsGoToNew
+    DoCmd.RunCommand acCmdSelectRecord
+    DoCmd.RunCommand acCmdPaste
+
+    Mensagem = "Registro foi copiado e está editado para alterações."
+    Estilo = vbOK + vbInformation
+    Resposta = MsgBox(Mensagem, Estilo, "CashBook")
+    
+    DoCmd.GoToControl "DataMovto"
+End Sub
+
+Private Sub Confirmado_Click()
+    Dim EstaConfirmado As Boolean
+   
+    EstaConfirmado = Confirmado
+    If (EstaConfirmado) Then
+        Efetuado = True
+        If (IsNull(DataPagto)) Then DataPagto = Date
+        ' se lançto é de venda atribui os códigos do parceiro ou empresa
+        If (CodigoParceiro = 1) Then
+            If (CodAtribuiParceiro <> 0) Then
+                CodAnteriorParceiro = CodigoParceiro
+                CodigoParceiro = CodAtribuiParceiro
+            End If
+        End If
+        If (EmpVinculada = 1) Then
+            If (CodAtribuiEmpresa <> 0) Then
+                CodAnteriorEmpresa = EmpVinculada
+                EmpVinculada = CodAtribuiEmpresa
+            End If
+        End If
+    Else
+        If (CodigoParceiro <> 1) Then
+            If (CodAnteriorParceiro <> 0) Then
+                CodigoParceiro = CodAnteriorParceiro
+            End If
+        End If
+        If (EmpVinculada <> 1) Then
+            If (CodAnteriorEmpresa <> 0) Then
+                EmpVinculada = CodAnteriorEmpresa
+            End If
+        End If
+    End If
+
+    ' se tem pagto lote atualiza todos os movtos envolvidos para Efetuado = S ou N
+    If (MovPagtoLote <> 0) Then
+        DoCmd.OpenQuery "AtualizaEfetuadoLote", acViewNormal, acEdit
+        DoCmd.OpenQuery "AtualizaConfirmadoLote", acViewNormal, acEdit
+    End If
+    If (LinkVenda <> 0) Then
+        DoCmd.OpenQuery "AtualizaEfetuadoVenda", acViewNormal, acEdit
+        DoCmd.OpenQuery "AtualizaConfirmadoVenda", acViewNormal, acEdit
+    End If
+
+End Sub
+
+Private Sub ContaFinanceira_DblClick(Cancel As Integer)
+    DoCmd.OpenForm "F Contas Financeiras", , , , , acDialog
+    DoCmd.Requery "ContaFinanceira"
+End Sub
+
+Private Sub DuplicarRegistro_Click()
+On Error GoTo Err_DuplicarRegistro_Click
+
+    Dim Mensagem, Estilo, Resposta
+    Mensagem = "Confirma duplicar registro ?"
+    Estilo = vbYesNo + vbQuestion + vbDefaultButton2
+    Resposta = MsgBox(Mensagem, Estilo, "CashBook")
+    
+    If Resposta = vbNo Then Exit Sub
+        
+    DoCmd.RunCommand acCmdSave
+    MovPagtoLote = NumMovimento
+    DoCmd.RunCommand acCmdSave
+
+    DoCmd.RunCommand acCmdSelectRecord
+    DoCmd.RunCommand acCmdCopy
+    DoCmd.RunCommand acCmdRecordsGoToNew
+    DoCmd.RunCommand acCmdSelectRecord
+    DoCmd.RunCommand acCmdPaste
+
+    Mensagem = "Registro foi duplicado e está editado para alterações."
+    Estilo = vbOK + vbInformation
+    Resposta = MsgBox(Mensagem, Estilo, "CashBook")
+    
+    DoCmd.GoToControl "DataMovto"
+
+Exit_DuplicarRegistro_Click:
+    Exit Sub
+
+Err_DuplicarRegistro_Click:
+    MsgBox Err.Description
+    Resume Exit_DuplicarRegistro_Click
+    
+End Sub
+
+Private Sub Efetuado_Click()
+    Dim EstaEfetuado As Boolean
+   
+    EstaEfetuado = Efetuado
+    If (EstaEfetuado) Then
+        ' se lançto é de venda atribui os códigos do parceiro ou empresa
+        If (CodigoParceiro = 1) Then
+            If (CodAtribuiParceiro <> 0) Then
+                CodAnteriorParceiro = CodigoParceiro
+                CodigoParceiro = CodAtribuiParceiro
+            End If
+        End If
+        If (EmpVinculada = 1) Then
+            If (CodAtribuiEmpresa <> 0) Then
+                CodAnteriorEmpresa = EmpVinculada
+                EmpVinculada = CodAtribuiEmpresa
+            End If
+        End If
+    Else
+        If (CodigoParceiro <> 1) Then
+            If (CodAnteriorParceiro <> 0) Then
+                CodigoParceiro = CodAnteriorParceiro
+            End If
+        End If
+        If (EmpVinculada <> 1) Then
+            If (CodAnteriorEmpresa <> 0) Then
+                EmpVinculada = CodAnteriorEmpresa
+            End If
+        End If
+    End If
+
+    ' se tem pagto lote atualiza todos os movtos envolvidos para Efetuado = S ou N
+    If (MovPagtoLote <> 0) Then
+        DoCmd.OpenQuery "AtualizaEfetuadoLote", acViewNormal, acEdit
+    End If
+    If (LinkVenda <> 0) Then
+         DoCmd.OpenQuery "AtualizaEfetuadoVendas", acViewNormal, acEdit
+    End If
+    
+End Sub
+
+Private Sub EmpVinculada_DblClick(Cancel As Integer)
+    DoCmd.OpenForm "EmpMaster", , , , , acDialog
+    DoCmd.Requery "EmpVinculada"
+End Sub
+
+
+Private Sub Form_BeforeInsert(Cancel As Integer)
+    GerarParcelas.Enabled = True
+    DiaVencto.Enabled = True
+    QtdDias.Enabled = True
+    QtdParcelas.Enabled = True
+    
+
+End Sub
+
+Private Sub Form_Current()
+        
+    DoCmd.Requery "Plano2"
+    DoCmd.Requery "Plano3"
+        
+    If ((Me!MovPagtoLote = 0) Or (IsNull(Me!MovPagtoLote))) Then
+        'MovPagtoLote.Enabled = False
+        AbrirAgrupadaLote.Enabled = False
+        If ((Not (IsNull(Me!NumMovimento))) And (Me!MovPagtoLote = 0)) Then
+            GerarParcelas.Enabled = True
+            DiaVencto.Enabled = True
+            QtdDias.Enabled = True
+            QtdParcelas.Enabled = True
+        Else
+            GerarParcelas.Enabled = False
+            DiaVencto.Enabled = False
+            QtdDias.Enabled = False
+            QtdParcelas.Enabled = False
+        End If
+    Else
+        'MovPagtoLote.Enabled = True
+        AbrirAgrupadaLote.Enabled = True
+        GerarParcelas.Enabled = False
+        DiaVencto.Enabled = False
+        QtdDias.Enabled = False
+        QtdParcelas.Enabled = False
+    End If
+    
+    If ((Me!AgrupadorVenda = 0) Or (IsNull(Me!AgrupadorVenda))) Then
+        AgrupadorVenda.Enabled = False
+        AbrirAgrupadaVendas.Enabled = False
+    Else
+        AgrupadorVenda.Enabled = True
+        AbrirAgrupadaVendas.Enabled = True
+        GerarParcelas.Enabled = False
+        DiaVencto.Enabled = False
+        QtdDias.Enabled = False
+        QtdParcelas.Enabled = False
+    End If
+    
+    QtdParcelas = Null
+    DiaVencto = Null
+    QtdDias = Null
+    
+'    If ((VerificaAgrupador = 0) And ((Not (IsNull(Me!NumMovimento))))) Then
+'        GerarParcelas.Enabled = True
+'        DiaVencto.Enabled = True
+'        QtdDias.Enabled = True
+'        QtdParcelas.Enabled = True
+'    Else
+'        GerarParcelas.Enabled = False
+'        DiaVencto.Enabled = False
+'        QtdDias.Enabled = False
+'        QtdParcelas.Enabled = False
+'    End If
+    
+End Sub
+
+Private Sub Form_Open(Cancel As Integer)
+On Error GoTo Formulário_Open_Err
+
+    'DoCmd.GoToRecord acForm, "F Movimento Contas", acGoTo
+    
+    If (Me![NumMovimento] = 4240 Or Me![NumMovimento] = 2278) Then DoCmd.GoToRecord acDataForm, "F Movimento Contas", acNewRec
+    'DoCmd.GoToRecord acDataForm, "F Movimento Contas", acNewRec
+
+Formulário_Open_Exit:
+    Exit Sub
+
+Formulário_Open_Err:
+    MsgBox Error$
+    Resume Formulário_Open_Exit
+
+End Sub
+
+
+Private Sub Integracao_Click()
+    Dim IntegracaoCustosContabil As Boolean
+    IntegracaoCustosContabil = Integracao
+    If IntegracaoCustosContabil = False Then SomenteIntegracao = False
+
+End Sub
+
+Private Sub PagamentoLote_Click()
+    Dim Mensagem, Estilo, Resposta
+    If PagamentoLote = True Then
+        If CodigoParceiro = 1 Then
+            PagamentoLote = False
+            Mensagem = "Obrigatorio Empresa e Parceiro para Pagto em Lote," & (Chr(13)) & "nao utilize N/A"
+            Estilo = vbInformation + vbOKOnly
+            Resposta = MsgBox(Mensagem, Estilo, "Aviso do Sistema")
+        End If
+    End If
+End Sub
+
+Private Sub Plano1_AfterUpdate()
+    DoCmd.Requery "Plano2"
+    
+End Sub
+
+
+Private Sub Plano1_DblClick(Cancel As Integer)
+    DoCmd.OpenForm "Plano1", , , , , acDialog
+    DoCmd.Requery "Plano1"
+End Sub
+
+Private Sub Plano2_DblClick(Cancel As Integer)
+    DoCmd.OpenForm "Plano1", , , , , acDialog
+    DoCmd.Requery "Plano2"
+End Sub
+
+Private Sub Plano3_DblClick(Cancel As Integer)
+    DoCmd.OpenForm "Plano1", , , , , acDialog
+    DoCmd.Requery "Plano3"
+End Sub
+
+Private Sub AbrirAgrupadaLote_Click()
+On Error GoTo Err_AbrirAgrupadaLote_Click
+
+    Dim stDocName As String
+    Dim stLinkCriteria As String
+    Dim MovLote
+
+    MovLote = Me![MovPagtoLote]
+    If ((MovLote = 0) Or (IsNull(MovLote))) Then Exit Sub
+    
+    stDocName = "AgrupadaLoteViaMovto"
+    
+    stLinkCriteria = "[MovPagtoLote]=" & MovLote
+    DoCmd.OpenForm stDocName, , , stLinkCriteria
+
+Exit_AbrirAgrupadaLote_Click:
+    Exit Sub
+
+Err_AbrirAgrupadaLote_Click:
+    MsgBox Err.Description
+    Resume Exit_AbrirAgrupadaLote_Click
+    
+End Sub
+Private Sub AbrirAgrupadaVendas_Click()
+On Error GoTo Err_AbrirAgrupadaVendas_Click
+
+    Dim stDocName As String
+    Dim stLinkCriteria As String
+    Dim MovVenda 'As Integer
+
+    MovVenda = Me![AgrupadorVenda]
+    If ((MovVenda = 0) Or (IsNull(MovVenda))) Then Exit Sub
+    
+    stDocName = "AgrupadaVendasViaMovto"
+    
+    stLinkCriteria = "[AgrupadorVenda]=" & MovVenda
+    DoCmd.OpenForm stDocName, , , stLinkCriteria
+
+Exit_AbrirAgrupadaVendas_Click:
+    Exit Sub
+
+Err_AbrirAgrupadaVendas_Click:
+    MsgBox Err.Description
+    Resume Exit_AbrirAgrupadaVendas_Click
+    
+End Sub
+
+Private Sub Plano2_AfterUpdate()
+    DoCmd.Requery "Plano3"
+    
+End Sub
+
+Private Sub SomenteIntegracao_Click()
+    Dim IntegracaoContabil As Boolean
+    IntegracaoContabil = SomenteIntegracao
+    If IntegracaoContabil = True Then Integracao = True
+    
+End Sub
+Private Sub GerarParcelas_Click()
+On Error GoTo Err_GerarParcelas_Click
+
+    Dim stDocName As String
+    Dim stLinkCriteria As String
+    Dim MovLote
+    Dim Mensagem, Estilo, Resposta
+
+    Dim QuantidadeParcelas
+    Dim DiaVencimento
+    Dim QuantidadeDias
+    Dim QtdParcelasGeradas
+    Dim DataVencimento
+    Dim MovPagtoLote
+    Dim ComplementoOriginal
+    Dim TTParcelasOriginal
+    Dim TTParcelasGeradas
+    
+    QuantidadeParcelas = QtdParcelas
+    DiaVencimento = DiaVencto
+    QuantidadeDias = QtdDias
+    DataVencimento = DataVencto
+    
+    If IsNull(DataVencimento) Then
+        MsgBox "Data de vencimento e obrigatoria !"
+        Exit Sub
+    End If
+    
+    If IsNull(QuantidadeParcelas) Then
+        MsgBox "Obrigatorio numero de parcelas a gerar !"
+        Exit Sub
+    End If
+    
+    If ((IsNull(QuantidadeDias)) Or (QuantidadeDias <= 0) Or (QuantidadeDias > 31)) Then
+        MsgBox "Digite a quantidade de dias para o proximo vencimento entre 1 e 31 !"
+        Exit Sub
+    End If
+    
+    If IsNull(DiaVencto) Then DiaVencimento = 0
+    
+    Mensagem = "Confirma gerar parcelas !"
+    Estilo = vbYesNo + vbQuestion
+    Resposta = MsgBox(Mensagem, Estilo, "Movimento")
+    If Resposta = vbNo Then Exit Sub
+    
+    ' monta a primeira parcela que e o proprio lancamento => Complemento + 1/xx
+    Me!MovPagtoLote.Enabled = True
+    Me!AbrirAgrupadaLote.Enabled = True
+    Me!MovPagtoLote = Me!NumMovimento
+    ComplementoOriginal = Me!Complemento
+    ComplementoProximaParcela = Trim(ComplementoOriginal) & " 1/" & QuantidadeParcelas
+    Me!Complemento = ComplementoProximaParcela
+    
+    DoCmd.DoMenuItem acFormBar, acRecordsMenu, acSaveRecord, , acMenuVer70
+    
+    TTParcelasOriginal = QtdParcelas
+    QuantidadeParcelas = QuantidadeParcelas - 1
+    TTParcelasGeradas = 1
+    
+    ProximoVencto = DataVencimento + QuantidadeDias
+    Do While QtdParcelasGeradas < QuantidadeParcelas
+        TTParcelasGeradas = TTParcelasGeradas + 1
+        If DiaVencimento <> 0 Then
+            If Day(ProximoVencto) <> Day(DataVencimento) Then
+                While Day(ProximoVencto) > Day(DataVencimento)
+                    ProximoVencto = ProximoVencto - 1
+                Wend
+                While Day(ProximoVencto) < Day(DataVencimento)
+                    ProximoVencto = ProximoVencto + 1
+                Wend
+            End If
+        End If
+        ' monta complemento proxima parcela
+        ComplementoProximaParcela = Trim(ComplementoOriginal) & " " & TTParcelasGeradas & "/" & TTParcelasOriginal
+        ' ativa consulta inclusao no F Temp Movimento Contas
+        DoCmd.OpenQuery "Gerar Temp Parcelas Movto", acViewNormal, acAdd
+        ' calcula vencto e incrementa parcelas a gerar
+        QtdParcelasGeradas = (QtdParcelasGeradas + 1)
+        ProximoVencto = ProximoVencto + QuantidadeDias
+    Loop
+    
+    ' gera arquivo F Temp Movimento Contas no arquivo REAL
+    DoCmd.OpenQuery "Gerar Temp Parcelas No Movto", acViewNormal, acAdd
+    
+    ' Zera arquivo F Temp Movimento Contas (ja existe rotina)
+    DoCmd.OpenQuery "F Zerar Temp Movimento Contas", acViewNormal, acEdit
+    
+    ' carrega formulario dos pagamentos em LOTE, gravar em LOTE nas variaveis
+    MovLote = Me![MovPagtoLote]
+    If MovLote = 0 Then Exit Sub
+    
+    stDocName = "AgrupadaLoteViaMovto"
+    
+    stLinkCriteria = "[MovPagtoLote]=" & MovLote
+    DoCmd.OpenForm stDocName, , , stLinkCriteria
+    
+    Me.Requery
+    DoCmd.GoToRecord , , acNewRec
+    
+    
+Exit_GerarParcelas_Click:
+    Exit Sub
+
+Err_GerarParcelas_Click:
+    MsgBox Err.Description
+    Resume Exit_GerarParcelas_Click
+    
+End Sub
+Private Sub OcorrenciasMensais_Click()
+On Error GoTo Err_OcorrenciasMensais_Click
+
+    Dim stDocName As String
+    Dim stLinkCriteria As String
+    
+    stDocName = "Ocorrencias Mensais"
+    DoCmd.OpenForm stDocName, , , stLinkCriteria
+
+Exit_OcorrenciasMensais_Click:
+    Exit Sub
+
+Err_OcorrenciasMensais_Click:
+    MsgBox Err.Description
+    Resume Exit_OcorrenciasMensais_Click
+    
+End Sub
+Private Sub FiltrarRegistros_Click()
+On Error GoTo Err_FiltrarRegistros_Click
+
+    Dim stDocName As String
+    Dim stLinkCriteria As String
+    
+    DoCmd.Close
+    
+    stDocName = "Filtro Movimento Contas"
+    DoCmd.OpenForm stDocName, , , stLinkCriteria
+
+Exit_FiltrarRegistros_Click:
+    Exit Sub
+
+Err_FiltrarRegistros_Click:
+    MsgBox Err.Description
+    Resume Exit_FiltrarRegistros_Click
+    
+End Sub
+Private Sub EmissaoCheques_Click()
+On Error GoTo Err_EmissaoCheques_Click
+
+    Dim stDocName As String
+    Dim stLinkCriteria As String
+    
+    ' Executar a consulta EmissaoChequeViaMovto para gravar os valores no Arquivo Sistema
+    If Not (IsNull(NumMovimento)) Then
+        DoCmd.OpenQuery "EmissaoChequeViaMovto", acViewNormal, acEdit
+    End If
+    stDocName = "EmissaoCheque"
+    stLinkCriteria = "[IDSistema]=1"
+    DoCmd.OpenForm stDocName, , , stLinkCriteria
+
+Exit_EmissaoCheques_Click:
+    Exit Sub
+
+Err_EmissaoCheques_Click:
+    MsgBox Err.Description
+    Resume Exit_EmissaoCheques_Click
+    
+End Sub
+Private Sub ExcluirLancamento_Click()
+On Error GoTo Err_ExcluirLancamento_Click
+
+    Dim Mensagem, Estilo, Resposta
+    Mensagem = "Confirma excluir registro ?"
+    Estilo = vbYesNo + vbQuestion + vbDefaultButton2
+    Resposta = MsgBox(Mensagem, Estilo, "CashBook")
+    
+    If Resposta = vbNo Then Exit Sub
+
+    DoCmd.RunCommand acCmdSelectRecord
+    DoCmd.RunCommand acCmdDeleteRecord
+
+Exit_ExcluirLancamento_Click:
+    Exit Sub
+
+Err_ExcluirLancamento_Click:
+    MsgBox Err.Description
+    Resume Exit_ExcluirLancamento_Click
+    
+End Sub

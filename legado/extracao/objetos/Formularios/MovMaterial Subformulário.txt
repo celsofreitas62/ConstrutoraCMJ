@@ -1,0 +1,406 @@
+Version =19
+VersionRequired =19
+Checksum =-54323233
+Begin Form
+    PictureTiling = NotDefault
+    AllowDesignChanges = NotDefault
+    TabularFamily =124
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =5499
+    DatasheetFontHeight =10
+    ItemSuffix =13
+    Left =8625
+    Top =3735
+    Right =14475
+    Bottom =7980
+    DatasheetGridlinesColor =12632256
+    PaintPalette = Begin
+        0x00030100ffffff0000000000
+    End
+    RecSrcDt = Begin
+        0xa98fad3cfc73e340
+    End
+    GUID = Begin
+        0x487a901097c24c4bb0e844b5613201c3
+    End
+    NameMap = Begin
+        0x0acc0e5500000000a1cd88f32a5c2c42b4eb5d6100d2ceb400000000a6d4af28 ,
+        0x18a5e34050d14c03000000004d006100740065007200690061006c0000000000 ,
+        0x0000b3526a1b6dbeb84fb11debe3c5d9a6ec00000000e755b12818a5e3400100 ,
+        0x0000c46120344d006f0076004d006100740065007200690061006c0000000000 ,
+        0x0000b213ab11382c964ba1a995e725fcf62907000000b3526a1b6dbeb84fb11d ,
+        0xebe3c5d9a6ec4d006f0076004d006100740065007200690061006c0000000000 ,
+        0x00007a0d4d526fb9ca4dbd507e7a0367bfb807000000b3526a1b6dbeb84fb11d ,
+        0xebe3c5d9a6ec4e0075006d004d006f00760069006d0065006e0074006f000000 ,
+        0x0000000084732732b54b5648a2ff36287618763b07000000b3526a1b6dbeb84f ,
+        0xb11debe3c5d9a6ec43006f0064004d006100740065007200690061006c000000 ,
+        0x00000000479d8f4be01a4a45a7719c7a2bf2ecca07000000b3526a1b6dbeb84f ,
+        0xb11debe3c5d9a6ec5100750061006e0074006900640061006400650000000000 ,
+        0x00007eb19d773d741645bbb5627e54a0dc8407000000b3526a1b6dbeb84fb11d ,
+        0xebe3c5d9a6ec50007200650063006f0055006e00690074006100720069006f00 ,
+        0x00000000000081eef8f9134ccb44b30d1ce450f0ca7107000000a1cd88f32a5c ,
+        0x2c42b4eb5d6100d2ceb455006e0069006400610064006500000000000000d448 ,
+        0xbfd8084f084c89dc1b0552620d2b07000000a1cd88f32a5c2c42b4eb5d6100d2 ,
+        0xceb443006f0064004d006100740065007200690061006c00000000000000548a ,
+        0x2fb01cf5b740830b2bb98712716607000000a1cd88f32a5c2c42b4eb5d6100d2 ,
+        0xceb4440065007300630072006900630061006f000000000000009a8036bc6ef9 ,
+        0x7b47a03ce54fd1602b2e06000000487a901097c24c4bb0e844b5613201c35100 ,
+        0x750061006e0074006900640061006400650000000000000019c7dbc128d3f542 ,
+        0x82da0c7b033f7e6b06000000487a901097c24c4bb0e844b5613201c350007200 ,
+        0x650063006f0055006e00690074006100720069006f0000000000000000000000 ,
+        0x0000000000000000000000000c00000004000000000000000000000000000000 ,
+        0x0000
+    End
+    RecordSource ="SELECT [MovMaterial].[MovMaterial], [MovMaterial].[NumMovimento], [MovMaterial]."
+        "[CodMaterial], [MovMaterial].[Quantidade], [MovMaterial].[PrecoUnitario], [Mater"
+        "ial].[Unidade] FROM Material INNER JOIN MovMaterial ON [Material].[CodMaterial]="
+        "[MovMaterial].[CodMaterial]; "
+    Caption ="MovMaterial Subformulário"
+    DatasheetFontName ="Arial"
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =9
+            FontWeight =700
+            BackColor =13209
+            FontName ="Arial"
+        End
+        Begin Rectangle
+            BackStyle =0
+            Width =850
+            Height =850
+            BorderColor =8421504
+        End
+        Begin Line
+            BorderWidth =2
+            Width =1701
+        End
+        Begin CommandButton
+            Width =1701
+            Height =283
+            FontSize =9
+            FontName ="Arial"
+        End
+        Begin OptionButton
+            BorderWidth =3
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin CheckBox
+            BorderWidth =3
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin OptionGroup
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin BoundObjectFrame
+            Width =4536
+            Height =2835
+            LabelX =-1701
+            BorderColor =8421504
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            Width =1701
+            LabelX =-1701
+            FontSize =9
+            BorderColor =8421504
+            FontName ="Arial"
+        End
+        Begin ListBox
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontSize =9
+            BackColor =12632256
+            BorderColor =8421504
+            FontName ="Arial"
+        End
+        Begin ComboBox
+            Width =1701
+            LabelX =-1701
+            FontSize =9
+            BackColor =12632256
+            BorderColor =8421504
+            FontName ="Arial"
+        End
+        Begin Subform
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin UnboundObjectFrame
+            BackStyle =0
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+            BorderColor =8421504
+        End
+        Begin ToggleButton
+            Width =283
+            Height =283
+            FontSize =9
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="Arial"
+        End
+        Begin Tab
+            Width =5103
+            Height =3402
+        End
+        Begin FormHeader
+            Height =369
+            BackColor =-2147483633
+            Name ="CabeçalhoDoFormulário"
+            GUID = Begin
+                0xeeef503f9f9ab340a5d82db07fdb00e7
+            End
+            Begin
+                Begin Label
+                    OverlapFlags =85
+                    Left =57
+                    Top =57
+                    Width =810
+                    Height =255
+                    FontSize =8
+                    Name ="CodMaterial_Rótulo"
+                    Caption ="Material"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x3442c2a008f1304881d6adeb0696d116
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =3
+                    Left =2324
+                    Top =57
+                    Width =900
+                    Height =255
+                    FontSize =8
+                    Name ="Quantidade_Rótulo"
+                    Caption ="Quantid."
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xf3260850cdacb545882053c2d6db0939
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =3
+                    Left =3348
+                    Top =57
+                    Width =1020
+                    Height =255
+                    FontSize =8
+                    Name ="PrecoUnitario_Rótulo"
+                    Caption ="Vlr Unit."
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x4050f1eda1b600429870a5e80464e436
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =3
+                    Left =4485
+                    Top =56
+                    Width =960
+                    Height =255
+                    FontSize =8
+                    Name ="Rótulo8"
+                    Caption ="Total"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x161a21ba37c31546aaa9f5fc15ae2d19
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    Left =1870
+                    Top =56
+                    Width =315
+                    Height =255
+                    FontSize =8
+                    Name ="Rótulo12"
+                    Caption ="Un"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x9eb6e0d227264a46b6d142ebceaf4b9a
+                    End
+                End
+            End
+        End
+        Begin Section
+            Height =399
+            Name ="Detalhe"
+            GUID = Begin
+                0xf8910f3b4fe7784da2565d6089d1c71b
+            End
+            Begin
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    ColumnCount =3
+                    ListWidth =4736
+                    Left =57
+                    Top =57
+                    Width =1755
+                    Height =270
+                    ColumnWidth =2310
+                    FontSize =8
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x9b40518d36fb124aaa85dfeeb428f6d8
+                    End
+                    Name ="CodMaterial"
+                    ControlSource ="CodMaterial"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [Material].[CodMaterial], [Material].[Descricao], [Material].[Unidade] FR"
+                        "OM Material ORDER BY [Material].[Descricao]; "
+                    ColumnWidths ="0;3969;766"
+                    OnDblClick ="[Event Procedure]"
+                    BaseInfo ="\"SELECT [Material].[CodMaterial], [Material].[Descricao], [Material].[Unidade] "
+                        "FROM Material ORDER BY [Material].[Descricao]; \";\"Material\";\"\";\"CodMateria"
+                        "l\";\"Descricao\";\"PrimaryKey\""
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    Left =2324
+                    Top =57
+                    Width =960
+                    Height =270
+                    ColumnWidth =1260
+                    FontSize =8
+                    TabIndex =1
+                    Name ="Quantidade"
+                    ControlSource ="Quantidade"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x9a8036bc6ef97b47a03ce54fd1602b2e
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    Left =3348
+                    Top =57
+                    Width =1035
+                    Height =270
+                    ColumnWidth =1260
+                    FontSize =8
+                    TabIndex =2
+                    Name ="PrecoUnitario"
+                    ControlSource ="PrecoUnitario"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x19c7dbc128d3f54282da0c7b033f7e6b
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    Left =4425
+                    Top =56
+                    Width =1026
+                    Height =270
+                    FontSize =8
+                    TabIndex =3
+                    BackColor =12632256
+                    Name ="Texto9"
+                    ControlSource ="=([Quantidade]*[PrecoUnitario])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x43fae9e8409d3446be469e9221c12b64
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =1870
+                    Top =56
+                    Width =381
+                    Height =270
+                    FontSize =8
+                    TabIndex =4
+                    BackColor =12632256
+                    Name ="Unidade"
+                    ControlSource ="Unidade"
+                    GUID = Begin
+                        0xcee95b545c47144a933a5a1d9bd4d1c1
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            Height =453
+            BackColor =-2147483633
+            Name ="RodapéDoFormulário"
+            GUID = Begin
+                0x3f9e676da157ef4093b37f7265010f11
+            End
+            Begin
+                Begin TextBox
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    Left =4425
+                    Top =56
+                    Width =1026
+                    Height =270
+                    FontSize =8
+                    BackColor =12632256
+                    Name ="Texto6"
+                    ControlSource ="=Sum([Quantidade]*[PrecoUnitario])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x6904c89f21e9a84e87ec7e00acdd230f
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextAlign =3
+                            Left =3401
+                            Top =56
+                            Width =960
+                            Height =270
+                            FontSize =8
+                            Name ="Rótulo7"
+                            Caption ="Total"
+                            GUID = Begin
+                                0xf00f27cd4e7d4a4aaabd076835ef8687
+                            End
+                        End
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub CodMaterial_DblClick(Cancel As Integer)
+    DoCmd.OpenForm "Material", , , , , acDialog
+'    DoCmd.Requery "CodMaterial"
+End Sub

@@ -1,0 +1,112 @@
+Version =19
+VersionRequired =19
+Checksum =-54376565
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    RecordLocks =2
+    TabularFamily =124
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =2097
+    DatasheetFontHeight =10
+    ItemSuffix =2
+    Left =1140
+    Top =480
+    Right =1140
+    Bottom =480
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xb5df6447ac7ae340
+    End
+    GUID = Begin
+        0x879e24148e9ed749947715e477ef12dc
+    End
+    NameMap = Begin
+        0x0acc0e55000000000d4d675d5dba3e4e8bc2588543e84c4e00000000b5df6447 ,
+        0xac7ae34060ca2c000100000854006f00740061006c0049006d006f0076006500 ,
+        0x6c00000000000000767d45c14c959445a0def5192a2e4d84070000000d4d675d ,
+        0x5dba3e4e8bc2588543e84c4e43006f00640049006d006f00760065006c000000 ,
+        0x00000000412889f38ed9b24eb96eac973f6ebf6f070000000d4d675d5dba3e4e ,
+        0x8bc2588543e84c4e540049006d006f00760065006c0000000000000000000000 ,
+        0x0000000000000000000000000c00000004000000000000000000000000000000 ,
+        0x0000
+    End
+    RecordSource ="TotalImovel"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x8905000089050000890500008905000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400049c009000032f000001000900000000006400010001002c0102000100 ,
+        0x2c01010000004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077706e6f ,
+        0x00000000010000000000000000000000fe0000000100000000000000c8000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800290044000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000053656e6420546f204d6963726f736f6674204f6e654e6f746520506f ,
+        0x72743a00
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontFamily =2
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =510
+            Name ="Detalhe"
+            GUID = Begin
+                0x8a43ad40ea7f674ca8f27019bde44fc8
+            End
+            Begin
+                Begin TextBox
+                    Left =56
+                    Top =113
+                    Width =906
+                    Name ="CodImovel"
+                    ControlSource ="CodImovel"
+                    GUID = Begin
+                        0xd6bc86b406f2f74cbd361fcfd8c6ec4b
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    Left =1077
+                    Top =113
+                    Width =786
+                    TabIndex =1
+                    Name ="TImovel"
+                    ControlSource ="TImovel"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x6a8f4eae47f958418ab28ea8c3d647ca
+                    End
+                End
+            End
+        End
+    End
+End

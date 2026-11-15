@@ -1,0 +1,11 @@
+﻿Extração do Access - SistemaCMJ
+Data: 15/11/2026 10:13
+Access: 16.0   Jet/ACE FE: (não lido)   BE: 4.0
+
+Back-end:  23 tabelas, 290 campos, 90 índices, 15 relações
+Front-end: 0 tabelas vinculadas, 0 tabelas locais, 0 consultas
+Objetos:   0 formulários, 0 relatórios, 0 macros, 0 módulos
+Dados:     23 tabelas exportadas para legado\dados_brutos
+Erros:     0 (ver erros.txt)
+
+Inicialização do front-end:

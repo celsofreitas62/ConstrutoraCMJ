@@ -1,0 +1,8 @@
+﻿-- Consulta: IncluirPadraoRelatorioCReceber
+-- Tipo: Acréscimo (64)
+-- Descrição: 
+
+INSERT INTO [F Movimento Contas] ( PadraoRelatorio, EmpVinculada, CodigoParceiro, CodHistorico, DataMovto, ValorDebito, ValorCredito, Complemento, Plano3, ContaFinanceira, Confirmado, Integracao, DataPagto, DataVencto, MovPagtoLote, SelPagtoLote, Observacao, NumDoc, CodImovel, AgrupadorVenda, ClassificacaoVenda, SofreReajuste, IndiceReajuste, CodAtribuiParceiro, CodAtribuiEmpresa, CodAnteriorParceiro, CodAnteriorEmpresa, Efetuado, LinkVenda, PagoAntecipado, ValorReajustado, ReferenteNotaFiscal, PagamentoLote )
+SELECT PadraoRelatorio.PadraoRelatorio, PadraoRelatorio.EmpVinculada, PadraoRelatorio.CodigoParceiro, PadraoRelatorio.CodHistorico, PadraoRelatorio.DataMovto, PadraoRelatorio.ValorDebito, PadraoRelatorio.ValorCredito, PadraoRelatorio.Complemento, PadraoRelatorio.Plano3, PadraoRelatorio.ContaFinanceira, PadraoRelatorio.Confirmado, PadraoRelatorio.Integracao, PadraoRelatorio.DataPagto, PadraoRelatorio.DataVencto, PadraoRelatorio.MovPagtoLote, PadraoRelatorio.SelPagtoLote, PadraoRelatorio.Observacao, PadraoRelatorio.NumDoc, PadraoRelatorio.CodImovel, PadraoRelatorio.AgrupadorVenda, PadraoRelatorio.ClassificacaoVenda, PadraoRelatorio.SofreReajuste, PadraoRelatorio.IndiceReajuste, PadraoRelatorio.CodAtribuiParceiro, PadraoRelatorio.CodAtribuiEmpresa, PadraoRelatorio.CodAnteriorParceiro, PadraoRelatorio.CodAnteriorEmpresa, PadraoRelatorio.Efetuado, PadraoRelatorio.LinkVenda, PadraoRelatorio.PagoAntecipado, PadraoRelatorio.ValorReajustado, PadraoRelatorio.ReferenteNotaFiscal, PadraoRelatorio.PagamentoLote
+FROM PadraoRelatorio
+WHERE (((PadraoRelatorio.PadraoRelatorio)=2));

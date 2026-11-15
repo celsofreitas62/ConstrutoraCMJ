@@ -1,0 +1,91 @@
+﻿Origem;Tabela;Indice;Primario;Unico;IgnoraNulos;Obrigatorio;Estrangeiro;Campos
+BE;AnoMes Ocorrencias Mensais;PrimaryKey;True;True;False;True;False;UltimoAnoGerado, UltimoMesGerado
+BE;Arquivo Sistema;IDSistema;True;True;False;True;False;IDSistema
+BE;ArquivoMorto;ClassificacaoVendaNumMovimento;False;False;False;False;False;ClassificacaoVenda, NumMovimento
+BE;ArquivoMorto;CodAtribuiEmpresa;False;False;False;False;False;CodAtribuiEmpresa
+BE;ArquivoMorto;Confirmado;False;False;False;False;False;Confirmado
+BE;ArquivoMorto;ContaVinculada;False;False;True;False;False;ContaFinanceira, DataMovto
+BE;ArquivoMorto;DataMovto;False;False;False;False;False;DataMovto
+BE;ArquivoMorto;DataPagto;False;False;False;False;False;DataPagto
+BE;ArquivoMorto;DataVencto;False;False;False;False;False;DataVencto
+BE;ArquivoMorto;Efetuado;False;False;False;False;False;Efetuado
+BE;ArquivoMorto;Integracao;False;False;False;False;False;Integracao
+BE;ArquivoMorto;Lote;False;False;False;False;False;MovPagtoLote
+BE;ArquivoMorto;NumMovimento;True;True;False;True;False;NumMovimento
+BE;ArquivoMorto;NumMovimentoContaFinanceira;False;False;False;False;False;NumMovimento, ContaFinanceira
+BE;ArquivoMorto;PagamentoLote;False;False;False;False;False;PagamentoLote
+BE;ArquivoMorto;PagoAntecipado;False;False;False;False;False;PagoAntecipado
+BE;ArquivoMorto;SelPagtoLote;False;False;False;False;False;SelPagtoLote
+BE;ArquivoMorto;SofreReajuste;False;False;False;False;False;SofreReajuste
+BE;ArquivoMorto;SomenteIntegracao;False;False;False;False;False;SomenteIntegracao
+BE;ArquivoMorto;Venda;False;False;False;False;False;AgrupadorVenda
+BE;CondPagtoImovel;ImoveisCondPagtoImovel;False;False;False;False;True;CodImovel
+BE;CondPagtoImovel;PrimaryKey;True;True;False;True;False;CodPagtoImovel
+BE;EmpMaster;PrimaryKey;True;True;False;True;False;CodigoMaster
+BE;EmpVinculada;EmpMasterEmpVinculada;False;False;False;False;True;CodigoMaster
+BE;EmpVinculada;PrimaryKey;True;True;False;True;False;CodigoVinculada
+BE;F Contas Financeiras;{BA68A09F-84E6-4372-BD62-58FD8CFD3B8F};False;False;False;False;True;Tipo Conta
+BE;F Contas Financeiras;CodigoConta;True;True;False;True;False;CodigoConta
+BE;F Contas Financeiras;Numero Conta;False;False;False;False;False;Numero Conta
+BE;F Movimento Contas;{5BC6E2B3-9E69-4B25-A878-6C6138B19B22};False;False;False;False;True;ContaFinanceira
+BE;F Movimento Contas;ClassificacaoVendaNumMovimento;False;False;False;False;False;ClassificacaoVenda, NumMovimento
+BE;F Movimento Contas;CodAtribuiEmpresa;False;False;False;False;False;CodAtribuiEmpresa
+BE;F Movimento Contas;Confirmado;False;False;False;False;False;Confirmado
+BE;F Movimento Contas;ContaVinculada;False;False;True;False;False;ContaFinanceira, DataMovto
+BE;F Movimento Contas;DataMovto;False;False;False;False;False;DataMovto
+BE;F Movimento Contas;DataPagto;False;False;False;False;False;DataPagto
+BE;F Movimento Contas;DataVencto;False;False;False;False;False;DataVencto
+BE;F Movimento Contas;Efetuado;False;False;False;False;False;Efetuado
+BE;F Movimento Contas;EmpVinculadaF Movimento Contas;False;False;False;False;True;EmpVinculada
+BE;F Movimento Contas;HistoricoF Movimento Contas;False;False;False;False;True;CodHistorico
+BE;F Movimento Contas;ImoveisF Movimento Contas;False;False;False;False;True;CodImovel
+BE;F Movimento Contas;IndicesF Movimento Contas;False;False;False;False;True;IndiceReajuste
+BE;F Movimento Contas;Integracao;False;False;False;False;False;Integracao
+BE;F Movimento Contas;Lote;False;False;False;False;False;MovPagtoLote
+BE;F Movimento Contas;NumMovimento;False;True;False;False;False;NumMovimento
+BE;F Movimento Contas;NumMovimentoContaFinanceira;False;False;False;False;False;NumMovimento, ContaFinanceira
+BE;F Movimento Contas;PagamentoLote;False;False;False;False;False;PagamentoLote
+BE;F Movimento Contas;PagoAntecipado;False;False;False;False;False;PagoAntecipado
+BE;F Movimento Contas;ParceirosF Movimento Contas;False;False;False;False;True;CodigoParceiro
+BE;F Movimento Contas;Plano3F Movimento Contas;False;False;False;False;True;Plano3
+BE;F Movimento Contas;SelPagtoLote;False;False;False;False;False;SelPagtoLote
+BE;F Movimento Contas;SofreReajuste;False;False;False;False;False;SofreReajuste
+BE;F Movimento Contas;SomenteIntegracao;False;False;False;False;False;SomenteIntegracao
+BE;F Movimento Contas;Venda;False;False;False;False;False;AgrupadorVenda
+BE;F Tipos Conta Financeira;CodTipoConta;True;True;False;True;False;CodTipoConta
+BE;Historico;PrimaryKey;True;True;False;True;False;CodHistorico
+BE;Imoveis;PrimaryKey;True;True;False;True;False;CodImovel
+BE;Indices;PeriodicidadeIndices;False;False;False;False;True;Periodicidade
+BE;Indices;PrimaryKey;True;True;False;True;False;CodIndice
+BE;Material;PrimaryKey;True;True;False;True;False;CodMaterial
+BE;MovMaterial;MaterialMovMaterial;False;False;False;False;True;CodMaterial
+BE;MovMaterial;MovMaterialNumMovimento;False;False;False;False;False;NumMovimento
+BE;MovMaterial;PrimaryKey;True;True;False;True;False;MovMaterial, NumMovimento
+BE;Ocorrencias Mensais;ContaVinculada;False;False;True;False;False;ContaFinanceira, DataMovto
+BE;Ocorrencias Mensais;DataMovto;False;False;False;False;False;DataMovto
+BE;Ocorrencias Mensais;DataPagto;False;False;False;False;False;DataPagto
+BE;Ocorrencias Mensais;DataVencto;False;False;False;False;False;DataVencto
+BE;Ocorrencias Mensais;Lote;False;False;False;False;False;MovPagtoLote
+BE;Ocorrencias Mensais;NumMovimento;True;True;False;True;False;NumMovimento
+BE;Ocorrencias Mensais;Venda;False;False;False;False;False;AgrupadorVenda
+BE;PadraoRelatorio;ContaVinculada;False;False;True;False;False;ContaFinanceira, DataMovto
+BE;PadraoRelatorio;DataMovto;False;False;False;False;False;DataMovto
+BE;PadraoRelatorio;DataPagto;False;False;False;False;False;DataPagto
+BE;PadraoRelatorio;DataVencto;False;False;False;False;False;DataVencto
+BE;PadraoRelatorio;Lote;False;False;False;False;False;MovPagtoLote
+BE;PadraoRelatorio;NumMovimento;True;True;False;True;False;NumMovimento
+BE;PadraoRelatorio;Venda;False;False;False;False;False;AgrupadorVenda
+BE;Parceiros;Codigo;True;True;False;True;False;CodigoParceiro
+BE;Parceiros;Inativo;False;False;False;False;False;Inativo
+BE;Parceiros;Master;False;False;False;False;False;Master
+BE;Parceiros;Nome;False;False;False;False;False;NomeParceiro
+BE;Parceiros;PagtoLote;False;False;False;False;False;PagtoLote
+BE;Periodicidade;PrimaryKey;True;True;False;True;False;CodPeriodicidade
+BE;Plano1;PrimaryKey;True;True;False;True;False;Plano1
+BE;Plano2;Plano1Plano2;False;False;False;False;True;Plano1
+BE;Plano2;PrimaryKey;True;True;False;True;False;Plano2
+BE;Plano3;Plano2Plano3;False;False;False;False;True;Plano2
+BE;Plano3;PrimaryKey;True;True;False;True;False;Plano3
+BE;Switchboard Items;PrimaryKey;True;True;False;True;False;SwitchboardID, ItemNumber
+BE;ValorIndices;IndicesValorIndices;False;False;False;False;True;CodIndice
+BE;ValorIndices;PrimaryKey;True;True;False;True;False;CodIndice, DataIndice

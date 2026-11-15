@@ -1,0 +1,255 @@
+Version =19
+VersionRequired =19
+Checksum =-54165723
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    RecordLocks =2
+    TabularFamily =0
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =6236
+    DatasheetFontHeight =10
+    ItemSuffix =23
+    Left =1140
+    Top =1980
+    Right =9165
+    Bottom =5205
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xd370f23219cae440
+    End
+    GUID = Begin
+        0x5d5b4ba6072d3e45badffd8c48ae6d8c
+    End
+    NameMap = Begin
+        0x0acc0e5500000000c4a22b4e6680f94ebc614c6e8fbfb4ab0000000069ff8d31 ,
+        0x19cae44000000000b89b2d004500780074007200610074006f004d006f007600 ,
+        0x43006f006e0074006100620069006c002000530064006f004100630075006d00 ,
+        0x000000000000e6faaad12edb7947bc7b22210480088d07000000c4a22b4e6680 ,
+        0xf94ebc614c6e8fbfb4ab44006100740061004d006f00760074006f0000000000 ,
+        0x0000a53ae41e80db5d47b993e8dd630a9cfe07000000c4a22b4e6680f94ebc61 ,
+        0x4c6e8fbfb4ab560061006c006f007200440065006200690074006f0000000000 ,
+        0x00007b33b9414accce4b902b10ae20e27ad107000000c4a22b4e6680f94ebc61 ,
+        0x4c6e8fbfb4ab560061006c006f0072004300720065006400690074006f000000 ,
+        0x0000000082dcae5c60770f48aae47d7f301c6197060000005d5b4ba6072d3e45 ,
+        0xbadffd8c48ae6d8c560061006c006f007200440065006200690074006f000000 ,
+        0x000000008aca43f0ab02ad49b8881c6af0936142060000005d5b4ba6072d3e45 ,
+        0xbadffd8c48ae6d8c560061006c006f0072004300720065006400690074006f00 ,
+        0x0000000000001c8f9cbadcd19442803fdf44780ae156060000005d5b4ba6072d ,
+        0x3e45badffd8c48ae6d8c4300720065006400690074006f00730041006e007400 ,
+        0x6500720069006f00720000000000000034c85a86a28bfc49918c74e4b6150679 ,
+        0x060000005d5b4ba6072d3e45badffd8c48ae6d8c440065006200690074006f00 ,
+        0x730041006e0074006500720069006f0072000000000000000000000000000000 ,
+        0x00000000000000000c000000040000000000000000000000000000000000
+    End
+    RecordSource ="ExtratoMovContabil SdoAcum"
+    Caption ="ExtratoMovContabil SdoAcum"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x00000000000000000000000000000000000000005c1800004701000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400049c00900043ef80070100010000000000640001000f002c0102000100 ,
+        0x2c01020001004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077706e6f ,
+        0x00000000010000000000000000000000fe0000000100000000000000c8000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800290044000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000053656e6420546f204d6963726f736f6674204f6e654e6f746520506f ,
+        0x72743a00
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextAlign =1
+            TextFontFamily =18
+            FontSize =9
+            FontWeight =700
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            Width =850
+            Height =850
+        End
+        Begin Line
+            Width =1701
+        End
+        Begin Image
+            OldBorderStyle =0
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+        End
+        Begin CheckBox
+            LabelX =230
+            LabelY =-30
+        End
+        Begin BoundObjectFrame
+            Width =4536
+            Height =2835
+            LabelX =-1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontFamily =18
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Times New Roman"
+        End
+        Begin ListBox
+            TextFontFamily =18
+            OldBorderStyle =0
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontName ="Times New Roman"
+        End
+        Begin ComboBox
+            OldBorderStyle =0
+            TextFontFamily =18
+            BackStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Times New Roman"
+        End
+        Begin Subform
+            OldBorderStyle =0
+            Width =1701
+            Height =1701
+        End
+        Begin UnboundObjectFrame
+            Width =4536
+            Height =2835
+        End
+        Begin BreakLevel
+            ControlSource ="DataMovto"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =0
+            Name ="CabeçalhoDoRelatório"
+            GUID = Begin
+                0x2344fb44004ad0468db199b22eeb47b4
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Visible = NotDefault
+            Height =327
+            Name ="Detalhe"
+            GUID = Begin
+                0xa87ed4dd2b95004d8d57ad0bb350f85f
+            End
+            Begin
+                Begin TextBox
+                    Left =2394
+                    Width =1035
+                    Height =270
+                    Name ="DataMovto"
+                    ControlSource ="DataMovto"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0x795764d34055a341abed39f0de9ba28f
+                    End
+                End
+                Begin TextBox
+                    Left =3486
+                    Width =1200
+                    Height =270
+                    TabIndex =1
+                    Name ="ValorDebito"
+                    ControlSource ="ValorDebito"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x82dcae5c60770f48aae47d7f301c6197
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    Left =4743
+                    Width =1230
+                    Height =270
+                    TabIndex =2
+                    Name ="ValorCredito"
+                    ControlSource ="ValorCredito"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x8aca43f0ab02ad49b8881c6af0936142
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =327
+            Name ="RodapéDoRelatório"
+            GUID = Begin
+                0xa50592c4b68d4c43a6fb014e926c91ff
+            End
+            Begin
+                Begin TextBox
+                    TextFontFamily =34
+                    Left =3486
+                    Width =1200
+                    Height =270
+                    Name ="DebitosAnterior"
+                    ControlSource ="=Sum([ValorDebito])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x34c85a86a28bfc49918c74e4b6150679
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextFontFamily =34
+                    Left =4743
+                    Width =1230
+                    Height =270
+                    TabIndex =1
+                    Name ="CreditosAnterior"
+                    ControlSource ="=Sum([ValorCredito])"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x1c8f9cbadcd19442803fdf44780ae156
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    TextFontFamily =34
+                    Left =2211
+                    Width =1230
+                    Height =270
+                    TabIndex =2
+                    Name ="SaldoAcum"
+                    ControlSource ="=[CreditosAnterior]-[DebitosAnterior]"
+                    Format ="Standard"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x120106828f6d3947b23b726eac2411b7
+                    End
+                End
+            End
+        End
+    End
+End

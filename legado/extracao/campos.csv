@@ -1,0 +1,421 @@
+﻿Origem;Tabela;Ordem;Campo;TipoCodigo;Tipo;Tamanho;AutoNumeracao;Obrigatorio;PermiteVazio;ValorPadrao;RegraValidacao;TextoValidacao;Descricao;Legenda;Formato;MascaraEntrada;OrigemLinha
+BE;AnoMes Ocorrencias Mensais;1;UltimoAnoGerado;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;AnoMes Ocorrencias Mensais;2;UltimoMesGerado;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Arquivo Sistema;1;IDSistema;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Arquivo Sistema;2;Seguranca;10;Texto;11;False;False;True;35364165604;;;;;;Password;
+BE;Arquivo Sistema;3;Cliente;10;Texto;50;False;False;True;;;;;;;;
+BE;Arquivo Sistema;4;SeDigitado;10;Texto;6;False;False;True;;;;;;;;
+BE;Arquivo Sistema;5;LinkVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Arquivo Sistema;6;CidadePadrao;10;Texto;50;False;False;False;;;;;;;;
+BE;Arquivo Sistema;7;Favorecido;10;Texto;150;False;False;True;;;;;;;;
+BE;Arquivo Sistema;8;NomeBanco;10;Texto;50;False;False;False;;;;;;;;
+BE;Arquivo Sistema;9;NumeroCheque;10;Texto;50;False;False;False;;;;;;;;
+BE;Arquivo Sistema;10;ContaCorrente;10;Texto;50;False;False;False;;;;;;;;
+BE;Arquivo Sistema;11;DataDoCheque;8;Data/Hora;8;False;False;False;;;;;;;;
+BE;Arquivo Sistema;12;ValorDoCheque;7;Duplo (Double);8;False;False;False;0;;;;;;;
+BE;Arquivo Sistema;13;FavorecidoCopiaCheque;12;Memorando (Memo);0;False;False;False;;;;;;;;
+BE;Arquivo Sistema;14;EmpresaDoCheque;10;Texto;50;False;False;False;;;;;;;;
+BE;ArquivoMorto;0;NumMovimento;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;ArquivoMorto;1;EmpVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;EmpVinculada_SL;;;"SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM EmpVinculada WHERE ((([EmpVinculada].[NomeVinculada])<>""sistema"")); "
+BE;ArquivoMorto;2;CodigoParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;Parceiro;;;"SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cliente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros WHERE ((([Parceiros].[NomeParceiro])<>""sistema"")); "
+BE;ArquivoMorto;3;CodHistorico;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE ((([Historico].[Descricao])<>""sistema"")); "
+BE;ArquivoMorto;4;DataMovto;8;Data/Hora;8;False;True;False;Date();;;;;;"00/00/0000;0;_";
+BE;ArquivoMorto;5;ValorDebito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;ArquivoMorto;6;ValorCredito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;ArquivoMorto;7;Complemento;10;Texto;80;False;False;True;;;;;;;;
+BE;ArquivoMorto;8;Plano1;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;9;Plano2;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;10;Plano3;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano2], [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] WHERE ((([Plano3].[DescricaoPlano3])<>""sistema"")); "
+BE;ArquivoMorto;11;ContaFinanceira;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>""sistema"")); "
+BE;ArquivoMorto;12;Confirmado;1;Sim/Não (Boolean);1;False;False;False;;;;;Confirmado;Yes/No;;
+BE;ArquivoMorto;13;Integracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;ArquivoMorto;14;DataPagto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+BE;ArquivoMorto;15;DataVencto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+BE;ArquivoMorto;16;MovPagtoLote;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;17;SelPagtoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;ArquivoMorto;18;Observacao;12;Memorando (Memo);0;False;False;False;;;;;;;;
+BE;ArquivoMorto;19;NumDoc;10;Texto;50;False;False;False;;;;;;;;
+BE;ArquivoMorto;20;CodImovel;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Imoveis].[CodImovel], [Imoveis].[NomeImovel] FROM Imoveis ORDER BY [Imoveis].[NomeImovel]; "
+BE;ArquivoMorto;21;AgrupadorVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;22;ClassificacaoVenda;10;Texto;1;False;False;False;;;;;;;;
+BE;ArquivoMorto;23;SofreReajuste;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;ArquivoMorto;24;IndiceReajuste;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Indices].[CodIndice], [Indices].[NomeIndice] FROM Indices; "
+BE;ArquivoMorto;25;CodAtribuiParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;26;CodAtribuiEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;27;CodAnteriorParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;28;CodAnteriorEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;29;Efetuado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;ArquivoMorto;30;LinkVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;31;PagoAntecipado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;ArquivoMorto;32;ValorReajustado;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;ArquivoMorto;33;ReferenteNotaFiscal;10;Texto;9;False;False;False;;;;;NF;;;
+BE;ArquivoMorto;34;PagamentoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;ArquivoMorto;35;PadraoRelatorio;4;Inteiro Longo (Long);4;False;False;False;0;;;Padrao=1 (CPagar);;;;
+BE;ArquivoMorto;36;SomenteIntegracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;ArquivoMorto;37;AnoOcorrenciaMensal;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;38;MesOcorrenciaMensal;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;ArquivoMorto;39;EmitirCheque;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;ArquivoMorto;40;ChequeEmitido;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;ArquivoMorto;41;ValorOriginalImovel;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;ArquivoMorto;42;CodigoCondPagto;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;CondPagtoImovel;0;CodImovel;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;CondPagtoImovel;1;CodPagtoImovel;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;CondPagtoImovel;2;NomePagto;10;Texto;20;False;False;False;;;;;;;;
+BE;CondPagtoImovel;3;QtdParcelas;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;CondPagtoImovel;4;ValorInicial;6;Simples (Single);4;False;False;False;0;;;;;Standard;;
+BE;CondPagtoImovel;5;DiasCalculo;4;Inteiro Longo (Long);4;False;False;False;0;;;excluir;;;;
+BE;CondPagtoImovel;6;Vencimento;8;Data/Hora;8;False;False;False;;;;excluir;;;"00/00/0000;0;_";
+BE;CondPagtoImovel;7;ValorReajustado;6;Simples (Single);4;False;False;False;0;;;;;Standard;;
+BE;EmpMaster;1;CodigoMaster;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;EmpMaster;2;NomeMaster;10;Texto;50;False;False;False;;;;;;;;
+BE;EmpMaster;3;Master;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;EmpMaster;4;CNPJ;10;Texto;50;False;False;False;;;;;Cnpj;;"00\.00\.000/0000\-00;;_";
+BE;EmpVinculada;1;CodigoVinculada;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;EmpVinculada;2;CodigoMaster;4;Inteiro Longo (Long);4;False;False;False;0;;;;EmpMaster_SL;;;"SELECT [EmpMaster].[CodigoMaster], [EmpMaster].[NomeMaster] FROM EmpMaster; "
+BE;EmpVinculada;3;NomeVinculada;10;Texto;50;False;False;False;;;;;Empresa Vinculada;;;
+BE;EmpVinculada;4;CNPJ;10;Texto;50;False;False;False;;;;;CNPJ;;"00\.000\.000/0000\-00;0;_";
+BE;EmpVinculada;5;PercentualAdm;7;Duplo (Double);8;False;False;False;0;;;;% Adm;Standard;;
+BE;EmpVinculada;6;FinanceiraPadrao;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;F Contas Financeiras
+BE;EmpVinculada;7;Master;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;EmpVinculada;8;Administracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;EmpVinculada;9;ImovelEmVenda;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;EmpVinculada;10;Contabil;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;EmpVinculada;11;SdoInicialDespesas;6;Simples (Single);4;False;False;False;0;;;;;Standard;;
+BE;EmpVinculada;12;SdoInicialReceitas;6;Simples (Single);4;False;False;False;0;;;;;Standard;;
+BE;EmpVinculada;13;CEI;10;Texto;50;False;False;False;;;;;;;;
+BE;EmpVinculada;14;Custos;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;EmpVinculada;15;DataInicialCustos;8;Data/Hora;8;False;False;False;;;;;DT Inicial;;"00/00/0000;0;_";
+BE;F Contas Financeiras;0;CodigoConta;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;F Contas Financeiras;1;Descricao;10;Texto;30;False;False;True;;;;;;;;"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao] FROM [F Contas Financeiras]; "
+BE;F Contas Financeiras;2;Numero Conta;10;Texto;15;False;False;True;;;;;;;;
+BE;F Contas Financeiras;3;Limite Credito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;F Contas Financeiras;4;Tipo Conta;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [F Tipos Conta Financeira].[CodTipoConta], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira]; "
+BE;F Contas Financeiras;5;Conciliacao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Contas Financeiras;6;NaoListarResumo;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Contas Financeiras;7;Observacao;12;Memorando (Memo);0;False;False;False;;;;;;;;
+BE;F Contas Financeiras;8;Master;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;1;NumMovimento;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;F Movimento Contas;2;EmpVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;EmpVinculada_SL;;;"SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM EmpVinculada WHERE ((([EmpVinculada].[NomeVinculada])<>""sistema"")); "
+BE;F Movimento Contas;3;CodigoParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;Parceiro;;;"SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cliente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros WHERE ((([Parceiros].[NomeParceiro])<>""sistema"")); "
+BE;F Movimento Contas;4;CodHistorico;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE ((([Historico].[Descricao])<>""sistema"")); "
+BE;F Movimento Contas;5;DataMovto;8;Data/Hora;8;False;True;False;Date();;;;;;"00/00/0000;0;_";
+BE;F Movimento Contas;6;ValorDebito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;F Movimento Contas;7;ValorCredito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;F Movimento Contas;8;Complemento;10;Texto;80;False;False;True;;;;;;;;
+BE;F Movimento Contas;9;Plano1;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;10;Plano2;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;11;Plano3;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano2], [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] WHERE ((([Plano3].[DescricaoPlano3])<>""sistema"")); "
+BE;F Movimento Contas;12;ContaFinanceira;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>""sistema"")); "
+BE;F Movimento Contas;13;Confirmado;1;Sim/Não (Boolean);1;False;False;False;;;;;Confirmado;Yes/No;;
+BE;F Movimento Contas;14;Integracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;15;DataPagto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+BE;F Movimento Contas;16;DataVencto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+BE;F Movimento Contas;17;MovPagtoLote;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;18;SelPagtoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;19;Observacao;12;Memorando (Memo);0;False;False;False;;;;;;;;
+BE;F Movimento Contas;20;NumDoc;10;Texto;50;False;False;False;;;;;;;;
+BE;F Movimento Contas;21;CodImovel;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Imoveis].[CodImovel], [Imoveis].[NomeImovel] FROM Imoveis ORDER BY [Imoveis].[NomeImovel]; "
+BE;F Movimento Contas;22;AgrupadorVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;23;ClassificacaoVenda;10;Texto;1;False;False;False;;;;;;;;
+BE;F Movimento Contas;24;SofreReajuste;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;25;IndiceReajuste;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Indices].[CodIndice], [Indices].[NomeIndice] FROM Indices; "
+BE;F Movimento Contas;26;CodAtribuiParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;27;CodAtribuiEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;28;CodAnteriorParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;29;CodAnteriorEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;30;Efetuado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;31;LinkVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;32;PagoAntecipado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;33;ValorReajustado;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;F Movimento Contas;34;ReferenteNotaFiscal;10;Texto;9;False;False;False;;;;;NF;;;
+BE;F Movimento Contas;35;PagamentoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;36;PadraoRelatorio;4;Inteiro Longo (Long);4;False;False;False;0;;;Padrao=1 (CPagar);;;;
+BE;F Movimento Contas;37;SomenteIntegracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;38;AnoOcorrenciaMensal;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;39;MesOcorrenciaMensal;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Movimento Contas;40;EmitirCheque;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;41;ChequeEmitido;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Movimento Contas;42;ValorOriginalImovel;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;F Movimento Contas;43;CodigoCondPagto;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Tipos Conta Financeira;0;CodTipoConta;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;F Tipos Conta Financeira;1;Descricao;10;Texto;50;False;False;True;;;;;;;;
+BE;F Tipos Conta Financeira;2;ListaNoResumo;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Tipos Conta Financeira;3;OrdemNoResumo;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;F Tipos Conta Financeira;4;ListaAgenda;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;F Tipos Conta Financeira;5;Master;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Historico;0;CodHistorico;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Historico;1;Descricao;10;Texto;15;False;False;False;;;;;;;;
+BE;Historico;2;Master;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Imoveis;0;EmpVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM EmpVinculada WHERE ((([EmpVinculada].[NomeVinculada])<>""sistema"")) ORDER BY [EmpVinculada].[NomeVinculada]; "
+BE;Imoveis;1;CodImovel;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Imoveis;2;NomeImovel;10;Texto;100;False;False;False;;;;;;;;
+BE;Imoveis;3;Divisao;10;Texto;50;False;False;False;;;;;;;;
+BE;Imoveis;4;Estilo;10;Texto;200;False;False;False;;;;;;;;
+BE;Imoveis;5;Proprietario;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro] FROM Parceiros WHERE ((([Parceiros].[NomeParceiro])<>""sistema"")); "
+BE;Imoveis;6;IndiceReajuste;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Indices].[CodIndice], [Indices].[NomeIndice] FROM Indices; "
+BE;Imoveis;7;PercentualComissao;6;Simples (Single);4;False;False;False;0;;;;;Standard;;
+BE;Imoveis;8;Vendido;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Imoveis;9;Vendedor;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro] FROM Parceiros WHERE ((([Parceiros].[NomeParceiro])<>""sistema"")); "
+BE;Imoveis;10;Modelo;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Indices;0;CodIndice;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Indices;1;NomeIndice;10;Texto;20;False;False;False;;;;;;;;
+BE;Indices;2;Periodicidade;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Periodicidade].[CodPeriodicidade], [Periodicidade].[NomePeriodicidade] FROM Periodicidade; "
+BE;Indices;3;CotaIndice;6;Simples (Single);4;False;False;False;0;;;;;Standard;;
+BE;Indices;4;Fator;10;Texto;1;False;False;False;;;;;;;;
+BE;Material;0;CodMaterial;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Material;1;Descricao;10;Texto;50;False;False;False;;;;;;;;
+BE;Material;2;Unidade;10;Texto;3;False;False;False;;;;;;;;
+BE;MovMaterial;0;MovMaterial;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;MovMaterial;1;NumMovimento;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;MovMaterial;2;CodMaterial;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Material].[CodMaterial], [Material].[Descricao], [Material].[Unidade] FROM Material; "
+BE;MovMaterial;3;Quantidade;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;MovMaterial;4;PrecoUnitario;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;Ocorrencias Mensais;1;NumMovimento;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Ocorrencias Mensais;2;EmpVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;EmpVinculada_SL;;;"SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM EmpVinculada WHERE ((([EmpVinculada].[NomeVinculada])<>""sistema"")); "
+BE;Ocorrencias Mensais;3;CodigoParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;Parceiro;;;"SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cliente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros WHERE ((([Parceiros].[NomeParceiro])<>""sistema"")); "
+BE;Ocorrencias Mensais;4;CodHistorico;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE ((([Historico].[Descricao])<>""sistema"")); "
+BE;Ocorrencias Mensais;5;DataMovto;8;Data/Hora;8;False;True;False;Date();;;;;;"00/00/0000;0;_";
+BE;Ocorrencias Mensais;6;ValorDebito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;Ocorrencias Mensais;7;ValorCredito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;Ocorrencias Mensais;8;Complemento;10;Texto;80;False;False;True;;;;;;;;
+BE;Ocorrencias Mensais;9;Plano3;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano2], [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] WHERE ((([Plano3].[DescricaoPlano3])<>""sistema"")); "
+BE;Ocorrencias Mensais;10;ContaFinanceira;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>""sistema"")); "
+BE;Ocorrencias Mensais;11;Confirmado;1;Sim/Não (Boolean);1;False;False;False;;;;;Confirmado;Yes/No;;
+BE;Ocorrencias Mensais;12;Integracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Ocorrencias Mensais;13;DataPagto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+BE;Ocorrencias Mensais;14;DataVencto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+BE;Ocorrencias Mensais;15;MovPagtoLote;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Ocorrencias Mensais;16;SelPagtoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Ocorrencias Mensais;17;Observacao;12;Memorando (Memo);0;False;False;False;;;;;;;;
+BE;Ocorrencias Mensais;18;NumDoc;10;Texto;50;False;False;False;;;;;;;;
+BE;Ocorrencias Mensais;19;CodImovel;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Imoveis].[CodImovel], [Imoveis].[NomeImovel] FROM Imoveis ORDER BY [Imoveis].[NomeImovel]; "
+BE;Ocorrencias Mensais;20;AgrupadorVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Ocorrencias Mensais;21;ClassificacaoVenda;10;Texto;1;False;False;False;;;;;;;;
+BE;Ocorrencias Mensais;22;SofreReajuste;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Ocorrencias Mensais;23;IndiceReajuste;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Indices].[CodIndice], [Indices].[NomeIndice] FROM Indices; "
+BE;Ocorrencias Mensais;24;CodAtribuiParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Ocorrencias Mensais;25;CodAtribuiEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Ocorrencias Mensais;26;CodAnteriorParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Ocorrencias Mensais;27;CodAnteriorEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Ocorrencias Mensais;28;Efetuado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Ocorrencias Mensais;29;LinkVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Ocorrencias Mensais;30;PagoAntecipado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Ocorrencias Mensais;31;ValorReajustado;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;Ocorrencias Mensais;32;ReferenteNotaFiscal;10;Texto;9;False;False;False;;;;;NF;;;
+BE;Ocorrencias Mensais;33;PagamentoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Ocorrencias Mensais;34;PadraoRelatorio;4;Inteiro Longo (Long);4;False;False;False;0;;;Padrao=1 (CPagar);;;;
+BE;Ocorrencias Mensais;35;SomenteIntegracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Ocorrencias Mensais;36;DiaVencimento;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Ocorrencias Mensais;37;EmitirCheque;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;PadraoRelatorio;0;NumMovimento;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;PadraoRelatorio;1;EmpVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;EmpVinculada_SL;;;"SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM EmpVinculada WHERE ((([EmpVinculada].[NomeVinculada])<>""sistema"")); "
+BE;PadraoRelatorio;2;CodigoParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;Parceiro;;;"SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cliente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros WHERE ((([Parceiros].[NomeParceiro])<>""sistema"")); "
+BE;PadraoRelatorio;3;CodHistorico;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE ((([Historico].[Descricao])<>""sistema"")); "
+BE;PadraoRelatorio;4;DataMovto;8;Data/Hora;8;False;True;False;Date();;;;;;"00/00/0000;0;_";
+BE;PadraoRelatorio;5;ValorDebito;7;Duplo (Double);8;False;False;False;0;;;;;;;
+BE;PadraoRelatorio;6;ValorCredito;7;Duplo (Double);8;False;False;False;0;;;;;;;
+BE;PadraoRelatorio;7;Complemento;10;Texto;80;False;False;True;;;;;;;;
+BE;PadraoRelatorio;8;Plano3;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano2], [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] WHERE ((([Plano3].[DescricaoPlano3])<>""sistema"")); "
+BE;PadraoRelatorio;9;ContaFinanceira;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>""sistema"")); "
+BE;PadraoRelatorio;10;Confirmado;1;Sim/Não (Boolean);1;False;False;False;;;;;Confirmado;Yes/No;;
+BE;PadraoRelatorio;11;Integracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;PadraoRelatorio;12;DataPagto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+BE;PadraoRelatorio;13;DataVencto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+BE;PadraoRelatorio;14;MovPagtoLote;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;PadraoRelatorio;15;SelPagtoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;PadraoRelatorio;16;Observacao;12;Memorando (Memo);0;False;False;False;;;;;;;;
+BE;PadraoRelatorio;17;NumDoc;10;Texto;50;False;False;False;;;;;;;;
+BE;PadraoRelatorio;18;CodImovel;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Imoveis].[CodImovel], [Imoveis].[NomeImovel] FROM Imoveis ORDER BY [Imoveis].[NomeImovel]; "
+BE;PadraoRelatorio;19;AgrupadorVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;PadraoRelatorio;20;ClassificacaoVenda;10;Texto;1;False;False;False;;;;;;;;
+BE;PadraoRelatorio;21;SofreReajuste;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;PadraoRelatorio;22;IndiceReajuste;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Indices].[CodIndice], [Indices].[NomeIndice] FROM Indices; "
+BE;PadraoRelatorio;23;CodAtribuiParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;PadraoRelatorio;24;CodAtribuiEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;PadraoRelatorio;25;CodAnteriorParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;PadraoRelatorio;26;CodAnteriorEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;PadraoRelatorio;27;Efetuado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;PadraoRelatorio;28;LinkVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;PadraoRelatorio;29;PagoAntecipado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;PadraoRelatorio;30;ValorReajustado;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+BE;PadraoRelatorio;31;ReferenteNotaFiscal;10;Texto;9;False;False;False;;;;;NF;;;
+BE;PadraoRelatorio;32;PagamentoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;PadraoRelatorio;33;PadraoRelatorio;4;Inteiro Longo (Long);4;False;False;False;0;;;Padrao=1 (CPagar);;;;
+BE;Parceiros;0;CodigoParceiro;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Parceiros;1;NomeParceiro;10;Texto;50;False;False;False;;;;;;;;
+BE;Parceiros;2;Cliente;1;Sim/Não (Boolean);1;False;True;False;;;;;;Yes/No;;
+BE;Parceiros;3;Fornecedor;1;Sim/Não (Boolean);1;False;True;False;;;;;;Yes/No;;
+BE;Parceiros;4;Funcionario;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Parceiros;5;Master;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Parceiros;6;Endereco;10;Texto;50;False;False;False;;;;;;;;
+BE;Parceiros;7;Bairro;10;Texto;30;False;False;False;;;;;;;;
+BE;Parceiros;8;Cidade;10;Texto;30;False;False;False;;;;;;;;
+BE;Parceiros;9;Estado;10;Texto;2;False;False;False;;;;;;>;LL;
+BE;Parceiros;10;CEP;10;Texto;9;False;False;False;;;;;;;"99999""-""999";
+BE;Parceiros;11;Telefone;10;Texto;30;False;False;False;;;;;;;;
+BE;Parceiros;12;Fax;10;Texto;30;False;False;False;;;;;;;;
+BE;Parceiros;13;Ramal;10;Texto;4;False;False;False;;;;;;;9999;
+BE;Parceiros;14;Contato;10;Texto;30;False;False;False;;;;;;;;
+BE;Parceiros;15;IE;10;Texto;20;False;False;False;;;;;;;;
+BE;Parceiros;16;CNPJ;10;Texto;20;False;False;False;;;;;;;;
+BE;Parceiros;17;Email;12;Memorando (Memo);0;False;False;False;;;;;;;;
+BE;Parceiros;18;TelefoneComercial;10;Texto;30;False;False;False;;;;;;;;
+BE;Parceiros;19;Trabalho;10;Texto;30;False;False;False;;;;;;;;
+BE;Parceiros;20;CPF;10;Texto;20;False;False;False;;;;;;;;
+BE;Parceiros;21;RG;10;Texto;20;False;False;False;;;;;;;;
+BE;Parceiros;22;Observacoes;12;Memorando (Memo);0;False;False;False;;;;;;;;
+BE;Parceiros;23;AplicarReajuste;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Parceiros;24;PagtoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Parceiros;25;Inativo;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Periodicidade;0;CodPeriodicidade;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Periodicidade;1;NomePeriodicidade;10;Texto;20;False;False;False;;;;;;;;
+BE;Plano1;0;Plano1;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Plano1;1;DescricaoPlano1;10;Texto;50;False;False;False;;;;;;;;
+BE;Plano1;2;Master;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Plano1;3;OrdemCusto;4;Inteiro Longo (Long);4;False;False;False;;;;;;;;
+BE;Plano2;0;Plano1;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Plano2;1;Plano2;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Plano2;2;DescricaoPlano2;10;Texto;50;False;False;False;;;;;;;;
+BE;Plano2;3;Master;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Plano2;4;RelatorioCustos;1;Sim/Não (Boolean);1;False;False;False;0;;;;;Yes/No;;
+BE;Plano2;5;Ativo;1;Sim/Não (Boolean);1;False;False;False;0;;;;;Yes/No;;
+BE;Plano3;0;Plano2;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+BE;Plano3;1;Plano3;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+BE;Plano3;2;DescricaoPlano3;10;Texto;50;False;False;False;;;;;;;;
+BE;Plano3;3;Master;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+BE;Switchboard Items;0;SwitchboardID;4;Inteiro Longo (Long);4;False;False;False;;;;;;;;
+BE;Switchboard Items;1;ItemNumber;3;Inteiro (Integer);2;False;False;False;0;;;;;;;
+BE;Switchboard Items;2;ItemText;10;Texto;255;False;False;False;;;;;;;;
+BE;Switchboard Items;3;Command;3;Inteiro (Integer);2;False;False;False;;;;;;;;
+BE;Switchboard Items;4;Argument;10;Texto;255;False;False;True;;;;;;;;
+BE;Switchboard Items;5;Senha;10;Texto;6;False;False;True;;;;;;;;
+BE;ValorIndices;0;CodIndice;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Indices].[CodIndice], [Indices].[NomeIndice], [Indices].[Periodicidade] FROM Indices; "
+BE;ValorIndices;1;DataIndice;8;Data/Hora;8;False;False;False;;;;;;Short Date;"00/00/0000;0;_";
+BE;ValorIndices;2;ValorIndice;6;Simples (Single);4;False;False;False;0;;;;;Standard;;
+FE;CustoEmpresa;0;NumMovimento;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+FE;CustoEmpresa;1;EmpVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;EmpVinculada_SL;;;"SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM EmpVinculada WHERE ((([EmpVinculada].[NomeVinculada])<>""sistema"")); "
+FE;CustoEmpresa;2;CodigoParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;Parceiro;;;"SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cliente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros WHERE ((([Parceiros].[NomeParceiro])<>""sistema"")); "
+FE;CustoEmpresa;3;CodHistorico;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE ((([Historico].[Descricao])<>""sistema"")); "
+FE;CustoEmpresa;4;DataMovto;8;Data/Hora;8;False;True;False;Date();;;;;;"00/00/0000;0;_";
+FE;CustoEmpresa;5;ValorDebito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;CustoEmpresa;6;ValorCredito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;CustoEmpresa;7;Complemento;10;Texto;80;False;False;True;;;;;;;;
+FE;CustoEmpresa;8;Plano1;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;9;Plano2;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;10;Plano3;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano2], [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] WHERE ((([Plano3].[DescricaoPlano3])<>""sistema"")); "
+FE;CustoEmpresa;11;ContaFinanceira;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>""sistema"")); "
+FE;CustoEmpresa;12;Confirmado;1;Sim/Não (Boolean);1;False;False;False;;;;;Confirmado;Yes/No;;
+FE;CustoEmpresa;13;Integracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;CustoEmpresa;14;DataPagto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+FE;CustoEmpresa;15;DataVencto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+FE;CustoEmpresa;16;MovPagtoLote;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;17;SelPagtoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;CustoEmpresa;18;Observacao;12;Memorando (Memo);0;False;False;False;;;;;;;;
+FE;CustoEmpresa;19;NumDoc;10;Texto;50;False;False;False;;;;;;;;
+FE;CustoEmpresa;20;CodImovel;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Imoveis].[CodImovel], [Imoveis].[NomeImovel] FROM Imoveis ORDER BY [Imoveis].[NomeImovel]; "
+FE;CustoEmpresa;21;AgrupadorVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;22;ClassificacaoVenda;10;Texto;1;False;False;False;;;;;;;;
+FE;CustoEmpresa;23;SofreReajuste;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;CustoEmpresa;24;IndiceReajuste;4;Inteiro Longo (Long);4;False;False;False;1;;;;;;;"SELECT [Indices].[CodIndice], [Indices].[NomeIndice] FROM Indices; "
+FE;CustoEmpresa;25;CodAtribuiParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;26;CodAtribuiEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;27;CodAnteriorParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;28;CodAnteriorEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;29;Efetuado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;CustoEmpresa;30;LinkVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;31;PagoAntecipado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;CustoEmpresa;32;ValorReajustado;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;CustoEmpresa;33;ReferenteNotaFiscal;10;Texto;9;False;False;False;;;;;NF;;;
+FE;CustoEmpresa;34;PagamentoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;CustoEmpresa;35;PadraoRelatorio;4;Inteiro Longo (Long);4;False;False;False;0;;;Padrao=1 (CPagar);;;;
+FE;CustoEmpresa;36;SomenteIntegracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;CustoEmpresa;37;AnoOcorrenciaMensal;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;38;MesOcorrenciaMensal;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;CustoEmpresa;39;EmitirCheque;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;CustoEmpresa;40;ChequeEmitido;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;CustoEmpresa;41;ValorOriginalImovel;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;CustoEmpresa;42;CodigoCondPagto;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;F Temp Movimento Contas;1;NumMovimento;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+FE;F Temp Movimento Contas;2;DataMovto;8;Data/Hora;8;False;True;False;Date();;;;;;"00/00/0000;0;_";
+FE;F Temp Movimento Contas;3;ValorDebito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;F Temp Movimento Contas;4;ValorCredito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;F Temp Movimento Contas;5;Complemento;10;Texto;80;False;False;True;;;;;;;;
+FE;F Temp Movimento Contas;6;Confirmado;1;Sim/Não (Boolean);1;False;False;False;;;;;Confirmado;Yes/No;;
+FE;F Temp Movimento Contas;7;EmAberto;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;F Temp Movimento Contas;8;CodigoConta;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;F Temp Movimento Contas;9;DataVinculada;8;Data/Hora;8;False;False;False;;;;;;;;
+FE;F Temp Movimento Contas;10;Historico;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;F Temp Movimento Contas;11;NumDoc;10;Texto;50;False;False;False;;;;;;;;
+FE;F Temp Movimento Contas;12;CodigoParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;F Temp Movimento Contas;13;DataPagto;8;Data/Hora;8;False;False;False;;;;;;;;
+FE;F Temp Movimento Contas;14;DataVencto;8;Data/Hora;8;False;False;False;;;;;;;;
+FE;F Temp Movimento Contas;15;HistoricoExtrato;10;Texto;80;False;False;False;;;;;;;;
+FE;F Temp Movimento Contas;16;CodigoVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;F Temp Movimento Contas;17;Efetuado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;F Temp Movimento Contas;18;Plano3;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;F Temp Movimento Contas;19;ReferenteNotaFiscal;10;Texto;9;False;False;False;;;;;;;;
+FE;F Temp Movimento Contas;20;Observacao;12;Memorando (Memo);0;False;False;False;;;;;;;;
+FE;F Temp Movimento Contas;21;PagamentoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;F Temp Movimento Contas;22;Integracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;F Temp Movimento Contas;23;SomenteIntegracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;F Temp Movimento Contas;24;MovPagtoLote;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;F Temp Movimento Contas;25;MovtoOrigem;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;PosicaoImovelParceiro;1;Movimento;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+FE;PosicaoImovelParceiro;2;EmpVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;PosicaoImovelParceiro;3;CodigoParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;PosicaoImovelParceiro;4;Imovel;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;PosicaoImovelParceiro;5;ValorDebito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;PosicaoImovelParceiro;6;ValorCredito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;TempLoteMovContas;0;NumMovimento;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+FE;TempLoteMovContas;1;EmpVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;EmpVinculada_SL;;;"SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM EmpVinculada WHERE ((([EmpVinculada].[NomeVinculada])<>""disponivel programador"")); "
+FE;TempLoteMovContas;2;CodigoParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;Parceiro;;;"SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cliente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros; "
+FE;TempLoteMovContas;3;CodHistorico;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico; "
+FE;TempLoteMovContas;4;DataMovto;8;Data/Hora;8;False;True;False;Date();;;;;;"00/00/0000;0;_";
+FE;TempLoteMovContas;5;ValorDebito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;TempLoteMovContas;6;ValorCredito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;TempLoteMovContas;7;Complemento;10;Texto;50;False;False;True;;;;;;;;
+FE;TempLoteMovContas;8;Plano3;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano2], [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2]; "
+FE;TempLoteMovContas;9;ContaFinanceira;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas Financeiras].[Tipo Conta]; "
+FE;TempLoteMovContas;10;Confirmado;1;Sim/Não (Boolean);1;False;False;False;;;;;Confirmado;Yes/No;;
+FE;TempLoteMovContas;11;Integracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;TempLoteMovContas;12;DataPagto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+FE;TempLoteMovContas;13;DataVencto;8;Data/Hora;8;False;False;False;=Date();;;;;;"00/00/0000;0;_";
+FE;TempLoteMovContas;14;MovPagtoLote;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempLoteMovContas;15;SelPagtoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;TempLoteMovContas;16;Observacao;12;Memorando (Memo);0;False;False;False;;;;;;;;
+FE;TempLoteMovContas;17;NumDoc;10;Texto;50;False;False;False;;;;;;;;
+FE;TempLoteMovContas;18;CodImovel;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempLoteMovContas;19;Efetuado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;TempLoteMovContas;20;ReferenteNotaFiscal;10;Texto;9;False;False;False;;;;;;;;
+FE;TempLoteMovContas;21;PagamentoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;TempVendaImovel;1;NumMovimento;4;Inteiro Longo (Long);4;True;False;False;;;;;;;;
+FE;TempVendaImovel;2;EmpVinculada;4;Inteiro Longo (Long);4;False;False;False;0;;;;EmpVinculada_SL;;;"SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada] FROM EmpVinculada WHERE ((([EmpVinculada].[NomeVinculada])<>""sistema"")); "
+FE;TempVendaImovel;3;CodigoParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;Parceiro;;;"SELECT [Parceiros].[CodigoParceiro], [Parceiros].[NomeParceiro], [Parceiros].[Cliente], [Parceiros].[Fornecedor], [Parceiros].[Funcionario] FROM Parceiros WHERE ((([Parceiros].[NomeParceiro])<>""sistema"")); "
+FE;TempVendaImovel;4;CodHistorico;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Historico].[CodHistorico], [Historico].[Descricao] FROM Historico WHERE ((([Historico].[Descricao])<>""sistema"")); "
+FE;TempVendaImovel;5;DataMovto;8;Data/Hora;8;False;True;False;Date();;;;;;"00/00/0000;0;_";
+FE;TempVendaImovel;6;ValorDebito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;TempVendaImovel;7;ValorCredito;7;Duplo (Double);8;False;False;False;0;;;;;Standard;;
+FE;TempVendaImovel;8;Complemento;10;Texto;80;False;False;True;;;;;;;;
+FE;TempVendaImovel;9;Plano3;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [Plano3].[Plano3], [Plano3].[DescricaoPlano3], [Plano2].[DescricaoPlano2], [Plano1].[DescricaoPlano1] FROM (Plano1 INNER JOIN Plano2 ON [Plano1].[Plano1]=[Plano2].[Plano1]) INNER JOIN Plano3 ON [Plano2].[Plano2]=[Plano3].[Plano2] WHERE ((([Plano3].[DescricaoPlano3])<>""sistema"")); "
+FE;TempVendaImovel;10;ContaFinanceira;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>""sistema"")); "
+FE;TempVendaImovel;11;Confirmado;1;Sim/Não (Boolean);1;False;False;False;;;;;Confirmado;Yes/No;;
+FE;TempVendaImovel;12;Integracao;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;TempVendaImovel;13;DataPagto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+FE;TempVendaImovel;14;DataVencto;8;Data/Hora;8;False;False;False;;;;;;;"00/00/0000;0;_";
+FE;TempVendaImovel;15;MovPagtoLote;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempVendaImovel;16;SelPagtoLote;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;TempVendaImovel;17;Observacao;12;Memorando (Memo);0;False;False;False;;;;;;;;
+FE;TempVendaImovel;18;NumDoc;10;Texto;50;False;False;False;;;;;;;;
+FE;TempVendaImovel;19;CodImovel;4;Inteiro Longo (Long);4;False;False;False;;;;;;;;"SELECT ImoveisParceiro.CodImovel, ImoveisParceiro.NomeImovel, ImoveisParceiro.EmpVinculada, ImoveisParceiro.CodParceiro FROM ImoveisParceiro; "
+FE;TempVendaImovel;20;AgrupadorVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempVendaImovel;21;ClassificacaoVenda;10;Texto;1;False;False;False;;;;;;;;
+FE;TempVendaImovel;22;SofreReajuste;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;TempVendaImovel;23;IndiceReajuste;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempVendaImovel;24;CodAtribuiParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempVendaImovel;25;CodAtribuiEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempVendaImovel;26;CodAnteriorParceiro;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempVendaImovel;27;CodAnteriorEmpresa;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempVendaImovel;28;Efetuado;1;Sim/Não (Boolean);1;False;False;False;;;;;;Yes/No;;
+FE;TempVendaImovel;29;LinkVenda;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;
+FE;TempVendaImovel;30;ValorOriginalImovel;7;Duplo (Double);8;False;False;False;0;;;;;;;
+FE;TempVendaImovel;31;CodigoCondPagto;4;Inteiro Longo (Long);4;False;False;False;0;;;;;;;

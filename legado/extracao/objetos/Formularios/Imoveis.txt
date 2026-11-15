@@ -1,0 +1,412 @@
+Version =19
+VersionRequired =19
+Checksum =45982200
+Begin Form
+    AutoResize = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    AutoCenter = NotDefault
+    AllowDeletions = NotDefault
+    PictureTiling = NotDefault
+    AllowAdditions = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    ViewsAllowed =1
+    TabularFamily =124
+    BorderStyle =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =14445
+    ItemSuffix =14
+    Left =4260
+    Top =495
+    Right =18525
+    Bottom =9600
+    DatasheetGridlinesColor =12632256
+    PaintPalette = Begin
+        0x00030100ffffff0000000000
+    End
+    RecSrcDt = Begin
+        0x8e088b28aebce340
+    End
+    GUID = Begin
+        0x351b8c4f38fb8a4d99e5d6c8fed0bccd
+    End
+    NameMap = Begin
+        0x0acc0e55000000007868cfc273f2114eb293d5636a02113e00000000e6e59c28 ,
+        0x18a5e340000000000000000045006d007000560069006e00630075006c006100 ,
+        0x640061000000000000004fb9722fc60dc64eabe2cbed4e7c7865070000007868 ,
+        0xcfc273f2114eb293d5636a02113e43006f006400690067006f00560069006e00 ,
+        0x630075006c0061006400610000000000000016ac49e3e4b5e14790dfff869bed ,
+        0x94a2070000007868cfc273f2114eb293d5636a02113e4e006f006d0065005600 ,
+        0x69006e00630075006c00610064006100000000000000a11fd3ef6deede47b288 ,
+        0x8e8a5af08118070000007868cfc273f2114eb293d5636a02113e49006d006f00 ,
+        0x760065006c0045006d00560065006e006400610000000000000052e03d9f0d65 ,
+        0x2b44a8533877372572e9010000007dab612753f8e34001000000803713004900 ,
+        0x6d006f007600650069007300200053007500620066006f0072006d0075006c00 ,
+        0xe100720069006f00000000000000ff900db53296f848888e673759ea4b140000 ,
+        0x0000f60a958bcc7ae340640049006e00640043006f006e00740072006f006c00 ,
+        0x650049006d006f007600650069007300000000000000a101a563e0fad24b8151 ,
+        0x233e82def5a107000000ff900db53296f848888e673759ea4b1445006d007000 ,
+        0x560069006e00630075006c00610064006100000000000000f75019cf01e3de4b ,
+        0xac875170863adfc306000000351b8c4f38fb8a4d99e5d6c8fed0bccd49006d00 ,
+        0x6f007600650069007300200053007500620066006f0072006d0075006c00e100 ,
+        0x720069006f00000000000000867e00f4fffa854a8cc7b95aa3e9dd7701000000 ,
+        0x3c0a259019a5e340010000008037130043006f006e0064005000610067007400 ,
+        0x6f0049006d006f00760065006c00200053007500620066006f0072006d007500 ,
+        0x6c00e100720069006f0000000000000058774e88c57ee448b240fa42d2bfac9b ,
+        0x000000002ddd992818a5e340f70300000000000043006f006e00640050006100 ,
+        0x670074006f0049006d006f00760065006c000000000000003fa8c5d3f1c5f84b ,
+        0x858b76f8bcce43420700000058774e88c57ee448b240fa42d2bfac9b51007400 ,
+        0x6400500061007200630065006c00610073000000000000007d6a097b5c66d048 ,
+        0xb0fef8533968b15d0700000058774e88c57ee448b240fa42d2bfac9b56006100 ,
+        0x6c006f00720049006e0069006300690061006c00000000000000767d45c14c95 ,
+        0x9445a0def5192a2e4d840700000058774e88c57ee448b240fa42d2bfac9b4300 ,
+        0x6f00640049006d006f00760065006c000000000000005b29bda76e82f64c8044 ,
+        0x6ea7174d62aa010000006193e77dafbce3400100000080371300500061007200 ,
+        0x630065006c006100730049006d006f00760065006c00000000000000639a12fa ,
+        0x9c7ed64db0bfbd7da330b18601000000c0bd6c88afbce3400100000080371300 ,
+        0x500061007200630065006c006100730049006d006f00760065006c0043007200 ,
+        0x65006400000000000000000000000000000000000000000000000c0000000400 ,
+        0x00000000000000000000000000000000
+    End
+    RecordSource ="SELECT [EmpVinculada].[CodigoVinculada], [EmpVinculada].[NomeVinculada], [EmpVin"
+        "culada].[ImovelEmVenda] FROM EmpVinculada WHERE ((([EmpVinculada].[NomeVinculada"
+        "])<>\"sistema\") And (([EmpVinculada].[ImovelEmVenda])=True)); "
+    Caption ="Imoveis"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x6801000068010000680100006801000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400149c00f80303f700040100090000000000000001000700580201000100 ,
+        0x5802020000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000010000000300000000000000000000000000000000000000e2a497bc ,
+        0x00010102ff020200010000000000004c65786d61726b20543633320000000000 ,
+        0x0000000000000000000000000000004c65786d61726b20543633320000000000 ,
+        0x00000000000000000000000000000000320200004c65786d61726b2054363332 ,
+        0x002052000000000000000000ccdab7009e672a7440004001ff7fff7f00002800 ,
+        0x01000c000d000500060004000700030006000100000000000000000000000600 ,
+        0x05000900000000008901c300bfc602007339010001001c001000200025001200 ,
+        0x000041003e010000e2a497bc02000100ff004000b00458022c01000000005802 ,
+        0x0000000000010000000000000000f10000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000100000700 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000a0000000a0000000a000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000001000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000001000000000000000000 ,
+        0x0000011000010000000000000400000001000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000003c4f00000000000000000000e2a497bc
+    End
+    PrtDevNames = Begin
+        0x080015001d00010000000000000000000000000000000000000000000049505f ,
+        0x3139322e3136382e322e323300
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =18
+            FontSize =10
+            FontWeight =700
+            BackColor =13209
+            FontName ="Times New Roman"
+        End
+        Begin Rectangle
+            BackStyle =0
+            Width =850
+            Height =850
+            BorderColor =8421504
+        End
+        Begin Line
+            BorderWidth =2
+            Width =1701
+            BorderColor =8421504
+        End
+        Begin CommandButton
+            TextFontFamily =18
+            Width =1701
+            Height =283
+            FontName ="Times New Roman"
+        End
+        Begin OptionButton
+            BorderWidth =3
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin CheckBox
+            BorderWidth =3
+            LabelX =230
+            LabelY =-30
+            BorderColor =13209
+        End
+        Begin OptionGroup
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin BoundObjectFrame
+            Width =4536
+            Height =2835
+            LabelX =-1701
+            BorderColor =8421504
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            TextFontFamily =18
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ListBox
+            TextFontFamily =18
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin ComboBox
+            TextFontFamily =18
+            Width =1701
+            LabelX =-1701
+            FontSize =10
+            BorderColor =8421504
+            FontName ="Times New Roman"
+        End
+        Begin Subform
+            Width =1701
+            Height =1701
+            BorderColor =8421504
+        End
+        Begin UnboundObjectFrame
+            BackStyle =0
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+            BorderColor =8421504
+        End
+        Begin ToggleButton
+            TextFontFamily =18
+            Width =283
+            Height =283
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="Times New Roman"
+        End
+        Begin Tab
+            Width =5103
+            Height =3402
+        End
+        Begin FormHeader
+            Height =0
+            BackColor =-2147483633
+            Name ="CabeçalhoDoFormulário"
+            GUID = Begin
+                0x4e6cf4cc00d1ac49b150f0a6e980accc
+            End
+        End
+        Begin Section
+            CanGrow = NotDefault
+            Height =9127
+            Name ="Detalhe"
+            GUID = Begin
+                0x236913e7884c4f47bd9253ae10ff44f7
+            End
+            Begin
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =34
+                    Left =6810
+                    Top =120
+                    Width =576
+                    Height =285
+                    ColumnWidth =1701
+                    FontSize =8
+                    Name ="CodigoVinculada"
+                    ControlSource ="CodigoVinculada"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x126cccf90fba6a4693329d6f2f207097
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =480
+                    Top =90
+                    Width =5085
+                    Height =300
+                    ColumnWidth =2310
+                    FontSize =11
+                    TabIndex =1
+                    Name ="NomeVinculada"
+                    ControlSource ="NomeVinculada"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x30d04b6e4ff74645ae4739814be045eb
+                    End
+                End
+                Begin Subform
+                    OverlapFlags =85
+                    Left =165
+                    Top =510
+                    Width =13731
+                    Height =2769
+                    TabIndex =2
+                    Name ="Imoveis Subformulário"
+                    SourceObject ="Form.Imoveis Subformulário"
+                    LinkChildFields ="EmpVinculada"
+                    LinkMasterFields ="CodigoVinculada"
+                    EventProcPrefix ="Imoveis_Subformulário"
+                    GUID = Begin
+                        0xf75019cf01e3de4bac875170863adfc3
+                    End
+                End
+                Begin Subform
+                    OverlapFlags =85
+                    Left =165
+                    Top =3414
+                    Width =6816
+                    Height =3609
+                    TabIndex =3
+                    Name ="CondPagtoImovel Subformulário"
+                    SourceObject ="Form.CondPagtoImovel Subformulário"
+                    LinkChildFields ="CodImovel"
+                    LinkMasterFields ="[Imoveis Subformulário].Form![CodImovel]"
+                    EventProcPrefix ="CondPagtoImovel_Subformulário"
+                    GUID = Begin
+                        0xfc580d0f34c4314794fa4f5894bf3d8a
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1485
+                    Top =7110
+                    Width =3750
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =4
+                    ForeColor =13209
+                    Name ="Texto15"
+                    ControlSource ="=[Imoveis Subformulário].Form!NomeImovel"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x6558370e056ce845baed19c5cd386538
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1485
+                    Top =7455
+                    Width =3750
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =5
+                    ForeColor =13209
+                    Name ="Texto8"
+                    ControlSource ="=[Imoveis Subformulário].Form!Divisao"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x36dbb7c00ccdc94ea6538d77b109a228
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1485
+                    Top =7800
+                    Width =3735
+                    Height =1275
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =6
+                    ForeColor =13209
+                    Name ="Texto9"
+                    ControlSource ="=[Imoveis Subformulário].Form!Estilo"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x6a7aa29af3c3f24eb70aab7c84633b9b
+                    End
+                End
+                Begin Subform
+                    OverlapFlags =85
+                    Left =7095
+                    Top =3405
+                    Width =6810
+                    Height =3615
+                    TabIndex =7
+                    Name ="ParcelasImovel"
+                    SourceObject ="Form.ParcelasImovel"
+                    GUID = Begin
+                        0xc591d41524e090408389c1680bf70eb9
+                    End
+                End
+                Begin Subform
+                    OverlapFlags =85
+                    Left =5670
+                    Top =7095
+                    Width =8205
+                    Height =1965
+                    TabIndex =8
+                    Name ="ParcelasImovelCred"
+                    SourceObject ="Form.ParcelasImovelCred"
+                    GUID = Begin
+                        0x67443ddb5290984789fc2cc16c164f9a
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            Height =0
+            BackColor =-2147483633
+            Name ="RodapéDoFormulário"
+            GUID = Begin
+                0x9c800d3796003a478a8612219e93fa9c
+            End
+        End
+    End
+End

@@ -1,0 +1,7 @@
+﻿-- Consulta: Gerar Temp Parcelas No Movto
+-- Tipo: Acréscimo (64)
+-- Descrição: 
+
+INSERT INTO [F Movimento Contas] ( DataMovto, ValorDebito, ValorCredito, Plano2, Plano1, Complemento, Confirmado, ContaFinanceira, CodHistorico, NumDoc, CodigoParceiro, DataPagto, DataVencto, EmpVinculada, Efetuado, Plano3, ReferenteNotaFiscal, Observacao, PagamentoLote, Integracao, SomenteIntegracao, MovPagtoLote )
+SELECT [F Temp Movimento Contas].DataMovto, [F Temp Movimento Contas].ValorDebito, [F Temp Movimento Contas].ValorCredito, Plano2.Plano2, Plano1.Plano1, [F Temp Movimento Contas].Complemento, [F Temp Movimento Contas].Confirmado, [F Temp Movimento Contas].CodigoConta, [F Temp Movimento Contas].Historico, [F Temp Movimento Contas].NumDoc, [F Temp Movimento Contas].CodigoParceiro, [F Temp Movimento Contas].DataPagto, [F Temp Movimento Contas].DataVencto, [F Temp Movimento Contas].CodigoVinculada, [F Temp Movimento Contas].Efetuado, [F Temp Movimento Contas].Plano3, [F Temp Movimento Contas].ReferenteNotaFiscal, [F Temp Movimento Contas].Observacao, [F Temp Movimento Contas].PagamentoLote, [F Temp Movimento Contas].Integracao, [F Temp Movimento Contas].SomenteIntegracao, [F Temp Movimento Contas].MovPagtoLote
+FROM Plano1 INNER JOIN (Plano2 INNER JOIN ([F Temp Movimento Contas] INNER JOIN Plano3 ON [F Temp Movimento Contas].Plano3=Plano3.Plano3) ON Plano2.Plano2=Plano3.Plano2) ON Plano1.Plano1=Plano2.Plano1;

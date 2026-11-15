@@ -1,0 +1,7 @@
+﻿-- Consulta: EmissaoChequeViaPgLote
+-- Tipo: Atualização (48)
+-- Parâmetros: Formulários![Pagto Lote Header]!Movimento.Formulário!Complemento (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário![Numero Conta] (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!NomeVinculada (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!FinanceiraDescricao (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!NumDoc (Texto), Formulários![Pagto Lote Header]!DataParaPagamento (Texto), Formulários![Pagto Lote Header]!Movimento.Formulário!ValorDebito (Texto)
+-- Descrição: 
+
+UPDATE [Arquivo Sistema] SET [Arquivo Sistema].Favorecido = Formulários![Pagto Lote Header]!Movimento.Formulário!Complemento, [Arquivo Sistema].FavorecidoCopiaCheque = Formulários![Pagto Lote Header]!Movimento.Formulário!Complemento, [Arquivo Sistema].ContaCorrente = Formulários![Pagto Lote Header]!Movimento.Formulário![Numero Conta], [Arquivo Sistema].EmpresaDoCheque = Formulários![Pagto Lote Header]!Movimento.Formulário!NomeVinculada, [Arquivo Sistema].NomeBanco = Formulários![Pagto Lote Header]!Movimento.Formulário!FinanceiraDescricao, [Arquivo Sistema].NumeroCheque = Formulários![Pagto Lote Header]!Movimento.Formulário!NumDoc, [Arquivo Sistema].DataDoCheque = Formulários![Pagto Lote Header]!DataParaPagamento, [Arquivo Sistema].ValorDoCheque = Formulários![Pagto Lote Header]!Movimento.Formulário!ValorDebito
+WHERE ((([Arquivo Sistema].IDSistema)=1));

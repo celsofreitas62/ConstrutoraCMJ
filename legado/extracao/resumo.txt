@@ -1,0 +1,18 @@
+﻿Extração do Access - SistemaCMJ
+Data: 15/11/2026 10:06
+Access: 16.0   Jet/ACE FE: 4.0   BE: 4.0
+
+Back-end:  23 tabelas, 293 campos, 90 índices, 15 relações
+Front-end: 23 tabelas vinculadas, 5 tabelas locais, 340 consultas
+Objetos:   65 formulários, 39 relatórios, 2 macros, 1 módulos
+Dados:     23 tabelas exportadas para legado\dados_brutos
+Erros:     0 (ver erros.txt)
+
+Inicialização do front-end:
+  StartupForm = Menu Principal
+  AppTitle = CashBook CMJ
+  StartupShowDBWindow = False
+  AllowBypassKey = 
+  StartupMenuBar = 
+  AllowSpecialKeys = True
+  MacroAutoExec = False

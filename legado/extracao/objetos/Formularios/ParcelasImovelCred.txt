@@ -1,0 +1,276 @@
+Version =19
+VersionRequired =19
+Checksum =-54165947
+Begin Form
+    AllowFilters = NotDefault
+    AllowDeletions = NotDefault
+    DividingLines = NotDefault
+    AllowAdditions = NotDefault
+    OrderByOn = NotDefault
+    ScrollBars =2
+    TabularCharSet =238
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =7540
+    ItemSuffix =13
+    Left =10365
+    Top =6150
+    Right =10365
+    Bottom =6150
+    Filter ="((Lookup_CodigoParceiro.NomeParceiro=\"Casa das Torneiras Ltda\"))"
+    OrderBy ="[F Movimento Contas].NumMovimento"
+    RecSrcDt = Begin
+        0x3148221baebce340
+    End
+    GUID = Begin
+        0x639a12fa9c7ed64db0bfbd7da330b186
+    End
+    NameMap = Begin
+        0x0acc0e5500000000ebf976235e724e48939d12c466fccad5000000009dab221b ,
+        0xaebce34000000000f8c1d106500061007200630065006c006100730049006d00 ,
+        0x6f00760065006c004300720065006400000000000000234efff34ccd0f439ad2 ,
+        0xf5798260187e07000000ebf976235e724e48939d12c466fccad54e0075006d00 ,
+        0x4d006f00760069006d0065006e0074006f00000000000000f85def09268f1145 ,
+        0xa0fdbafdb4e9dc4d07000000ebf976235e724e48939d12c466fccad556006100 ,
+        0x6c006f0072004300720065006400690074006f00000000000000fbec953840ae ,
+        0xdd4fb8f11a329a2c7e7007000000ebf976235e724e48939d12c466fccad54400 ,
+        0x610074006100560065006e00630074006f0000000000000034998d7af7eed14a ,
+        0x97e76b8a50463ee807000000ebf976235e724e48939d12c466fccad556006100 ,
+        0x6c006f0072004f0072006900670069006e0061006c0049006d006f0076006500 ,
+        0x6c00000000000000f9d29dcaf0ebb5408b46b016991b65d007000000ebf97623 ,
+        0x5e724e48939d12c466fccad543006f006e0074006100460069006e0061006e00 ,
+        0x6300650069007200610000000000000033f2700b8480324c94b67e173d5e5f7d ,
+        0x00000000f341a82818a5e3400000000000000000460020005400690070006f00 ,
+        0x7300200043006f006e00740061002000460069006e0061006e00630065006900 ,
+        0x720061000000000000008f62d3b824edbb479fce7b0009fc2dba0000000093ca ,
+        0x9e2818a5e34001000000c4617f544600200043006f006e007400610073002000 ,
+        0x460069006e0061006e00630065006900720061007300000000000000246fb76e ,
+        0x3eebcf49b9b364f6fba78404070000008f62d3b824edbb479fce7b0009fc2dba ,
+        0x43006f006400690067006f0043006f006e007400610000000000000030f674ae ,
+        0xa2bfac4cb0b2674b64f5cecb070000008f62d3b824edbb479fce7b0009fc2dba ,
+        0x440065007300630072006900630061006f00000000000000456689f74547aa43 ,
+        0xb9ef9287b569b6b10700000033f2700b8480324c94b67e173d5e5f7d44006500 ,
+        0x7300630072006900630061006f000000000000006db9dbd2032c41498d3afea7 ,
+        0xa5117f970700000033f2700b8480324c94b67e173d5e5f7d43006f0064005400 ,
+        0x690070006f0043006f006e00740061000000000000002e12478bfab45a48ac39 ,
+        0xbd8ad7c43f7e070000008f62d3b824edbb479fce7b0009fc2dba540069007000 ,
+        0x6f00200043006f006e00740061000000000000006b4dc47b956d2b41851505b0 ,
+        0x42a3d53b07000000ebf976235e724e48939d12c466fccad543006f006d007000 ,
+        0x6c0065006d0065006e0074006f00000000000000000000000000000000000000 ,
+        0x000000000c000000040000000000000000000000000000000000
+    End
+    RecordSource ="ParcelasImovelCred"
+    DatasheetFontName ="Arial"
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =11
+            FontName ="Calibri"
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            Width =1701
+            LabelX =-1701
+            FontSize =11
+            BorderColor =12632256
+            FontName ="Calibri"
+        End
+        Begin ComboBox
+            Width =1701
+            LabelX =-1701
+            FontSize =11
+            BorderColor =12632256
+            FontName ="Calibri"
+        End
+        Begin FormHeader
+            Height =283
+            BackColor =-2147483633
+            Name ="CabeçalhoDoFormulário"
+            GUID = Begin
+                0x128c13b12e83e54a82e0ec0e65117ef2
+            End
+            Begin
+                Begin Label
+                    OverlapFlags =93
+                    TextAlign =2
+                    Left =4305
+                    Top =15
+                    Width =1020
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =13209
+                    Name ="Rótulo6"
+                    Caption ="Crédito"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x8fcf6bebe7f75b44bba60cdbe43a7391
+                    End
+                End
+                Begin Label
+                    OverlapFlags =87
+                    TextAlign =2
+                    Left =5325
+                    Top =15
+                    Width =1095
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =13209
+                    Name ="Rótulo7"
+                    Caption ="Vencto"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xf6c535414b441048a3e37f147ec35b62
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =6480
+                    Top =15
+                    Width =960
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =13209
+                    Name ="Rótulo9"
+                    Caption ="Vlr Original"
+                    FontName ="Arial"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xa5b05bfe6076d946838c8ee4f5a3f744
+                    End
+                End
+            End
+        End
+        Begin Section
+            Height =340
+            Name ="Detalhe"
+            GUID = Begin
+                0x797d877210a9a4438de0f84de41b7bb5
+            End
+            Begin
+                Begin TextBox
+                    TabStop = NotDefault
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontCharSet =204
+                    IMESentenceMode =3
+                    Left =4392
+                    Top =45
+                    Width =906
+                    ColumnWidth =1095
+                    FontSize =8
+                    Name ="ValorCredito"
+                    ControlSource ="ValorCredito"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x098513af83702a4abd7a4c8ca4d53d59
+                    End
+                End
+                Begin TextBox
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextFontCharSet =204
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =5347
+                    Top =49
+                    Width =1086
+                    ColumnWidth =990
+                    FontSize =8
+                    TabIndex =1
+                    Name ="DataVencto"
+                    ControlSource ="DataVencto"
+                    InputMask ="00/00/0000;0;_"
+                    GUID = Begin
+                        0x0d636424fc4f574b967fb1ff9e93b508
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =85
+                    TextFontCharSet =204
+                    IMESentenceMode =3
+                    Left =6504
+                    Top =45
+                    Width =936
+                    ColumnWidth =1185
+                    FontSize =8
+                    TabIndex =2
+                    ForeColor =16711680
+                    Name ="ValorOriginalImovel"
+                    ControlSource ="ValorOriginalImovel"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xf85a9d5606ec16419fd8fd53be4c998a
+                    End
+                End
+                Begin ComboBox
+                    LimitToList = NotDefault
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    IMESentenceMode =3
+                    ColumnCount =3
+                    ListRows =8
+                    ListWidth =4536
+                    Left =120
+                    Top =45
+                    Width =1776
+                    Height =255
+                    ColumnWidth =2250
+                    FontSize =8
+                    TabIndex =3
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"60\""
+                    GUID = Begin
+                        0xa3743465aeef484bad1cd1c219b80d93
+                    End
+                    Name ="ContaFinanceira"
+                    ControlSource ="ContaFinanceira"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao],"
+                        " [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER JO"
+                        "IN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Contas"
+                        " Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>\"siste"
+                        "ma\")); "
+                    ColumnWidths ="0;1560;2115"
+                    BaseInfo ="\"SELECT [F Contas Financeiras].[CodigoConta], [F Contas Financeiras].[Descricao"
+                        "], [F Tipos Conta Financeira].[Descricao] FROM [F Tipos Conta Financeira] INNER "
+                        "JOIN [F Contas Financeiras] ON [F Tipos Conta Financeira].[CodTipoConta]=[F Cont"
+                        "as Financeiras].[Tipo Conta] WHERE ((([F Contas Financeiras].[Descricao])<>\"\"s"
+                        "istema\"\")); \";\"F Tipos Conta Financeira\";\"F Contas Financeiras\";\"\""
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    IMESentenceMode =3
+                    Left =1987
+                    Top =49
+                    Width =2316
+                    Height =255
+                    ColumnWidth =1485
+                    FontSize =8
+                    TabIndex =4
+                    Name ="Complemento"
+                    ControlSource ="Complemento"
+                    GUID = Begin
+                        0xf813e8a493c3a44a9bded819a3c43e68
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            Visible = NotDefault
+            Height =0
+            Name ="RodapéDoFormulário"
+            GUID = Begin
+                0xd0daa3472ee13d4f863c0ed03cbfdcff
+            End
+        End
+    End
+End
