@@ -352,6 +352,7 @@ C:\SistemaCMJ\            (sincronizada com o Google Drive)
 - Desenvolver e testar no `SISTEMACMJ_LOCAL`; o usuário promove para produção.
 - Toda rotina financeira é **tudo-ou-nada** e auditada (quem, quando, antes/depois).
 - Ao final de cada etapa, atualizar as seções 6 (pendências), 7 (fases) e 10 (diário) deste arquivo.
+- **Commits feitos pelo Claude** (pedido do Celso, 16/11/2026): depois de cada etapa/ajuste homologado e de cada registro de decisões, fazer `git add -A` + `git commit` na pasta pelo shell do notebook, com a mensagem no padrão ("02c: ...") e as linhas de atribuição; avisar o código do commit. Na conversa nova, pedir uma vez a permissão de apagar na pasta (o Git precisa apagar os `.lock`). Nunca `push`, `reset`, `rebase` ou apagar histórico sem o Celso pedir.
 
 ## 10. Diário de decisões
 
@@ -395,3 +396,4 @@ C:\SistemaCMJ\            (sincronizada com o Google Drive)
 - **15/11/2026**: homologação 02b2 achou um **defeito**: o padrão `LIKE '%[^a-z0-9._-]%'` recusava nomes com `_` (arquivo `logo_email.png` e, do mesmo jeito, login como `maria_silva`). Corrigido em `SIS_Parametro_Gravar` v1.3, `SIS_Usuario_Gravar` v1.2 e `CK_Usuario_LOGIN` (`SIS.Usuario` v1.1): os caracteres `. _ -` são retirados com `REPLACE` antes de conferir que o resto é só letra e número. **Nota (ainda não é regra oficial)**: não usar `_` e `-` juntos dentro de `[...]` no LIKE; preferir `REPLACE` + `[^A-Za-z0-9]`.
 - **15/11/2026**: **02b2 homologada** pelo Celso no LOCAL (pacote sem erro, **25 testes, 0 falhas**, incluindo a correção de nomes com `_`).
 - **16/11/2026**: o Celso passou **12 pedidos** (seção 3.8; detalhe em `docs/requisitos/Pedidos_Celso_2026-11-16.md`). Respostas dele: medição = controle completo de empreitada (planilha `PlanilhasCMJ/Medição.xlsx`, analisada em `docs/requisitos/Medicao_Empreitada.md`); mês fechado bloqueia só lançamentos contábeis; habilitação por **módulo e tela** (entra na 02c); análise do plano de contas na **etapa 03**. Criados `padroes/PADRAO_TELAS.md` (pedido 1) e `padroes/PADRAO_RELATORIOS.md` (pedido 12). `PlanilhasCMJ/` e atalhos `*.gdoc` incluídos no `.gitignore`.
+- **16/11/2026**: pedido do Celso: **o Claude faz os commits** no notebook (seção 9 e `docs/GUIA_DO_CELSO.md` seção 6). Primeiro commit feito assim: `d52e234`.

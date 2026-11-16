@@ -59,6 +59,9 @@ Se uma etapa ficar grande, abra outra com o mesmo número e uma letra (ex.: `07b
 
 ## 6. Git: guardar o trabalho
 
+**Desde 16/11/2026 o Claude faz os commits sozinho**, a cada etapa ou ajuste homologado (e depois de registrar decisões), com a mensagem já pronta. Para isso, em cada conversa nova ele pede uma vez a permissão de apagar arquivos na pasta (o Git apaga arquivos temporários a cada commit): é só aprovar a janela. Ele avisa o código de cada commit. Os comandos abaixo continuam valendo se você quiser fazer na mão.
+
+
 No PowerShell, ao fim de cada etapa (o Claude sugere a mensagem):
 
 ```powershell
