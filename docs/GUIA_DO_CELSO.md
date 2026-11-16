@@ -23,20 +23,20 @@ Atualizado em 15/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dize
 
 | Nº | Nome da conversa | Fase do plano |
 |---|---|---|
-| 01 | Git e levantamento do Access (Git concluído em 14/11/2026) | 1 |
-| 01b | Levantamento do Access (concluído em 15/11/2026) | 1 |
-| 02 | Base SIS (licença, parâmetros, usuários, auditoria, lote, anexo, log, fila de e-mail) | 2 |
-| 03 | Modelo de dados (cadastros, imóveis, vendas, financeiro) | 2 |
-| 04 | API ASP.NET Core (esqueleto, login, fila de e-mail, agendador) | 3 |
-| 05 | Cadastros (telas + procedures) | 4 |
-| 06 | Vendas e geração de parcelas | 5 |
-| 07 | Financeiro (pagar, receber, baixas, conciliação) | 6 |
-| 08 | Cobrança Sicredi | 7 |
-| 09 | Custos de obra | 8 |
-| 10 | Painel e relatórios | 9 |
-| 11 | Migração do Access e virada | 10 |
+| 01 | Git e levantamento do Access (concluída em 14/11/2026) | 1 |
+| 01b | Levantamento do Access (concluída em 15/11/2026) | 1 |
+| 02 | Base SIS (concluída em 16/11/2026) | 2 |
+| 03 | Modelo de dados: plano de contas, CAD e BANCO (03a concluída em 16/11/2026) | 3a |
+| 03b | API e primeira tela (login, menu, tela de Pessoas no navegador) | 3b |
+| 03c | Financeiro e ensaio da migração do movimento | 3c |
+| 04 | Telas dos cadastros e do financeiro | 4 |
+| 05 | Imóveis e vendas (espelho, contrato, parcelas, reajuste) | 5 |
+| 06 | Cobrança Sicredi | 6 |
+| 07 | Relatórios essenciais e ajuda | 7 |
+| 08 | Migração final, instalação e virada | 8 |
+| 09 em diante | Itens de depois da virada (Compras, medição, custo de obra, painel...) | 1.x |
 
-Se uma etapa ficar grande, abra outra com o mesmo número e uma letra (ex.: `07b - Conciliação bancária`).
+Lista revista em 16/11/2026, junto com o novo plano de fases (CLAUDE.md, seção 7). Se uma etapa ficar grande, abra outra com o mesmo número e uma letra (ex.: `07b - Conciliação bancária`).
 
 ## 4. Frases úteis
 
@@ -72,6 +72,15 @@ git commit -m "mensagem que o Claude sugerir"
 ```
 
 Para ver o histórico: `git log --oneline`.
+
+**Cópia no GitHub** (desde 16/11/2026): o repositório privado `https://github.com/celsofreitas62/ConstrutoraCMJ` guarda uma cópia de todo o histórico. Para enviar os commits para lá (no primeiro envio abre uma janela do GitHub pedindo para autorizar: é só autorizar uma vez):
+
+```powershell
+Set-Location C:\SistemaCMJ
+git push -u origin main
+```
+
+Depois do primeiro, basta `git push`. Dados pessoais e material de outras empresas nunca vão para lá (o `.gitignore` já impede).
 
 **Sempre comece pelo `Set-Location C:\SistemaCMJ`**: o PowerShell abre em `C:\Users\celso`, e lá o Git responde `fatal: not a git repository`. Se aparecer esse erro, rode o `Set-Location` e repita os comandos.
 
