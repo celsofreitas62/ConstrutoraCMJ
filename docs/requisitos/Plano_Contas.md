@@ -2,7 +2,7 @@
 
 Conversa "03 – Modelo de dados", 16/11/2026. Fonte: `legado/dados_brutos/Plano1/2/3.csv` e os 250.096 movimentos (`F Movimento Contas` + `ArquivoMorto`).
 
-> **Situação: proposta aguardando aprovação do Celso.** Nada foi criado no banco.
+> **Situação: APROVADA pelo Celso em 16/11/2026** (respostas na seção 5). Tabelas ainda não criadas.
 
 ## 1. Como é no Access
 
@@ -52,3 +52,13 @@ Conversa "03 – Modelo de dados", 16/11/2026. Fonte: `legado/dados_brutos/Plano
 5. **Imóvel ou obra dentro do plano** (Casa Danielle, Sala 110, Allegro apto. 13, Obra Terra Forte Café): trocar por conta genérica ("Aluguéis recebidos", "Despesas de imóveis próprios") e identificar o imóvel pelo centro de custo/unidade?
 6. **Orçamento da obra** (`OBRA`): orçar por grupo/subgrupo do plano (as etapas já estão nele) em vez de uma tabela de etapas separada?
 7. Quais contas são **contábeis** (pedido 10) e o código na contabilidade: preencher depois, pela tela, com a contabilidade?
+
+## 5. Respostas do Celso (16/11/2026)
+
+1. Estrutura em três tabelas: **aprovada**.
+2. Plano antigo: **opção (a)**, grupos inativos de histórico, só consulta.
+3. Receitas: **criar grupo novo numerado**.
+4. Não operacional: **criar grupo**.
+5. Imóvel/obra no plano: **conta genérica**, imóvel/obra pelo centro de custo ou unidade.
+6. Orçamento da obra: **pelos grupos/subgrupos do plano**.
+7. Contábil e código da contabilidade: **preenchidos depois, pela tela**.
