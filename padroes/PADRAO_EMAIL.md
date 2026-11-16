@@ -20,11 +20,13 @@ Serviço da aplicação (agendador interno, a cada 1 min)
 ```
 
 1. **Nunca enviar e-mail de forma síncrona dentro de uma gravação de negócio.** A procedure/trigger só faz um `INSERT` barato na fila. Uma falha de SMTP nunca desfaz a venda, a baixa ou o lançamento.
-2. **Fila com idempotência**: `ID_EMAIL` (`uniqueidentifier`), `CHAVE_ORIGEM` (ex.: `BOLETO:12345`) com índice único filtrado para impedir duplicidade do mesmo aviso, `TENTATIVAS`, `PROXIMA_TENTATIVA`, `ULTIMO_ERRO`.
+2. **Fila com idempotência**: `ID_EMAIL` (numérico, mostrado na tela; decidido na etapa 02d), `CHAVE_ORIGEM` (ex.: `BOLETO:12345`) com índice único filtrado para impedir duplicidade do mesmo aviso, `TENTATIVAS`, `PROXIMA_TENTATIVA`, `ULTIMO_ERRO`.
 3. **Retentativa só para falha temporária** (timeout, SMTP indisponível, 4xx), com espera progressiva (1, 5, 15, 60 min) e limite de tentativas. Erro permanente (endereço inválido, 5xx definitivo) vai direto para `ERRO`.
 4. **Laço isolado**: um e-mail com problema não impede os demais de sair.
 5. **Falha no envio gera alerta técnico** para o administrador (endereço em `SIS.Parametro`), nunca para o cliente/usuário final.
 6. **Credenciais SMTP** nunca em tabela comum nem no código-fonte: ficam na configuração protegida do serviço (variável de ambiente / arquivo de segredos fora da pasta publicada / DPAPI). Nunca registrar senha, token ou cabeçalho de autenticação em log.
+
+Implementação (etapa 02d): `SIS.SIS_Email_Enfileirar` é a única entrada da fila; a moldura visual (seções 3 e 4) sai pronta de `SIS.fn_SIS_Email_HTML(@Titulo, @Severidade, @Conteudo, @Rotina, @Grupo, @Externo)`; a orquestradora monta só o miolo.
 
 ## 2. Montagem (no SQL)
 

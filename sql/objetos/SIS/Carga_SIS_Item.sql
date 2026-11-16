@@ -22,6 +22,9 @@
                         existente, porque itens só mudam por carga).
     v1.2 (16/11/2026) - Etapa 02c: HABILITADO, TABELAS_DA_TELA e as telas
                         "Módulos e telas" (exclusiva), "Auditoria" e "Lotes".
+    v1.3 (16/11/2026) - Etapa 02d: "Rotinas automáticas" e "Instalação e
+                        manutenção" (exclusivas); agrupador "E-mails" com
+                        "Grupos de e-mail" e "E-mails enviados".
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -37,9 +40,14 @@ FROM (VALUES
         ('SIS', 'SIS_CONFIGURACAO',  'SIS_LICENCA',       N'Licença',             'TELA', 'sis/licenca.html',     10, 1, 1, 'SIS.Licenca,SIS.Licenca_Empresa'),
         ('SIS', 'SIS_CONFIGURACAO',  'SIS_PARAMETRO',     N'Parâmetros',          'TELA', 'sis/parametros.html',  20, 1, 1, 'SIS.Parametro'),
         ('SIS', 'SIS_CONFIGURACAO',  'SIS_MODULO',        N'Módulos e telas',     'TELA', 'sis/modulos.html',     30, 1, 1, 'SIS.Modulo,SIS.Item'),
+        ('SIS', 'SIS_CONFIGURACAO',  'SIS_ROTINA',        N'Rotinas automáticas', 'TELA', 'sis/rotinas.html',     40, 1, 1, 'SIS.Rotina'),
+        ('SIS', 'SIS_CONFIGURACAO',  'SIS_INSTALACAO',    N'Instalação e manutenção', 'TELA', 'sis/instalacao.html', 50, 1, 1, ''),
         ('SIS', NULL,                'SIS_SEGURANCA',     N'Segurança',           'MENU', '',                     20, 0, 1, ''),
         ('SIS', 'SIS_SEGURANCA',     'SIS_USUARIO',       N'Usuários',            'TELA', 'sis/usuarios.html',    10, 0, 1, 'SIS.Usuario,SIS.Usuario_Permissao'),
         ('SIS', 'SIS_SEGURANCA',     'SIS_PERFIL',        N'Perfis e permissões', 'TELA', 'sis/perfis.html',      20, 0, 1, 'SIS.Perfil,SIS.Perfil_Permissao'),
+        ('SIS', NULL,                'SIS_EMAILS',        N'E-mails',             'MENU', '',                     25, 0, 1, ''),
+        ('SIS', 'SIS_EMAILS',        'SIS_GRUPO_EMAIL',   N'Grupos de e-mail',    'TELA', 'sis/grupos-email.html', 10, 0, 1, 'SIS.Grupo_Email,SIS.Grupo_Email_Destinatario'),
+        ('SIS', 'SIS_EMAILS',        'SIS_EMAIL_FILA',    N'E-mails enviados',    'TELA', 'sis/emails.html',      20, 0, 1, ''),
         ('SIS', NULL,                'SIS_MONITORAMENTO', N'Monitoramento',       'MENU', '',                     30, 0, 1, ''),
         ('SIS', 'SIS_MONITORAMENTO', 'SIS_LOG_ERRO',      N'Log de erros',        'TELA', 'sis/log-erros.html',   10, 0, 1, ''),
         ('SIS', 'SIS_MONITORAMENTO', 'SIS_AUDITORIA',     N'Auditoria',           'TELA', 'sis/auditoria.html',   20, 0, 1, ''),
@@ -98,7 +106,21 @@ FROM (VALUES
         ('SIS_AUDITORIA', 'VER'),
         ('SIS_AUDITORIA', 'EXPORTAR'),
         ('SIS_LOTE',      'VER'),
-        ('SIS_LOTE',      'EXPORTAR')
+        ('SIS_LOTE',      'EXPORTAR'),
+        ('SIS_ROTINA',    'VER'),
+        ('SIS_ROTINA',    'ALTERAR'),
+        ('SIS_ROTINA',    'EXECUTAR'),
+        ('SIS_INSTALACAO','VER'),
+        ('SIS_INSTALACAO','EXECUTAR'),
+        ('SIS_INSTALACAO','CANCELAR'),
+        ('SIS_GRUPO_EMAIL','VER'),
+        ('SIS_GRUPO_EMAIL','INCLUIR'),
+        ('SIS_GRUPO_EMAIL','ALTERAR'),
+        ('SIS_GRUPO_EMAIL','EXPORTAR'),
+        ('SIS_EMAIL_FILA','VER'),
+        ('SIS_EMAIL_FILA','ENVIAR'),
+        ('SIS_EMAIL_FILA','CANCELAR'),
+        ('SIS_EMAIL_FILA','EXPORTAR')
      ) v (ITEM, ACAO)
 INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
 INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO

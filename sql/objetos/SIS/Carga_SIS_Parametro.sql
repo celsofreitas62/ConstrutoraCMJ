@@ -16,6 +16,8 @@
     v1.1 (15/11/2026) - Etapa 02b: SENHA_PBKDF2_ITERACOES.
     v1.2 (15/11/2026) - Identidade visual por cliente: pasta, logomarcas e
                         cores (valores de fábrica = CMJ).
+    v1.3 (16/11/2026) - Etapa 02d: e-mail (domínio interno, minutos preso),
+                        pastas de backup e de atualizações.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -62,6 +64,16 @@ FROM (VALUES
          N'Cor dos avisos de alerta (vencido, falha, divergência). Diferente da cor principal.', 'SIS', 1),
         ('EMAIL_COR_SUCESSO', N'#2E7D32', 'COR',
          N'Cor das confirmações (pagamento recebido, envio concluído).', 'SIS', 1),
+        ('EMAIL_DOMINIO_INTERNO', N'', 'TEXTO',
+         N'Domínio(s) do e-mail da empresa (ex.: cmj.com.br), separados por vírgula. Esses endereços saem pela conta interna; os demais pela externa. Vazio = todos pela interna.', 'SIS', 1),
+        ('EMAIL_MINUTOS_PRESO', N'15', 'INTEIRO',
+         N'Minutos que um e-mail pode ficar "processando" antes de voltar para a fila (serviço parou no meio). Mínimo 5.', 'SIS', 1),
+        ('BACKUP_PASTA', N'C:\SistemaCMJ_Arquivos\Backup', 'TEXTO',
+         N'Pasta do servidor onde ficam os backups do banco.', 'SIS', 0),
+        ('BACKUP_PASTA_EXTERNA', N'', 'TEXTO',
+         N'Pasta fora do servidor (disco externo ou pasta sincronizada com a nuvem) para onde os backups são copiados. Vazio = não copia.', 'SIS', 0),
+        ('ATUALIZACAO_PASTA', N'C:\SistemaCMJ_Arquivos\Atualizacoes', 'TEXTO',
+         N'Pasta do servidor onde ficam os pacotes de atualização e o certificado usados pela tela Instalação e manutenção.', 'SIS', 0),
         ('CIDADE_PADRAO', N'Poços de Caldas', 'TEXTO',
          N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)

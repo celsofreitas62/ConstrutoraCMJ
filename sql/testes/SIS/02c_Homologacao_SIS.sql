@@ -17,6 +17,8 @@
     v1.0 (16/11/2026) - Criação (etapa 02c).
     v1.1 (16/11/2026) - Tela Módulos com a mesma árvore do menu (agrupadores).
     v1.2 (16/11/2026) - Aba Histórico grava em #AudReg (11 colunas, sem TABELA/ID_REGISTRO).
+    v1.3 (16/11/2026) - Contagens de menu, tela Módulos e triggers restritas aos
+                        itens da 02c (a 02d acrescenta itens, módulo e triggers).
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -100,7 +102,10 @@ FROM (VALUES
 
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO)
 SELECT N'Triggers de auditoria criadas', N'13', CONVERT(NVARCHAR(10), COUNT(*))
-FROM sys.triggers t WHERE t.name LIKE N'tg[_]SIS[_]%[_]Auditoria' AND t.name <> N'tg_SIS_Auditoria_Protecao';
+FROM sys.triggers t WHERE t.parent_id IN (OBJECT_ID(N'SIS.Parametro'), OBJECT_ID(N'SIS.Modulo'), OBJECT_ID(N'SIS.Item'), OBJECT_ID(N'SIS.Acao'), OBJECT_ID(N'SIS.Item_Acao'),
+      OBJECT_ID(N'SIS.Perfil'), OBJECT_ID(N'SIS.Perfil_Permissao'), OBJECT_ID(N'SIS.Usuario'), OBJECT_ID(N'SIS.Usuario_Permissao'), OBJECT_ID(N'SIS.Licenca'),
+      OBJECT_ID(N'SIS.Licenca_Empresa'), OBJECT_ID(N'SIS.Anexo_Tipo'), OBJECT_ID(N'SIS.Anexo'))
+  AND t.name LIKE N'tg[_]SIS[_]%[_]Auditoria';
 
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: tipos de anexo', N'9', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Anexo_Tipo;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Tipo LOGOMARCA aceita', N'png,jpg,jpeg,svg', t.EXTENSOES FROM SIS.Anexo_Tipo t WHERE t.CODIGO = 'LOGOMARCA';
@@ -111,14 +116,15 @@ SELECT N'Módulo SIS habilitado / CAD desabilitado', N'1/0',
        CONVERT(NVARCHAR(5), (SELECT m.HABILITADO FROM SIS.Modulo m WHERE m.CODIGO = 'SIS')) + N'/' + CONVERT(NVARCHAR(5), (SELECT m.HABILITADO FROM SIS.Modulo m WHERE m.CODIGO = 'CAD'));
 
 INSERT INTO #Menu EXEC SIS.SIS_Menu_Listar @IdUsuario = @IdAdmin;
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do admin (1 módulo + 2 menus + 5 telas)', N'8', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu; DELETE FROM #Menu;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do admin (1 módulo + 2 menus + 5 telas)', N'8', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu WHERE CODIGO IN ('SIS','SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_MODULO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO','SIS_AUDITORIA','SIS_LOTE'); DELETE FROM #Menu;
 INSERT INTO #Menu EXEC SIS.SIS_Menu_Listar @IdUsuario = @IdCelso;
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do celso (1 módulo + 3 menus + 8 telas)', N'12', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu; DELETE FROM #Menu;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do celso (1 módulo + 3 menus + 8 telas)', N'12', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu WHERE CODIGO IN ('SIS','SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_MODULO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO','SIS_AUDITORIA','SIS_LOTE'); DELETE FROM #Menu;
 
 INSERT INTO #Mod EXEC SIS.SIS_Modulo_Listar @IdUsuario = @IdCelso;
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Tela Módulos: 9 módulos + 3 agrupadores + 8 telas', N'20', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Mod;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Tela Módulos: 9 módulos + 3 agrupadores + 8 telas', N'20', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Mod
+ WHERE CODIGO IN ('CAD','IMOB','VENDA','FIN','BANCO','COBR','OBRA','GER') OR CODIGO IN ('SIS','SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_MODULO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO','SIS_AUDITORIA','SIS_LOTE');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Tela Módulos na ordem do menu (SIS)', N'SIS|SIS_CONFIGURACAO|SIS_LICENCA|SIS_PARAMETRO|SIS_MODULO|SIS_SEGURANCA|SIS_USUARIO|SIS_PERFIL|SIS_MONITORAMENTO|SIS_LOG_ERRO|SIS_AUDITORIA|SIS_LOTE',
-       ISNULL((SELECT STRING_AGG(CAST(m.CODIGO AS NVARCHAR(MAX)), N'|') FROM #Mod m WHERE m.MODULO_CODIGO = 'SIS'), N'');
+       ISNULL((SELECT STRING_AGG(CAST(m.CODIGO AS NVARCHAR(MAX)), N'|') FROM #Mod m WHERE m.MODULO_CODIGO = 'SIS' AND m.CODIGO IN ('SIS','SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_MODULO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO','SIS_AUDITORIA','SIS_LOTE')), N'');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Agrupador não tem liga/desliga', N'0', CONVERT(NVARCHAR(5), MAX(CAST(PODE_HABILITAR AS INT))) FROM #Mod WHERE TIPO = 'MENU';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Pai da tela Licença é o agrupador Configuração', N'S',
        CASE WHEN (SELECT l.CHAVE_PAI FROM #Mod l WHERE l.CODIGO = 'SIS_LICENCA') = (SELECT c.CHAVE FROM #Mod c WHERE c.CODIGO = 'SIS_CONFIGURACAO') THEN N'S' ELSE N'N' END;

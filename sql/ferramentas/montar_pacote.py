@@ -1,5 +1,5 @@
 import os, sys
-BASE = '/mnt/user-data/outputs/sql'
+BASE = os.environ.get('SISTEMACMJ_SQL', '/mnt/user-data/outputs/sql')
 
 ORDEM_02A = [
     'objetos/_GERAL/Schemas.sql',
@@ -73,12 +73,35 @@ ORDEM_02C = [
     'objetos/SIS/Carga_SIS_Modulo.sql', 'objetos/SIS/Carga_SIS_Item.sql', 'objetos/SIS/Carga_SIS_Anexo_Tipo.sql',
     'objetos/SIS/Carga_SIS_Auditoria_Triggers.sql',
 ]
+ORDEM_02D = [
+    'objetos/_GERAL/Schemas.sql',
+    'objetos/SIS/Carga_SIS_Modulo.sql', 'objetos/SIS/Carga_SIS_Acao.sql', 'objetos/SIS/Carga_SIS_Parametro.sql',
+    'objetos/SIS/SIS.Grupo_Email.sql', 'objetos/SIS/SIS.Grupo_Email_Destinatario.sql',
+    'objetos/SIS/SIS.Email_Fila.sql', 'objetos/SIS/SIS.Email_Fila_Anexo.sql', 'objetos/SIS/SIS.Email_Log.sql',
+    'objetos/SIS/SIS.Rotina.sql', 'objetos/SIS/SIS.Rotina_Execucao.sql',
+    'objetos/SIS/SIS.Comando.sql', 'objetos/SIS/SIS.Comando_Fila.sql',
+    'objetos/SIS/SIS.fn_SIS_Email_Valido.sql', 'objetos/SIS/SIS.fn_SIS_Emails_Do_Grupo.sql',
+    'objetos/SIS/SIS.fn_SIS_Filtrar_Emails_Por_Dominio.sql', 'objetos/SIS/SIS.fn_SIS_Email_HTML.sql',
+    'objetos/SIS/SIS.fn_SIS_Rotina_Proxima.sql',
+    'objetos/SIS/SIS.SIS_Email_Enfileirar.sql', 'objetos/SIS/SIS.SIS_Email_Capturar.sql', 'objetos/SIS/SIS.SIS_Email_Resultado_Gravar.sql',
+    'objetos/SIS/SIS.SIS_Email_Presos_Liberar.sql', 'objetos/SIS/SIS.SIS_Email_Listar.sql', 'objetos/SIS/SIS.SIS_Email_Obter.sql',
+    'objetos/SIS/SIS.SIS_Email_Situacao_Gravar.sql',
+    'objetos/SIS/SIS.SIS_Grupo_Email_Listar.sql', 'objetos/SIS/SIS.SIS_Grupo_Email_Gravar.sql',
+    'objetos/SIS/SIS.SIS_Rotina_Processar.sql', 'objetos/SIS/SIS.SIS_Rotina_Listar.sql', 'objetos/SIS/SIS.SIS_Rotina_Gravar.sql',
+    'objetos/SIS/SIS.SIS_Rotina_Executar_Agora.sql', 'objetos/SIS/SIS.SIS_Rotina_Execucao_Listar.sql',
+    'objetos/SIS/SIS.SIS_Comando_Listar.sql', 'objetos/SIS/SIS.SIS_Comando_Solicitar.sql', 'objetos/SIS/SIS.SIS_Comando_Cancelar.sql',
+    'objetos/SIS/SIS.SIS_Comando_Fila_Listar.sql', 'objetos/SIS/SIS.SIS_Comando_Capturar.sql', 'objetos/SIS/SIS.SIS_Comando_Resultado_Gravar.sql',
+    'objetos/SIS/Carga_SIS_Item.sql', 'objetos/SIS/Carga_SIS_Rotina.sql', 'objetos/SIS/Carga_SIS_Comando.sql',
+    'objetos/SIS/Carga_SIS_Auditoria_Triggers.sql',
+    'objetos/SIS/SIS.rl_sistemacmj_api.sql',
+]
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
-ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C}[PARTE]
+ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D}[PARTE]
 TITULO = {'02a': '02a - base SIS (schemas, logs, parâmetros, functions de formatação)',
           '02b': '02b - base SIS (licença, usuários, perfis, permissões, sessão, menu, dois níveis de administrador)',
           '02b2': '02b2 - ajuste da base SIS: identidade visual por cliente (logomarcas e cores) e correção de nomes com "_"',
-          '02c': '02c - base SIS (habilitação de módulo e tela, contexto, auditoria, lote, anexo)'}[PARTE]
+          '02c': '02c - base SIS (habilitação de módulo e tela, contexto, auditoria, lote, anexo)',
+          '02d': '02d - base SIS (e-mail, agenda das rotinas, comandos de instalação, papel da API, módulo Compras)'}[PARTE]
 # pacote
 cab = """/*******************************************************************************
   Pacote      : """ + TITULO + """
@@ -86,10 +109,11 @@ cab = """/**********************************************************************
   Gerado em   : """ + __import__('datetime').date.today().strftime('%d/%m/%Y') + """ pelo Claude, juntando os arquivos de sql/objetos/
                 na ordem da regra 59. NÃO EDITAR ESTE ARQUIVO: corrigir o
                 arquivo do objeto e gerar o pacote de novo.
-  Pré-requisito: """ + {'02a': 'sql/local/00_SISTEMACMJ_LOCAL_Criar_Banco.sql já rodado.', '02b': 'pacote 02a já rodado.', '02b2': 'pacotes 02a e 02b já rodados.', '02c': 'pacotes 02a, 02b e 02b2 já rodados.'}[PARTE] + """
+  Pré-requisito: """ + {'02a': 'sql/local/00_SISTEMACMJ_LOCAL_Criar_Banco.sql já rodado.', '02b': 'pacote 02a já rodado.', '02b2': 'pacotes 02a e 02b já rodados.', '02c': 'pacotes 02a, 02b e 02b2 já rodados.', '02d': 'pacotes 02a, 02b, 02b2 e 02c já rodados.'}[PARTE] + """
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > F5.
                 Pode rodar de novo: é idempotente.
-  Depois      : """ + {'02a': 'rodar sql/testes/SIS/02a_Homologacao_SIS.sql.', '02b': 'rodar sql/testes/SIS/02b_Homologacao_SIS.sql e depois\n                sql/testes/SIS/02a_Homologacao_SIS.sql (v1.1).', '02b2': 'rodar sql/testes/SIS/02b2_Homologacao_SIS.sql.', '02c': 'rodar sql/testes/SIS/02c_Homologacao_SIS.sql e depois\n                02b_Homologacao_SIS.sql (v1.2), para conferir que nada quebrou.'}[PARTE] + """
+  Depois      : """ + {'02a': 'rodar sql/testes/SIS/02a_Homologacao_SIS.sql.', '02b': 'rodar sql/testes/SIS/02b_Homologacao_SIS.sql e depois\n                sql/testes/SIS/02a_Homologacao_SIS.sql (v1.1).', '02b2': 'rodar sql/testes/SIS/02b2_Homologacao_SIS.sql.', '02c': 'rodar sql/testes/SIS/02c_Homologacao_SIS.sql e depois\n                02b_Homologacao_SIS.sql (v1.2), para conferir que nada quebrou.',
+          '02d': 'rodar sql/testes/SIS/02d_Homologacao_SIS.sql e depois\n                02c_Homologacao_SIS.sql (v1.3) e 02b_Homologacao_SIS.sql.'}[PARTE] + """
 *******************************************************************************/
 USE [SISTEMACMJ_LOCAL];
 GO

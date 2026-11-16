@@ -13,6 +13,8 @@
     v1.0 (15/11/2026) - Criação (etapa 02a).
     v1.1 (16/11/2026) - HABILITADO: só o SIS nasce habilitado; os demais o
                         administrador geral liga quando estiverem prontos.
+    v1.2 (16/11/2026) - Módulo COMP (Compras), pedido do Celso; nasce fora
+                        da licença e desabilitado (etapa 02d).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -25,6 +27,7 @@ FROM (VALUES
         ('IMOB',  N'Imóveis',             20, 0),
         ('VENDA', N'Vendas',              30, 0),
         ('FIN',   N'Financeiro',          40, 0),
+        ('COMP',  N'Compras',             45, 0),
         ('BANCO', N'Bancos',              50, 0),
         ('COBR',  N'Cobrança',            60, 0),
         ('OBRA',  N'Custos de obra',      70, 0),
