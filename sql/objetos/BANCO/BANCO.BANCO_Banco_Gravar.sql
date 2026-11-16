@@ -9,6 +9,9 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (16/11/2026) - @Codigo e @Ispb maiores que a coluna: o ISPB digitado
+                        com pontos (12.345.678) era cortado em 8 caracteres
+                        antes de limpar e virava inválido (achado na homologação).
 
   Homologação (LOCAL):
     -- EXEC BANCO.BANCO_Banco_Gravar @IdUsuario = 2, @Codigo = '748', @Ispb = '01181521', @Nome = N'Sicredi';
@@ -20,8 +23,8 @@ GO
 CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Banco_Gravar]
     @IdUsuario  INT,
     @IdBanco    INT          = NULL,
-    @Codigo     VARCHAR(3),
-    @Ispb       VARCHAR(8)   = NULL,
+    @Codigo     VARCHAR(10),
+    @Ispb       VARCHAR(20)  = NULL,
     @Nome       NVARCHAR(80),
     @Ativo      BIT          = 1
 AS

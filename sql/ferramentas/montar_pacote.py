@@ -108,6 +108,7 @@ ORDEM_03A = [
     'objetos/CAD/CAD.CAD_Pessoa_Listar.sql', 'objetos/CAD/CAD.CAD_Pessoa_Obter.sql', 'objetos/CAD/CAD.CAD_Pessoa_Gravar.sql', 'objetos/CAD/CAD.CAD_Pessoa_Excluir.sql',
     'objetos/CAD/CAD.CAD_Plano_Conta_Listar.sql', 'objetos/CAD/CAD.CAD_Plano_Grupo_Gravar.sql', 'objetos/CAD/CAD.CAD_Plano_Subgrupo_Gravar.sql',
     'objetos/CAD/CAD.CAD_Plano_Conta_Gravar.sql', 'objetos/CAD/CAD.CAD_Plano_Excluir.sql',
+    'objetos/SIS/SIS.SIS_Rotina_Executar_Agora.sql',
     'objetos/BANCO/Carga_BANCO_Banco.sql', 'objetos/CAD/Carga_CAD_Item.sql', 'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql',
 ]
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'

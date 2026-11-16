@@ -23,7 +23,7 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 
 ## 0. Estado atual e como retomar (atualizar sempre)
 
-**Situação em 16/11/2026 (conversa "03 – Modelo de dados", em andamento)**: a CMJ **aprovou a proposta**: o projeto está em desenvolvimento para valer. Etapas 01 (levantamento) e 02 (base `SIS`) concluídas. Na 03 já foram **aprovados**: plano de contas (`docs/requisitos/Plano_Contas.md`), `CAD` (`docs/requisitos/Modelo_CAD.md`), cadastro do `BANCO` (`docs/requisitos/Modelo_BANCO_Cadastro.md`), arquivo morto só para consulta (seção 5) e o **novo plano de fases com a versão 1** (seção 7). **Em andamento: parte 03a** (`CAD` + cadastro do `BANCO`). Servidor da CMJ: Ryzen 5, 16 GB, SSD 240 GB + HD 1 TB, **Windows 11**.
+**Situação em 16/11/2026 (conversa "03 – Modelo de dados", em andamento)**: a CMJ **aprovou a proposta**: o projeto está em desenvolvimento para valer. Etapas 01 (levantamento) e 02 (base `SIS`) concluídas. Na 03 já foram **aprovados**: plano de contas (`docs/requisitos/Plano_Contas.md`), `CAD` (`docs/requisitos/Modelo_CAD.md`), cadastro do `BANCO` (`docs/requisitos/Modelo_BANCO_Cadastro.md`), arquivo morto só para consulta (seção 5) e o **novo plano de fases com a versão 1** (seção 7). **Parte 03a concluída e homologada no LOCAL** (16/11/2026: `CAD` + cadastro do `BANCO`; 03a 68 testes, 02d 127, 02c 75, 02b 126, todos com 0 falhas). **Próximo: fase 3b** (esqueleto da API + primeira tela no navegador). Pendente do Celso: criar o repositório privado no GitHub (pendência 15). Servidor da CMJ: Ryzen 5, 16 GB, SSD 240 GB + HD 1 TB, **Windows 11**.
 
 **Histórico e decisões**: tudo em [docs/DIARIO_DECISOES.md](docs/DIARIO_DECISOES.md) (separado em 16/11/2026). Ler só quando precisar do motivo de uma decisão.
 
@@ -326,8 +326,8 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 |---|---|---|
 | 1 | Levantamento do Access | concluída (15/11/2026) |
 | 2 | Base `SIS` (02a a 02d) | concluída (16/11/2026) |
-| 3a | `CAD` + cadastro do `BANCO` (SQL) | **em andamento** |
-| 3b | **Esqueleto da API** (login, sessão, chamada de procedure, menu) + **primeira tela no navegador** (Pessoas) | próxima |
+| 3a | `CAD` + cadastro do `BANCO` (SQL) | concluída (16/11/2026) |
+| 3b | **Esqueleto da API** (login, sessão, chamada de procedure, menu) + **primeira tela no navegador** (Pessoas) | **próxima** |
 | 3c | Desenho do `FIN` + arquivo morto + **ensaio da migração do movimento** com os dados reais | |
 | 4 | Telas dos cadastros e do financeiro (agenda, pagar/receber, baixa, caixa, conciliação) | |
 | 5 | `IMOB` + `VENDA` (empreendimento, unidades, espelho, contrato, parcelas, reajuste) | |

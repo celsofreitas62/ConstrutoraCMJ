@@ -15,6 +15,11 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02d).
+    v1.1 (16/11/2026) - Etapa 03a: "executar agora" grava a próxima execução 1
+                        segundo antes de agora. A coluna é DATETIME2(0) e
+                        arredonda: 15:11:16,6 virava 15:11:17 e o processador
+                        rodando no mesmo segundo não pegava a rotina (falha
+                        intermitente do teste 02d nº 107/108).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Rotina_Executar_Agora @IdUsuario = 2, @Codigo = 'EMAIL_PRESOS';
@@ -66,7 +71,7 @@ BEGIN
 
         SET @EtapaAtual = 'Gravação';
         UPDATE r
-           SET r.PROXIMA_EXECUCAO = SYSDATETIME(),
+           SET r.PROXIMA_EXECUCAO = DATEADD(SECOND, -1, SYSDATETIME()),   -- DATETIME2(0) arredonda: sem o -1 podia cair no segundo seguinte
                r.SOLICITADA_POR   = SIS.fn_SIS_Usuario_Login(@IdUsuario)
         FROM SIS.Rotina r
         WHERE r.ID_ROTINA = @IdRotina AND r.EM_EXECUCAO = 0;
