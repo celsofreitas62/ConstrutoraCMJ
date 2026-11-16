@@ -2,7 +2,7 @@
 
 Conversa "03 – Modelo de dados", 16/11/2026. Base: decisões do Celso de 16/11/2026, plano de contas aprovado (`Plano_Contas.md`) e o Access (`EmpMaster` 35, `EmpVinculada` 57, `Parceiros` 1.437).
 
-> **Situação: proposta aguardando aprovação do Celso.** Nada foi criado no banco.
+> **Situação: APROVADA pelo Celso em 16/11/2026**, com os ajustes da seção 7. Tabelas ainda não criadas.
 
 ## 1. Decisões que orientam o desenho (Celso, 16/11/2026)
 
@@ -62,3 +62,10 @@ Para cada cadastro: `Listar`, `Obter`, `Gravar` (inclui/altera), `Excluir` (só 
 2. Documento repetido na migração (14 pessoas): juntar num registro só, como proposto?
 3. Dados bancários/PIX do fornecedor no cadastro da pessoa: quer agora?
 4. O Access tem a marca `Contabil` na obra (`EmpVinculada`): existe obra que não vai para a contabilidade? Se sim, vira marca no centro de custo.
+
+## 7. Respostas do Celso (16/11/2026) e ajustes
+
+1. Separação e tabelas: **aprovadas**.
+2. **CPF/CNPJ pode repetir**: sem índice único no documento; a identificação única é o **código da pessoa** (`ID_PESSOA`, mostrado na tela). Na migração cada `Parceiros` vira uma pessoa (nada é juntado), guardando o código antigo. A tela só **avisa** que já existe pessoa com o mesmo documento, sem impedir.
+3. **Dados bancários para TED e PIX**: saem da `CAD.Pessoa` e vão para a tabela **`CAD.Pessoa_Dado_Bancario`** (várias contas por pessoa, uma principal): `TIPO` (`TED` / `PIX`), banco (código e nome), agência, conta e dígito, tipo de conta (corrente/poupança), titular e documento do titular quando for outro, `PIX_TIPO` (CPF/CNPJ, e-mail, celular, aleatória) e `PIX_CHAVE`, `PRINCIPAL`, `ATIVO`.
+4. **Há obra que não vai para a contabilidade**: `CAD.Centro_Custo` ganha a marca **`CONTABIL`** (S/N). O fechamento de mês (pedido 10) bloqueia o lançamento quando a conta do plano **e** o centro de custo são contábeis.
