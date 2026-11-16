@@ -24,7 +24,7 @@ Como o trabalho é conduzido neste projeto. Mesmo modo de trabalhar que o Celso 
 
 ## Documentação e decisões
 
-12. Toda decisão, regra nova ou etapa concluída vai para o `CLAUDE.md` (seção "Diário de decisões") na hora. Regra nova de padrão vai também para o arquivo de `padroes/` correspondente.
+12. Toda decisão, regra nova ou etapa concluída vai para o diário (`docs/DIARIO_DECISOES.md`) na hora, e o estado atual para a seção 0 do `CLAUDE.md`. Regra nova de padrão vai também para o arquivo de `padroes/` correspondente.
 13. Nota que ainda não é regra (algo visto uma vez só) fica marcada como **"ainda não é regra oficial"** até se repetir.
 14. Responder e documentar em português do Brasil, linguagem direta.
 15. **Sempre perguntar o próximo passo antes de desenvolver** e esperar a confirmação do Celso. O sistema é **modernizado**: o Access serve para entender dados e regras, não como modelo a copiar. Avisar quando for hora de abrir uma conversa nova (fim de etapa).

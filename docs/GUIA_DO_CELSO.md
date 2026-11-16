@@ -16,7 +16,7 @@ Atualizado em 15/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dize
 
 - Responde em português do Brasil.
 - Segue o padrão SQL, o padrão de e-mail, os gabaritos e as boas práticas da pasta `padroes/`.
-- Ao fim de cada etapa, atualiza a **seção 0** (estado atual) e o **diário de decisões** do `CLAUDE.md`.
+- Ao fim de cada etapa, atualiza a **seção 0** (estado atual) e o **diário de decisões** (`docs/DIARIO_DECISOES.md`).
 - Ao fim de cada etapa, **lembra você de abrir uma conversa nova** para a próxima.
 
 ## 3. Uma conversa por etapa (nomes sugeridos)
@@ -42,7 +42,7 @@ Se uma etapa ficar grande, abra outra com o mesmo número e uma letra (ex.: `07b
 
 - **Vamos continuar o SistemaCMJ.**: início de toda conversa.
 - **Fechar a etapa.**: o Claude atualiza o CLAUDE.md e diz o nome da próxima conversa.
-- **Anote no diário: ...**: registra uma decisão sua no CLAUDE.md.
+- **Anote no diário: ...**: registra uma decisão sua no diário (`docs/DIARIO_DECISOES.md`).
 - **A CMJ respondeu: ...**: o Claude tira o item das pendências (seção 6) e registra no diário.
 - **Regra nova: ...**: vira regra no arquivo certo de `padroes/`.
 - **Onde paramos?**: resumo do estado atual.
