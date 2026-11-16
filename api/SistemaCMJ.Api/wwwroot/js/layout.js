@@ -5,7 +5,7 @@
    Criação   : 16/11/2026 (fase 3b)
    Descrição : Moldura de toda tela do sistema (esboço aprovado em 16/11/2026):
                topo (logomarca, busca geral, usuário, Sair), menu lateral em
-               drill-down (CLAUDE.md seção 3 item 8) e painel de ajuda "?".
+               árvore (CLAUDE.md seção 3 item 8) e painel de ajuda "?".
                A página informa no <body>:
                  data-tela   = tela de origem (auditoria/log), ex.: cad/pessoas.html
                  data-menu   = item do menu a destacar (padrão: data-tela)
@@ -17,12 +17,11 @@
 'use strict';
 
 const Layout = (() => {
-  const CHAVE_NIVEL = 'cmj_menu_nivel';
+  const CHAVE_ABERTOS = 'cmj_menu_abertos';
   let nos = new Map();
-  let nivelAtual = '';
+  let abertos = new Set();
   let telaMenu = '';
 
-  const SETA_VOLTAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
   const SETA_ABRIR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   const LUPA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
 
@@ -69,7 +68,7 @@ const Layout = (() => {
     sair.type = 'button';
     sair.addEventListener('click', async () => {
       await Api.post('/api/logout');
-      sessionStorage.removeItem(CHAVE_NIVEL);
+      sessionStorage.removeItem(CHAVE_ABERTOS);
       location.href = '/login.html';
     });
     usuario.append(nome, sair);
@@ -91,54 +90,68 @@ const Layout = (() => {
     return nos.get(chave)?.filhos ?? [];
   }
 
+  /* Menu em árvore (pedido do Celso, 16/11/2026): clicar no módulo abre as telas
+     logo abaixo dele, sem esconder o caminho; clicar de novo no nível de cima
+     fecha (volta). Abrir um grupo fecha os irmãos dele, para a árvore não crescer. */
   function desenharMenu() {
     const menu = document.getElementById('menu');
     if (!menu) return;
     menu.replaceChildren();
     menu.setAttribute('aria-label', 'Menu do sistema');
+    menu.append(Util.el('div', 'menu-titulo', 'Menu'));
 
-    if (nivelAtual && !nos.has(nivelAtual)) nivelAtual = '';
-    const atual = nos.get(nivelAtual);
-
-    if (atual) {
-      const voltar = Util.el('button', 'menu-voltar');
-      voltar.type = 'button';
-      voltar.innerHTML = SETA_VOLTAR;
-      voltar.append('Voltar');
-      voltar.addEventListener('click', () => irParaNivel(atual.CHAVE_PAI || ''));
-      menu.append(voltar);
-    }
-    menu.append(Util.el('div', 'menu-titulo', atual ? atual.NOME : 'Módulos'));
-
-    const itens = filhosDe(nivelAtual);
-    if (itens.length === 0) menu.append(Util.el('div', 'menu-rodape', 'Nenhuma tela liberada para o seu usuário.'));
-
-    for (const n of itens) {
-      let item;
-      if (n.TIPO === 'TELA') {
-        item = Util.el('a', 'menu-item');
-        item.href = '/' + n.CAMINHO;
-        if (n.CAMINHO === telaMenu) { item.classList.add('ativo'); item.setAttribute('aria-current', 'page'); }
-        item.append(Util.el('span', null, n.NOME));
-      } else {
-        item = Util.el('button', 'menu-item');
-        item.type = 'button';
-        item.append(Util.el('span', null, n.NOME));
-        const seta = Util.el('span');
-        seta.innerHTML = SETA_ABRIR;
-        item.append(seta);
-        item.addEventListener('click', () => irParaNivel(n.CHAVE));
-      }
-      menu.append(item);
-    }
+    const raiz = filhosDe('');
+    if (raiz.length === 0) menu.append(Util.el('div', 'menu-rodape', 'Nenhuma tela liberada para o seu usuário.'));
+    desenharNivel(menu, raiz, 0);
     menu.append(Util.el('div', 'menu-rodape', 'Aparecem só os módulos e as telas liberados para o seu usuário.'));
   }
 
-  function irParaNivel(chave) {
-    nivelAtual = chave;
-    sessionStorage.setItem(CHAVE_NIVEL, chave);
+  function desenharNivel(destino, itens, nivel) {
+    const classeNivel = 'nivel-' + Math.min(nivel, 4);
+    for (const n of itens) {
+      if (n.TIPO === 'TELA') {
+        const item = Util.el('a', 'menu-item ' + classeNivel);
+        item.href = '/' + n.CAMINHO;
+        if (n.CAMINHO === telaMenu) { item.classList.add('ativo'); item.setAttribute('aria-current', 'page'); }
+        item.append(Util.el('span', null, n.NOME));
+        destino.append(item);
+        continue;
+      }
+      const aberto = abertos.has(n.CHAVE);
+      const botao = Util.el('button', 'menu-item menu-grupo ' + classeNivel);
+      botao.type = 'button';
+      botao.dataset.chave = n.CHAVE;
+      botao.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+      const seta = Util.el('span', 'menu-seta');
+      seta.innerHTML = SETA_ABRIR;
+      botao.append(seta, Util.el('span', null, n.NOME));
+      botao.addEventListener('click', () => alternar(n));
+      destino.append(botao);
+      if (aberto) {
+        const grupo = Util.el('div', 'menu-subnivel');
+        grupo.setAttribute('role', 'group');
+        grupo.setAttribute('aria-label', n.NOME);
+        desenharNivel(grupo, n.filhos, nivel + 1);
+        destino.append(grupo);
+      }
+    }
+  }
+
+  function fecharComDescendentes(chave) {
+    abertos.delete(chave);
+    for (const f of nos.get(chave)?.filhos ?? []) fecharComDescendentes(f.CHAVE);
+  }
+
+  function alternar(n) {
+    if (abertos.has(n.CHAVE)) {
+      fecharComDescendentes(n.CHAVE);
+    } else {
+      for (const irmao of filhosDe(n.CHAVE_PAI)) if (irmao.CHAVE !== n.CHAVE) fecharComDescendentes(irmao.CHAVE);
+      abertos.add(n.CHAVE);
+    }
+    sessionStorage.setItem(CHAVE_ABERTOS, JSON.stringify([...abertos]));
     desenharMenu();
-    document.querySelector('#menu .menu-item, #menu .menu-voltar')?.focus();
+    document.querySelector('#menu [data-chave="' + n.CHAVE + '"]')?.focus();
   }
 
   function ligarAjuda() {
@@ -188,11 +201,13 @@ const Layout = (() => {
     if (rMenu.sucesso) {
       carregarMenu(rMenu.dados || []);
       const tela = [...nos.values()].find((n) => n.TIPO === 'TELA' && n.CAMINHO === telaMenu);
+      try { abertos = new Set(JSON.parse(sessionStorage.getItem(CHAVE_ABERTOS) || '[]')); } catch { abertos = new Set(); }
       if (tela) {
         acoes = new Set((tela.ACOES || '').split(',').filter(Boolean));
-        nivelAtual = tela.CHAVE_PAI;
-      } else {
-        nivelAtual = sessionStorage.getItem(CHAVE_NIVEL) || '';
+        // Abre o caminho até a tela atual (e só ele).
+        abertos = new Set();
+        for (let pai = nos.get(tela.CHAVE_PAI); pai; pai = nos.get(pai.CHAVE_PAI)) abertos.add(pai.CHAVE);
+        sessionStorage.setItem(CHAVE_ABERTOS, JSON.stringify([...abertos]));
       }
       desenharMenu();
     } else {
