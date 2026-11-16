@@ -50,3 +50,6 @@ PlanilhasCMJ/
 *.gdoc
 *.gsheet
 .teste_escrita
+
+# Scripts locais com hash de senha (mesmo provisoria): nunca no Git
+sql/local/*_Usuario_*_LOCAL.sql
