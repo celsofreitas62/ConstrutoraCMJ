@@ -42,3 +42,11 @@ publish/
 
 # Dados reais extraidos do Access (LGPD): nunca no Git
 legado/dados_brutos/
+
+# Planilhas de trabalho da CMJ (dados pessoais de funcionarios/clientes): nunca no Git
+PlanilhasCMJ/
+
+# Atalhos do Google Drive e arquivos de teste
+*.gdoc
+*.gsheet
+.teste_escrita

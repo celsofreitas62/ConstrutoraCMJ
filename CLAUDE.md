@@ -8,6 +8,9 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 > - [padroes/PADRAO_SQL.md](padroes/PADRAO_SQL.md): regras obrigatórias de T-SQL
 > - [padroes/PADRAO_EMAIL.md](padroes/PADRAO_EMAIL.md): padrão de e-mails e avisos (fila + processador)
 > - [padroes/GABARITOS.md](padroes/GABARITOS.md): esqueletos de procedure, trigger, function e orquestrador de e-mail
+> - [padroes/PADRAO_TELAS.md](padroes/PADRAO_TELAS.md): padrão das telas (mensagens em janela com OK, permissões, ajuda)
+> - [padroes/PADRAO_RELATORIOS.md](padroes/PADRAO_RELATORIOS.md): relatórios A4, PDF, e-mail, extratos de cliente e fornecedor
+> - [docs/requisitos/](docs/requisitos/): pedidos detalhados do Celso (ex.: os 12 de 16/11/2026, medição de empreitada)
 > - [padroes/BOAS_PRATICAS.md](padroes/BOAS_PRATICAS.md): como trabalhamos (ambientes, autorização, entrega de scripts, testes)
 > - [padroes/ORIGEM_PADRAO.md](padroes/ORIGEM_PADRAO.md): mapa regra a regra do padrão de origem do Celso para este projeto
 > - [docs/GUIA_DO_CELSO.md](docs/GUIA_DO_CELSO.md): guia do Celso (como abrir cada conversa, frases úteis, Git, o que só ele faz). Manter atualizado quando o modo de trabalhar mudar.
@@ -30,7 +33,7 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 
 **Situação em 15/11/2026, 10h (conversa 01b)**: extração **concluída sem erros** na base atual e na base de 2015. Levantamento escrito em `legado/schema_access.md` (tabelas, movimento, comparação das três fontes de movimento, qualidade dos dados, telas e relatórios). Conclusão principal: a base de 2015 é um backup antigo e não traz dado novo (aguardando confirmação do Celso). Pontos para o Celso decidir: seção 7 do `schema_access.md`.
 
-**Situação em 15/11/2026 (conversa "02 – Base SIS", em andamento)**: proposta da base `SIS` **aprovada pelo Celso** (diário). Trabalho dividido em 4 partes: **02a** schemas + logs + parâmetros + functions de formatação · **02b** licença + usuários/permissões/sessão + menu · **02c** contexto + auditoria (com gerador de trigger) + lote + anexo · **02d** e-mail + agenda das rotinas + papel da API. **02a concluída e homologada no LOCAL** (15/11/2026, 58 testes, 0 falhas; banco `SISTEMACMJ_LOCAL` criado). **02b concluída e homologada** (15/11/2026, com os dois níveis de administrador: 126 testes, 0 falhas; 02a v1.1: 58 testes, 0 falhas). Ajuste **02b2** (identidade visual por cliente + correção de nomes com `_`) **homologado** (25 testes, 0 falhas). Próxima: **02c** (contexto da sessão, auditoria com gerador de trigger, lote, anexo).
+**Situação em 15/11/2026 (conversa "02 – Base SIS", em andamento)**: proposta da base `SIS` **aprovada pelo Celso** (diário). Trabalho dividido em 4 partes: **02a** schemas + logs + parâmetros + functions de formatação · **02b** licença + usuários/permissões/sessão + menu · **02c** contexto + auditoria (com gerador de trigger) + lote + anexo · **02d** e-mail + agenda das rotinas + papel da API. **02a concluída e homologada no LOCAL** (15/11/2026, 58 testes, 0 falhas; banco `SISTEMACMJ_LOCAL` criado). **02b concluída e homologada** (15/11/2026, com os dois níveis de administrador: 126 testes, 0 falhas; 02a v1.1: 58 testes, 0 falhas). Ajuste **02b2** (identidade visual por cliente + correção de nomes com `_`) **homologado** (25 testes, 0 falhas). Próxima: **02c** (contexto da sessão, auditoria com gerador de trigger, lote, anexo **e a chave `HABILITADO` em módulo e tela**, pedido 5 de 16/11/2026). Em 16/11/2026 o Celso passou **12 pedidos** (seção 3.8), já registrados.
 
 **Ao retomar, primeiro** (atualizado em 15/11/2026, fim da conversa 01b):
 1. Perguntar ao Celso se a proposta foi aprovada (e se entrou a cláusula de licença de uso, seção 3.5) e se já tem as respostas pendentes: versão do Windows do servidor, as 4 perguntas da seção 3.3 e as 3 decisões do levantamento (`legado/schema_access.md`, seção 7: base 2015 fora da migração? histórico desde 2008 ou a partir de um ano? materiais/modelos/cheques continuam?).
@@ -215,6 +218,20 @@ Desenho:
 - **Ninguém altera nem apaga a auditoria**, nem o administrador.
 - Consulta: aba **"Histórico"** em toda tela de manutenção (quem fez o quê naquele registro) e uma tela geral de consulta com filtros por usuário, período, tabela, registro e operação.
 
+## 3.8 Pedidos do Celso de 16/11/2026 (12 itens, detalhe em `docs/requisitos/Pedidos_Celso_2026-11-16.md`)
+
+1. Recusa e erro em **janela com OK** (`padroes/PADRAO_TELAS.md`).
+2. e 4. Tela **Instalação e manutenção**, exclusiva do administrador geral: cada comando de instalação/manutenção vira botão. O SQL grava o pedido numa fila; o serviço executa uma **lista fixa** de comandos, com saída registrada; só no servidor ou com senha pedida de novo. A primeira instalação (SQL Express, .NET, o próprio serviço) fica num instalador único rodado uma vez. Lado SQL na 02d.
+3. **Ajuda exclusiva** do administrador geral (instalação, licença, parâmetros, comandos).
+5. **Habilitar módulo e tela**: chave `HABILITADO` em `SIS.Modulo` e `SIS.Item`, só o nível 2 liga; aparece só o que está **na licença e habilitado**. Entra na 02c.
+6. Painel: **obras em andamento** em gráfico financeiro com drill-down (obra > custo, vendas, recebido > etapas > lançamentos).
+7. **Medição de empreitada** completa (contrato, itens, medições numeradas, diárias, descontos, aprovação gera o lançamento a pagar com a referência da medição): `docs/requisitos/Medicao_Empreitada.md`. Planilha de origem em `PlanilhasCMJ/` (fora do Git: dados pessoais).
+8. Baixa com juros, multa, desconto, abatimento, tarifa, correção e retenções, cada um no seu campo.
+9. Lote: grade com os lançamentos do lote; clique abre o movimento.
+10. Mês fechado bloqueia só os lançamentos em conta **marcada como contábil** no plano de contas.
+11. Plano de contas em 3 níveis sempre alinhados (só o nível 3 recebe lançamento; 3 > 2 > 1 por chave estrangeira); análise do plano do Access e proposta de melhoria **na etapa 03**.
+12. Relatórios A4 profissionais, PDF para imprimir e enviar, com logomarca da empresa e da obra; extrato do cliente e do fornecedor (`padroes/PADRAO_RELATORIOS.md`).
+
 ## 4. Pontos já sabidos sobre o ambiente
 
 - **SQL Server Express**: limite de 50 GB por banco na versão 2025 (10 GB nas anteriores; usar a 2025 se o Windows do servidor permitir), sem Agent, sem Database Mail. Arquivos (PDF, CNAB, anexos) em **disco**, banco guarda só a referência.
@@ -287,6 +304,7 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 9. **Perfis de usuário**: quem pode baixar título, estornar, cancelar contrato, ver dashboards.
 10. **E-mail da CMJ**: a empresa já tem e-mail no próprio domínio? Qual provedor? Dá para criar uma caixa só para envio do sistema?
 11. **Assinatura digital**: a CMJ quer? Qual plataforma (FastSign, ZapSign, outra)? Quem assina pela CMJ? Precisa de testemunhas?
+13. **Medição de empreitada** (a confirmar no desenho da `OBRA`): retenção técnica? histórico de aditivos? medir além do contratado bloqueia ou só alerta? descontos dos funcionários do empreiteiro geram lançamento próprio ou só abatem da medição? (`docs/requisitos/Medicao_Empreitada.md`, seção 4)
 12. **Volume**: quantos contratos ativos e quantos boletos por mês, em média (define o limite de envio de e-mail e o tamanho do banco).
 
 **A fazer quando for preciso (lembretes do Celso)**:
@@ -319,7 +337,8 @@ C:\SistemaCMJ\            (sincronizada com o Google Drive)
 │   ├── pacotes/         pacote de cada parte, gerado juntando os arquivos de objetos/ na ordem da regra 59 (não editar à mão)
 │   ├── testes/<BLOCO>/  scripts de homologação (só LOCAL; mostram ESPERADO x OBTIDO)
 │   └── MASTER/          SISTEMACMJ_MASTER_Instalacao.sql (só o que o Celso aprovou)
-├── docs/                proposta, roteiro de instalação, layouts Sicredi, manuais
+├── PlanilhasCMJ/        planilhas de trabalho da CMJ (ex.: Medição.xlsx), referência; fora do Git (dados pessoais)
+├── docs/                proposta, roteiro de instalação, layouts Sicredi, manuais; identidade/ (logomarcas); requisitos/ (pedidos detalhados)
 └── Padrao_SQL/          material de referência do padrão de origem (não faz parte do sistema)
 ```
 
@@ -375,3 +394,4 @@ C:\SistemaCMJ\            (sincronizada com o Google Drive)
 - **15/11/2026**: pedido do Celso: **cada obra tem a sua própria logomarca**, cadastrada junto com a obra. Fica para o desenho do `IMOB` (etapa 03), proposta na seção 3.6 (anexo tipo `LOGOMARCA` + uso da logomarca da obra nos documentos daquela obra, com a da empresa como reserva). Não muda a 02b2: os parâmetros `EMPRESA_LOGO*` continuam valendo para o sistema e para o que não é de uma obra.
 - **15/11/2026**: homologação 02b2 achou um **defeito**: o padrão `LIKE '%[^a-z0-9._-]%'` recusava nomes com `_` (arquivo `logo_email.png` e, do mesmo jeito, login como `maria_silva`). Corrigido em `SIS_Parametro_Gravar` v1.3, `SIS_Usuario_Gravar` v1.2 e `CK_Usuario_LOGIN` (`SIS.Usuario` v1.1): os caracteres `. _ -` são retirados com `REPLACE` antes de conferir que o resto é só letra e número. **Nota (ainda não é regra oficial)**: não usar `_` e `-` juntos dentro de `[...]` no LIKE; preferir `REPLACE` + `[^A-Za-z0-9]`.
 - **15/11/2026**: **02b2 homologada** pelo Celso no LOCAL (pacote sem erro, **25 testes, 0 falhas**, incluindo a correção de nomes com `_`).
+- **16/11/2026**: o Celso passou **12 pedidos** (seção 3.8; detalhe em `docs/requisitos/Pedidos_Celso_2026-11-16.md`). Respostas dele: medição = controle completo de empreitada (planilha `PlanilhasCMJ/Medição.xlsx`, analisada em `docs/requisitos/Medicao_Empreitada.md`); mês fechado bloqueia só lançamentos contábeis; habilitação por **módulo e tela** (entra na 02c); análise do plano de contas na **etapa 03**. Criados `padroes/PADRAO_TELAS.md` (pedido 1) e `padroes/PADRAO_RELATORIOS.md` (pedido 12). `PlanilhasCMJ/` e atalhos `*.gdoc` incluídos no `.gitignore`.
