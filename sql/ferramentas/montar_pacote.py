@@ -118,6 +118,7 @@ gravar('pacotes/' + PARTE + '_SIS_LOCAL.sql', ''.join(partes))
 # conferência
 for root, _, files in os.walk(BASE):
     for f in sorted(files):
+        if not f.endswith('.sql'): continue
         b = open(os.path.join(root, f), 'rb').read()
         bom = b.startswith(b'\xef\xbb\xbf')
         lf_solto = b.replace(b'\r\n', b'').count(b'\n')
