@@ -29,3 +29,8 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 ## 5. Usuários: reiniciar senha (pedido do Celso, 16/11/2026)
 
 13. A tela de Usuários tem o botão **Reiniciar senha**: volta a senha do usuário para a senha provisória padrão (`@12345`, definida pelo Celso) e obriga a criar uma nova senha no próximo login (`TROCAR_SENHA = 1`). Também desbloqueia o usuário e encerra as sessões abertas dele. Pede confirmação antes. Precisa da permissão `REDEFINIR_SENHA` (procedure `SIS_Usuario_Senha_Gravar`, já pronta desde a 02b). **A senha provisória vale só por um tempo** (decisão do Celso, opção (a), 16/11/2026): parâmetro `SENHA_PROVISORIA_HORAS` (padrão 24); passado esse tempo sem o usuário trocar, o login recusa e é preciso reiniciar de novo. O texto da senha padrão também fica em parâmetro (`SENHA_PROVISORIA_PADRAO` = `@12345`), sem nada fixo no código.
+
+## 6. Digitação rápida (aprovado pelo Celso, 16/11/2026)
+
+14. **Atalhos de teclado** em toda tela de manutenção: **Ctrl+S** grava (com a mesma confirmação do botão), **Esc** cancela/volta, **Enter** passa para o próximo campo (não grava). Os atalhos aparecem na dica do botão.
+15. **Endereço pelo CEP e dados da empresa pelo CNPJ** por serviços públicos gratuitos, preenchendo os campos (o usuário confere antes de gravar). Depende de internet no servidor: liga/desliga em parâmetro. Implementar na fase 4.

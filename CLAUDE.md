@@ -329,6 +329,7 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 | 3a | `CAD` + cadastro do `BANCO` (SQL) | concluída (16/11/2026) |
 | 3b | **Esqueleto da API** (login, sessão, chamada de procedure, menu) + **primeira tela no navegador** (Pessoas) | concluída (16/11/2026) |
 | 3c | Desenho do `FIN` + arquivo morto + **ensaio da migração do movimento** com os dados reais | **próxima** |
+| 3d | **Ensaio da instalação no servidor da CMJ** (SQL Express, .NET 10, serviço do Windows, HTTPS na rede, firewall, acesso da Renata pelo computador dela) + **backup automático com teste de restauração** + proteções de operação (limite de tentativas de login por computador, registro da API em arquivo, endereço de "saúde") + **controle de versão do banco** (programa e banco na mesma versão) + **teste automático da API** | |
 | 4 | Telas dos cadastros e do financeiro (agenda, pagar/receber, baixa, caixa, conciliação) | |
 | 5 | `IMOB` + `VENDA` (empreendimento, unidades, espelho, contrato, parcelas, reajuste) | |
 | 6 | `COBR` Sicredi (remessa, retorno, PDF, e-mail) | |
@@ -367,7 +368,7 @@ C:\SistemaCMJ\            (sincronizada com o Google Drive)
 - Desenvolver e testar no `SISTEMACMJ_LOCAL`; o usuário promove para produção.
 - Toda rotina financeira é **tudo-ou-nada** e auditada (quem, quando, antes/depois).
 - Ao final de cada etapa, atualizar as seções 0, 6 (pendências) e 7 (fases) deste arquivo e o diário (`docs/DIARIO_DECISOES.md`).
-- **Commits feitos pelo Claude** (pedido do Celso, 16/11/2026): depois de cada etapa/ajuste homologado e de cada registro de decisões, fazer `git add -A` + `git commit` na pasta pelo shell do notebook, com a mensagem no padrão ("02c: ...") e as linhas de atribuição; avisar o código do commit. Na conversa nova, pedir uma vez a permissão de apagar na pasta (o Git precisa apagar os `.lock`). Nunca `push`, `reset`, `rebase` ou apagar histórico sem o Celso pedir.
+- **Commits feitos pelo Claude** (pedido do Celso, 16/11/2026): depois de cada etapa/ajuste homologado e de cada registro de decisões, fazer `git add -A` + `git commit` na pasta pelo shell do notebook, com a mensagem no padrão ("02c: ...") e as linhas de atribuição; avisar o código do commit. Na conversa nova, pedir uma vez a permissão de apagar na pasta (o Git precisa apagar os `.lock`). **`git push` também automático** (autorizado pelo Celso em 16/11/2026): depois de cada commit, enviar para o `origin` quando o ambiente conseguir; se não conseguir, avisar e o Celso faz `git push`. Nunca `reset`, `rebase`, push forçado ou apagar histórico sem o Celso pedir.
 
 ## 10. Diário de decisões
 
