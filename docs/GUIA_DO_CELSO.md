@@ -27,7 +27,7 @@ Atualizado em 15/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dize
 | 01b | Levantamento do Access (concluída em 15/11/2026) | 1 |
 | 02 | Base SIS (concluída em 16/11/2026) | 2 |
 | 03 | Modelo de dados: plano de contas, CAD e BANCO (03a concluída em 16/11/2026) | 3a |
-| 03b | API e primeira tela (login, menu, tela de Pessoas no navegador) | 3b |
+| 03b | API e primeira tela (concluída em 16/11/2026) | 3b |
 | 03c | Financeiro e ensaio da migração do movimento | 3c |
 | 04 | Telas dos cadastros e do financeiro | 4 |
 | 05 | Imóveis e vendas (espelho, contrato, parcelas, reajuste) | 5 |
@@ -91,3 +91,10 @@ Cuidados: a pasta é sincronizada com o Google Drive. Não edite o projeto em do
 - O Claude não achou a pasta: abra o app Claude no notebook (precisa estar aberto e com internet) e mande a mensagem de novo.
 - O Claude parece não lembrar do projeto: confira se a conversa está **dentro do projeto SistemaCMJ** e escreva "Leia o CLAUDE.md".
 - Script SQL deu erro: copie a mensagem de erro inteira do SSMS e cole na conversa.
+
+## 7. Rodar o sistema no notebook (desde 16/11/2026)
+
+- **Subir**: dois cliques em `C:\SistemaCMJ\api\rodar.cmd`, deixar a janela aberta e abrir **https://localhost:5443** no navegador. Para parar, feche a janela.
+- **Compilar** (quando o Claude mudar algo em C#): dois cliques em `C:\SistemaCMJ\api\compilar.cmd` e avisar o Claude (ele lê o `compilar.log`). Mudança só em tela (HTML/CSS/JS) não precisa compilar: basta Ctrl+F5 no navegador.
+- **Primeira senha** de um usuário sem senha: no PowerShell, `Set-Location C:\SistemaCMJ\api\SistemaCMJ.Api` e `dotnet run -- senha-inicial <login>`.
+- O notebook precisa do **.NET 10 (Hosting Bundle)**, instalado em 16/11/2026, e do certificado confiável (`dotnet dev-certs https --trust`, uma vez só).

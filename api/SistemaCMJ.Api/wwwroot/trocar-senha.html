@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/app.css">
   <script src="/js/api.js" defer></script>
   <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
   <script src="/js/layout.js" defer></script>
   <script src="/js/trocar-senha.js" defer></script>
 </head>
@@ -21,13 +22,13 @@
         <h1 id="titulo">Trocar a sua senha</h1>
         <p id="explicacao">Informe a senha atual e a nova senha.</p>
       </div>
-      <label class="campo">Senha atual
+      <label data-dica="A senha que você usa hoje. No primeiro acesso, a senha provisória recebida." data-obrigatorio class="campo">Senha atual
         <input type="password" id="senha-atual" autocomplete="current-password" maxlength="128" required>
       </label>
-      <label class="campo">Nova senha
+      <label data-dica="A nova senha: pelo menos 8 caracteres, com letras e números, diferente da atual." data-obrigatorio class="campo">Nova senha
         <input type="password" id="nova-senha" autocomplete="new-password" maxlength="128" required>
       </label>
-      <label class="campo">Repita a nova senha
+      <label data-dica="Digite a nova senha de novo, igual, para conferir." data-obrigatorio class="campo">Repita a nova senha
         <input type="password" id="confirmacao" autocomplete="new-password" maxlength="128" required>
       </label>
       <p class="nota">Pelo menos 8 caracteres (ou o mínimo definido nos parâmetros), com letras e números.</p>

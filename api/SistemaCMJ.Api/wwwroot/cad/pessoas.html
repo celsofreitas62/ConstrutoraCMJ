@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/app.css">
   <script src="/js/api.js" defer></script>
   <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
   <script src="/js/layout.js" defer></script>
   <script src="/js/cad/pessoas.js" defer></script>
 </head>
@@ -20,16 +21,16 @@
           <div class="caminho">Cadastros › Pessoas</div>
           <h1>Pessoas</h1>
         </div>
-        <button type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
-        <a class="botao botao-principal" href="/cad/pessoa.html" id="botao-incluir" hidden>+ Incluir</a>
+        <button data-dica="Baixa a lista que está na tela num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <a data-dica="Abre a ficha em branco para cadastrar uma pessoa nova." class="botao botao-principal" href="/cad/pessoa.html" id="botao-incluir" hidden>+ Incluir</a>
         <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
       </div>
 
       <form class="cartao filtros" id="filtros" role="search">
-        <label class="campo f-3">Nome, parte do nome, CPF/CNPJ ou código
+        <label data-dica="Digite parte do nome ou do nome fantasia, o início do CPF/CNPJ (com ou sem pontos) ou o código da pessoa. A lista atualiza sozinha." class="campo f-3">Nome, parte do nome, CPF/CNPJ ou código
           <input type="search" id="busca" maxlength="100" placeholder="Ex.: ribeiro" autocomplete="off">
         </label>
-        <label class="campo f-1">Papel
+        <label data-dica="Mostra só clientes, fornecedores, funcionários ou corretores." class="campo f-1">Papel
           <select id="papel">
             <option value="">Todos</option>
             <option value="CLIENTE">Clientes</option>
@@ -38,7 +39,7 @@
             <option value="CORRETOR">Corretores</option>
           </select>
         </label>
-        <label class="campo f-1">Situação
+        <label data-dica="Ativos, inativos (excluídos) ou todos." class="campo f-1">Situação
           <select id="situacao">
             <option value="ATIVOS">Ativos</option>
             <option value="INATIVOS">Inativos</option>

@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/app.css">
   <script src="/js/api.js" defer></script>
   <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
   <script src="/js/layout.js" defer></script>
   <script src="/js/cad/pessoa.js" defer></script>
 </head>
@@ -21,10 +22,10 @@
           <h1 id="titulo">Nova pessoa</h1>
           <div class="subtitulo" id="subtitulo"></div>
         </div>
-        <button type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
-        <button type="button" class="botao" id="botao-reativar" hidden>Reativar</button>
-        <button type="button" class="botao" id="botao-cancelar">Cancelar</button>
-        <button type="submit" form="ficha" class="botao botao-principal" id="botao-gravar" hidden>Gravar</button>
+        <button data-dica="Desativa a pessoa: some das listas de escolha, mas continua no histórico." type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
+        <button data-dica="Volta a pessoa para as listas de escolha." type="button" class="botao" id="botao-reativar" hidden>Reativar</button>
+        <button data-dica="Volta para a lista sem gravar (avisa se houver alteração)." type="button" class="botao" id="botao-cancelar">Cancelar</button>
+        <button data-dica="Grava tudo de uma vez (dados, contatos, contas e vínculos). Pede confirmação antes." type="submit" form="ficha" class="botao botao-principal" id="botao-gravar" hidden>Gravar</button>
         <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
       </div>
 
@@ -46,50 +47,50 @@
             <div class="marcacoes">
               <span class="rotulo-linha" id="rotulo-tipo">Tipo</span>
               <div class="marcacoes" role="radiogroup" aria-labelledby="rotulo-tipo">
-                <button type="button" class="pilula ativa" role="radio" aria-checked="true" data-tipo="F" id="tipo-f">Pessoa física</button>
-                <button type="button" class="pilula" role="radio" aria-checked="false" data-tipo="J" id="tipo-j">Pessoa jurídica</button>
+                <button data-dica="Pessoa física: pede CPF, RG, nascimento e estado civil." type="button" class="pilula ativa" role="radio" aria-checked="true" data-tipo="F" id="tipo-f">Pessoa física</button>
+                <button data-dica="Pessoa jurídica (empresa): pede CNPJ, nome fantasia e inscrições." type="button" class="pilula" role="radio" aria-checked="false" data-tipo="J" id="tipo-j">Pessoa jurídica</button>
               </div>
             </div>
             <fieldset class="marcacoes" id="papeis">
               <legend class="rotulo-linha">Papéis (pelo menos um)</legend>
-              <label class="marcacao"><input type="checkbox" id="cliente"> Cliente</label>
-              <label class="marcacao"><input type="checkbox" id="fornecedor"> Fornecedor</label>
-              <label class="marcacao"><input type="checkbox" id="funcionario"> Funcionário</label>
-              <label class="marcacao"><input type="checkbox" id="corretor"> Corretor</label>
+              <label data-dica="Compra imóveis ou serviços da construtora." class="marcacao"><input type="checkbox" id="cliente"> Cliente</label>
+              <label data-dica="Vende materiais ou serviços para a construtora." class="marcacao"><input type="checkbox" id="fornecedor"> Fornecedor</label>
+              <label data-dica="Trabalha para a construtora." class="marcacao"><input type="checkbox" id="funcionario"> Funcionário</label>
+              <label data-dica="Corretor ou imobiliária que intermedia vendas." class="marcacao"><input type="checkbox" id="corretor"> Corretor</label>
             </fieldset>
 
             <div class="grade">
-              <label class="campo s-2"><span id="rotulo-nome">Nome completo *</span>
+              <label data-dica="Nome completo (pessoa física) ou razão social (pessoa jurídica), como no documento." data-obrigatorio class="campo s-2"><span id="rotulo-nome">Nome completo *</span>
                 <input id="nome" maxlength="150" autocomplete="off">
               </label>
-              <label class="campo s-2 so-pj">Nome fantasia
+              <label data-dica="Nome comercial da empresa, se for diferente da razão social." class="campo s-2 so-pj">Nome fantasia
                 <input id="nomeFantasia" maxlength="100" autocomplete="off">
               </label>
-              <label class="campo"><span id="rotulo-documento">CPF</span>
+              <label data-dica="CPF ou CNPJ, com ou sem pontos. É conferido ao gravar; se outra pessoa tiver o mesmo, o sistema avisa." class="campo"><span id="rotulo-documento">CPF</span>
                 <input id="cpfCnpj" maxlength="20" inputmode="text" autocomplete="off">
               </label>
-              <label class="campo so-pf">Data de nascimento
+              <label data-dica="Data de nascimento (usada em contratos)." class="campo so-pf">Data de nascimento
                 <input id="dtNascimento" type="date">
               </label>
-              <label class="campo so-pf">RG
+              <label data-dica="Número do RG (usado em contratos)." class="campo so-pf">RG
                 <input id="rg" maxlength="20" autocomplete="off">
               </label>
-              <label class="campo so-pf">Órgão emissor
+              <label data-dica="Órgão que emitiu o RG (ex.: SSP/MG)." class="campo so-pf">Órgão emissor
                 <input id="orgaoEmissor" maxlength="20" autocomplete="off">
               </label>
-              <label class="campo so-pj">Inscrição estadual
+              <label data-dica="Inscrição estadual da empresa, ou ISENTO." class="campo so-pj">Inscrição estadual
                 <input id="inscricaoEstadual" maxlength="20" autocomplete="off">
               </label>
-              <label class="campo so-pj">Inscrição municipal
+              <label data-dica="Inscrição municipal da empresa (notas de serviço)." class="campo so-pj">Inscrição municipal
                 <input id="inscricaoMunicipal" maxlength="20" autocomplete="off">
               </label>
-              <label class="campo so-pf">Nacionalidade
+              <label data-dica="Nacionalidade (usada em contratos). Ex.: Brasileira." class="campo so-pf">Nacionalidade
                 <input id="nacionalidade" maxlength="40" autocomplete="off">
               </label>
-              <label class="campo so-pf">Profissão
+              <label data-dica="Profissão (usada em contratos)." class="campo so-pf">Profissão
                 <input id="profissao" maxlength="60" autocomplete="off">
               </label>
-              <label class="campo so-pf">Estado civil
+              <label data-dica="Estado civil (usado em contratos; casado pede o cônjuge em Vínculos)." class="campo so-pf">Estado civil
                 <select id="estadoCivil">
                   <option value="">(não informado)</option>
                   <option value="SOLTEIRO">Solteiro(a)</option>
@@ -100,7 +101,7 @@
                   <option value="VIUVO">Viúvo(a)</option>
                 </select>
               </label>
-              <label class="campo so-pf">Regime de bens
+              <label data-dica="Regime de bens do casamento (usado em contratos)." class="campo so-pf">Regime de bens
                 <select id="regimeBens">
                   <option value="">(não informado)</option>
                   <option value="COMUNHAO_PARCIAL">Comunhão parcial</option>
@@ -109,7 +110,7 @@
                   <option value="PARTICIPACAO_AQUESTOS">Participação final nos aquestos</option>
                 </select>
               </label>
-              <label class="campo s-4">Observação
+              <label data-dica="Anotações livres sobre a pessoa (até 2.000 caracteres)." class="campo s-4">Observação
                 <textarea id="observacao" rows="3" maxlength="2000"></textarea>
               </label>
             </div>
@@ -117,25 +118,25 @@
 
           <section class="painel-aba" role="tabpanel" id="painel-endereco" aria-labelledby="aba-endereco" hidden>
             <div class="grade-6">
-              <label class="campo">CEP
+              <label data-dica="CEP com 8 números, com ou sem traço." class="campo">CEP
                 <input id="cep" maxlength="10" inputmode="numeric" autocomplete="off">
               </label>
-              <label class="campo s-4">Logradouro
+              <label data-dica="Rua, avenida, praça..." class="campo s-4">Logradouro
                 <input id="logradouro" maxlength="150" autocomplete="off">
               </label>
-              <label class="campo">Número
+              <label data-dica="Número do imóvel (ou S/N)." class="campo">Número
                 <input id="numero" maxlength="20" autocomplete="off">
               </label>
-              <label class="campo s-2">Complemento
+              <label data-dica="Apartamento, bloco, sala..." class="campo s-2">Complemento
                 <input id="complemento" maxlength="60" autocomplete="off">
               </label>
-              <label class="campo s-2">Bairro
+              <label data-dica="Bairro." class="campo s-2">Bairro
                 <input id="bairro" maxlength="60" autocomplete="off">
               </label>
-              <label class="campo">Cidade
+              <label data-dica="Cidade." class="campo">Cidade
                 <input id="cidade" maxlength="60" autocomplete="off">
               </label>
-              <label class="campo">UF
+              <label data-dica="Sigla do estado com 2 letras (ex.: MG)." class="campo">UF
                 <input id="uf" maxlength="2" autocomplete="off">
               </label>
             </div>
@@ -144,7 +145,7 @@
           <section class="painel-aba" role="tabpanel" id="painel-contatos" aria-labelledby="aba-contatos" hidden>
             <div class="barra-lista">
               <span class="suave">O contato marcado em "Cobrança" recebe boletos e avisos por e-mail.</span>
-              <button type="button" class="botao botao-contorno editavel" id="incluir-contato">+ Incluir contato</button>
+              <button data-dica="Acrescenta uma linha de contato (e-mail, celular, WhatsApp ou telefone)." type="button" class="botao botao-contorno editavel" id="incluir-contato">+ Incluir contato</button>
             </div>
             <div class="rolagem">
               <table class="tabela tabela-edicao tabela-larga">
@@ -157,7 +158,7 @@
           <section class="painel-aba" role="tabpanel" id="painel-bancarios" aria-labelledby="aba-bancarios" hidden>
             <div class="barra-lista">
               <span class="suave">Para pagar ou devolver valores. TED pede banco, agência e conta; PIX pede o tipo e a chave.</span>
-              <button type="button" class="botao botao-contorno editavel" id="incluir-bancario">+ Incluir dado bancário</button>
+              <button data-dica="Acrescenta uma conta para TED ou uma chave PIX." type="button" class="botao botao-contorno editavel" id="incluir-bancario">+ Incluir dado bancário</button>
             </div>
             <div class="rolagem">
               <table class="tabela tabela-edicao tabela-larga">
@@ -170,7 +171,7 @@
           <section class="painel-aba" role="tabpanel" id="painel-vinculos" aria-labelledby="aba-vinculos" hidden>
             <div class="barra-lista">
               <span class="suave">Cônjuge, sócio, representante ou procurador. A pessoa vinculada também precisa estar cadastrada.</span>
-              <button type="button" class="botao botao-contorno editavel" id="incluir-vinculo">+ Incluir vínculo</button>
+              <button data-dica="Liga esta pessoa a outra já cadastrada (cônjuge, sócio, representante, procurador)." type="button" class="botao botao-contorno editavel" id="incluir-vinculo">+ Incluir vínculo</button>
             </div>
             <div class="rolagem">
               <table class="tabela tabela-edicao tabela-larga">

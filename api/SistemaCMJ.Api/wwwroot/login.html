@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/app.css">
   <script src="/js/api.js" defer></script>
   <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
   <script src="/js/layout.js" defer></script>
   <script src="/js/login.js" defer></script>
 </head>
@@ -18,10 +19,10 @@
         <h1>Entrar no SistemaCMJ</h1>
         <p>Use o seu usuário e a sua senha.</p>
       </div>
-      <label class="campo">Usuário
+      <label data-dica="Seu usuário no sistema, em letras minúsculas (ex.: renata)." data-obrigatorio class="campo">Usuário
         <input type="text" id="login" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="100" required>
       </label>
-      <label class="campo">Senha
+      <label data-dica="Sua senha pessoal. Depois de várias tentativas erradas o usuário é bloqueado." data-obrigatorio class="campo">Senha
         <input type="password" id="senha" name="senha" autocomplete="current-password" maxlength="128" required>
       </label>
       <button type="submit" class="botao botao-principal" id="botao-entrar">Entrar</button>

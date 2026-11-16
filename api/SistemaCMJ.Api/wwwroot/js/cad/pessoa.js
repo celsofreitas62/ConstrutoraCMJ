@@ -78,6 +78,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     b.addEventListener('click', () => { if (podeEditar && b.dataset.tipo !== tipo) { aplicarTipo(b.dataset.tipo); sujo = true; } });
   }
 
+  // ---------- Dicas dos campos das listas (PADRAO_TELAS seção 4) ----------
+  const DICAS = {
+    'Tipo do contato': 'Obrigatório. E-mail, celular, WhatsApp ou telefone.',
+    'Contato (e-mail ou número)': 'Obrigatório. O e-mail ou o número com DDD (só números).',
+    'Nome do contato': 'Opcional: com quem falar nesse contato (ex.: secretária).',
+    'Principal': 'Marque o principal de cada tipo: é o que aparece nas listas e nos documentos.',
+    'Recebe cobrança': 'Marque o e-mail que recebe boletos e avisos de cobrança.',
+    'Forma': 'TED (banco, agência e conta) ou PIX (chave).',
+    'Tipo da chave PIX': 'Obrigatório no PIX: CPF/CNPJ, e-mail, celular ou chave aleatória.',
+    'Chave PIX': 'Obrigatório no PIX: a chave, do jeito que o banco informou.',
+    'Banco': 'Obrigatório na TED: banco da conta (código e nome).',
+    'Agência': 'Obrigatório na TED: número da agência, sem o dígito.',
+    'Dígito da agência': 'Dígito da agência, se houver.',
+    'Conta': 'Obrigatório na TED: número da conta, sem o dígito.',
+    'Dígito da conta': 'Dígito da conta.',
+    'Tipo de conta': 'Corrente, poupança ou conta de pagamento.',
+    'Nome do titular, se for outro': 'Preencha só se a conta for de outra pessoa.',
+    'CPF/CNPJ do titular, se for outro': 'Preencha só se a conta for de outra pessoa.',
+    'Tipo do vínculo': 'Cônjuge, sócio, representante ou procurador.',
+    'Observação do vínculo': 'Anotação livre (ex.: coobrigado nos contratos).',
+    'Remover contato': 'Tira o contato da ficha ao gravar (fica no histórico).',
+    'Remover dado bancário': 'Tira a conta ou chave da ficha ao gravar (fica no histórico).',
+    'Remover vínculo': 'Tira o vínculo da ficha ao gravar (fica no histórico).'
+  };
+  const comDica = (el, rotulo) => { if (DICAS[rotulo]) el.dataset.dica = DICAS[rotulo]; return el; };
+
   // ---------- Construtores de campos das listas ----------
   function campoTexto(valor, max, rotulo, aoMudar) {
     const i = Util.el('input');
@@ -85,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     i.maxLength = max;
     i.setAttribute('aria-label', rotulo);
     i.addEventListener('input', () => aoMudar(i.value));
-    return i;
+    return comDica(i, rotulo);
   }
   function campoLista(valor, opcoes, rotulo, aoMudar) {
     const s = Util.el('select');
@@ -97,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     s.value = valor ?? '';
     s.setAttribute('aria-label', rotulo);
     s.addEventListener('change', () => aoMudar(s.value));
-    return s;
+    return comDica(s, rotulo);
   }
   function campoMarca(valor, rotulo, aoMudar) {
     const l = Util.el('label', 'marcacao');
@@ -106,15 +132,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     c.checked = !!valor;
     c.addEventListener('change', () => aoMudar(c.checked));
     l.append(c, Util.el('span', 'so-leitor', rotulo));
-    return l;
+    return comDica(l, rotulo);
   }
   function botaoRemover(rotulo, aoRemover) {
     const b = Util.el('button', 'botao-icone editavel', '×');
     b.type = 'button';
     b.setAttribute('aria-label', rotulo);
-    b.title = rotulo;
     b.addEventListener('click', () => { aoRemover(); sujo = true; });
-    return b;
+    return comDica(b, rotulo);
   }
   function celula(...filhos) { const td = Util.el('td'); td.append(...filhos); return td; }
   function linhaVazia(corpo, colunas, texto) {

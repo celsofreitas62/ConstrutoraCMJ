@@ -236,3 +236,10 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
   .s-3, .s-4 { grid-column: span 2; }
   .conteudo { padding: 16px; }
 }
+
+/* ---------- Dica ao passar o mouse (componente único, js/dicas.js) ---------- */
+.dica {
+  position: absolute; z-index: 60; max-width: 320px; padding: 8px 12px; border-radius: 6px;
+  background: #2B2B2B; color: #FFFFFF; font-size: 13px; font-weight: 400; line-height: 1.4;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .2); pointer-events: none;
+}

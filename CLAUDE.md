@@ -23,7 +23,7 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 
 ## 0. Estado atual e como retomar (atualizar sempre)
 
-**Situação em 16/11/2026 (conversa "03b – API e primeira tela", em andamento)**: a CMJ aprovou a proposta; etapas 01, 02 e 03a concluídas. **Fase 3b escrita, aguardando o primeiro teste do Celso no notebook**: API em `api/SistemaCMJ.Api` (.NET 10, Minimal API; login em dois passos com PBKDF2, sessão por cookie, ponto único de chamada de procedure com `SIS_Contexto_Gravar`, menu, identidade, Pessoas, histórico) e telas em `wwwroot` (login, troca de senha, início, lista e ficha de Pessoas, componente único de mensagens, ajuda por tela), conforme o esboço aprovado. No LOCAL já foram ligados o módulo CAD e a tela Pessoas (`sql/local/03b_Habilitar_Pessoas_LOCAL.sql`, rodado pelo Claude no SSMS; menu do celso confere). **Próximo**: o Celso dá dois cliques em `api\compilar.cmd` (resultado em `api\compilar.log`, que o Claude lê), define a primeira senha (`dotnet run -- senha-inicial celso`, na pasta `api\SistemaCMJ.Api`), confia o certificado (`dotnet dev-certs https --trust`), sobe com `api\rodar.cmd` e abre https://localhost:5443. Ajustes do teste, depois **3c** (FIN + arquivo morto + ensaio da migração). GitHub ligado (`origin`); push é do Celso. Servidor da CMJ: Windows 11 Pro.
+**Situação em 16/11/2026 (fim da conversa "03b – API e primeira tela")**: a CMJ aprovou a proposta; etapas 01, 02, 03a e **3b concluídas**. A 3b foi testada e **aprovada pelo Celso** no notebook (https://localhost:5443): API em `api/SistemaCMJ.Api` (.NET 10; login PBKDF2, sessão por cookie, ponto único de chamada de procedure com contexto, menu, identidade, Pessoas, histórico) e telas em `wwwroot` (login, troca de senha, início, lista e ficha de Pessoas, menu em árvore, mensagens, confirmação antes de gravar e janela "Concluído", dicas ao passar o mouse, ajuda por tela). Para subir no notebook: dois cliques em `api\rodar.cmd` (compilar: `api\compilar.cmd`, resultado em `api\compilar.log`). Usuários no LOCAL: `celso` (nível 2) e `renata` (Administrador, nível 1, senha provisória @12345). **Próximo: fase 3c**, na conversa nova **"03c – Financeiro e ensaio da migração"** (desenho do `FIN`, arquivo morto e ensaio da migração do movimento). GitHub ligado (`origin`); push é do Celso. Servidor da CMJ: Windows 11 Pro.
 
 **Histórico e decisões**: tudo em [docs/DIARIO_DECISOES.md](docs/DIARIO_DECISOES.md) (separado em 16/11/2026). Ler só quando precisar do motivo de uma decisão.
 
@@ -327,8 +327,8 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 | 1 | Levantamento do Access | concluída (15/11/2026) |
 | 2 | Base `SIS` (02a a 02d) | concluída (16/11/2026) |
 | 3a | `CAD` + cadastro do `BANCO` (SQL) | concluída (16/11/2026) |
-| 3b | **Esqueleto da API** (login, sessão, chamada de procedure, menu) + **primeira tela no navegador** (Pessoas) | **escrita, em teste** (16/11/2026) |
-| 3c | Desenho do `FIN` + arquivo morto + **ensaio da migração do movimento** com os dados reais | |
+| 3b | **Esqueleto da API** (login, sessão, chamada de procedure, menu) + **primeira tela no navegador** (Pessoas) | concluída (16/11/2026) |
+| 3c | Desenho do `FIN` + arquivo morto + **ensaio da migração do movimento** com os dados reais | **próxima** |
 | 4 | Telas dos cadastros e do financeiro (agenda, pagar/receber, baixa, caixa, conciliação) | |
 | 5 | `IMOB` + `VENDA` (empreendimento, unidades, espelho, contrato, parcelas, reajuste) | |
 | 6 | `COBR` Sicredi (remessa, retorno, PDF, e-mail) | |
@@ -361,6 +361,7 @@ C:\SistemaCMJ\            (sincronizada com o Google Drive)
 - Responder e documentar **em português do Brasil**.
 - **Sempre perguntar ao Celso o próximo passo antes de começar o desenvolvimento dele** (regra do Celso, 15/11/2026): apresentar a proposta e esperar a confirmação. O sistema será **modernizado**: nada do Access é reaproveitado do jeito que foi feito sem o Celso confirmar; o levantamento em `legado/` serve para entender dados e regras, não como modelo a copiar.
 - **Avisar o Celso quando for hora de abrir uma conversa nova** (fim de etapa), dizendo o nome da próxima conversa.
+- **A cada mudança de fase, dar ao Celso a opinião do Claude sobre o andamento e sugestões de melhoria** pelas boas práticas de mercado, em que ele talvez não tenha pensado (pedido do Celso, 16/11/2026). As sugestões são propostas: só entram no projeto com a aprovação dele.
 - Aplicar sempre os padrões de `padroes/` sem precisar ser lembrado; se algo conflitar, perguntar antes.
 - Antes de assumir nome/tipo de campo, ler o DDL em `sql/` ou o levantamento em `legado/`. Nunca adivinhar.
 - Desenvolver e testar no `SISTEMACMJ_LOCAL`; o usuário promove para produção.
