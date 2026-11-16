@@ -95,13 +95,29 @@ ORDEM_02D = [
     'objetos/SIS/Carga_SIS_Auditoria_Triggers.sql',
     'objetos/SIS/SIS.rl_sistemacmj_api.sql',
 ]
+ORDEM_03A = [
+    'objetos/BANCO/BANCO.Banco.sql', 'objetos/CAD/CAD.Empresa.sql', 'objetos/BANCO/BANCO.Conta.sql', 'objetos/CAD/CAD.FK_Conta_Padrao.sql',
+    'objetos/CAD/CAD.Centro_Custo.sql', 'objetos/CAD/CAD.Pessoa.sql', 'objetos/CAD/CAD.Pessoa_Contato.sql', 'objetos/CAD/CAD.Pessoa_Vinculo.sql',
+    'objetos/CAD/CAD.Pessoa_Dado_Bancario.sql', 'objetos/CAD/CAD.Plano_Grupo.sql', 'objetos/CAD/CAD.Plano_Subgrupo.sql', 'objetos/CAD/CAD.Plano_Conta.sql',
+    'objetos/CAD/CAD.fn_CAD_Somente_Digitos.sql', 'objetos/CAD/CAD.fn_CAD_Documento_Limpo.sql', 'objetos/CAD/CAD.fn_CAD_Documento_Valido.sql',
+    'objetos/CAD/CAD.vw_CAD_Plano_Conta.sql',
+    'objetos/BANCO/BANCO.BANCO_Banco_Listar.sql', 'objetos/BANCO/BANCO.BANCO_Banco_Gravar.sql',
+    'objetos/BANCO/BANCO.BANCO_Conta_Listar.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Gravar.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Excluir.sql',
+    'objetos/CAD/CAD.CAD_Empresa_Listar.sql', 'objetos/CAD/CAD.CAD_Empresa_Gravar.sql', 'objetos/CAD/CAD.CAD_Empresa_Excluir.sql',
+    'objetos/CAD/CAD.CAD_Centro_Custo_Listar.sql', 'objetos/CAD/CAD.CAD_Centro_Custo_Gravar.sql', 'objetos/CAD/CAD.CAD_Centro_Custo_Excluir.sql',
+    'objetos/CAD/CAD.CAD_Pessoa_Listar.sql', 'objetos/CAD/CAD.CAD_Pessoa_Obter.sql', 'objetos/CAD/CAD.CAD_Pessoa_Gravar.sql', 'objetos/CAD/CAD.CAD_Pessoa_Excluir.sql',
+    'objetos/CAD/CAD.CAD_Plano_Conta_Listar.sql', 'objetos/CAD/CAD.CAD_Plano_Grupo_Gravar.sql', 'objetos/CAD/CAD.CAD_Plano_Subgrupo_Gravar.sql',
+    'objetos/CAD/CAD.CAD_Plano_Conta_Gravar.sql', 'objetos/CAD/CAD.CAD_Plano_Excluir.sql',
+    'objetos/BANCO/Carga_BANCO_Banco.sql', 'objetos/CAD/Carga_CAD_Item.sql', 'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql',
+]
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
-ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D}[PARTE]
+ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A}[PARTE]
 TITULO = {'02a': '02a - base SIS (schemas, logs, parâmetros, functions de formatação)',
           '02b': '02b - base SIS (licença, usuários, perfis, permissões, sessão, menu, dois níveis de administrador)',
           '02b2': '02b2 - ajuste da base SIS: identidade visual por cliente (logomarcas e cores) e correção de nomes com "_"',
           '02c': '02c - base SIS (habilitação de módulo e tela, contexto, auditoria, lote, anexo)',
-          '02d': '02d - base SIS (e-mail, agenda das rotinas, comandos de instalação, papel da API, módulo Compras)'}[PARTE]
+          '02d': '02d - base SIS (e-mail, agenda das rotinas, comandos de instalação, papel da API, módulo Compras)',
+          '03a': '03a - cadastros (CAD: empresas, pessoas, centros de custo, plano de contas) e cadastro do BANCO (bancos e contas)'}[PARTE]
 # pacote
 cab = """/*******************************************************************************
   Pacote      : """ + TITULO + """
@@ -109,11 +125,12 @@ cab = """/**********************************************************************
   Gerado em   : """ + __import__('datetime').date.today().strftime('%d/%m/%Y') + """ pelo Claude, juntando os arquivos de sql/objetos/
                 na ordem da regra 59. NÃO EDITAR ESTE ARQUIVO: corrigir o
                 arquivo do objeto e gerar o pacote de novo.
-  Pré-requisito: """ + {'02a': 'sql/local/00_SISTEMACMJ_LOCAL_Criar_Banco.sql já rodado.', '02b': 'pacote 02a já rodado.', '02b2': 'pacotes 02a e 02b já rodados.', '02c': 'pacotes 02a, 02b e 02b2 já rodados.', '02d': 'pacotes 02a, 02b, 02b2 e 02c já rodados.'}[PARTE] + """
+  Pré-requisito: """ + {'02a': 'sql/local/00_SISTEMACMJ_LOCAL_Criar_Banco.sql já rodado.', '02b': 'pacote 02a já rodado.', '02b2': 'pacotes 02a e 02b já rodados.', '02c': 'pacotes 02a, 02b e 02b2 já rodados.', '02d': 'pacotes 02a, 02b, 02b2 e 02c já rodados.', '03a': 'pacotes 02a a 02d já rodados.'}[PARTE] + """
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > F5.
                 Pode rodar de novo: é idempotente.
   Depois      : """ + {'02a': 'rodar sql/testes/SIS/02a_Homologacao_SIS.sql.', '02b': 'rodar sql/testes/SIS/02b_Homologacao_SIS.sql e depois\n                sql/testes/SIS/02a_Homologacao_SIS.sql (v1.1).', '02b2': 'rodar sql/testes/SIS/02b2_Homologacao_SIS.sql.', '02c': 'rodar sql/testes/SIS/02c_Homologacao_SIS.sql e depois\n                02b_Homologacao_SIS.sql (v1.2), para conferir que nada quebrou.',
-          '02d': 'rodar sql/testes/SIS/02d_Homologacao_SIS.sql e depois\n                02c_Homologacao_SIS.sql (v1.3) e 02b_Homologacao_SIS.sql.'}[PARTE] + """
+          '02d': 'rodar sql/testes/SIS/02d_Homologacao_SIS.sql e depois\n                02c_Homologacao_SIS.sql (v1.3) e 02b_Homologacao_SIS.sql.',
+          '03a': 'rodar sql/testes/CAD/03a_Homologacao_CAD.sql e depois\n                02d, 02c e 02b, para conferir que nada quebrou.'}[PARTE] + """
 *******************************************************************************/
 USE [SISTEMACMJ_LOCAL];
 GO
@@ -137,7 +154,7 @@ for root, _, files in os.walk(BASE):
             rel = os.path.relpath(os.path.join(root, f), BASE)
             if rel.startswith('pacotes'): continue
             gravar(rel, ler(rel))
-gravar('pacotes/' + PARTE + '_SIS_LOCAL.sql', ''.join(partes))
+gravar('pacotes/' + PARTE + ('_SIS' if PARTE.startswith('02') else '_CAD') + '_LOCAL.sql', ''.join(partes))
 
 # conferência
 for root, _, files in os.walk(BASE):
