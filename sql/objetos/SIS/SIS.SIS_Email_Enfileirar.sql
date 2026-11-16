@@ -74,7 +74,7 @@ BEGIN
         SET @ChaveOrigem = NULLIF(LTRIM(RTRIM(@ChaveOrigem)), N'');
         SET @Tipo        = UPPER(LTRIM(RTRIM(ISNULL(@Tipo, ''))));
         SET @Conta       = UPPER(LTRIM(RTRIM(ISNULL(@Conta, 'INTERNA'))));
-        SET @Assunto     = LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(ISNULL(@Assunto, N''), NCHAR(13), N' '), NCHAR(10), N' '), NCHAR(9), N' ')));
+        SET @Assunto     = LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL(@Assunto, N''), NCHAR(13) + NCHAR(10), N' '), NCHAR(13), N' '), NCHAR(10), N' '), NCHAR(9), N' ')));
 
         IF @ChaveOrigem IS NOT NULL
         BEGIN

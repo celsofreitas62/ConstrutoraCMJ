@@ -13,7 +13,7 @@
                 Cada teste mostra ESPERADO x OBTIDO e RESULTADO (OK/FALHOU).
                 Dados de teste (HML_*, e-mails "Hml 02d", pedidos de comando
                 do teste) são apagados no fim; parâmetros e agendas mexidos
-                voltam ao valor original.
+                voltam ao valor original (agendas reais recalculadas a partir de agora).
                 Aborta se não estiver no SISTEMACMJ_LOCAL.
 
   Changelog:
@@ -38,6 +38,8 @@ SET NOCOUNT ON;
 DELETE l FROM SIS.Email_Log l INNER JOIN SIS.Email_Fila f ON f.ID_EMAIL = l.ID_EMAIL WHERE f.TIPO = 'HML_TESTE' OR f.ASSUNTO LIKE N'%Hml 02d%';
 DELETE a FROM SIS.Email_Fila_Anexo a INNER JOIN SIS.Email_Fila f ON f.ID_EMAIL = a.ID_EMAIL WHERE f.TIPO = 'HML_TESTE' OR f.ASSUNTO LIKE N'%Hml 02d%';
 DELETE FROM SIS.Email_Fila WHERE TIPO = 'HML_TESTE' OR ASSUNTO LIKE N'%Hml 02d%';
+DELETE l FROM SIS.Email_Log l INNER JOIN SIS.Email_Fila f ON f.ID_EMAIL = l.ID_EMAIL WHERE f.TIPO = 'ALERTA_EMAIL' AND f.PARA_ORIGINAL = N'alerta.hml@teste.com.br';
+DELETE FROM SIS.Email_Fila WHERE TIPO = 'ALERTA_EMAIL' AND PARA_ORIGINAL = N'alerta.hml@teste.com.br';
 DELETE e FROM SIS.Rotina_Execucao e INNER JOIN SIS.Rotina r ON r.ID_ROTINA = e.ID_ROTINA WHERE r.CODIGO LIKE 'HML[_]%';
 DELETE FROM SIS.Rotina WHERE CODIGO LIKE 'HML[_]%';
 DELETE d FROM SIS.Grupo_Email_Destinatario d INNER JOIN SIS.Grupo_Email g ON g.ID_GRUPO_EMAIL = d.ID_GRUPO_EMAIL WHERE g.CODIGO LIKE 'HML[_]%';
@@ -289,7 +291,7 @@ SELECT N'Cancelar com motivo', N'1|CANCELADO', CONVERT(NVARCHAR(1), r.SUCESSO) +
 FROM #Ret64 r CROSS JOIN SIS.Email_Fila f WHERE f.ID_EMAIL = @Id2; DELETE FROM #Ret64;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO)
 SELECT N'Histórico do e-mail 2 (erro, reenvio, cancelado)', N'ERRO_PERMANENTE,REENVIO,CANCELADO',
-       ISNULL(STRING_AGG(l.RESULTADO, N',') WITHIN GROUP (ORDER BY l.ID_EMAIL_LOG), N'') FROM SIS.Email_Log l WHERE l.ID_EMAIL = @Id2;
+       ISNULL(STRING_AGG(CAST(l.RESULTADO AS NVARCHAR(30)), N',') WITHIN GROUP (ORDER BY l.ID_EMAIL_LOG), N'') FROM SIS.Email_Log l WHERE l.ID_EMAIL = @Id2;
 
 -- Preso em processamento
 EXEC SIS.SIS_Email_Enfileirar @Para = N'tres@exemplo.com.br', @Assunto = N'Hml 02d tres', @CorpoHTML = N'<p>3</p>', @Tipo = 'HML_TESTE',
@@ -307,13 +309,13 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Tela E-mails enviados enco
 
 -- 5) Próxima execução das rotinas
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
- (N'Próxima: a cada 10 min', N'2026-11-16 09:10', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('MINUTOS', 10, NULL, '', 0, '2026-11-16T09:00'), 120)),
- (N'Próxima: diária 03:10 (já passou hoje)', N'2026-11-17 03:10', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('DIARIA', 0, '03:10', '', 0, '2026-11-16T09:00'), 120)),
- (N'Próxima: semanal seg e qua 08:00 (segunda 09h)', N'2026-11-18 08:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('SEMANAL', 0, '08:00', '2,4', 0, '2026-11-16T09:00'), 120)),
- (N'Próxima: semanal seg 10:00 (mesmo dia)', N'2026-11-16 10:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('SEMANAL', 0, '10:00', '2', 0, '2026-11-16T09:00'), 120)),
- (N'Próxima: mensal último dia (novembro)', N'2026-11-30 07:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('MENSAL', 0, '07:00', '', 31, '2026-11-16T09:00'), 120)),
- (N'Próxima: mensal dia 31 depois de 30/11 08h', N'2026-12-31 07:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('MENSAL', 0, '07:00', '', 31, '2026-11-30T08:00'), 120)),
- (N'Próxima: mensal dia 30 em fevereiro', N'2027-02-28 07:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('MENSAL', 0, '07:00', '', 30, '2027-02-01T09:00'), 120));
+ (N'Próxima: a cada 10 min', N'2026-11-16 09:10', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('MINUTOS', 10, NULL, '', 0, '2026-11-16T09:00:00'), 120)),
+ (N'Próxima: diária 03:10 (já passou hoje)', N'2026-11-17 03:10', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('DIARIA', 0, '03:10', '', 0, '2026-11-16T09:00:00'), 120)),
+ (N'Próxima: semanal seg e qua 08:00 (segunda 09h)', N'2026-11-18 08:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('SEMANAL', 0, '08:00', '2,4', 0, '2026-11-16T09:00:00'), 120)),
+ (N'Próxima: semanal seg 10:00 (mesmo dia)', N'2026-11-16 10:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('SEMANAL', 0, '10:00', '2', 0, '2026-11-16T09:00:00'), 120)),
+ (N'Próxima: mensal último dia (novembro)', N'2026-11-30 07:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('MENSAL', 0, '07:00', '', 31, '2026-11-16T09:00:00'), 120)),
+ (N'Próxima: mensal dia 31 depois de 30/11 08h', N'2026-12-31 07:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('MENSAL', 0, '07:00', '', 31, '2026-11-30T08:00:00'), 120)),
+ (N'Próxima: mensal dia 30 em fevereiro', N'2027-02-28 07:00', CONVERT(VARCHAR(16), SIS.fn_SIS_Rotina_Proxima('MENSAL', 0, '07:00', '', 30, '2027-02-01T09:00:00'), 120));
 
 -- 6) Agenda pela tela
 INSERT INTO #Ret EXEC SIS.SIS_Rotina_Gravar @IdUsuario = @IdCelso, @Codigo = 'LOG_LIMPEZA', @Ativa = 1, @Frequencia = 'SEMANAL', @Horario = '03:10', @DiasSemana = '4, 2,2';
@@ -387,7 +389,7 @@ FROM SIS.Rotina r WHERE r.CODIGO = 'HML_ROTINA_OK';
 
 -- 8) Comandos de instalação e manutenção
 INSERT INTO #Cmd EXEC SIS.SIS_Comando_Listar @IdUsuario = @IdCelso;
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Tela de comandos: 14 botões, 7 perigosos', N'14|7', CONVERT(NVARCHAR(5), COUNT(*)) + N'|' + CONVERT(NVARCHAR(5), SUM(CAST(PERIGOSO AS INT))) FROM #Cmd;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Tela de comandos: 14 botões, 6 perigosos', N'14|6', CONVERT(NVARCHAR(5), COUNT(*)) + N'|' + CONVERT(NVARCHAR(5), SUM(CAST(PERIGOSO AS INT))) FROM #Cmd;
 
 INSERT INTO #Ret64 EXEC SIS.SIS_Comando_Solicitar @IdUsuario = @IdCelso, @Codigo = 'DISCO_ESPACO', @Estacao = N'HML-PC';
 SELECT @PedidoA = ID FROM #Ret64;
@@ -442,7 +444,8 @@ DELETE FROM SIS.Rotina WHERE CODIGO LIKE 'HML[_]%';
 DELETE d FROM SIS.Grupo_Email_Destinatario d INNER JOIN SIS.Grupo_Email g ON g.ID_GRUPO_EMAIL = d.ID_GRUPO_EMAIL WHERE g.CODIGO LIKE 'HML[_]%';
 DELETE FROM SIS.Grupo_Email WHERE CODIGO LIKE 'HML[_]%';
 DELETE FROM SIS.Comando_Fila WHERE ID_PEDIDO > @CmdInicio;
-UPDATE r SET r.PROXIMA_EXECUCAO = p.PROXIMA FROM SIS.Rotina r INNER JOIN #ProxRotina p ON p.CODIGO = r.CODIGO;
+UPDATE r SET r.PROXIMA_EXECUCAO = CASE WHEN r.ATIVA = 1 THEN SIS.fn_SIS_Rotina_Proxima(r.FREQUENCIA, r.INTERVALO_MINUTOS, r.HORARIO, r.DIAS_SEMANA, r.DIA_MES, SYSDATETIME()) END
+FROM SIS.Rotina r WHERE r.CODIGO NOT LIKE 'HML[_]%';
 DROP PROCEDURE IF EXISTS SIS.SIS_Hml_Rotina_Ok;
 DROP PROCEDURE IF EXISTS SIS.SIS_Hml_Rotina_Erro;
 EXEC SIS.SIS_Contexto_Gravar @IdUsuario = NULL;

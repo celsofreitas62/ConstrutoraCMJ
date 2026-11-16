@@ -17,6 +17,7 @@
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.2 (16/11/2026) - Contagens de itens, ações e menus restritas aos
                         itens da 02b (etapas seguintes acrescentam telas).
+    v1.3 (16/11/2026) - Contagem de ações restrita às 14 da 02b (a 02d acrescenta EXECUTAR).
     v1.1 (15/11/2026) - Dois níveis de administrador: celso (geral) x admin
                         (CMJ); testes de visibilidade e de telas exclusivas;
                         exceções de usuário testadas no Log de erros.
@@ -110,7 +111,8 @@ FROM (VALUES
         (N'SIS.SIS_Menu_Listar', N'SQL_STORED_PROCEDURE')
      ) v (NOME, TIPO);
 
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: ações', N'14', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Acao;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: ações (02b)', N'14', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Acao a
+WHERE a.CODIGO IN ('VER','INCLUIR','ALTERAR','EXCLUIR','EXPORTAR','IMPORTAR','BAIXAR','ESTORNAR','CANCELAR','REABRIR','APROVAR','ENVIAR','DESBLOQUEAR','REDEFINIR_SENHA');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: itens do SIS (02b)', N'8', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Item i WHERE i.CODIGO IN ('SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: ações das telas do SIS', N'17', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM WHERE i.CODIGO IN ('SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: perfis de administrador (nível 1 / nível 2)', N'1/1',

@@ -18,7 +18,7 @@
     v1.0 (16/11/2026) - Criação (etapa 02d).
 
   Homologação (LOCAL):
-    -- SELECT SIS.fn_SIS_Rotina_Proxima('SEMANAL', 0, '08:00', '2,4', 0, '2026-11-16T09:00');  -- 18/11 08:00
+    -- SELECT SIS.fn_SIS_Rotina_Proxima('SEMANAL', 0, '08:00', '2,4', 0, '2026-11-16T09:00:00');  -- 18/11 08:00
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
