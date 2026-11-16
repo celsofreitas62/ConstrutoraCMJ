@@ -72,6 +72,7 @@ Aplicar sempre, sem precisar repetir a cada pedido. Se um pedido conflitar com a
     | `FIN` | títulos a pagar e a receber, baixas, estornos, caixa, transferências |
     | `COBR` | boletos Sicredi, nosso número, remessa, retorno, envio ao cliente |
     | `OBRA` | orçamento por etapa, lançamentos de custo, orçado x realizado |
+    | `COMP` | compras: insumos, solicitação, cotação, pedido, recebimento (gera títulos a pagar no `FIN`); incluído em 16/11/2026 |
     | `GER` | views e procedures do painel gerencial e dos relatórios (só leitura) |
     | `SIS` | usuários, permissões, parâmetros, log de erros, fila de e-mail, agenda das rotinas |
     | `MIG` | staging da migração do Access; **não entra no arquivo MASTER** |
