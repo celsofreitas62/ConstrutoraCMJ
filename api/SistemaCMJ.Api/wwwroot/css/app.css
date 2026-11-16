@@ -217,6 +217,7 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .janela-botoes .botao { min-width: 96px; min-height: 42px; }
 .icone-atencao { color: var(--atencao); }
 .icone-erro { color: var(--erro); }
+.icone-ok { color: var(--sucesso); }
 .janela-larga { width: min(720px, calc(100vw - 32px)); }
 
 .avisos { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 50; }

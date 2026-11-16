@@ -9,6 +9,7 @@
                                             com Esc nem clicando fora; depois do
                                             OK o cursor volta ao campo indicado.
      Mensagens.confirmar(titulo, texto, botao) janela Confirmar/Cancelar -> true/false
+     Mensagens.concluido(texto)             janela com OK: registro gravado (todas as telas)
      Mensagens.sucesso(texto)               aviso discreto que some sozinho
      Mensagens.tratar(resposta, {foco})     resposta da API: mostra a janela se
                                             não deu certo; devolve true/false
@@ -91,6 +92,17 @@ const Mensagens = (() => {
     });
   }
 
+  function concluido(texto) {
+    return enfileirar(() => criarJanela({
+      icone: ICONES.OK,
+      classeIcone: 'icone-ok',
+      titulo: 'Concluído',
+      texto: texto || 'Registro gravado.',
+      botoes: [{ texto: 'OK', valor: true, principal: true }],
+      escFecha: true
+    }));
+  }
+
   function confirmar(titulo, texto, textoBotao = 'Confirmar') {
     return enfileirar(() => criarJanela({
       icone: ICONES.PERGUNTA,
@@ -129,5 +141,5 @@ const Mensagens = (() => {
     return false;
   }
 
-  return { alerta, confirmar, sucesso, tratar };
+  return { alerta, confirmar, concluido, sucesso, tratar };
 })();

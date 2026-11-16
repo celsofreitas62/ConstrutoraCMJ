@@ -31,10 +31,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   let historicoCarregado = false;
   const podeEditar = idPessoa ? acoes.has('ALTERAR') : acoes.has('INCLUIR');
 
-  // ---------- Aviso deixado pela gravação anterior (antes de recarregar) ----------
-  const avisoGuardado = sessionStorage.getItem('cmj_aviso');
-  if (avisoGuardado) { sessionStorage.removeItem('cmj_aviso'); Mensagens.sucesso(avisoGuardado, 6); }
-
   // ---------- Abas ----------
   const abas = [...document.querySelectorAll('.aba')];
   function abrirAba(aba) {
@@ -408,6 +404,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    const nomeGravar = $('nome').value.trim();
+    if (!(await Mensagens.confirmar('Gravar?', (idPessoa ? 'Confirma a gravação das alterações de ' : 'Confirma a inclusão de ') + nomeGravar + '?', 'Gravar'))) return;
+
     const corpo = { idPessoa, tipoPessoa: tipo };
     for (const c of CAMPOS) corpo[c] = $(c).value;
     for (const p of PAPEIS) corpo[p] = $(p).checked;
@@ -427,7 +426,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!(await Mensagens.tratar(r))) return;
 
     sujo = false;
-    sessionStorage.setItem('cmj_aviso', r.mensagem || 'Pessoa gravada.');
+    await Mensagens.concluido(r.mensagem || 'Pessoa gravada.');
     const novoId = r.dados && r.dados.id ? r.dados.id : idPessoa;
     location.replace('/cad/pessoa.html?id=' + encodeURIComponent(novoId));
   });
@@ -441,7 +440,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!ok) return;
     const r = await Api.post('/api/cad/pessoas/' + idPessoa + '/excluir', { reativar });
     if (!(await Mensagens.tratar(r))) return;
-    sessionStorage.setItem('cmj_aviso', r.mensagem || 'Situação alterada.');
+    await Mensagens.concluido(r.mensagem || 'Situação alterada.');
     location.replace('/cad/pessoa.html?id=' + encodeURIComponent(idPessoa));
   }
   $('botao-excluir').addEventListener('click', () => mudarSituacao(false));

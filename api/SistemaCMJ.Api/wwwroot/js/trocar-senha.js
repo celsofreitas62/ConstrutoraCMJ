@@ -39,6 +39,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    if (!(await Mensagens.confirmar('Gravar nova senha?', 'Confirma a troca da sua senha?', 'Gravar'))) return;
+
     botao.disabled = true;
     const resp = await Api.post('/api/senha', { senhaAtual: atual.value, novaSenha: nova.value, confirmacao: confirmacao.value });
     botao.disabled = false;
@@ -47,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await Mensagens.tratar(resp, { foco });
       return;
     }
-    Mensagens.sucesso(resp.mensagem || 'Senha alterada.');
-    setTimeout(() => { location.href = '/'; }, 1200);
+    await Mensagens.concluido(resp.mensagem || 'Senha alterada.');
+    location.href = '/';
   });
 });

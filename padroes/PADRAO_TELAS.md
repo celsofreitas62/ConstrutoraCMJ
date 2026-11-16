@@ -7,7 +7,7 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 1. **Recusa e erro em janela (pop-up) com botão OK**: toda vez que a procedure devolver `SUCESSO = 0` (ou, nas procedures "Listar", o erro 50001), a tela abre uma janela no centro com o texto de `MENSAGEM` e um botão **OK**. Nada continua até o usuário clicar em OK. A janela não fecha sozinha e não fecha clicando fora.
 2. A janela de erro tem ícone e título conforme o tipo: **Atenção** (recusa de regra de negócio: campo faltando, valor inválido) ou **Erro** (falha técnica: "O erro foi registrado para análise"). O texto técnico nunca aparece para o usuário; ele está em `SIS.Log_Erro`.
 3. Depois do OK, o foco volta para o campo que causou a recusa, quando der para saber qual é.
-4. **Sucesso** (gravado, enviado) aparece como aviso discreto que some sozinho em poucos segundos (não pede OK), para não atrapalhar o trabalho rápido.
+4. **Gravação em todas as telas** (revisto pelo Celso em 16/11/2026): ao clicar em Gravar, primeiro abre a janela **"Gravar?"** com **Confirmar/Cancelar**; depois de gravar, abre a janela **"Concluído"** dizendo que o registro foi gravado, com botão **OK** (`Mensagens.concluido`). Vale também para excluir, reativar e trocar senha. O aviso discreto que some sozinho (`Mensagens.sucesso`) fica só para ações pequenas que não são gravação.
 5. **Confirmação antes de ação que não se desfaz fácil** (estornar, cancelar contrato, reabrir mês, excluir): janela com **Confirmar** e **Cancelar**, dizendo o que vai acontecer.
 6. A mesma janela é um componente único (um arquivo JS/CSS), usado por todas as telas.
 
