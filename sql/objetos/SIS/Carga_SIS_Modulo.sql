@@ -11,13 +11,15 @@
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02a).
+    v1.1 (16/11/2026) - HABILITADO: só o SIS nasce habilitado; os demais o
+                        administrador geral liga quando estiverem prontos.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-INSERT INTO SIS.Modulo (CODIGO, NOME, ORDEM_MENU, ICONE, LIBERADO_LICENCA)
-SELECT v.CODIGO, v.NOME, v.ORDEM_MENU, '', v.LIBERADO_LICENCA
+INSERT INTO SIS.Modulo (CODIGO, NOME, ORDEM_MENU, ICONE, LIBERADO_LICENCA, HABILITADO)
+SELECT v.CODIGO, v.NOME, v.ORDEM_MENU, '', v.LIBERADO_LICENCA, v.LIBERADO_LICENCA
 FROM (VALUES
         (CAST('CAD'   AS VARCHAR(10)), CAST(N'Cadastros'           AS NVARCHAR(60)), CAST(10 AS SMALLINT), CAST(0 AS BIT)),
         ('IMOB',  N'Imóveis',             20, 0),

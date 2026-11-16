@@ -15,6 +15,8 @@
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02b).
+    v1.2 (16/11/2026) - Contagens de itens, ações e menus restritas aos
+                        itens da 02b (etapas seguintes acrescentam telas).
     v1.1 (15/11/2026) - Dois níveis de administrador: celso (geral) x admin
                         (CMJ); testes de visibilidade e de telas exclusivas;
                         exceções de usuário testadas no Log de erros.
@@ -109,8 +111,8 @@ FROM (VALUES
      ) v (NOME, TIPO);
 
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: ações', N'14', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Acao;
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: itens do SIS', N'8', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Item i INNER JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO WHERE m.CODIGO = 'SIS';
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: ações das telas do SIS', N'17', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM WHERE i.CODIGO LIKE 'SIS[_]%';
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: itens do SIS (02b)', N'8', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Item i WHERE i.CODIGO IN ('SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO');
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: ações das telas do SIS', N'17', CONVERT(NVARCHAR(10), COUNT(*)) FROM SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM WHERE i.CODIGO IN ('SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: perfis de administrador (nível 1 / nível 2)', N'1/1',
        CONVERT(NVARCHAR(10), SUM(CASE WHEN p.NIVEL_ADMIN = 1 THEN 1 ELSE 0 END)) + N'/' + CONVERT(NVARCHAR(10), SUM(CASE WHEN p.NIVEL_ADMIN = 2 THEN 1 ELSE 0 END)) FROM SIS.Perfil p;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
@@ -118,7 +120,7 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Nível do admin (administrador da CMJ)', N'1', CONVERT(NVARCHAR(5), SIS.fn_SIS_Usuario_Nivel_Admin(@IdAdmin))),
  (N'Nível do sistema (interno)', N'2', CONVERT(NVARCHAR(5), SIS.fn_SIS_Usuario_Nivel_Admin(@IdSistema)));
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Telas exclusivas do administrador geral', N'SIS_LICENCA,SIS_PARAMETRO',
-       ISNULL(STRING_AGG(CAST(i.CODIGO AS NVARCHAR(MAX)), N',') WITHIN GROUP (ORDER BY i.CODIGO), N'') FROM SIS.Item i WHERE i.EXCLUSIVO_GERAL = 1;
+       ISNULL(STRING_AGG(CAST(i.CODIGO AS NVARCHAR(MAX)), N',') WITHIN GROUP (ORDER BY i.CODIGO), N'') FROM SIS.Item i WHERE i.EXCLUSIVO_GERAL = 1 AND i.CODIGO IN ('SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: usuário sistema é interno', N'1', CONVERT(NVARCHAR(5), u.INTERNO) FROM SIS.Usuario u WHERE u.ID_USUARIO = @IdSistema;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Carga: admin sem senha e com troca obrigatória', N'1/1',
        CONVERT(NVARCHAR(5), CASE WHEN u.SENHA_HASH IS NULL THEN 1 ELSE 0 END) + N'/' + CONVERT(NVARCHAR(5), u.TROCAR_SENHA) FROM SIS.Usuario u WHERE u.ID_USUARIO = @IdAdmin;
@@ -254,13 +256,13 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Ações da tela no menu do
 DELETE FROM #Menu;
 
 INSERT INTO #Menu EXEC SIS.SIS_Menu_Listar @IdUsuario = @IdAdmin;
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do admin, sem Configuração (1 módulo + 2 menus + 3 telas)', N'6', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do admin, sem Configuração (1 módulo + 2 menus + 3 telas)', N'6', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu WHERE CODIGO IN ('SIS', 'SIS_SEGURANCA', 'SIS_USUARIO', 'SIS_PERFIL', 'SIS_MONITORAMENTO', 'SIS_LOG_ERRO');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do admin não tem Licença nem Parâmetros', N'0', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu WHERE CODIGO IN ('SIS_CONFIGURACAO', 'SIS_LICENCA', 'SIS_PARAMETRO');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Ações de Usuários no menu do admin', N'VER,INCLUIR,ALTERAR,EXPORTAR,DESBLOQUEAR,REDEFINIR_SENHA', ISNULL(MAX(m.ACOES), '') FROM #Menu m WHERE m.CODIGO = 'SIS_USUARIO';
 DELETE FROM #Menu;
 
 INSERT INTO #Menu EXEC SIS.SIS_Menu_Listar @IdUsuario = @IdCelso;
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do celso (1 módulo + 3 menus + 5 telas)', N'9', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do celso (1 módulo + 3 menus + 5 telas)', N'9', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu WHERE CODIGO = 'SIS' OR CODIGO IN ('SIS_CONFIGURACAO','SIS_LICENCA','SIS_PARAMETRO','SIS_SEGURANCA','SIS_USUARIO','SIS_PERFIL','SIS_MONITORAMENTO','SIS_LOG_ERRO');
 DELETE FROM #Menu;
 
 -- 7) Sem permissão

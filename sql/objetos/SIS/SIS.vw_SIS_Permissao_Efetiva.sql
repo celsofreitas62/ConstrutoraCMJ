@@ -11,13 +11,15 @@
                   perfil comum: (ações do perfil + concessões 'C') -
                     retiradas 'R', nunca em tela EXCLUSIVO_GERAL.
                 Só entram: usuário ativo, não bloqueado e não interno; perfil
-                ativo; tela, ação e módulo ativos; módulo liberado na licença.
+                ativo; tela, ação e módulo ativos; módulo liberado na licença;
+                módulo e tela HABILITADOS pelo administrador geral.
                 Fonte única de permissão: fn_SIS_Tem_Permissao e
                 SIS_Menu_Listar leem daqui.
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (15/11/2026) - Dois níveis de administrador (NIVEL_ADMIN, EXCLUSIVO_GERAL).
+    v1.2 (16/11/2026) - Módulo e tela precisam estar HABILITADOS (pedido 5).
 
   Homologação:
     -- SELECT * FROM SIS.vw_SIS_Permissao_Efetiva WHERE ID_USUARIO = 2;
@@ -51,6 +53,8 @@ WHERE u.ATIVO = 1
   AND a.ATIVO = 1
   AND m.ATIVO = 1
   AND m.LIBERADO_LICENCA = 1
+  AND m.HABILITADO = 1
+  AND i.HABILITADO = 1
   AND (i.EXCLUSIVO_GERAL = 0 OR p.NIVEL_ADMIN = 2)
   AND (    p.NIVEL_ADMIN >= 1
        OR (    (   EXISTS (SELECT 1 FROM SIS.Perfil_Permissao pp
