@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Entrar</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/login.js" defer></script>
+</head>
+<body data-tela="login.html" data-publica="1">
+  <main class="pagina-login">
+    <form class="caixa-login" id="form-login" novalidate>
+      <img class="logo-login" src="/api/identidade/logo/horizontal" alt="Logomarca da empresa">
+      <div>
+        <h1>Entrar no SistemaCMJ</h1>
+        <p>Use o seu usuário e a sua senha.</p>
+      </div>
+      <label class="campo">Usuário
+        <input type="text" id="login" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="100" required>
+      </label>
+      <label class="campo">Senha
+        <input type="password" id="senha" name="senha" autocomplete="current-password" maxlength="128" required>
+      </label>
+      <button type="submit" class="botao botao-principal" id="botao-entrar">Entrar</button>
+      <p class="nota">Esqueceu a senha ou o usuário está bloqueado? Fale com o administrador do sistema.</p>
+    </form>
+  </main>
+</body>
+</html>

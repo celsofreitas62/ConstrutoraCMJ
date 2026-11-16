@@ -23,7 +23,7 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 
 ## 0. Estado atual e como retomar (atualizar sempre)
 
-**Situação em 16/11/2026 (conversa "03 – Modelo de dados", em andamento)**: a CMJ **aprovou a proposta**: o projeto está em desenvolvimento para valer. Etapas 01 (levantamento) e 02 (base `SIS`) concluídas. Na 03 já foram **aprovados**: plano de contas (`docs/requisitos/Plano_Contas.md`), `CAD` (`docs/requisitos/Modelo_CAD.md`), cadastro do `BANCO` (`docs/requisitos/Modelo_BANCO_Cadastro.md`), arquivo morto só para consulta (seção 5) e o **novo plano de fases com a versão 1** (seção 7). **Parte 03a concluída e homologada no LOCAL** (16/11/2026: `CAD` + cadastro do `BANCO`; 03a 68 testes, 02d 127, 02c 75, 02b 126, todos com 0 falhas). **Próximo: fase 3b, aprovada pelo Celso**, na conversa nova **"03b – API e primeira tela"** (esqueleto da API + login + menu + tela de Pessoas no navegador). GitHub: remoto `origin` = `https://github.com/celsofreitas62/ConstrutoraCMJ.git` (privado), ligado em 16/11/2026; o primeiro `git push` é feito pelo Celso no PowerShell (autoriza o GitHub uma vez). Servidor da CMJ: Ryzen 5, 16 GB, SSD 240 GB + HD 1 TB, **Windows 11 Pro**.
+**Situação em 16/11/2026 (conversa "03b – API e primeira tela", em andamento)**: a CMJ aprovou a proposta; etapas 01, 02 e 03a concluídas. **Fase 3b escrita, aguardando o primeiro teste do Celso no notebook**: API em `api/SistemaCMJ.Api` (.NET 10, Minimal API; login em dois passos com PBKDF2, sessão por cookie, ponto único de chamada de procedure com `SIS_Contexto_Gravar`, menu, identidade, Pessoas, histórico) e telas em `wwwroot` (login, troca de senha, início, lista e ficha de Pessoas, componente único de mensagens, ajuda por tela), conforme o esboço aprovado. No LOCAL já foram ligados o módulo CAD e a tela Pessoas (`sql/local/03b_Habilitar_Pessoas_LOCAL.sql`, rodado pelo Claude no SSMS; menu do celso confere). **Próximo**: o Celso dá dois cliques em `api\compilar.cmd` (resultado em `api\compilar.log`, que o Claude lê), define a primeira senha (`dotnet run -- senha-inicial celso`, na pasta `api\SistemaCMJ.Api`), confia o certificado (`dotnet dev-certs https --trust`), sobe com `api\rodar.cmd` e abre https://localhost:5443. Ajustes do teste, depois **3c** (FIN + arquivo morto + ensaio da migração). GitHub ligado (`origin`); push é do Celso. Servidor da CMJ: Windows 11 Pro.
 
 **Histórico e decisões**: tudo em [docs/DIARIO_DECISOES.md](docs/DIARIO_DECISOES.md) (separado em 16/11/2026). Ler só quando precisar do motivo de uma decisão.
 
@@ -327,7 +327,7 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 | 1 | Levantamento do Access | concluída (15/11/2026) |
 | 2 | Base `SIS` (02a a 02d) | concluída (16/11/2026) |
 | 3a | `CAD` + cadastro do `BANCO` (SQL) | concluída (16/11/2026) |
-| 3b | **Esqueleto da API** (login, sessão, chamada de procedure, menu) + **primeira tela no navegador** (Pessoas) | **próxima** |
+| 3b | **Esqueleto da API** (login, sessão, chamada de procedure, menu) + **primeira tela no navegador** (Pessoas) | **escrita, em teste** (16/11/2026) |
 | 3c | Desenho do `FIN` + arquivo morto + **ensaio da migração do movimento** com os dados reais | |
 | 4 | Telas dos cadastros e do financeiro (agenda, pagar/receber, baixa, caixa, conciliação) | |
 | 5 | `IMOB` + `VENDA` (empreendimento, unidades, espelho, contrato, parcelas, reajuste) | |

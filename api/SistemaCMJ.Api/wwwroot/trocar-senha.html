@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Trocar senha</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/trocar-senha.js" defer></script>
+</head>
+<body data-tela="trocar-senha.html">
+  <main class="pagina-login">
+    <form class="caixa-login" id="form-senha" novalidate>
+      <div class="marca-pequena">
+        <img src="/api/identidade/logo/simbolo" alt="">
+        <span id="etiqueta">Trocar senha</span>
+      </div>
+      <div>
+        <h1 id="titulo">Trocar a sua senha</h1>
+        <p id="explicacao">Informe a senha atual e a nova senha.</p>
+      </div>
+      <label class="campo">Senha atual
+        <input type="password" id="senha-atual" autocomplete="current-password" maxlength="128" required>
+      </label>
+      <label class="campo">Nova senha
+        <input type="password" id="nova-senha" autocomplete="new-password" maxlength="128" required>
+      </label>
+      <label class="campo">Repita a nova senha
+        <input type="password" id="confirmacao" autocomplete="new-password" maxlength="128" required>
+      </label>
+      <p class="nota">Pelo menos 8 caracteres (ou o mínimo definido nos parâmetros), com letras e números.</p>
+      <button type="submit" class="botao botao-principal" id="botao-gravar">Gravar nova senha</button>
+      <a class="botao" href="/" id="botao-cancelar">Cancelar</a>
+    </form>
+  </main>
+</body>
+</html>

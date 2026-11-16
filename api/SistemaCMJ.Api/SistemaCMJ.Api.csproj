@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    SistemaCMJ.Api - camada fina entre as telas (HTML/JS) e o SQL Server.
+    Autentica, confere a sessão, grava o contexto do usuário, chama as
+    procedures e devolve JSON. Regra de negócio fica no SQL (CLAUDE.md seção 2).
+    Bibliotecas: só Microsoft.Data.SqlClient (MIT).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SistemaCMJ.Api</RootNamespace>
+    <AssemblyName>SistemaCMJ.Api</AssemblyName>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <SatelliteResourceLanguages>pt-BR</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.*" />
+  </ItemGroup>
+
+</Project>

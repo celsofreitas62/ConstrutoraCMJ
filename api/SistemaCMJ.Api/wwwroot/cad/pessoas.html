@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Pessoas</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/cad/pessoas.js" defer></script>
+</head>
+<body data-tela="cad/pessoas.html" data-ajuda="cad-pessoas" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Cadastros › Pessoas</div>
+          <h1>Pessoas</h1>
+        </div>
+        <button type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <a class="botao botao-principal" href="/cad/pessoa.html" id="botao-incluir" hidden>+ Incluir</a>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label class="campo f-3">Nome, parte do nome, CPF/CNPJ ou código
+          <input type="search" id="busca" maxlength="100" placeholder="Ex.: ribeiro" autocomplete="off">
+        </label>
+        <label class="campo f-1">Papel
+          <select id="papel">
+            <option value="">Todos</option>
+            <option value="CLIENTE">Clientes</option>
+            <option value="FORNECEDOR">Fornecedores</option>
+            <option value="FUNCIONARIO">Funcionários</option>
+            <option value="CORRETOR">Corretores</option>
+          </select>
+        </label>
+        <label class="campo f-1">Situação
+          <select id="situacao">
+            <option value="ATIVOS">Ativos</option>
+            <option value="INATIVOS">Inativos</option>
+            <option value="TODOS">Todos</option>
+          </select>
+        </label>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div class="rolagem">
+            <table class="tabela tabela-larga">
+              <thead>
+                <tr>
+                  <th scope="col">Código</th>
+                  <th scope="col">Nome</th>
+                  <th scope="col">CPF/CNPJ</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Papéis</th>
+                  <th scope="col">Contato</th>
+                  <th scope="col">Cidade/UF</th>
+                  <th scope="col">Situação</th>
+                </tr>
+              </thead>
+              <tbody id="linhas"></tbody>
+            </table>
+          </div>
+          <div class="rodape-lista">
+            <span id="contagem" aria-live="polite"></span>
+            <span>Clique na linha para abrir a ficha</span>
+          </div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

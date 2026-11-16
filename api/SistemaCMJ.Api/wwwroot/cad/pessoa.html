@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Ficha da pessoa</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/cad/pessoa.js" defer></script>
+</head>
+<body data-tela="cad/pessoa.html" data-menu="cad/pessoas.html" data-ajuda="cad-pessoa" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <a href="/cad/pessoas.html" id="link-voltar">‹ Voltar para a lista de Pessoas</a>
+          <h1 id="titulo">Nova pessoa</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
+        <button type="button" class="botao" id="botao-reativar" hidden>Reativar</button>
+        <button type="button" class="botao" id="botao-cancelar">Cancelar</button>
+        <button type="submit" form="ficha" class="botao botao-principal" id="botao-gravar" hidden>Gravar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="aviso-faixa" id="aviso-documento" role="note" hidden></div>
+
+      <div class="abas" role="tablist" aria-label="Partes da ficha">
+        <button type="button" class="aba" role="tab" id="aba-dados" aria-controls="painel-dados" aria-selected="true">Dados principais</button>
+        <button type="button" class="aba" role="tab" id="aba-endereco" aria-controls="painel-endereco" aria-selected="false">Endereço</button>
+        <button type="button" class="aba" role="tab" id="aba-contatos" aria-controls="painel-contatos" aria-selected="false">Contatos</button>
+        <button type="button" class="aba" role="tab" id="aba-bancarios" aria-controls="painel-bancarios" aria-selected="false">Dados bancários</button>
+        <button type="button" class="aba" role="tab" id="aba-vinculos" aria-controls="painel-vinculos" aria-selected="false">Vínculos</button>
+        <button type="button" class="aba" role="tab" id="aba-historico" aria-controls="painel-historico" aria-selected="false" hidden>Histórico</button>
+      </div>
+
+      <div class="area-lista">
+        <form class="cartao" id="ficha" novalidate>
+
+          <section class="painel-aba" role="tabpanel" id="painel-dados" aria-labelledby="aba-dados">
+            <div class="marcacoes">
+              <span class="rotulo-linha" id="rotulo-tipo">Tipo</span>
+              <div class="marcacoes" role="radiogroup" aria-labelledby="rotulo-tipo">
+                <button type="button" class="pilula ativa" role="radio" aria-checked="true" data-tipo="F" id="tipo-f">Pessoa física</button>
+                <button type="button" class="pilula" role="radio" aria-checked="false" data-tipo="J" id="tipo-j">Pessoa jurídica</button>
+              </div>
+            </div>
+            <fieldset class="marcacoes" id="papeis">
+              <legend class="rotulo-linha">Papéis (pelo menos um)</legend>
+              <label class="marcacao"><input type="checkbox" id="cliente"> Cliente</label>
+              <label class="marcacao"><input type="checkbox" id="fornecedor"> Fornecedor</label>
+              <label class="marcacao"><input type="checkbox" id="funcionario"> Funcionário</label>
+              <label class="marcacao"><input type="checkbox" id="corretor"> Corretor</label>
+            </fieldset>
+
+            <div class="grade">
+              <label class="campo s-2"><span id="rotulo-nome">Nome completo *</span>
+                <input id="nome" maxlength="150" autocomplete="off">
+              </label>
+              <label class="campo s-2 so-pj">Nome fantasia
+                <input id="nomeFantasia" maxlength="100" autocomplete="off">
+              </label>
+              <label class="campo"><span id="rotulo-documento">CPF</span>
+                <input id="cpfCnpj" maxlength="20" inputmode="text" autocomplete="off">
+              </label>
+              <label class="campo so-pf">Data de nascimento
+                <input id="dtNascimento" type="date">
+              </label>
+              <label class="campo so-pf">RG
+                <input id="rg" maxlength="20" autocomplete="off">
+              </label>
+              <label class="campo so-pf">Órgão emissor
+                <input id="orgaoEmissor" maxlength="20" autocomplete="off">
+              </label>
+              <label class="campo so-pj">Inscrição estadual
+                <input id="inscricaoEstadual" maxlength="20" autocomplete="off">
+              </label>
+              <label class="campo so-pj">Inscrição municipal
+                <input id="inscricaoMunicipal" maxlength="20" autocomplete="off">
+              </label>
+              <label class="campo so-pf">Nacionalidade
+                <input id="nacionalidade" maxlength="40" autocomplete="off">
+              </label>
+              <label class="campo so-pf">Profissão
+                <input id="profissao" maxlength="60" autocomplete="off">
+              </label>
+              <label class="campo so-pf">Estado civil
+                <select id="estadoCivil">
+                  <option value="">(não informado)</option>
+                  <option value="SOLTEIRO">Solteiro(a)</option>
+                  <option value="CASADO">Casado(a)</option>
+                  <option value="UNIAO_ESTAVEL">União estável</option>
+                  <option value="DIVORCIADO">Divorciado(a)</option>
+                  <option value="SEPARADO">Separado(a)</option>
+                  <option value="VIUVO">Viúvo(a)</option>
+                </select>
+              </label>
+              <label class="campo so-pf">Regime de bens
+                <select id="regimeBens">
+                  <option value="">(não informado)</option>
+                  <option value="COMUNHAO_PARCIAL">Comunhão parcial</option>
+                  <option value="COMUNHAO_UNIVERSAL">Comunhão universal</option>
+                  <option value="SEPARACAO_TOTAL">Separação total</option>
+                  <option value="PARTICIPACAO_AQUESTOS">Participação final nos aquestos</option>
+                </select>
+              </label>
+              <label class="campo s-4">Observação
+                <textarea id="observacao" rows="3" maxlength="2000"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-endereco" aria-labelledby="aba-endereco" hidden>
+            <div class="grade-6">
+              <label class="campo">CEP
+                <input id="cep" maxlength="10" inputmode="numeric" autocomplete="off">
+              </label>
+              <label class="campo s-4">Logradouro
+                <input id="logradouro" maxlength="150" autocomplete="off">
+              </label>
+              <label class="campo">Número
+                <input id="numero" maxlength="20" autocomplete="off">
+              </label>
+              <label class="campo s-2">Complemento
+                <input id="complemento" maxlength="60" autocomplete="off">
+              </label>
+              <label class="campo s-2">Bairro
+                <input id="bairro" maxlength="60" autocomplete="off">
+              </label>
+              <label class="campo">Cidade
+                <input id="cidade" maxlength="60" autocomplete="off">
+              </label>
+              <label class="campo">UF
+                <input id="uf" maxlength="2" autocomplete="off">
+              </label>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-contatos" aria-labelledby="aba-contatos" hidden>
+            <div class="barra-lista">
+              <span class="suave">O contato marcado em "Cobrança" recebe boletos e avisos por e-mail.</span>
+              <button type="button" class="botao botao-contorno editavel" id="incluir-contato">+ Incluir contato</button>
+            </div>
+            <div class="rolagem">
+              <table class="tabela tabela-edicao tabela-larga">
+                <thead><tr><th scope="col">Tipo</th><th scope="col">Contato</th><th scope="col">Nome do contato</th><th scope="col">Principal</th><th scope="col">Cobrança</th><th scope="col"><span class="so-leitor">Remover</span></th></tr></thead>
+                <tbody id="linhas-contatos"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-bancarios" aria-labelledby="aba-bancarios" hidden>
+            <div class="barra-lista">
+              <span class="suave">Para pagar ou devolver valores. TED pede banco, agência e conta; PIX pede o tipo e a chave.</span>
+              <button type="button" class="botao botao-contorno editavel" id="incluir-bancario">+ Incluir dado bancário</button>
+            </div>
+            <div class="rolagem">
+              <table class="tabela tabela-edicao tabela-larga">
+                <thead><tr><th scope="col">Forma</th><th scope="col">Banco / tipo da chave</th><th scope="col">Agência / chave</th><th scope="col">Conta</th><th scope="col">Tipo de conta</th><th scope="col">Titular (se for outro)</th><th scope="col">Principal</th><th scope="col"><span class="so-leitor">Remover</span></th></tr></thead>
+                <tbody id="linhas-bancarios"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-vinculos" aria-labelledby="aba-vinculos" hidden>
+            <div class="barra-lista">
+              <span class="suave">Cônjuge, sócio, representante ou procurador. A pessoa vinculada também precisa estar cadastrada.</span>
+              <button type="button" class="botao botao-contorno editavel" id="incluir-vinculo">+ Incluir vínculo</button>
+            </div>
+            <div class="rolagem">
+              <table class="tabela tabela-edicao tabela-larga">
+                <thead><tr><th scope="col">Tipo</th><th scope="col">Pessoa vinculada</th><th scope="col">Observação</th><th scope="col"><span class="so-leitor">Remover</span></th></tr></thead>
+                <tbody id="linhas-vinculos"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-historico" aria-labelledby="aba-historico" hidden>
+            <span class="suave">Quem mudou o quê e quando nesta pessoa. Somente consulta: ninguém altera o histórico.</span>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead><tr><th scope="col">Data e hora</th><th scope="col">Usuário</th><th scope="col">Parte</th><th scope="col">Operação</th><th scope="col">Campo</th><th scope="col">Antes</th><th scope="col">Depois</th></tr></thead>
+                <tbody id="linhas-historico"></tbody>
+              </table>
+            </div>
+          </section>
+        </form>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+
+      <div class="rodape-ficha" id="rodape"></div>
+    </main>
+  </div>
+</body>
+</html>

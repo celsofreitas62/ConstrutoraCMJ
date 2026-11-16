@@ -1,0 +1,133 @@
+/* =============================================================================
+   SistemaCMJ - js/mensagens.js
+   Autor     : Celso de Freitas
+   Refatorado: Claude
+   Criação   : 16/11/2026 (fase 3b)
+   Descrição : Componente ÚNICO de mensagens (padroes/PADRAO_TELAS.md, seção 1):
+     Mensagens.alerta(texto, tipo, {foco})  janela com OK ("ATENCAO" ou "ERRO");
+                                            nada continua até o OK; não fecha
+                                            com Esc nem clicando fora; depois do
+                                            OK o cursor volta ao campo indicado.
+     Mensagens.confirmar(titulo, texto, botao) janela Confirmar/Cancelar -> true/false
+     Mensagens.sucesso(texto)               aviso discreto que some sozinho
+     Mensagens.tratar(resposta, {foco})     resposta da API: mostra a janela se
+                                            não deu certo; devolve true/false
+   ========================================================================== */
+'use strict';
+
+const Mensagens = (() => {
+  const ICONES = {
+    ATENCAO: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4"/><path d="M12 17.5v.5"/></svg>',
+    ERRO: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>',
+    PERGUNTA: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7"/><path d="M12 17v.5"/></svg>',
+    OK: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+  };
+
+  // Uma janela por vez: as seguintes esperam na fila.
+  let fila = Promise.resolve();
+
+  function criarJanela({ icone, classeIcone, titulo, texto, botoes, escFecha }) {
+    return new Promise((resolver) => {
+      const janela = document.createElement('dialog');
+      janela.className = 'janela';
+      janela.setAttribute('aria-labelledby', 'janela-titulo');
+
+      const topo = document.createElement('div');
+      topo.className = 'janela-topo';
+      const spanIcone = document.createElement('span');
+      spanIcone.className = classeIcone || '';
+      spanIcone.innerHTML = icone;
+      const h2 = document.createElement('h2');
+      h2.id = 'janela-titulo';
+      h2.textContent = titulo;
+      topo.append(spanIcone, h2);
+
+      const p = document.createElement('p');
+      p.className = 'janela-texto';
+      p.textContent = texto;
+
+      const barra = document.createElement('div');
+      barra.className = 'janela-botoes';
+      let botaoPadrao = null;
+      for (const b of botoes) {
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'botao' + (b.principal ? ' botao-principal' : '');
+        botao.textContent = b.texto;
+        botao.addEventListener('click', () => { janela.close(); janela.remove(); resolver(b.valor); });
+        barra.append(botao);
+        if (b.principal) botaoPadrao = botao;
+      }
+
+      janela.addEventListener('cancel', (e) => {
+        e.preventDefault();
+        if (escFecha !== undefined) { janela.close(); janela.remove(); resolver(escFecha); }
+      });
+
+      janela.append(topo, p, barra);
+      document.body.append(janela);
+      janela.showModal();
+      (botaoPadrao || barra.lastElementChild)?.focus();
+    });
+  }
+
+  function enfileirar(fn) {
+    const proxima = fila.then(fn, fn);
+    fila = proxima.catch(() => {});
+    return proxima;
+  }
+
+  function alerta(texto, tipo = 'ATENCAO', opcoes = {}) {
+    const erro = tipo === 'ERRO';
+    return enfileirar(async () => {
+      await criarJanela({
+        icone: erro ? ICONES.ERRO : ICONES.ATENCAO,
+        classeIcone: erro ? 'icone-erro' : 'icone-atencao',
+        titulo: erro ? 'Erro' : 'Atenção',
+        texto: texto || (erro ? 'Não foi possível concluir a operação. O erro foi registrado para análise.' : ''),
+        botoes: [{ texto: 'OK', valor: true, principal: true }]
+      });
+      if (opcoes.foco && typeof opcoes.foco.focus === 'function') opcoes.foco.focus();
+    });
+  }
+
+  function confirmar(titulo, texto, textoBotao = 'Confirmar') {
+    return enfileirar(() => criarJanela({
+      icone: ICONES.PERGUNTA,
+      titulo,
+      texto,
+      botoes: [{ texto: 'Cancelar', valor: false }, { texto: textoBotao, valor: true, principal: true }],
+      escFecha: false
+    }));
+  }
+
+  function sucesso(texto, segundos = 4) {
+    if (!texto) return;
+    let area = document.querySelector('.avisos');
+    if (!area) {
+      area = document.createElement('div');
+      area.className = 'avisos';
+      area.setAttribute('role', 'status');
+      area.setAttribute('aria-live', 'polite');
+      document.body.append(area);
+    }
+    const aviso = document.createElement('div');
+    aviso.className = 'aviso';
+    const icone = document.createElement('span');
+    icone.innerHTML = ICONES.OK;
+    const t = document.createElement('span');
+    t.textContent = texto;
+    aviso.append(icone, t);
+    area.append(aviso);
+    setTimeout(() => aviso.remove(), segundos * 1000);
+  }
+
+  async function tratar(resposta, opcoes = {}) {
+    if (resposta && resposta.sucesso) return true;
+    const tipo = resposta && resposta.tipo === 'ERRO' ? 'ERRO' : 'ATENCAO';
+    await alerta(resposta ? resposta.mensagem : '', tipo, opcoes);
+    return false;
+  }
+
+  return { alerta, confirmar, sucesso, tratar };
+})();

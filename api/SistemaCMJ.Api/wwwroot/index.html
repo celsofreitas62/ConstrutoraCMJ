@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Início</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/inicio.js" defer></script>
+</head>
+<body data-tela="index.html" data-ajuda="inicio">
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Início</div>
+          <h1 id="boas-vindas">Bem-vindo</h1>
+        </div>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+      <div class="area-lista">
+        <section class="cartao painel-aba">
+          <p>Escolha no menu à esquerda o módulo e a tela que quer usar.</p>
+          <p class="suave">A agenda da semana (contas a pagar e a receber) vai aparecer aqui a partir da fase 4.</p>
+        </section>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+<Project>
+  <!--
+    SistemaCMJ - configuração comum dos projetos .NET (criado em 16/11/2026, fase 3b).
+    A pasta C:\SistemaCMJ é sincronizada com o Google Drive: os arquivos de
+    compilação (bin/obj) ficam FORA dela, em %LOCALAPPDATA%\SistemaCMJ\artifacts,
+    para não encher o Drive nem o Git.
+  -->
+  <PropertyGroup>
+    <ArtifactsPath>$(LOCALAPPDATA)\SistemaCMJ\artifacts</ArtifactsPath>
+  </PropertyGroup>
+</Project>
