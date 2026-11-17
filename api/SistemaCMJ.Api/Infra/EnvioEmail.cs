@@ -106,7 +106,7 @@ public sealed class EnvioEmail(Banco banco, IConfiguration configuracao, ILogger
         var conta = LerConta(email.Texto("CONTA"));
         var mensagem = new MimeMessage();
         var nomeRemetente = conta.NomeRemetente.Length > 0 ? conta.NomeRemetente
-            : await banco.ParametroAsync("SISTEMA_NOME", ct) is { Length: > 0 } nome ? nome : "SistemaCMJ";
+            : await banco.ParametroAsync("SISTEMA_NOME", ct) is { Length: > 0 } nomeSistema ? nomeSistema : "SistemaCMJ";
         mensagem.From.Add(new MailboxAddress(nomeRemetente, conta.Remetente));
         AdicionarEnderecos(mensagem.To, email.Texto("PARA"));
         AdicionarEnderecos(mensagem.Cc, email.Texto("CC"));
