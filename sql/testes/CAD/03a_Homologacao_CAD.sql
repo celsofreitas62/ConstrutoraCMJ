@@ -19,6 +19,8 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (17/11/2026) - Contagens de tabelas e triggers sem as tabelas do BANCO
+                        criadas na 03c (movimento e extrato).
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -107,12 +109,14 @@ EXEC SIS.SIS_Contexto_Gravar @IdUsuario = @IdCelso, @Estacao = N'HOMOLOGACAO-03A
 
 -- 1) Objetos e cargas
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
- (N'Tabelas CAD + BANCO', N'11', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.tables t WHERE SCHEMA_NAME(t.schema_id) IN ('CAD', 'BANCO')))),
+ (N'Tabelas CAD + BANCO', N'11', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.tables t WHERE SCHEMA_NAME(t.schema_id) IN ('CAD', 'BANCO')
+                                                    AND t.name NOT IN ('Movimento', 'Extrato_Arquivo', 'Extrato_Linha')))),
  (N'Procedures CAD + BANCO', N'20', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.procedures p WHERE SCHEMA_NAME(p.schema_id) IN ('CAD', 'BANCO')))),
  (N'Functions + view do CAD', N'3|1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.objects o WHERE SCHEMA_NAME(o.schema_id) = 'CAD' AND o.type = 'FN')) + N'|'
                                     + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.views v WHERE SCHEMA_NAME(v.schema_id) = 'CAD'))),
  (N'Triggers de auditoria CAD + BANCO', N'11', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t INNER JOIN sys.tables b ON b.object_id = t.parent_id
-                                                                      WHERE SCHEMA_NAME(b.schema_id) IN ('CAD', 'BANCO')))),
+                                                                      WHERE SCHEMA_NAME(b.schema_id) IN ('CAD', 'BANCO')
+                                                                        AND b.name NOT IN ('Movimento', 'Extrato_Arquivo', 'Extrato_Linha')))),
  (N'FK da conta padrão da empresa', N'1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.foreign_keys f WHERE f.name = 'FK_Empresa_Conta_Padrao'))),
  (N'Carga de bancos (Sicredi 748 e Itaú 341)', N'Sicredi|Itaú Unibanco', (SELECT b.NOME FROM BANCO.Banco b WHERE b.CODIGO = '748') + N'|' + (SELECT b.NOME FROM BANCO.Banco b WHERE b.CODIGO = '341')),
  (N'Telas novas no menu (CAD 4, BANCO 2)', N'4|2', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Item i INNER JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO WHERE m.CODIGO = 'CAD' AND i.TIPO = 'TELA')) + N'|'

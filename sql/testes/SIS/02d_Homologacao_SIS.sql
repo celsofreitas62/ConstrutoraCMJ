@@ -18,6 +18,8 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02d).
+    v1.1 (17/11/2026) - Contagem das triggers de auditoria sem as do comunicado
+                        (etapa 03c).
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -137,7 +139,8 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Parâmetros novos da 02d', N'5', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Parametro p WHERE p.CHAVE IN ('EMAIL_DOMINIO_INTERNO','EMAIL_MINUTOS_PRESO','BACKUP_PASTA','BACKUP_PASTA_EXTERNA','ATUALIZACAO_PASTA')))),
  (N'Rotinas da carga (com próxima execução)', N'2', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM #ProxRotina p WHERE p.CODIGO IN ('LOG_LIMPEZA','EMAIL_PRESOS') AND p.PROXIMA IS NOT NULL))),
  (N'Comandos da carga', N'14', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Comando c WHERE c.ATIVO = 1))),
- (N'Triggers de auditoria (13 + 4)', N'17', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t WHERE t.name LIKE N'tg[_]SIS[_]%[_]Auditoria' AND t.name <> N'tg_SIS_Auditoria_Protecao'))),
+ (N'Triggers de auditoria (13 + 4)', N'17', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t WHERE t.name LIKE N'tg[_]SIS[_]%[_]Auditoria' AND t.name <> N'tg_SIS_Auditoria_Protecao'
+                                                                           AND t.name NOT LIKE N'tg[_]SIS[_]Comunicado%'))),
  (N'Fila de e-mail não é auditada', N'0', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t WHERE t.parent_id = OBJECT_ID(N'SIS.Email_Fila')))),
  (N'celso: Rotinas/EXECUTAR e Instalação/EXECUTAR', N'1/1',
   CONVERT(NVARCHAR(1), SIS.fn_SIS_Tem_Permissao(@IdCelso, 'SIS_ROTINA', 'EXECUTAR')) + N'/' + CONVERT(NVARCHAR(1), SIS.fn_SIS_Tem_Permissao(@IdCelso, 'SIS_INSTALACAO', 'EXECUTAR'))),
