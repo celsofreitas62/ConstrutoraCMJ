@@ -114,6 +114,7 @@ ORDEM_03A = [
 ORDEM_03C = [
     'objetos/CAD/CAD.Empresa_Pasta_OFX.sql',
     'objetos/SIS/Carga_SIS_Parametro.sql', 'objetos/SIS/SIS.SIS_Email_Enfileirar.sql',
+    'objetos/SIS/SIS.fn_SIS_Email_HTML.sql', 'objetos/SIS/SIS.SIS_Email_Resultado_Gravar.sql',
     'objetos/FIN/FIN.Historico_Padrao.sql', 'objetos/FIN/FIN.Mes_Fechado.sql',
     'objetos/BANCO/BANCO.Extrato_Arquivo.sql', 'objetos/BANCO/BANCO.Extrato_Linha.sql',
     'objetos/FIN/FIN.Transferencia.sql', 'objetos/BANCO/BANCO.Movimento.sql',

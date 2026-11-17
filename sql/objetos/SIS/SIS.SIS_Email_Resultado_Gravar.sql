@@ -21,6 +21,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02d).
+    v1.1 (17/11/2026) - Nome do sistema no assunto do alerta pelo parâmetro SISTEMA_NOME.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Email_Resultado_Gravar @IdEmail = 1, @Resultado = 'ENVIADO', @Servidor = N'TESTE';
@@ -39,6 +40,7 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
+    DECLARE @AssuntoAlerta NVARCHAR(400);
     DECLARE @NomeProc    NVARCHAR(128) = N'[SIS].[SIS_Email_Resultado_Gravar]';
     DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
     DECLARE @Status      VARCHAR(12);
@@ -124,9 +126,10 @@ BEGIN
                            + N'<p>Para reenviar, use a tela Sistema &gt; E-mails &gt; E-mails enviados.</p>',
                              @NomeProc, '', 0);
 
+            SET @AssuntoAlerta = ISNULL(NULLIF(SIS.fn_SIS_Parametro('SISTEMA_NOME'), N''), N'SistemaCMJ') + N' - FALHA no envio de e-mail';
             EXEC SIS.SIS_Email_Enfileirar
                  @Para = @Alerta,
-                 @Assunto = N'SistemaCMJ - FALHA no envio de e-mail',
+                 @Assunto = @AssuntoAlerta,
                  @CorpoHTML = @Corpo,
                  @Tipo = 'ALERTA_EMAIL',
                  @Origem = @NomeProc,

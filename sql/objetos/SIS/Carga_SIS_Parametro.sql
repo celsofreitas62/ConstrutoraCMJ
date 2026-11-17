@@ -19,7 +19,8 @@
     v1.3 (16/11/2026) - Etapa 02d: e-mail (domínio interno, minutos preso),
                         pastas de backup e de atualizações.
     v1.4 (17/11/2026) - Etapa 03c: EMAIL_LOCAL_LIBERADOS (exceção controlada do
-                        banco de teste, pedido do Celso).
+                        banco de teste, pedido do Celso) e SISTEMA_NOME
+                        (nome do sistema por cliente, pedido do Celso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -68,6 +69,8 @@ FROM (VALUES
          N'Cor das confirmações (pagamento recebido, envio concluído).', 'SIS', 1),
         ('EMAIL_DOMINIO_INTERNO', N'', 'TEXTO',
          N'Domínio(s) do e-mail da empresa (ex.: cmj.com.br), separados por vírgula. Esses endereços saem pela conta interna; os demais pela externa. Vazio = todos pela interna.', 'SIS', 1),
+        ('SISTEMA_NOME', N'SistemaCMJ', 'TEXTO',
+         N'Nome do sistema mostrado nas telas, nos e-mails (rodapé e remetente) e nos relatórios. Só o administrador geral altera.', 'SIS', 0),
         ('EMAIL_LOCAL_LIBERADOS', N'', 'TEXTO',
          N'Só no banco de teste (_LOCAL): tipos de e-mail que saem para os destinatários reais em vez de irem para o EMAIL_TESTE, separados por vírgula (ex.: COMUNICADO). Vazio = todos desviados. Não tem efeito em produção.', 'SIS', 0),
         ('EMAIL_MINUTOS_PRESO', N'15', 'INTEIRO',

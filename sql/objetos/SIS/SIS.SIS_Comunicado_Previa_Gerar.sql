@@ -13,6 +13,7 @@
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, boletim semanal da implantação).
+    v1.1 (17/11/2026) - Nome do sistema no aviso da prévia pelo parâmetro SISTEMA_NOME.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Comunicado_Previa_Gerar @IdUsuario = 2, @IdComunicado = 1;
@@ -85,7 +86,7 @@ BEGIN
         SET @AssuntoPv = N'[PRÉVIA] ' + @Assunto;
         SET @Aviso     = N'<div style="background:#FFF3E0;border-left:4px solid #E65100;padding:10px 14px;margin-bottom:16px;">'
                        + N'<b>Prévia para aprovação.</b> Este e-mail ainda não foi enviado aos destinatários. '
-                       + N'Para liberar, abra o SistemaCMJ, menu Sistema &gt; E-mails &gt; Comunicados, e clique em "Aprovar e enviar".</div>';
+                       + N'Para liberar, abra o ' + SIS.fn_SIS_Texto_HTML(ISNULL(NULLIF(SIS.fn_SIS_Parametro('SISTEMA_NOME'), N''), N'SistemaCMJ')) + N', menu Sistema &gt; E-mails &gt; Comunicados, e clique em "Aprovar e enviar".</div>';
         SET @CorpoPv   = SIS.fn_SIS_Email_HTML(N'Prévia - ' + @Titulo, 'INFO', @Aviso + @Conteudo, @NomeProc, @GrupoAprov, 0);
 
         SET @EtapaAtual = 'Gravação';

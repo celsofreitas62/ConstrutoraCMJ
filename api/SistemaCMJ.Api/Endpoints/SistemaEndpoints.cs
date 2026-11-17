@@ -46,10 +46,12 @@ public static partial class SistemaEndpoints
         {
             var principal = await banco.ParametroAsync("EMPRESA_COR_PRINCIPAL", http.RequestAborted);
             var secundaria = await banco.ParametroAsync("EMPRESA_COR_SECUNDARIA", http.RequestAborted);
+            var nomeSistema = await banco.ParametroAsync("SISTEMA_NOME", http.RequestAborted);
             return Resposta.Ok(new
             {
                 corPrincipal = CorValida().IsMatch(principal) ? principal : "#D43414",
-                corSecundaria = CorValida().IsMatch(secundaria) ? secundaria : "#A8A8A8"
+                corSecundaria = CorValida().IsMatch(secundaria) ? secundaria : "#A8A8A8",
+                nomeSistema = nomeSistema.Length > 0 ? nomeSistema : "SistemaCMJ"
             });
         });
 

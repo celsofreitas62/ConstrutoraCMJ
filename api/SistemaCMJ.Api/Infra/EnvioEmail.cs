@@ -17,6 +17,10 @@
 //              de ambiente Smtp__Interna__Senha (gravada pelo configurar_email.cmd).
 //              Sem servidor ou senha configurados, não captura nada: os e-mails
 //              continuam PENDENTES até a configuração existir.
+//              17/11/2026: logomarca embutida no corpo (inline, sem nome de
+//              arquivo: não aparece como anexo), versão em texto simples junto
+//              com o HTML (menos chance de spam) e nome do remetente pelo
+//              parâmetro SISTEMA_NOME quando a configuração não tiver um.
 // =============================================================================
 using System.Text.Json;
 using MailKit;
@@ -40,7 +44,7 @@ public sealed class EnvioEmail(Banco banco, IConfiguration configuracao, ILogger
         var secao = configuracao.GetSection("Smtp:" + (conta.Equals("EXTERNA", StringComparison.OrdinalIgnoreCase) ? "Externa" : "Interna"));
         var c = new ContaSmtp(
             secao["Servidor"] ?? "", int.TryParse(secao["Porta"], out var porta) ? porta : 587,
-            secao["Usuario"] ?? "", secao["Senha"] ?? "", secao["Remetente"] ?? "", secao["NomeRemetente"] ?? "SistemaCMJ");
+            secao["Usuario"] ?? "", secao["Senha"] ?? "", secao["Remetente"] ?? "", secao["NomeRemetente"] ?? "");
         return c.Completa || conta.Equals("INTERNA", StringComparison.OrdinalIgnoreCase) ? c : LerConta("INTERNA");
     }
 
@@ -101,7 +105,9 @@ public sealed class EnvioEmail(Banco banco, IConfiguration configuracao, ILogger
     {
         var conta = LerConta(email.Texto("CONTA"));
         var mensagem = new MimeMessage();
-        mensagem.From.Add(new MailboxAddress(conta.NomeRemetente, conta.Remetente));
+        var nomeRemetente = conta.NomeRemetente.Length > 0 ? conta.NomeRemetente
+            : await banco.ParametroAsync("SISTEMA_NOME", ct) is { Length: > 0 } nome ? nome : "SistemaCMJ";
+        mensagem.From.Add(new MailboxAddress(nomeRemetente, conta.Remetente));
         AdicionarEnderecos(mensagem.To, email.Texto("PARA"));
         AdicionarEnderecos(mensagem.Cc, email.Texto("CC"));
         AdicionarEnderecos(mensagem.Bcc, email.Texto("CCO"));
@@ -110,14 +116,18 @@ public sealed class EnvioEmail(Banco banco, IConfiguration configuracao, ILogger
         mensagem.Subject = email.Texto("ASSUNTO");
 
         var corpo = new BodyBuilder { HtmlBody = email.Texto("CORPO_HTML") };
+        corpo.TextBody = TextoSimples(corpo.HtmlBody);
 
         if (corpo.HtmlBody.Contains("cid:logo_empresa", StringComparison.OrdinalIgnoreCase))
         {
             var logo = await CaminhoLogoAsync(ct);
             if (logo is not null)
             {
-                var imagem = corpo.LinkedResources.Add(logo);
+                var imagem = corpo.LinkedResources.Add("logo" + Path.GetExtension(logo), await File.ReadAllBytesAsync(logo, ct));
                 imagem.ContentId = "logo_empresa";
+                // Imagem do corpo, não anexo: inline e sem nome de arquivo.
+                imagem.ContentDisposition = new ContentDisposition(ContentDisposition.Inline);
+                imagem.ContentType.Name = null;
             }
             else
                 corpo.HtmlBody = corpo.HtmlBody.Replace("<img src=\"cid:logo_empresa\"", "<img hidden src=\"\"", StringComparison.OrdinalIgnoreCase);
@@ -146,6 +156,19 @@ public sealed class EnvioEmail(Banco banco, IConfiguration configuracao, ILogger
         await cliente.AuthenticateAsync(conta.Usuario, conta.Senha, ct);
         await cliente.SendAsync(mensagem, ct);
         await cliente.DisconnectAsync(true, ct);
+    }
+
+    /// <summary>Versão em texto do HTML (parte "text/plain" do e-mail).</summary>
+    private static string TextoSimples(string html)
+    {
+        var t = System.Text.RegularExpressions.Regex.Replace(html, @"<(head|style|script)[^>]*>.*?</\1>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        t = System.Text.RegularExpressions.Regex.Replace(t, @"<li[^>]*>", "\n - ", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        t = System.Text.RegularExpressions.Regex.Replace(t, @"<(br|/p|/div|/tr|/h\d|/ul)[^>]*>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        t = System.Text.RegularExpressions.Regex.Replace(t, @"<[^>]+>", "");
+        t = System.Net.WebUtility.HtmlDecode(t);
+        t = System.Text.RegularExpressions.Regex.Replace(t, @"[ \t]+", " ");
+        t = System.Text.RegularExpressions.Regex.Replace(t, @"\s*\n\s*(\n\s*)+", "\n\n");
+        return t.Trim();
     }
 
     private static void AdicionarEnderecos(InternetAddressList lista, string texto)

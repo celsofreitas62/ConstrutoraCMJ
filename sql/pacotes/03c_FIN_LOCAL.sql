@@ -68,7 +68,8 @@ GO
     v1.3 (16/11/2026) - Etapa 02d: e-mail (domínio interno, minutos preso),
                         pastas de backup e de atualizações.
     v1.4 (17/11/2026) - Etapa 03c: EMAIL_LOCAL_LIBERADOS (exceção controlada do
-                        banco de teste, pedido do Celso).
+                        banco de teste, pedido do Celso) e SISTEMA_NOME
+                        (nome do sistema por cliente, pedido do Celso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -117,6 +118,8 @@ FROM (VALUES
          N'Cor das confirmações (pagamento recebido, envio concluído).', 'SIS', 1),
         ('EMAIL_DOMINIO_INTERNO', N'', 'TEXTO',
          N'Domínio(s) do e-mail da empresa (ex.: cmj.com.br), separados por vírgula. Esses endereços saem pela conta interna; os demais pela externa. Vazio = todos pela interna.', 'SIS', 1),
+        ('SISTEMA_NOME', N'SistemaCMJ', 'TEXTO',
+         N'Nome do sistema mostrado nas telas, nos e-mails (rodapé e remetente) e nos relatórios. Só o administrador geral altera.', 'SIS', 0),
         ('EMAIL_LOCAL_LIBERADOS', N'', 'TEXTO',
          N'Só no banco de teste (_LOCAL): tipos de e-mail que saem para os destinatários reais em vez de irem para o EMAIL_TESTE, separados por vírgula (ex.: COMUNICADO). Vazio = todos desviados. Não tem efeito em produção.', 'SIS', 0),
         ('EMAIL_MINUTOS_PRESO', N'15', 'INTEIRO',
@@ -321,6 +324,249 @@ BEGIN
         SET @IdEmail = NULL;
         INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
         VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Email_HTML.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Email_HTML]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Moldura padrão de todo e-mail do sistema (PADRAO_EMAIL seções
+                3 e 4): container branco centralizado, logomarca, cabeçalho
+                colorido pela severidade, o conteúdo e o rodapé de rastreio.
+                A orquestradora monta só o miolo (@Conteudo, já em HTML, com
+                o texto digitado escapado por fn_SIS_Texto_HTML) e chama esta
+                function: o visual fica igual em todo o sistema.
+                @Severidade: INFO (cor EMPRESA_COR_PRINCIPAL), ALERTA (cor
+                EMAIL_COR_ALERTA e a palavra ALERTA no título) ou SUCESSO
+                (cor EMAIL_COR_SUCESSO). Cores sempre dos parâmetros.
+                @Rotina: nome da procedure que gerou (variável @NomeProc).
+                @Grupo : código do grupo (só em e-mail interno).
+                @Externo = 1: e-mail a cliente/terceiro; rodapé sem dados
+                técnicos (razão social, CNPJ e aviso de não responder).
+                Logomarca: <img src="cid:logo_empresa">; o serviço embute o
+                arquivo do parâmetro EMPRESA_LOGO_EMAIL com esse CID sempre
+                que o corpo citar "cid:logo_empresa".
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 02d).
+    v1.1 (17/11/2026) - Nome do sistema no rodapé pelo parâmetro SISTEMA_NOME.
+
+  Homologação (LOCAL):
+    -- SELECT SIS.fn_SIS_Email_HTML(N'Teste', 'INFO', N'<p>Olá</p>', N'[SIS].[Teste]', 'SIS_ALERTA', 0);
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Email_HTML]
+(
+    @Titulo      NVARCHAR(200),
+    @Severidade  VARCHAR(10),
+    @Conteudo    NVARCHAR(MAX),
+    @Rotina      NVARCHAR(256),
+    @Grupo       VARCHAR(30),
+    @Externo     BIT
+)
+RETURNS NVARCHAR(MAX)
+AS
+BEGIN
+    DECLARE @Sev    VARCHAR(10)   = UPPER(ISNULL(@Severidade, 'INFO'));
+    DECLARE @Cor    VARCHAR(7);
+    DECLARE @Titul  NVARCHAR(300) = UPPER(SIS.fn_SIS_Texto_HTML(ISNULL(@Titulo, N'')));
+    DECLARE @Razao  NVARCHAR(400) = SIS.fn_SIS_Texto_HTML(ISNULL(SIS.fn_SIS_Empresa_Razao_Social(), N''));
+    DECLARE @Rodape NVARCHAR(MAX);
+    DECLARE @Sistema NVARCHAR(400) = SIS.fn_SIS_Texto_HTML(ISNULL(NULLIF(SIS.fn_SIS_Parametro('SISTEMA_NOME'), N''), N'SistemaCMJ'));
+
+    SET @Cor = CASE @Sev WHEN 'ALERTA'  THEN SIS.fn_SIS_Parametro_Cor('EMAIL_COR_ALERTA')
+                         WHEN 'SUCESSO' THEN SIS.fn_SIS_Parametro_Cor('EMAIL_COR_SUCESSO')
+                         ELSE SIS.fn_SIS_Parametro_Cor('EMPRESA_COR_PRINCIPAL') END;
+    SET @Cor = ISNULL(NULLIF(@Cor, ''), '#333333');
+    IF @Sev = 'ALERTA' SET @Titul = N'ALERTA - ' + @Titul;
+
+    IF ISNULL(@Externo, 0) = 1
+        SET @Rodape = N'<div style="font-weight:bold;">' + @Razao + N'</div>'
+                    + N'<div>CNPJ ' + ISNULL(SIS.fn_SIS_Mascarar_CPF_CNPJ(SIS.fn_SIS_Empresa_CNPJ(), 0), N'') + N'</div>'
+                    + N'<div style="margin-top:6px;">Este e-mail foi enviado automaticamente. Por favor, não responda.</div>';
+    ELSE
+        SET @Rodape = N'<div>Gerado automaticamente pelo sistema ' + @Sistema + N': ' + SIS.fn_SIS_Texto_HTML(ISNULL(@Rotina, N'')) + N'</div>'
+                    + N'<div>Emitido em: ' + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(CAST(SYSDATETIME() AS DATETIME2(0))), N'') + N'</div>'
+                    + CASE WHEN ISNULL(@Grupo, '') <> '' THEN N'<div>Grupo de Destinatários: ' + SIS.fn_SIS_Texto_HTML(@Grupo) + N'</div>' ELSE N'' END
+                    + N'<div style="margin-top:6px;font-weight:bold;">' + @Razao + N'</div>';
+
+    RETURN N'<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
+         + N'<body style="margin:0;padding:20px;background:#eeeeee;font-family:Arial,''Segoe UI'',sans-serif;color:#333333;">'
+         + N'<div style="max-width:700px;margin:0 auto;background:#ffffff;box-shadow:0 1px 4px rgba(0,0,0,0.15);">'
+         + N'<div style="padding:16px 20px;"><img src="cid:logo_empresa" alt="' + @Razao + N'" style="max-height:60px;"></div>'
+         + N'<div style="background:' + @Cor + N';color:#ffffff;font-weight:bold;padding:12px 20px;font-size:15px;">' + @Titul + N'</div>'
+         + N'<div style="padding:20px;font-size:14px;line-height:1.5;">' + ISNULL(@Conteudo, N'') + N'</div>'
+         + N'<div style="background:#f9f9f9;padding:12px 20px;font-size:11px;color:#777777;border-top:1px solid #eeeeee;">' + @Rodape + N'</div>'
+         + N'</div></body></html>';
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Email_Resultado_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Email_Resultado_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Usada só pelo serviço, depois de tentar enviar um e-mail
+                capturado (PADRAO_EMAIL regras 3 a 5).
+                @Resultado:
+                  ENVIADO         : STATUS = ENVIADO.
+                  ERRO_TEMPORARIO : volta para PENDENTE e espera 1, 5, 15 e
+                                    depois 60 min a cada tentativa; passou de
+                                    EMAIL_TENTATIVAS_MAX, vira ERRO.
+                  ERRO_PERMANENTE : ERRO direto (endereço inválido, anexo
+                                    que não existe, recusa definitiva).
+                Toda tentativa vai para SIS.Email_Log.
+                E-mail que terminou em ERRO gera um alerta técnico para o
+                parâmetro EMAIL_ADMIN_ALERTA (se preenchido), uma vez por
+                e-mail (CHAVE_ORIGEM 'ALERTA_EMAIL:<id>'). Alerta que falha
+                não gera outro alerta.
+                Devolve SUCESSO, MENSAGEM, ID (ID = ID_EMAIL).
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 02d).
+    v1.1 (17/11/2026) - Nome do sistema no assunto do alerta pelo parâmetro SISTEMA_NOME.
+
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Email_Resultado_Gravar @IdEmail = 1, @Resultado = 'ENVIADO', @Servidor = N'TESTE';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Email_Resultado_Gravar]
+    @IdEmail    BIGINT,
+    @Resultado  VARCHAR(20),
+    @Mensagem   NVARCHAR(1000) = NULL,
+    @Servidor   NVARCHAR(128)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @AssuntoAlerta NVARCHAR(400);
+    DECLARE @NomeProc    NVARCHAR(128) = N'[SIS].[SIS_Email_Resultado_Gravar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
+    DECLARE @Status      VARCHAR(12);
+    DECLARE @Tentativas  INT;
+    DECLARE @Tipo        VARCHAR(30);
+    DECLARE @Assunto     NVARCHAR(400);
+    DECLARE @Para        NVARCHAR(2000);
+    DECLARE @Max         INT           = ISNULL(SIS.fn_SIS_Parametro_Inteiro('EMAIL_TENTATIVAS_MAX'), 5);
+    DECLARE @Novo        VARCHAR(12);
+    DECLARE @Espera      INT;
+    DECLARE @Agora       DATETIME2(0)  = SYSDATETIME();
+    DECLARE @Alerta      NVARCHAR(256);
+    DECLARE @Corpo       NVARCHAR(MAX);
+    DECLARE @IdAlerta    BIGINT;
+    DECLARE @Chave       NVARCHAR(200);
+
+    BEGIN TRY
+        SET @Resultado = UPPER(LTRIM(RTRIM(ISNULL(@Resultado, ''))));
+        SET @Mensagem  = LEFT(ISNULL(@Mensagem, N''), 1000);
+        IF @Max < 1 SET @Max = 1;
+
+        IF @Resultado NOT IN ('ENVIADO', 'ERRO_TEMPORARIO', 'ERRO_PERMANENTE')
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Resultado inválido.' AS NVARCHAR(400)) AS MENSAGEM, @IdEmail AS ID;
+            RETURN;
+        END;
+
+        BEGIN TRANSACTION;
+
+        SELECT @Status = f.STATUS, @Tentativas = f.TENTATIVAS, @Tipo = f.TIPO, @Assunto = f.ASSUNTO, @Para = f.PARA
+        FROM SIS.Email_Fila f WITH (UPDLOCK, ROWLOCK)
+        WHERE f.ID_EMAIL = @IdEmail;
+
+        IF @Status IS NULL OR @Status <> 'PROCESSANDO'
+        BEGIN
+            COMMIT TRANSACTION;
+            SELECT CAST(0 AS BIT) AS SUCESSO,
+                   CAST(CASE WHEN @Status IS NULL THEN N'E-mail não encontrado.' ELSE N'O e-mail não está em processamento (situação: ' + @Status + N').' END AS NVARCHAR(400)) AS MENSAGEM,
+                   @IdEmail AS ID;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        SET @Novo = CASE WHEN @Resultado = 'ENVIADO' THEN 'ENVIADO'
+                         WHEN @Resultado = 'ERRO_TEMPORARIO' AND @Tentativas < @Max THEN 'PENDENTE'
+                         ELSE 'ERRO' END;
+        SET @Espera = CASE WHEN @Tentativas <= 1 THEN 1 WHEN @Tentativas = 2 THEN 5 WHEN @Tentativas = 3 THEN 15 ELSE 60 END;
+
+        UPDATE f
+           SET f.STATUS            = @Novo,
+               f.DT_ENVIO          = CASE WHEN @Novo = 'ENVIADO' THEN @Agora ELSE f.DT_ENVIO END,
+               f.ULTIMO_ERRO       = CASE WHEN @Novo = 'ENVIADO' THEN N'' ELSE @Mensagem END,
+               f.PROXIMA_TENTATIVA = CASE WHEN @Novo = 'PENDENTE' THEN DATEADD(MINUTE, @Espera, @Agora) ELSE f.PROXIMA_TENTATIVA END,
+               f.SERVIDOR          = CASE WHEN ISNULL(@Servidor, N'') <> N'' THEN LEFT(@Servidor, 128) ELSE f.SERVIDOR END,
+               f.DT_ALTERACAO      = @Agora,
+               f.USUARIO_ALTERACAO = N'sistema'
+        FROM SIS.Email_Fila f
+        WHERE f.ID_EMAIL = @IdEmail;
+
+        INSERT INTO SIS.Email_Log (ID_EMAIL, TENTATIVA, RESULTADO, MENSAGEM, SERVIDOR, USUARIO)
+        VALUES (@IdEmail, @Tentativas,
+                CASE WHEN @Resultado = 'ERRO_TEMPORARIO' AND @Novo = 'ERRO' THEN 'ERRO_PERMANENTE' ELSE @Resultado END,
+                CASE WHEN @Resultado = 'ERRO_TEMPORARIO' AND @Novo = 'ERRO' THEN LEFT(N'Limite de tentativas atingido. ' + @Mensagem, 1000) ELSE @Mensagem END,
+                LEFT(ISNULL(@Servidor, N''), 128), N'sistema');
+
+        -- Alerta técnico (uma vez por e-mail; alerta não gera alerta)
+        SET @EtapaAtual = 'Alerta';
+        SET @Alerta = LTRIM(RTRIM(ISNULL(SIS.fn_SIS_Parametro('EMAIL_ADMIN_ALERTA'), N'')));
+        IF @Novo = 'ERRO' AND @Tipo <> 'ALERTA_EMAIL' AND @Alerta <> N''
+        BEGIN
+            SET @Chave = N'ALERTA_EMAIL:' + CAST(@IdEmail AS NVARCHAR(20));
+            SET @Corpo = SIS.fn_SIS_Email_HTML(
+                             N'Falha no envio de e-mail', 'ALERTA',
+                             N'<p>Um e-mail do sistema não pôde ser enviado e foi marcado como erro.</p>'
+                           + N'<table style="border-collapse:collapse;font-size:13px;">'
+                           + N'<tr><td style="padding:4px 8px;color:#777777;">Número</td><td style="padding:4px 8px;">' + CAST(@IdEmail AS NVARCHAR(20)) + N'</td></tr>'
+                           + N'<tr style="background:#f5f5f5;"><td style="padding:4px 8px;color:#777777;">Tipo</td><td style="padding:4px 8px;">' + SIS.fn_SIS_Texto_HTML(@Tipo) + N'</td></tr>'
+                           + N'<tr><td style="padding:4px 8px;color:#777777;">Assunto</td><td style="padding:4px 8px;">' + SIS.fn_SIS_Texto_HTML(@Assunto) + N'</td></tr>'
+                           + N'<tr style="background:#f5f5f5;"><td style="padding:4px 8px;color:#777777;">Para</td><td style="padding:4px 8px;">' + SIS.fn_SIS_Texto_HTML(@Para) + N'</td></tr>'
+                           + N'<tr><td style="padding:4px 8px;color:#777777;">Tentativas</td><td style="padding:4px 8px;">' + CAST(@Tentativas AS NVARCHAR(10)) + N'</td></tr>'
+                           + N'<tr style="background:#f5f5f5;"><td style="padding:4px 8px;color:#777777;">Erro</td><td style="padding:4px 8px;">' + SIS.fn_SIS_Texto_HTML(@Mensagem) + N'</td></tr>'
+                           + N'</table>'
+                           + N'<p>Para reenviar, use a tela Sistema &gt; E-mails &gt; E-mails enviados.</p>',
+                             @NomeProc, '', 0);
+
+            SET @AssuntoAlerta = ISNULL(NULLIF(SIS.fn_SIS_Parametro('SISTEMA_NOME'), N''), N'SistemaCMJ') + N' - FALHA no envio de e-mail';
+            EXEC SIS.SIS_Email_Enfileirar
+                 @Para = @Alerta,
+                 @Assunto = @AssuntoAlerta,
+                 @CorpoHTML = @Corpo,
+                 @Tipo = 'ALERTA_EMAIL',
+                 @Origem = @NomeProc,
+                 @ChaveOrigem = @Chave,
+                 @IdEmail = @IdAlerta OUTPUT;
+        END;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(CASE @Novo WHEN 'ENVIADO'  THEN N'Enviado.'
+                               WHEN 'PENDENTE' THEN N'Nova tentativa em ' + CAST(@Espera AS NVARCHAR(5)) + N' min.'
+                               ELSE N'Marcado como erro.' END AS NVARCHAR(400)) AS MENSAGEM,
+               @IdEmail AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+        VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar o resultado do envio. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, @IdEmail AS ID;
     END CATCH;
 END;
 GO
@@ -1175,6 +1421,7 @@ GO
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, boletim semanal da implantação).
+    v1.1 (17/11/2026) - Nome do sistema no aviso da prévia pelo parâmetro SISTEMA_NOME.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Comunicado_Previa_Gerar @IdUsuario = 2, @IdComunicado = 1;
@@ -1247,7 +1494,7 @@ BEGIN
         SET @AssuntoPv = N'[PRÉVIA] ' + @Assunto;
         SET @Aviso     = N'<div style="background:#FFF3E0;border-left:4px solid #E65100;padding:10px 14px;margin-bottom:16px;">'
                        + N'<b>Prévia para aprovação.</b> Este e-mail ainda não foi enviado aos destinatários. '
-                       + N'Para liberar, abra o SistemaCMJ, menu Sistema &gt; E-mails &gt; Comunicados, e clique em "Aprovar e enviar".</div>';
+                       + N'Para liberar, abra o ' + SIS.fn_SIS_Texto_HTML(ISNULL(NULLIF(SIS.fn_SIS_Parametro('SISTEMA_NOME'), N''), N'SistemaCMJ')) + N', menu Sistema &gt; E-mails &gt; Comunicados, e clique em "Aprovar e enviar".</div>';
         SET @CorpoPv   = SIS.fn_SIS_Email_HTML(N'Prévia - ' + @Titulo, 'INFO', @Aviso + @Conteudo, @NomeProc, @GrupoAprov, 0);
 
         SET @EtapaAtual = 'Gravação';

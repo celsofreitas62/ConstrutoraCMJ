@@ -30,6 +30,11 @@ const Layout = (() => {
     if (r.sucesso && r.dados) {
       document.documentElement.style.setProperty('--cor-principal', r.dados.corPrincipal);
       document.documentElement.style.setProperty('--cor-secundaria', r.dados.corSecundaria);
+      // Nome do sistema pelo parâmetro SISTEMA_NOME (17/11/2026): título da aba e textos marcados.
+      if (r.dados.nomeSistema) {
+        document.title = document.title.replace('SistemaCMJ', r.dados.nomeSistema);
+        for (const e of document.querySelectorAll('[data-nome-sistema]')) e.textContent = e.dataset.nomeSistema.replace('{sistema}', r.dados.nomeSistema);
+      }
     }
   }
 
