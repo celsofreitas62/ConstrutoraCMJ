@@ -28,7 +28,8 @@ Atualizado em 15/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dize
 | 02 | Base SIS (concluída em 16/11/2026) | 2 |
 | 03 | Modelo de dados: plano de contas, CAD e BANCO (03a concluída em 16/11/2026) | 3a |
 | 03b | API e primeira tela (concluída em 16/11/2026) | 3b |
-| 03c | Financeiro e ensaio da migração do movimento | 3c |
+| 03c | Financeiro e ensaio da migração do movimento (FIN, boletim semanal e arquivo morto prontos em 17/11/2026) | 3c |
+| 03c2 | Migração: cadastros e transformação do movimento | 3c |
 | 04 | Telas dos cadastros e do financeiro | 4 |
 | 05 | Imóveis e vendas (espelho, contrato, parcelas, reajuste) | 5 |
 | 06 | Cobrança Sicredi | 6 |
