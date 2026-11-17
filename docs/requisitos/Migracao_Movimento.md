@@ -2,7 +2,7 @@
 
 Conversa "03c – Financeiro e ensaio da migração", 17/11/2026. Fonte: `legado/dados_brutos/F Movimento Contas.csv` (102.230 linhas) e `ArquivoMorto.csv` (147.866), análise feita pelo Claude com os scripts da pasta de trabalho dele (resultados abaixo, repetíveis no SQL do `MIG`).
 
-> **Situação: PROPOSTA, aguardando as respostas do Celso (seção 5).** Primeira rodada do ensaio feita em 17/11/2026 no LOCAL (seção 6): carga crua, classificação e arquivo morto. Os lançamentos de 2018 em diante ainda não foram gerados no `FIN`.
+> **Situação: regras APROVADAS pelo Celso em 17/11/2026 (seção 7): corte em 01/01/2022.** Primeira rodada do ensaio feita em 17/11/2026 no LOCAL (seção 6): carga crua, classificação e arquivo morto. Os lançamentos de 2018 em diante ainda não foram gerados no `FIN`.
 
 ## 1. Três descobertas que mudam o ensaio
 
@@ -61,3 +61,22 @@ Rodado pelo Claude no SSMS: pacote `sql/pacotes/03c_mig_LOCAL.sql` (schema `MIG`
 Para conferir: `EXEC MIG.MIG_Conferencia_Listar;` e a tela "Arquivo morto" (fase 4).
 
 **Próximo passo** (depois das respostas da seção 5): de-paras (pessoas, empresas/obras e centros de custo, contas, plano), carga dos cadastros do Access no `CAD`/`BANCO` e transformação dos 30.348 documentos em lançamento, parcela, baixa e movimento bancário, com a conferência de totais por ano, empresa, conta e pessoa.
+
+## 7. Decisões do Celso (17/11/2026) e segunda rodada
+
+**Decisões:**
+1. **Corte em 01/01/2022** (a CMJ analisou e preferiu; o Claude recomendou: de 2022 em diante os dados não têm os vícios do arquivamento do Access, que vão só até 2020). **Contrato de venda vai inteiro**: se tem alguma parcela de 2022 em diante, todas as parcelas dele migram (25 contratos atravessavam o corte).
+2. **Saldo inicial** de cada conta = **saldo do extrato do banco no dia da virada**; o movimento migrado é histórico (relatórios), sem recompor saldo antigo.
+3. **Lançamentos soltos nas contas de sistema** (explicação do Celso): crédito na conta "Créditos" = **saque do banco que entrou no caixa contábil**; débito na conta "Débitos" = **valor recebido no dia que entrou no banco**. Todos os lançamentos integrados passam pelo caixa contábil. Regra proposta pelo Claude para a transformação: cada empresa ganha a conta **"Caixa contábil"** (tipo CAIXA); o crédito solto vira **transferência banco → caixa contábil** e o débito solto **transferência caixa contábil → banco**, usando a conta bancária padrão da obra/empresa no Access (`FinanceiraPadrao`); sem conta identificável, vai para a lista de casos.
+4. **Pendentes antigos** (39 de 2009-2017 e os 6 não confirmados de 2018-2021): ficam só no arquivo morto.
+
+**Segunda rodada** (`MIG_Movimento_Preparar` v1.1, `@Corte = '2022-01-01'`), 17/11/2026: 250.096 linhas, nenhuma perdida.
+
+| Destino | Linhas | Documentos |
+|---|---:|---:|
+| Sistema novo (2022 em diante + contratos inteiros) | 50.251 | 19.204 |
+| Arquivo morto (até 31/12/2021, com os resumos "Sd Acum") | 170.490 | 51.782 |
+| Cópias repetidas (fora) | 29.349 | |
+| Casos de data | 6 | 6 |
+
+Arquivo morto carregado: **170.490 linhas** (118.481 do ArquivoMorto + 52.009 do movimento atual), de 2008 a 31/12/2021. Padrões do sistema novo: lote 5.513, caixinha saída 3.647, venda 3.212, crédito solto 2.570, banco saída 1.495, débito solto 1.279, caixinha entrada 583, banco entrada 389.

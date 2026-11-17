@@ -397,8 +397,11 @@ GO
                   (MovPagtoLote, junta as duas tabelas), a venda (LinkVenda) ou
                   a própria linha;
                 - DT_UNIDADE: maior data das linhas de banco/caixa da unidade
-                  (ou de qualquer linha, se não houver banco); antes de
-                  01/01/2018 = arquivo morto;
+                  (ou de qualquer linha, se não houver banco); antes de @Corte
+                  = arquivo morto;
+                - CONTRATO de venda (imóvel + cliente da parcela): se alguma
+                  parcela é de @Corte em diante, o contrato inteiro vai para o
+                  sistema novo (extrato e ficha do contrato completos);
                 - PADRAO: combinação dos tipos de conta e lados da unidade
                   (ex.: L|BCO-D|CRED-C|LOTE-D).
                 Contas de sistema do Access: 1 Créditos, 2 Débitos, 3 Pagto em
@@ -407,12 +410,20 @@ GO
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, ensaio da migração).
+    v1.1 (17/11/2026) - Corte em parâmetro (@Corte, padrão 01/01/2022, decisão
+                        do Celso) e contrato de venda inteiro no sistema novo.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
+-- MIG.Movimento é refeita a cada ensaio: apagar aqui evita erro de compilação
+-- quando a estrutura dela muda entre versões desta procedure.
+DROP TABLE IF EXISTS MIG.Movimento;
+GO
+
 CREATE OR ALTER PROCEDURE [MIG].[MIG_Movimento_Preparar]
+    @Corte  DATE = '2022-01-01'
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -420,7 +431,6 @@ BEGIN
 
     DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Movimento_Preparar]';
     DECLARE @EtapaAtual VARCHAR(100)  = 'Tipagem';
-    DECLARE @Corte      DATE          = '2018-01-01';
 
     BEGIN TRY
         DROP TABLE IF EXISTS MIG.Movimento;
@@ -472,6 +482,7 @@ BEGIN
                CAST('' AS VARCHAR(40))        AS UNIDADE,
                CAST(NULL AS DATE)             AS DT_UNIDADE,
                CAST('' AS VARCHAR(200))       AS PADRAO,
+               CAST('' AS VARCHAR(40))        AS CONTRATO,
                CAST('' AS VARCHAR(12))        AS DESTINO
         INTO MIG.Movimento
         FROM Fonte f;
@@ -535,6 +546,23 @@ BEGIN
                                 ELSE 'SISTEMA' END
         FROM MIG.Movimento m;
 
+        -- contrato de venda: imóvel + cliente da parcela (linha na conta 2 "Débitos")
+        ;WITH C AS
+        (
+            SELECT d.UNIDADE, MIN(CONVERT(VARCHAR(12), d.IMOVEL) + ':' + CONVERT(VARCHAR(12), d.PARCEIRO)) AS CONTRATO
+            FROM MIG.Movimento d
+            WHERE d.UNIDADE LIKE 'V:%' AND d.CONTA = 2
+            GROUP BY d.UNIDADE
+        )
+        UPDATE m SET m.CONTRATO = c.CONTRATO
+        FROM MIG.Movimento m INNER JOIN C c ON c.UNIDADE = m.UNIDADE;
+
+        UPDATE m
+           SET m.DESTINO = 'SISTEMA'
+        FROM MIG.Movimento m
+        WHERE m.DESTINO = 'ARQ_MORTO' AND m.CONTRATO <> ''
+          AND EXISTS (SELECT 1 FROM MIG.Movimento x WHERE x.CONTRATO = m.CONTRATO AND x.DESTINO = 'SISTEMA');
+
         DROP TABLE IF EXISTS #U;
 
         SELECT m.DESTINO, COUNT(*) AS LINHAS, COUNT(DISTINCT NULLIF(m.UNIDADE, '')) AS DOCUMENTOS,
@@ -563,17 +591,18 @@ GO
   Criação     : 17/11/2026
   Descrição   : Carrega o arquivo morto (FIN.Arquivo_Morto) com as linhas que o
                 MIG_Movimento_Preparar marcou com destino ARQ_MORTO: movimento
-                anterior a 01/01/2018 e os resumos "Sd Acum" até 01/01/2018,
+                anterior ao corte e os resumos "Sd Acum" até o corte,
                 com os textos legíveis do Access (empresa, obra, pessoa, conta,
-                plano, histórico, imóvel). Saldos por conta em 31/12/2017
-                (FIN.Arquivo_Morto_Saldo): soma dos resumos "Sd Acum" de
-                01/01/2018, como o Access mostrava (só referência: não são os
-                saldos reais do banco).
+                plano, histórico, imóvel). Saldos por conta
+                (FIN.Arquivo_Morto_Saldo): soma dos últimos resumos "Sd Acum"
+                antes do corte (o Access só tem até 01/01/2020), como o Access
+                mostrava (só referência: não são os saldos reais do banco).
                 Tudo-ou-nada; repetível: apaga a carga anterior do Access e
                 carrega de novo. Devolve quantidade e totais carregados.
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, ensaio da migração).
+    v1.1 (17/11/2026) - Saldo pelo último resumo antes do corte (corte 2022).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -587,6 +616,7 @@ BEGIN
 
     DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Arquivo_Morto_Processar]';
     DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @DtResumo   DATE;
 
     BEGIN TRY
         IF OBJECT_ID(N'MIG.Movimento', N'U') IS NULL
@@ -625,11 +655,13 @@ BEGIN
                      WHERE TRY_CONVERT(INT, i.CodImovel) = m.IMOVEL AND m.IMOVEL > 1 ORDER BY i.NomeImovel) im
         WHERE m.DESTINO = 'ARQ_MORTO';
 
+        SELECT @DtResumo = MAX(m.DT_VALIDA) FROM MIG.Movimento m WHERE m.SD_ACUM = 1 AND m.DESTINO = 'ARQ_MORTO';
+
         INSERT INTO FIN.Arquivo_Morto_Saldo (CONTA, DT_SALDO, SALDO)
-        SELECT LEFT(ISNULL(cf.Descricao, N'Conta ' + CONVERT(NVARCHAR(10), m.CONTA)), 80), '2017-12-31', SUM(m.VALOR_CREDITO - m.VALOR_DEBITO)
+        SELECT LEFT(ISNULL(cf.Descricao, N'Conta ' + CONVERT(NVARCHAR(10), m.CONTA)), 80), DATEADD(DAY, -1, @DtResumo), SUM(m.VALOR_CREDITO - m.VALOR_DEBITO)
         FROM MIG.Movimento m
         LEFT JOIN MIG.Access_Contas_Financeiras cf ON TRY_CONVERT(INT, cf.CodigoConta) = m.CONTA
-        WHERE m.SD_ACUM = 1 AND m.DUPLICADA = 0 AND m.DT_VALIDA = '2018-01-01' AND m.CONTA NOT IN (1, 2, 3)
+        WHERE m.SD_ACUM = 1 AND m.DUPLICADA = 0 AND m.DT_VALIDA = @DtResumo AND m.CONTA NOT IN (1, 2, 3)
         GROUP BY LEFT(ISNULL(cf.Descricao, N'Conta ' + CONVERT(NVARCHAR(10), m.CONTA)), 80);
 
         COMMIT TRANSACTION;
@@ -663,12 +695,13 @@ GO
                    carregado e classificado (nada se perde);
                 2) destino de cada linha (sistema, arquivo morto, resumos,
                    duplicadas, casos de data);
-                3) documentos de 2018 em diante por padrão (quantidade, linhas,
+                3) documentos do sistema novo (a partir do corte) por padrão (quantidade, linhas,
                    valor), base das regras de transformação;
                 4) arquivo morto por ano (linhas, débitos, créditos).
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, ensaio da migração).
+    v1.1 (17/11/2026) - Rótulo da grade de padrões sem o ano fixo.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -695,7 +728,7 @@ BEGIN
     GROUP BY m.DESTINO
     ORDER BY m.DESTINO;
 
-    SELECT 'PADROES 2018+' AS GRADE, u.PADRAO, COUNT(*) AS DOCUMENTOS, SUM(u.LINHAS) AS LINHAS, SUM(u.VALOR) AS VALOR
+    SELECT 'PADROES (SISTEMA NOVO)' AS GRADE, u.PADRAO, COUNT(*) AS DOCUMENTOS, SUM(u.LINHAS) AS LINHAS, SUM(u.VALOR) AS VALOR
     FROM (SELECT m.UNIDADE, MAX(m.PADRAO) AS PADRAO, COUNT(*) AS LINHAS, SUM(m.VALOR_DEBITO + m.VALOR_CREDITO) AS VALOR
           FROM MIG.Movimento m WHERE m.DESTINO = 'SISTEMA' GROUP BY m.UNIDADE) u
     GROUP BY u.PADRAO

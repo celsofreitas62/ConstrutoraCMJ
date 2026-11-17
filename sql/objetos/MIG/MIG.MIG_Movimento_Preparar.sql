@@ -16,8 +16,11 @@
                   (MovPagtoLote, junta as duas tabelas), a venda (LinkVenda) ou
                   a própria linha;
                 - DT_UNIDADE: maior data das linhas de banco/caixa da unidade
-                  (ou de qualquer linha, se não houver banco); antes de
-                  01/01/2018 = arquivo morto;
+                  (ou de qualquer linha, se não houver banco); antes de @Corte
+                  = arquivo morto;
+                - CONTRATO de venda (imóvel + cliente da parcela): se alguma
+                  parcela é de @Corte em diante, o contrato inteiro vai para o
+                  sistema novo (extrato e ficha do contrato completos);
                 - PADRAO: combinação dos tipos de conta e lados da unidade
                   (ex.: L|BCO-D|CRED-C|LOTE-D).
                 Contas de sistema do Access: 1 Créditos, 2 Débitos, 3 Pagto em
@@ -26,12 +29,20 @@
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, ensaio da migração).
+    v1.1 (17/11/2026) - Corte em parâmetro (@Corte, padrão 01/01/2022, decisão
+                        do Celso) e contrato de venda inteiro no sistema novo.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
+-- MIG.Movimento é refeita a cada ensaio: apagar aqui evita erro de compilação
+-- quando a estrutura dela muda entre versões desta procedure.
+DROP TABLE IF EXISTS MIG.Movimento;
+GO
+
 CREATE OR ALTER PROCEDURE [MIG].[MIG_Movimento_Preparar]
+    @Corte  DATE = '2022-01-01'
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -39,7 +50,6 @@ BEGIN
 
     DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Movimento_Preparar]';
     DECLARE @EtapaAtual VARCHAR(100)  = 'Tipagem';
-    DECLARE @Corte      DATE          = '2018-01-01';
 
     BEGIN TRY
         DROP TABLE IF EXISTS MIG.Movimento;
@@ -91,6 +101,7 @@ BEGIN
                CAST('' AS VARCHAR(40))        AS UNIDADE,
                CAST(NULL AS DATE)             AS DT_UNIDADE,
                CAST('' AS VARCHAR(200))       AS PADRAO,
+               CAST('' AS VARCHAR(40))        AS CONTRATO,
                CAST('' AS VARCHAR(12))        AS DESTINO
         INTO MIG.Movimento
         FROM Fonte f;
@@ -153,6 +164,23 @@ BEGIN
                                 WHEN m.DT_UNIDADE < @Corte                  THEN 'ARQ_MORTO'
                                 ELSE 'SISTEMA' END
         FROM MIG.Movimento m;
+
+        -- contrato de venda: imóvel + cliente da parcela (linha na conta 2 "Débitos")
+        ;WITH C AS
+        (
+            SELECT d.UNIDADE, MIN(CONVERT(VARCHAR(12), d.IMOVEL) + ':' + CONVERT(VARCHAR(12), d.PARCEIRO)) AS CONTRATO
+            FROM MIG.Movimento d
+            WHERE d.UNIDADE LIKE 'V:%' AND d.CONTA = 2
+            GROUP BY d.UNIDADE
+        )
+        UPDATE m SET m.CONTRATO = c.CONTRATO
+        FROM MIG.Movimento m INNER JOIN C c ON c.UNIDADE = m.UNIDADE;
+
+        UPDATE m
+           SET m.DESTINO = 'SISTEMA'
+        FROM MIG.Movimento m
+        WHERE m.DESTINO = 'ARQ_MORTO' AND m.CONTRATO <> ''
+          AND EXISTS (SELECT 1 FROM MIG.Movimento x WHERE x.CONTRATO = m.CONTRATO AND x.DESTINO = 'SISTEMA');
 
         DROP TABLE IF EXISTS #U;
 

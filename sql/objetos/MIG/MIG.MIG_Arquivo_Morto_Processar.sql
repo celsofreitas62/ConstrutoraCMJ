@@ -5,17 +5,18 @@
   Criação     : 17/11/2026
   Descrição   : Carrega o arquivo morto (FIN.Arquivo_Morto) com as linhas que o
                 MIG_Movimento_Preparar marcou com destino ARQ_MORTO: movimento
-                anterior a 01/01/2018 e os resumos "Sd Acum" até 01/01/2018,
+                anterior ao corte e os resumos "Sd Acum" até o corte,
                 com os textos legíveis do Access (empresa, obra, pessoa, conta,
-                plano, histórico, imóvel). Saldos por conta em 31/12/2017
-                (FIN.Arquivo_Morto_Saldo): soma dos resumos "Sd Acum" de
-                01/01/2018, como o Access mostrava (só referência: não são os
-                saldos reais do banco).
+                plano, histórico, imóvel). Saldos por conta
+                (FIN.Arquivo_Morto_Saldo): soma dos últimos resumos "Sd Acum"
+                antes do corte (o Access só tem até 01/01/2020), como o Access
+                mostrava (só referência: não são os saldos reais do banco).
                 Tudo-ou-nada; repetível: apaga a carga anterior do Access e
                 carrega de novo. Devolve quantidade e totais carregados.
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, ensaio da migração).
+    v1.1 (17/11/2026) - Saldo pelo último resumo antes do corte (corte 2022).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -29,6 +30,7 @@ BEGIN
 
     DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Arquivo_Morto_Processar]';
     DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @DtResumo   DATE;
 
     BEGIN TRY
         IF OBJECT_ID(N'MIG.Movimento', N'U') IS NULL
@@ -67,11 +69,13 @@ BEGIN
                      WHERE TRY_CONVERT(INT, i.CodImovel) = m.IMOVEL AND m.IMOVEL > 1 ORDER BY i.NomeImovel) im
         WHERE m.DESTINO = 'ARQ_MORTO';
 
+        SELECT @DtResumo = MAX(m.DT_VALIDA) FROM MIG.Movimento m WHERE m.SD_ACUM = 1 AND m.DESTINO = 'ARQ_MORTO';
+
         INSERT INTO FIN.Arquivo_Morto_Saldo (CONTA, DT_SALDO, SALDO)
-        SELECT LEFT(ISNULL(cf.Descricao, N'Conta ' + CONVERT(NVARCHAR(10), m.CONTA)), 80), '2017-12-31', SUM(m.VALOR_CREDITO - m.VALOR_DEBITO)
+        SELECT LEFT(ISNULL(cf.Descricao, N'Conta ' + CONVERT(NVARCHAR(10), m.CONTA)), 80), DATEADD(DAY, -1, @DtResumo), SUM(m.VALOR_CREDITO - m.VALOR_DEBITO)
         FROM MIG.Movimento m
         LEFT JOIN MIG.Access_Contas_Financeiras cf ON TRY_CONVERT(INT, cf.CodigoConta) = m.CONTA
-        WHERE m.SD_ACUM = 1 AND m.DUPLICADA = 0 AND m.DT_VALIDA = '2018-01-01' AND m.CONTA NOT IN (1, 2, 3)
+        WHERE m.SD_ACUM = 1 AND m.DUPLICADA = 0 AND m.DT_VALIDA = @DtResumo AND m.CONTA NOT IN (1, 2, 3)
         GROUP BY LEFT(ISNULL(cf.Descricao, N'Conta ' + CONVERT(NVARCHAR(10), m.CONTA)), 80);
 
         COMMIT TRANSACTION;

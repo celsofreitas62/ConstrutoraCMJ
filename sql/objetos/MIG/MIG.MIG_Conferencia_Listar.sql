@@ -8,12 +8,13 @@
                    carregado e classificado (nada se perde);
                 2) destino de cada linha (sistema, arquivo morto, resumos,
                    duplicadas, casos de data);
-                3) documentos de 2018 em diante por padrão (quantidade, linhas,
+                3) documentos do sistema novo (a partir do corte) por padrão (quantidade, linhas,
                    valor), base das regras de transformação;
                 4) arquivo morto por ano (linhas, débitos, créditos).
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, ensaio da migração).
+    v1.1 (17/11/2026) - Rótulo da grade de padrões sem o ano fixo.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -40,7 +41,7 @@ BEGIN
     GROUP BY m.DESTINO
     ORDER BY m.DESTINO;
 
-    SELECT 'PADROES 2018+' AS GRADE, u.PADRAO, COUNT(*) AS DOCUMENTOS, SUM(u.LINHAS) AS LINHAS, SUM(u.VALOR) AS VALOR
+    SELECT 'PADROES (SISTEMA NOVO)' AS GRADE, u.PADRAO, COUNT(*) AS DOCUMENTOS, SUM(u.LINHAS) AS LINHAS, SUM(u.VALOR) AS VALOR
     FROM (SELECT m.UNIDADE, MAX(m.PADRAO) AS PADRAO, COUNT(*) AS LINHAS, SUM(m.VALOR_DEBITO + m.VALOR_CREDITO) AS VALOR
           FROM MIG.Movimento m WHERE m.DESTINO = 'SISTEMA' GROUP BY m.UNIDADE) u
     GROUP BY u.PADRAO

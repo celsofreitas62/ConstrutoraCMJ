@@ -24,7 +24,7 @@ GO
 
 EXEC MIG.MIG_Carga_Processar @Pasta = N'C:\SistemaCMJ\legado\dados_brutos';
 GO
-EXEC MIG.MIG_Movimento_Preparar;
+EXEC MIG.MIG_Movimento_Preparar @Corte = '2022-01-01';   -- decisão do Celso, 17/11/2026
 GO
 EXEC MIG.MIG_Arquivo_Morto_Processar;
 GO
