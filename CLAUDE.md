@@ -23,7 +23,7 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 
 ## 0. Estado atual e como retomar (atualizar sempre)
 
-**Situação em 16/11/2026 (fim da conversa "03b – API e primeira tela")**: a CMJ aprovou a proposta; etapas 01, 02, 03a e **3b concluídas**. A 3b foi testada e **aprovada pelo Celso** no notebook (https://localhost:5443): API em `api/SistemaCMJ.Api` (.NET 10; login PBKDF2, sessão por cookie, ponto único de chamada de procedure com contexto, menu, identidade, Pessoas, histórico) e telas em `wwwroot` (login, troca de senha, início, lista e ficha de Pessoas, menu em árvore, mensagens, confirmação antes de gravar e janela "Concluído", dicas ao passar o mouse, ajuda por tela). Para subir no notebook: dois cliques em `api\rodar.cmd` (compilar: `api\compilar.cmd`, resultado em `api\compilar.log`). Usuários no LOCAL: `celso` (nível 2) e `renata` (Administrador, nível 1, senha provisória @12345). **Lembrete obrigatório no início da 03c (pedido do Celso, 16/11/2026): perguntar sobre o Sicredi** (CNAB 240 ou 400, quem emite o boleto, cooperativa/beneficiário/carteira; seção 6 item 3), porque sem isso a fase 6 não começa. **Próximo: fase 3c**, na conversa nova **"03c – Financeiro e ensaio da migração"** (desenho do `FIN`, arquivo morto e ensaio da migração do movimento). GitHub ligado (`origin`); push é do Celso. Servidor da CMJ: Windows 11 Pro.
+**Situação em 17/11/2026 (conversa "03c – Financeiro e ensaio da migração", em andamento)**: a CMJ aprovou a proposta; etapas 01, 02, 03a e 3b concluídas (3b aprovada no notebook, https://localhost:5443; subir com dois cliques em `api\rodar.cmd`; usuários no LOCAL: `celso` nível 2 e `renata` Administrador nível 1). **3c aberta**: proposta do financeiro, arquivo morto e ensaio da migração em `docs/requisitos/Modelo_FIN.md`, revista com as respostas do Celso de 17/11/2026 (Sicredi CNAB 400, significado dos campos do Access, caixinha, corte da migração em 2018, Material via Compras, OFX por empresa, regime de caixa); **aguardando a aprovação final** para criar as tabelas. Pedido novo de 17/11/2026: **boletim semanal da implantação por e-mail**, com prévia para o Celso aprovar (`docs/requisitos/Boletim_Implantacao.md`, aguardando aprovação). GitHub ligado (`origin`); o envio é pelo `enviar_github.cmd`. Servidor da CMJ: Windows 11 Pro.
 
 **Histórico e decisões**: tudo em [docs/DIARIO_DECISOES.md](docs/DIARIO_DECISOES.md) (separado em 16/11/2026). Ler só quando precisar do motivo de uma decisão.
 
@@ -173,9 +173,9 @@ Vindas do que os sistemas de construtoras e os financeiros atuais oferecem. **Os
 
 **Perguntas para fechar o desenho** (PENDENTES: o Celso vai perguntar à CMJ; registrar as respostas no diário):
 - A contabilidade usa qual programa e em que formato quer o fechamento (planilha, PDF, arquivo de importação do sistema contábil)?
-- O Sicredi da CMJ disponibiliza o extrato em **OFX**? (quase todo internet banking tem)
+- ~~O Sicredi da CMJ disponibiliza o extrato em **OFX**?~~ **Sim** (17/11/2026); a CMJ guarda os OFX numa pasta por empresa (caminho no cadastro da empresa).
 - A CMJ trabalha com mais de uma conta bancária / mais de um banco?
-- Os relatórios da contabilidade são por regime de caixa ou de competência?
+- ~~Os relatórios da contabilidade são por regime de caixa ou de competência?~~ **Regime de caixa** (17/11/2026).
 
 ## 3.4 Parametrização total (decidido em 14/11/2026)
 
@@ -295,11 +295,12 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 
 1. ~~Camada de API~~: **resolvido** em 14/11/2026 (ASP.NET Core).
 2. ~~Caminho do .mdb~~: **resolvido** em 14/11/2026 (pasta `CashBookCMJ/`, dividido em front-end e back-end).
-3. **Sicredi**:
-   - layout do arquivo: **CNAB 240** ou **CNAB 400**? (confirmar com o gerente / manual que o banco entregou para a conta da CMJ);
-   - quem **emite** o boleto: o banco ou a CMJ (o sistema gera o PDF com código de barras e linha digitável)? "Receber os boletos do banco" sugere emissão pelo banco: confirmar como os PDFs chegam;
-   - avaliar a **API de Cobrança do Sicredi** (registro on-line, PDF e baixa sem troca de arquivo) como alternativa ou evolução do CNAB;
-   - cooperativa, posto, código do beneficiário, carteira, regras de multa/juros/desconto/protesto.
+3. **Sicredi** (respondido em parte em 17/11/2026): layout **CNAB 400**; hoje os boletos são feitos **no site do banco**; cooperativa **0217**, conta **73623-5**, código do beneficiário **55.73623**, carteira **Simples**. Falta:
+   - o **manual do CNAB 400 do Sicredi** (pedir ao gerente) e a liberação da **troca de arquivos** (remessa/retorno) para a conta, já que hoje se usa o site;
+   - **posto** da cooperativa (faz parte do nosso número e do arquivo);
+   - regras de multa/juros/desconto/protesto/baixa automática;
+   - se as outras SPEs também terão cobrança (cada uma com o seu beneficiário);
+   - avaliar a **API de Cobrança do Sicredi** como evolução do CNAB.
 4. **Correção das parcelas**: há correção monetária (ex.: INCC durante a obra, IGP-M/IPCA após as chaves)? Juros de tabela Price/SAC no saldo? Como o Access faz hoje?
 5. ~~**Identidade visual**~~: **resolvido** em 15/11/2026 (logomarca `CashBookCMJ/Logomarca.jpg`, cores vermelho `#D43414` e cinza `#A8A8A8`, tudo em parâmetros; razão social e CNPJ vêm da licença). Falta só o CNPJ real da CMJ para a licença de produção.
 6. **Servidor da empresa** (já se sabe: servidor **dedicado com Windows 11 Pro**, informado em 16/11/2026; Ryzen 5, 16 GB, SSD 240 GB + HD 1 TB; o SQL Server 2025 Express aceita Windows 10 ou mais novo): falta (as versões atuais do SQL Server Express e do .NET pedem Windows Server 2016 ou mais novo; se for mais antigo, ajustar as versões), a versão do SQL Server Express, se já existe instância, servidor SMTP/conta de envio (Microsoft 365, Google, provedor próprio), certificado para HTTPS.
