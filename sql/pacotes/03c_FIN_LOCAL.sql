@@ -69,7 +69,9 @@ GO
                         pastas de backup e de atualizações.
     v1.4 (17/11/2026) - Etapa 03c: EMAIL_LOCAL_LIBERADOS (exceção controlada do
                         banco de teste, pedido do Celso) e SISTEMA_NOME
-                        (nome do sistema por cliente, pedido do Celso).
+                        (nome do sistema por cliente, pedido do Celso);
+                        EMAIL_LOGO_MODO, EMAIL_LOGO_ENDERECO e
+                        EMAIL_LOGO_NOME_ARQUIVO (como a logomarca vai no e-mail).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -120,6 +122,12 @@ FROM (VALUES
          N'Domínio(s) do e-mail da empresa (ex.: cmj.com.br), separados por vírgula. Esses endereços saem pela conta interna; os demais pela externa. Vazio = todos pela interna.', 'SIS', 1),
         ('SISTEMA_NOME', N'SistemaCMJ', 'TEXTO',
          N'Nome do sistema mostrado nas telas, nos e-mails (rodapé e remetente) e nos relatórios. Só o administrador geral altera.', 'SIS', 0),
+        ('EMAIL_LOGO_MODO', N'EMBUTIDA', 'TEXTO',
+         N'Logomarca nos e-mails: EMBUTIDA (vai dentro do e-mail), ENDERECO (puxada do endereço público EMAIL_LOGO_ENDERECO, não aparece como anexo) ou SEM_IMAGEM (só a faixa colorida).', 'SIS', 0),
+        ('EMAIL_LOGO_ENDERECO', N'', 'TEXTO',
+         N'Endereço público (https://...) da logomarca, usado quando EMAIL_LOGO_MODO = ENDERECO.', 'SIS', 0),
+        ('EMAIL_LOGO_NOME_ARQUIVO', N'CMJ.png', 'TEXTO',
+         N'Nome com que a logomarca embutida aparece para quem recebe o e-mail (ex.: CMJ.png).', 'SIS', 0),
         ('EMAIL_LOCAL_LIBERADOS', N'', 'TEXTO',
          N'Só no banco de teste (_LOCAL): tipos de e-mail que saem para os destinatários reais em vez de irem para o EMAIL_TESTE, separados por vírgula (ex.: COMUNICADO). Vazio = todos desviados. Não tem efeito em produção.', 'SIS', 0),
         ('EMAIL_MINUTOS_PRESO', N'15', 'INTEIRO',
@@ -356,6 +364,9 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02d).
     v1.1 (17/11/2026) - Nome do sistema no rodapé pelo parâmetro SISTEMA_NOME.
+    v1.2 (17/11/2026) - Logomarca conforme EMAIL_LOGO_MODO: EMBUTIDA (cid,
+                        anexada pelo serviço), ENDERECO (EMAIL_LOGO_ENDERECO)
+                        ou SEM_IMAGEM.
 
   Homologação (LOCAL):
     -- SELECT SIS.fn_SIS_Email_HTML(N'Teste', 'INFO', N'<p>Olá</p>', N'[SIS].[Teste]', 'SIS_ALERTA', 0);
@@ -381,6 +392,9 @@ BEGIN
     DECLARE @Titul  NVARCHAR(300) = UPPER(SIS.fn_SIS_Texto_HTML(ISNULL(@Titulo, N'')));
     DECLARE @Razao  NVARCHAR(400) = SIS.fn_SIS_Texto_HTML(ISNULL(SIS.fn_SIS_Empresa_Razao_Social(), N''));
     DECLARE @Rodape NVARCHAR(MAX);
+    DECLARE @Modo   VARCHAR(20)   = UPPER(ISNULL(SIS.fn_SIS_Parametro('EMAIL_LOGO_MODO'), N'EMBUTIDA'));
+    DECLARE @Url    NVARCHAR(500) = LTRIM(RTRIM(ISNULL(SIS.fn_SIS_Parametro('EMAIL_LOGO_ENDERECO'), N'')));
+    DECLARE @Logo   NVARCHAR(MAX);
     DECLARE @Sistema NVARCHAR(400) = SIS.fn_SIS_Texto_HTML(ISNULL(NULLIF(SIS.fn_SIS_Parametro('SISTEMA_NOME'), N''), N'SistemaCMJ'));
 
     SET @Cor = CASE @Sev WHEN 'ALERTA'  THEN SIS.fn_SIS_Parametro_Cor('EMAIL_COR_ALERTA')
@@ -399,10 +413,15 @@ BEGIN
                     + CASE WHEN ISNULL(@Grupo, '') <> '' THEN N'<div>Grupo de Destinatários: ' + SIS.fn_SIS_Texto_HTML(@Grupo) + N'</div>' ELSE N'' END
                     + N'<div style="margin-top:6px;font-weight:bold;">' + @Razao + N'</div>';
 
+    SET @Logo = CASE WHEN @Modo = 'SEM_IMAGEM' THEN N''
+                     WHEN @Modo = 'ENDERECO' AND @Url LIKE N'https://%' AND @Url NOT LIKE N'%"%'
+                          THEN N'<div style="padding:16px 20px;"><img src="' + @Url + N'" alt="' + @Razao + N'" style="max-height:60px;"></div>'
+                     ELSE N'<div style="padding:16px 20px;"><img src="cid:logo_empresa" alt="' + @Razao + N'" style="max-height:60px;"></div>' END;
+
     RETURN N'<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
          + N'<body style="margin:0;padding:20px;background:#eeeeee;font-family:Arial,''Segoe UI'',sans-serif;color:#333333;">'
          + N'<div style="max-width:700px;margin:0 auto;background:#ffffff;box-shadow:0 1px 4px rgba(0,0,0,0.15);">'
-         + N'<div style="padding:16px 20px;"><img src="cid:logo_empresa" alt="' + @Razao + N'" style="max-height:60px;"></div>'
+         + @Logo
          + N'<div style="background:' + @Cor + N';color:#ffffff;font-weight:bold;padding:12px 20px;font-size:15px;">' + @Titul + N'</div>'
          + N'<div style="padding:20px;font-size:14px;line-height:1.5;">' + ISNULL(@Conteudo, N'') + N'</div>'
          + N'<div style="background:#f9f9f9;padding:12px 20px;font-size:11px;color:#777777;border-top:1px solid #eeeeee;">' + @Rodape + N'</div>'

@@ -116,6 +116,9 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Aprovação do boletim', N'celsofreitas62@gmail.com', ISNULL(SIS.fn_SIS_Emails_Do_Grupo('BOLETIM_APROVACAO'), N'')),
  (N'Parâmetro SISTEMA_NOME (só o administrador geral altera)', N'SistemaCMJ|0', ISNULL((SELECT p.VALOR + N'|' + CONVERT(NVARCHAR(5), p.EDITAVEL_ADMIN) FROM SIS.Parametro p WHERE p.CHAVE = 'SISTEMA_NOME'), N'')),
  (N'Rodapé do e-mail interno usa o nome do sistema', N'1', CONVERT(NVARCHAR(5), CASE WHEN SIS.fn_SIS_Email_HTML(N'x', 'INFO', N'', N'rotina', N'', 0) LIKE N'%pelo sistema SistemaCMJ:%' THEN 1 ELSE 0 END)),
+ (N'Logomarca embutida por padrão (EMAIL_LOGO_MODO) com nome CMJ.png', N'EMBUTIDA|CMJ.png|1',
+  ISNULL(SIS.fn_SIS_Parametro('EMAIL_LOGO_MODO'), N'') + N'|' + ISNULL(SIS.fn_SIS_Parametro('EMAIL_LOGO_NOME_ARQUIVO'), N'') + N'|'
+  + CONVERT(NVARCHAR(5), CASE WHEN SIS.fn_SIS_Email_HTML(N'x', 'INFO', N'', N'r', N'', 1) LIKE N'%cid:logo_empresa%' THEN 1 ELSE 0 END)),
  (N'Parâmetro EMAIL_LOCAL_LIBERADOS existe', N'1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Parametro p WHERE p.CHAVE = 'EMAIL_LOCAL_LIBERADOS'))),
  (N'Itens iniciais do boletim (1 implantado, 2 em teste, 2 próxima)', N'1|2|2',
   (SELECT CONVERT(NVARCHAR(5), SUM(CASE WHEN i.SECAO = 'IMPLANTADO' THEN 1 ELSE 0 END)) + N'|' + CONVERT(NVARCHAR(5), SUM(CASE WHEN i.SECAO = 'EM_TESTE' THEN 1 ELSE 0 END))

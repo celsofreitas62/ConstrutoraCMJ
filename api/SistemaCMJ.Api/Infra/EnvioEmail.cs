@@ -17,8 +17,8 @@
 //              de ambiente Smtp__Interna__Senha (gravada pelo configurar_email.cmd).
 //              Sem servidor ou senha configurados, não captura nada: os e-mails
 //              continuam PENDENTES até a configuração existir.
-//              17/11/2026: logomarca embutida no corpo (inline, sem nome de
-//              arquivo: não aparece como anexo), versão em texto simples junto
+//              17/11/2026: logomarca embutida no corpo (inline, com o nome do
+//              parâmetro EMAIL_LOGO_NOME_ARQUIVO; o modo vem de EMAIL_LOGO_MODO), versão em texto simples junto
 //              com o HTML (menos chance de spam) e nome do remetente pelo
 //              parâmetro SISTEMA_NOME quando a configuração não tiver um.
 // =============================================================================
@@ -123,11 +123,12 @@ public sealed class EnvioEmail(Banco banco, IConfiguration configuracao, ILogger
             var logo = await CaminhoLogoAsync(ct);
             if (logo is not null)
             {
-                var imagem = corpo.LinkedResources.Add("logo" + Path.GetExtension(logo), await File.ReadAllBytesAsync(logo, ct));
+                // Nome que quem recebe vê (parâmetro EMAIL_LOGO_NOME_ARQUIVO); imagem do corpo, inline.
+                var nomeLogo = await banco.ParametroAsync("EMAIL_LOGO_NOME_ARQUIVO", ct);
+                if (nomeLogo.Length == 0 || Path.GetFileName(nomeLogo) != nomeLogo) nomeLogo = "logo" + Path.GetExtension(logo);
+                var imagem = corpo.LinkedResources.Add(nomeLogo, await File.ReadAllBytesAsync(logo, ct));
                 imagem.ContentId = "logo_empresa";
-                // Imagem do corpo, não anexo: inline e sem nome de arquivo.
-                imagem.ContentDisposition = new ContentDisposition(ContentDisposition.Inline);
-                imagem.ContentType.Name = null;
+                imagem.ContentDisposition = new ContentDisposition(ContentDisposition.Inline) { FileName = nomeLogo };
             }
             else
                 corpo.HtmlBody = corpo.HtmlBody.Replace("<img src=\"cid:logo_empresa\"", "<img hidden src=\"\"", StringComparison.OrdinalIgnoreCase);

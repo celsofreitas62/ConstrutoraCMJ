@@ -20,7 +20,9 @@
                         pastas de backup e de atualizações.
     v1.4 (17/11/2026) - Etapa 03c: EMAIL_LOCAL_LIBERADOS (exceção controlada do
                         banco de teste, pedido do Celso) e SISTEMA_NOME
-                        (nome do sistema por cliente, pedido do Celso).
+                        (nome do sistema por cliente, pedido do Celso);
+                        EMAIL_LOGO_MODO, EMAIL_LOGO_ENDERECO e
+                        EMAIL_LOGO_NOME_ARQUIVO (como a logomarca vai no e-mail).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -71,6 +73,12 @@ FROM (VALUES
          N'Domínio(s) do e-mail da empresa (ex.: cmj.com.br), separados por vírgula. Esses endereços saem pela conta interna; os demais pela externa. Vazio = todos pela interna.', 'SIS', 1),
         ('SISTEMA_NOME', N'SistemaCMJ', 'TEXTO',
          N'Nome do sistema mostrado nas telas, nos e-mails (rodapé e remetente) e nos relatórios. Só o administrador geral altera.', 'SIS', 0),
+        ('EMAIL_LOGO_MODO', N'EMBUTIDA', 'TEXTO',
+         N'Logomarca nos e-mails: EMBUTIDA (vai dentro do e-mail), ENDERECO (puxada do endereço público EMAIL_LOGO_ENDERECO, não aparece como anexo) ou SEM_IMAGEM (só a faixa colorida).', 'SIS', 0),
+        ('EMAIL_LOGO_ENDERECO', N'', 'TEXTO',
+         N'Endereço público (https://...) da logomarca, usado quando EMAIL_LOGO_MODO = ENDERECO.', 'SIS', 0),
+        ('EMAIL_LOGO_NOME_ARQUIVO', N'CMJ.png', 'TEXTO',
+         N'Nome com que a logomarca embutida aparece para quem recebe o e-mail (ex.: CMJ.png).', 'SIS', 0),
         ('EMAIL_LOCAL_LIBERADOS', N'', 'TEXTO',
          N'Só no banco de teste (_LOCAL): tipos de e-mail que saem para os destinatários reais em vez de irem para o EMAIL_TESTE, separados por vírgula (ex.: COMUNICADO). Vazio = todos desviados. Não tem efeito em produção.', 'SIS', 0),
         ('EMAIL_MINUTOS_PRESO', N'15', 'INTEIRO',
