@@ -69,7 +69,7 @@ GO
                         pastas de backup e de atualizações.
     v1.4 (17/11/2026) - Etapa 03c: EMAIL_LOCAL_LIBERADOS (exceção controlada do
                         banco de teste, pedido do Celso) e SISTEMA_NOME
-                        (nome do sistema por cliente, pedido do Celso);
+                        (nome do sistema por cliente, pedido do Celso: SisCMJ);
                         EMAIL_LOGO_MODO, EMAIL_LOGO_ENDERECO e
                         EMAIL_LOGO_NOME_ARQUIVO (como a logomarca vai no e-mail).
 *******************************************************************************/
@@ -120,7 +120,7 @@ FROM (VALUES
          N'Cor das confirmações (pagamento recebido, envio concluído).', 'SIS', 1),
         ('EMAIL_DOMINIO_INTERNO', N'', 'TEXTO',
          N'Domínio(s) do e-mail da empresa (ex.: cmj.com.br), separados por vírgula. Esses endereços saem pela conta interna; os demais pela externa. Vazio = todos pela interna.', 'SIS', 1),
-        ('SISTEMA_NOME', N'SistemaCMJ', 'TEXTO',
+        ('SISTEMA_NOME', N'SisCMJ', 'TEXTO',
          N'Nome do sistema mostrado nas telas, nos e-mails (rodapé e remetente) e nos relatórios. Só o administrador geral altera.', 'SIS', 0),
         ('EMAIL_LOGO_MODO', N'EMBUTIDA', 'TEXTO',
          N'Logomarca nos e-mails: EMBUTIDA (vai dentro do e-mail), ENDERECO (puxada do endereço público EMAIL_LOGO_ENDERECO, não aparece como anexo) ou SEM_IMAGEM (só a faixa colorida).', 'SIS', 0),
@@ -2155,7 +2155,7 @@ WHERE NOT EXISTS (SELECT 1 FROM SIS.Grupo_Email_Destinatario d WHERE d.ID_GRUPO_
 GO
 
 INSERT INTO SIS.Comunicado (CODIGO, TITULO, INTRODUCAO, ID_GRUPO_EMAIL, ID_GRUPO_EMAIL_APROVACAO, EXIGE_APROVACAO, USUARIO_CRIACAO)
-SELECT 'BOLETIM_IMPLANTACAO', N'Boletim da implantação do SistemaCMJ',
+SELECT 'BOLETIM_IMPLANTACAO', N'Boletim da implantação do SisCMJ',
        N'Segue o resumo semanal do andamento da implantação do novo sistema de gestão da Construtora.',
        g.ID_GRUPO_EMAIL, ga.ID_GRUPO_EMAIL, 1, N'instalacao'
 FROM SIS.Grupo_Email g

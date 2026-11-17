@@ -40,7 +40,7 @@ WHERE NOT EXISTS (SELECT 1 FROM SIS.Grupo_Email_Destinatario d WHERE d.ID_GRUPO_
 GO
 
 INSERT INTO SIS.Comunicado (CODIGO, TITULO, INTRODUCAO, ID_GRUPO_EMAIL, ID_GRUPO_EMAIL_APROVACAO, EXIGE_APROVACAO, USUARIO_CRIACAO)
-SELECT 'BOLETIM_IMPLANTACAO', N'Boletim da implantação do SistemaCMJ',
+SELECT 'BOLETIM_IMPLANTACAO', N'Boletim da implantação do SisCMJ',
        N'Segue o resumo semanal do andamento da implantação do novo sistema de gestão da Construtora.',
        g.ID_GRUPO_EMAIL, ga.ID_GRUPO_EMAIL, 1, N'instalacao'
 FROM SIS.Grupo_Email g

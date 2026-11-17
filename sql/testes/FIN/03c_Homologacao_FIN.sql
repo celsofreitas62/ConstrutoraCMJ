@@ -114,8 +114,8 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
   ISNULL((SELECT CONVERT(NVARCHAR(5), DATEDIFF(DAY, '19000101', r.PROXIMA_EXECUCAO) % 7) + N'|' + CONVERT(VARCHAR(5), r.PROXIMA_EXECUCAO, 108) FROM SIS.Rotina r WHERE r.CODIGO = 'COMUNICADO_PREVIA'), N'')),
  (N'Destinatários do boletim', N'construtora.m.judice@gmail.com; dmjdaher@gmail.com', ISNULL(SIS.fn_SIS_Emails_Do_Grupo('BOLETIM_IMPLANTACAO'), N'')),
  (N'Aprovação do boletim', N'celsofreitas62@gmail.com', ISNULL(SIS.fn_SIS_Emails_Do_Grupo('BOLETIM_APROVACAO'), N'')),
- (N'Parâmetro SISTEMA_NOME (só o administrador geral altera)', N'SistemaCMJ|0', ISNULL((SELECT p.VALOR + N'|' + CONVERT(NVARCHAR(5), p.EDITAVEL_ADMIN) FROM SIS.Parametro p WHERE p.CHAVE = 'SISTEMA_NOME'), N'')),
- (N'Rodapé do e-mail interno usa o nome do sistema', N'1', CONVERT(NVARCHAR(5), CASE WHEN SIS.fn_SIS_Email_HTML(N'x', 'INFO', N'', N'rotina', N'', 0) LIKE N'%pelo sistema SistemaCMJ:%' THEN 1 ELSE 0 END)),
+ (N'Parâmetro SISTEMA_NOME (só o administrador geral altera)', N'SisCMJ|0', ISNULL((SELECT p.VALOR + N'|' + CONVERT(NVARCHAR(5), p.EDITAVEL_ADMIN) FROM SIS.Parametro p WHERE p.CHAVE = 'SISTEMA_NOME'), N'')),
+ (N'Rodapé do e-mail interno usa o nome do sistema', N'1', CONVERT(NVARCHAR(5), CASE WHEN SIS.fn_SIS_Email_HTML(N'x', 'INFO', N'', N'rotina', N'', 0) LIKE N'%pelo sistema ' + SIS.fn_SIS_Parametro('SISTEMA_NOME') + N':%' THEN 1 ELSE 0 END)),
  (N'Logomarca embutida por padrão (EMAIL_LOGO_MODO) com nome CMJ.png', N'EMBUTIDA|CMJ.png|1',
   ISNULL(SIS.fn_SIS_Parametro('EMAIL_LOGO_MODO'), N'') + N'|' + ISNULL(SIS.fn_SIS_Parametro('EMAIL_LOGO_NOME_ARQUIVO'), N'') + N'|'
   + CONVERT(NVARCHAR(5), CASE WHEN SIS.fn_SIS_Email_HTML(N'x', 'INFO', N'', N'r', N'', 1) LIKE N'%cid:logo_empresa%' THEN 1 ELSE 0 END)),
