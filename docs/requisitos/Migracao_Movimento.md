@@ -2,7 +2,7 @@
 
 Conversa "03c – Financeiro e ensaio da migração", 17/11/2026. Fonte: `legado/dados_brutos/F Movimento Contas.csv` (102.230 linhas) e `ArquivoMorto.csv` (147.866), análise feita pelo Claude com os scripts da pasta de trabalho dele (resultados abaixo, repetíveis no SQL do `MIG`).
 
-> **Situação: PROPOSTA, aguardando as respostas do Celso (seção 5).** Nenhum dado foi carregado no sistema novo.
+> **Situação: PROPOSTA, aguardando as respostas do Celso (seção 5).** Primeira rodada do ensaio feita em 17/11/2026 no LOCAL (seção 6): carga crua, classificação e arquivo morto. Os lançamentos de 2018 em diante ainda não foram gerados no `FIN`.
 
 ## 1. Três descobertas que mudam o ensaio
 
@@ -46,3 +46,18 @@ Os valores e quantidades são do Access; o relatório de conferência do ensaio 
 1. **Saldo inicial das contas**: como o Access não tem o saldo real dos bancos, proposta: o sistema novo começa cada conta com o **saldo do extrato do banco no dia da virada** (fase 8); o movimento de 2018 em diante entra como histórico (relatórios por empresa, obra, fornecedor, cliente), sem pretender recompor o saldo antigo. Concorda? Ou prefere informar o saldo real de cada conta em 31/12/2017?
 2. **Lançamentos soltos nas contas de sistema** ("Créditos": 3.785, ex. "Suprimento de caixa"; "Débitos": 1.824, ex. "Banco Itaú"): o que a CMJ registrava com eles? Proposta: os marcados "Somente integração" entram como lançamento só contábil (sem banco e sem custo); os demais vão para a lista de casos.
 3. **Os 39 pendentes antigos (2009-2017)**: podem ficar só no arquivo morto (não viram contas em aberto no sistema novo)?
+
+## 6. Primeira rodada do ensaio (17/11/2026, SISTEMACMJ_LOCAL)
+
+Rodado pelo Claude no SSMS: pacote `sql/pacotes/03c_mig_LOCAL.sql` (schema `MIG`, não vai para o MASTER) e `sql/local/03c_Ensaio_Migracao_LOCAL.sql` (1 min 54 s).
+
+| Passo | Resultado |
+|---|---|
+| Carga crua dos 11 CSV | todos OK; movimento 102.230 e arquivo morto 147.866 linhas, iguais ao Access |
+| Classificação (`MIG.Movimento`) | 250.096 linhas, nenhuma perdida: **sistema novo 79.575 linhas / 30.348 documentos**; **arquivo morto 128.831** (109.474 de movimento + os resumos "Sd Acum" até 01/01/2018); duplicadas fora 29.349; resumos de 2019 e 2020 fora 12.335; casos de data 6 |
+| Arquivo morto (`FIN.Arquivo_Morto`) | **128.831 linhas** carregadas (106.854 do ArquivoMorto + 21.977 do movimento atual), de 2008 a 01/01/2018, todas com pessoa e conta em texto; saldos do Access em 31/12/2017 em `FIN.Arquivo_Morto_Saldo` (só referência) |
+| Padrões de 2018 em diante | iguais aos da análise (seção 3): lote 9.542, caixinha saída 6.732, crédito solto 3.785, venda 3.712, banco saída 2.246, débito solto 1.824, caixinha entrada 1.009, banco entrada 648 |
+
+Para conferir: `EXEC MIG.MIG_Conferencia_Listar;` e a tela "Arquivo morto" (fase 4).
+
+**Próximo passo** (depois das respostas da seção 5): de-paras (pessoas, empresas/obras e centros de custo, contas, plano), carga dos cadastros do Access no `CAD`/`BANCO` e transformação dos 30.348 documentos em lançamento, parcela, baixa e movimento bancário, com a conferência de totais por ano, empresa, conta e pessoa.
