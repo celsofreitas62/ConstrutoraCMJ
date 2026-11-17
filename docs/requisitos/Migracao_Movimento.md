@@ -80,3 +80,37 @@ Para conferir: `EXEC MIG.MIG_Conferencia_Listar;` e a tela "Arquivo morto" (fase
 | Casos de data | 6 | 6 |
 
 Arquivo morto carregado: **170.490 linhas** (118.481 do ArquivoMorto + 52.009 do movimento atual), de 2008 a 31/12/2021. Padrões do sistema novo: lote 5.513, caixinha saída 3.647, venda 3.212, crédito solto 2.570, banco saída 1.495, débito solto 1.279, caixinha entrada 583, banco entrada 389.
+
+## 8. Respostas da CMJ para a 03c2 (17/11/2026)
+
+Documento `CashBookCMJ/Migracao_Perguntas_CMJ_03c2.docx`, respondido pela Renata.
+
+**Propostas aprovadas** (as três):
+1. Receitas e despesas lançadas no plano antigo desde 2022 ganham de-para para o plano novo (receitas no grupo novo de Receitas, com nome genérico); a lista vai para conferência.
+2. Parcelas de venda entram agora como contas a receber do cliente, com obra e unidade no texto; a ligação com o imóvel e o contrato do Access fica guardada para a fase 5.
+3. Créditos e débitos soltos: conta "Caixa contábil" por empresa e transferências com a conta bancária padrão da obra/empresa.
+
+**Classificação das obras e empresas usadas desde 2022:**
+
+| Access | Fica no SisCMJ |
+|---|---|
+| 1 - Construtora Marcilio Judice | empresa (Construtora) + centro administrativo |
+| 4 - Holding Judice e Filhos | empresa (Holding) |
+| 58 - Ilha das Galés, 61 - Allegro (Judice e Daher), 62 - Square (MJ Incorporadora), 63 - Maui, 67 - Orion, 68 - Opera, 69 - Music | empresa do grupo (SPE) + obra |
+| 59 - Edifício La Sante | empresa do grupo: **Edifício Comercial La Sante SPE** + obra |
+| Construtora e La Sante - 01321-7 | controle do custo/receita da obra La Sante **até sair a documentação da SPE**: centro de custo da Construtora ligado à obra La Sante |
+| Jd. Carolina - Obra Diogo e Outros (62) | **obra particular dos proprietários** (centro de custo tipo PARTICULAR) |
+| Marco Aurelio | **despesa particular de toda a família** (centro de custo tipo PARTICULAR) |
+| Ronaldo Dellaroli | **estudo de viabilidade, obra não executada** (centro de custo inativo) |
+| 65 - Indiara e 66 - Paladium (CADAP) | obra por administração; CADAP como cliente (pessoa) |
+| N/A | não vira empresa |
+
+As demais, sem movimento desde 2022, entram como centros de custo inativos, sem tratamento diferente.
+
+**SPEs**: todas têm como sócios, na abertura, a Construtora CMJ, Diogo Marcilio Judice, Marco Aurelio Judice e Danielle Marcilio Judice Daher; o terreno é negociado com terceiros e a SPE é aberta para o empreendimento. Todas são empresas do grupo.
+
+**CNPJs informados** (dígitos conferidos): Construtora Marcilio Judice Sociedade Empresária Ltda 25.686.528/0001-97; Judice e Filhos Administração de Bens Ltda 27.546.995/0001-47; Marcilio Judice Incorporadora SPE Ltda (Maui) 36.451.082/0001-38; Orion Incorporadora SPE Ltda 52.095.394/0001-02; Opera Residences 56.304.064/0001-30; Music Incorporadora SPE Ltda 68.542.803/0001-01. **A verificar**: Ilha das Galès, Judice e Daher, MJ Incorporadora (Square) e La Sante.
+
+**Opera e o RET**: com a tributação pelo RET, a Receita criou um segundo CNPJ, **56.304.064/0002-11**, usado nas notas de compras e serviços e no DDA do Sicredi; os boletos de cobrança aos clientes saem no **/0001-30**.
+
+**Reajuste das parcelas de venda**: o contrato traz a data-base da tabela de preços (ex.: compra em nov/2026 com tabela atualizada até out/2026: data-base out/2026). Índice: **INCC-M da FGV**, coluna "Número Índice desde Jan/1993 (Dez/1992 = 1,00)", do mês anterior à assinatura. Reajuste **mensal**; a CMJ calcula o acumulado à mão porque a FGV demora a publicar: acumulado do mês = acumulado do mês anterior × (1 + variação do mês ÷ 100). Fator aplicado às parcelas que vencem no mês = índice do mês anterior ÷ índice da data-base (ex.: parcelas de out/2026 com data-base jun/2026 = índice de set/2026 ÷ índice de jun/2026). Observação do Claude: no exemplo, 4.502,5477 ÷ 4.426,0236 = **1,0173** (e não 1,1360, como estava no documento). Boletos: **juros de 1% ao mês pro rata die e multa de 2%** sobre a parcela.
