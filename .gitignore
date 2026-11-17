@@ -53,3 +53,6 @@ PlanilhasCMJ/
 
 # Scripts locais com hash de senha (mesmo provisoria): nunca no Git
 sql/local/*_Usuario_*_LOCAL.sql
+
+# Contratos de venda reais da CMJ (dados pessoais de compradores, LGPD): nunca no Git
+Contrato de venda de imóvel/
