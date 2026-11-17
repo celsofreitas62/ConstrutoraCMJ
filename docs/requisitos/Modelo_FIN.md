@@ -58,41 +58,7 @@ Significado dos campos (**confirmado pelo Celso em 17/11/2026**):
 - Tabela `FIN.Arquivo_Morto`: os 147.866 lançamentos de 2008-2019 **com os dados como eram**, já traduzidos para texto legível (empresa, obra, pessoa, conta, plano em 3 níveis, histórico, complemento, documento, débito, crédito, datas, situação) + os códigos do Access, para a busca e o "Exportar".
 - Sem ligação (FK) com o modelo novo: o que mudar no cadastro novo não altera o passado. Busca por pessoa usa o nome gravado e, quando houver, o `ID_PESSOA` do de-para.
 - Procedure só de leitura `FIN.FIN_Arquivo_Morto_Listar` (filtros, busca por parte do nome, paginação); tela na fase 4 sem incluir/alterar/excluir.
-
-## 4. Ensaio da migração do movimento (repetível no servidor da CMJ)
-
-**Corte decidido pelo Celso em 17/11/2026: migra para o modelo novo o movimento de 2018 em diante; o anterior a 2018 fica no arquivo morto, com os saldos.** Isso vale para as duas tabelas do Access (o `F Movimento Contas` tem linhas de 2017 e o `ArquivoMorto` tem linhas de 2018-2019). Proposta de regra:
-- data de corte pela **data do movimento** (`DataMovto`) em 01/01/2018;
-- o que for anterior a 2018 mas **ainda estiver em aberto** (não `Confirmado`) migra também para o modelo novo, para nenhum compromisso pendente sumir;
-- cada conta bancária/caixa começa no sistema novo com **saldo inicial em 01/01/2018** = saldo do Access até 31/12/2017 (lançamento `SALDO_INICIAL`), conferido no relatório de conferência;
-- o arquivo morto mostra também o **saldo por conta** na data do corte.
-
-1. **Extração**: o PowerShell da 01b (`Extrair_Access.ps1`) passa a gerar só os CSV que a migração usa, com data/hora da extração.
-2. **Carga crua** em `MIG.*` (uma tabela por tabela do Access, tudo texto, `BULK INSERT`), apagando a carga anterior.
-3. **De-para**: `MIG.Depara_Pessoa`, `MIG.Depara_Empresa_CC` (a tabela de classificação que o Celso confere uma vez), `MIG.Depara_Conta`, `MIG.Depara_Plano`.
-4. **Transformação** (procedures `MIG.MIG_*_Processar`, tudo-ou-nada, com `SIS.Log_Passo`):
-   - grupos de **pagamento em lote** → 1 lançamento + parcela + baixa por título, 1 movimento bancário pelo total;
-   - pares de **venda** → título a receber (cliente, venda) + baixa quando `Confirmado`; aberto quando não;
-   - lançamento avulso no banco → lançamento + parcela + baixa;
-   - conta `N/A` e casos estranhos (débito e crédito na mesma linha, valor zero/negativo, datas fora de faixa) → regra própria ou **lista de rejeitados** para o Celso decidir a regra (nunca correção à mão).
-5. **Conferência** (`MIG.MIG_Conferencia_Listar`): quantidade e soma por ano, empresa, conta bancária, pessoa e situação, Access x sistema novo; saldo de cada conta bancária no fim de cada mês igual nos dois.
-6. Rodar o ensaio no `SISTEMACMJ_LOCAL` quantas vezes for preciso até a conferência bater.
-
-## 5. Ordem de trabalho proposta para a 3c
-
-1. Celso responde às perguntas da seção 6 (pode ser amanhã).
-2. Tabelas do `FIN` + `BANCO.Movimento` + arquivo morto (SQL, testado no LOCAL).
-3. `MIG`: carga crua + de-paras + transformação do movimento + conferência.
-4. Rodar o ensaio, mostrar a conferência ao Celso, ajustar as regras.
-5. Procedures de tela do `FIN` ficam para a fase 4, junto com as telas.
-
-## 6. Perguntas ao Celso e respostas (17/11/2026)
-
-1. **Sicredi**: **CNAB 400**; hoje os boletos são feitos no site do banco. Cooperativa 0217, conta 73623-5, beneficiário 55.73623, carteira Simples. (Detalhe e o que falta na seção 6 do CLAUDE.md.)
-2. Campos do Access: respondido (seção 1).
-3. Conta `N/A`: caixinha, sem empresa ou pessoa obrigatória (seção 2.5).
-4. Histórico: **2018 em diante** no modelo novo; antes de 2018 no arquivo morto, com saldos (seção 4).
-5. `Material`/`MovMaterial`: continua, integrado ao módulo de Compras (seção 2.5). `PadraoRelatorio`: sem resposta; proposta: não migra.
-6. OFX: **sim**, pasta por empresa (seção 2.6). Contabilidade: **regime de caixa**.
-
-Confirmados em 17/11/2026: data de corte pela data do movimento + pendências anteriores a 2018 migrando (seção 4); `PadraoRelatorio` não migra.
+- **Pedidos do Celso de 17/11/2026 para a tela (fase 4):**
+  - filtros de consulta (período, empresa, obra, pessoa, conta, plano, valor, busca por parte do texto);
+  - botão especial **"Retornar ao movimento"**: o usuário marca linhas na lista e elas voltam para o movimento do sistema novo (viram lançamento, parcela e baixa pelas mesmas regras da migração, ligadas à linha de origem, que fica marcada como "retornada" e não pode voltar duas vezes). Pede **confirmação** e **a senha de entrada no sistema de novo**; tudo-ou-nada e auditado (quem, quando, quais linhas). Acesso: só o administrador geral e o administrador do sistema (ação nova `RETORNAR` na tela, que nenhum perfil comum recebe);
+  - **relatório simples** do arquivo morto com os filtros escolhidos (A4, PDF, no padrão de `PADRAO_RELATORIOS.md`: cabeçalho, filtros usados, lista e totais de débito e crédito).
