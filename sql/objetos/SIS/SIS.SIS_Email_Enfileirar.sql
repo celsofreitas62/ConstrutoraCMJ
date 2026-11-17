@@ -16,6 +16,8 @@
                   EMAIL_TESTE, com "[TESTE]" no assunto e o endereço pedido
                   guardado em PARA_ORIGINAL (MODO_TESTE = 1). Proteção
                   extra, além do @bRunLocal das orquestradoras.
+                  Exceção: tipo listado em EMAIL_LOCAL_LIBERADOS (separado
+                  por vírgula) sai de verdade mesmo no _LOCAL (v1.1).
                 - Assunto sem quebra de linha (texto puro, regra 14).
                 - @Anexos: JSON '[{"caminho":"C:\\...\\a.pdf","nome":"a.pdf",
                   "cid":""}]'.
@@ -29,6 +31,10 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02d).
+    v1.1 (17/11/2026) - Exceção controlada à proteção do banco _LOCAL (pedido
+                        do Celso, 03c): tipos listados no parâmetro
+                        EMAIL_LOCAL_LIBERADOS (ex.: COMUNICADO) saem para os
+                        destinatários reais. Vazio = tudo desviado, como antes.
 
   Homologação (LOCAL):
     -- DECLARE @Id BIGINT;
@@ -115,6 +121,11 @@ BEGIN
         END;
 
         SET @EtapaAtual = 'Modo teste';
+        IF @Teste = 1
+           AND EXISTS (SELECT 1 FROM STRING_SPLIT(ISNULL(SIS.fn_SIS_Parametro('EMAIL_LOCAL_LIBERADOS'), N''), N',') l
+                       WHERE UPPER(LTRIM(RTRIM(l.value))) = UPPER(@Tipo))
+            SET @Teste = 0;   -- tipo liberado: sai para os destinatários reais
+
         IF @Teste = 1
         BEGIN
             SET @ParaOrig = @ParaOk

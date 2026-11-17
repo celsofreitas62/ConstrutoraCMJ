@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Comunicados</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/sis/comunicados.js" defer></script>
+</head>
+<body data-tela="sis/comunicados.html" data-ajuda="sis-comunicados" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Sistema › E-mails › Comunicados</div>
+          <h1 id="titulo">Comunicados</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button data-dica="Monta o comunicado desta semana com os itens gravados e manda a prévia só para quem aprova. A prévia pendente anterior é descartada." type="button" class="botao" id="botao-previa" hidden>Gerar prévia agora</button>
+        <button data-dica="Grava a introdução e os itens. Não envia nada: depois gere a prévia." type="button" class="botao botao-principal" id="botao-gravar" hidden>Gravar itens</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="aviso-faixa" id="aviso-previa" role="note" hidden></div>
+
+      <div class="abas" role="tablist" aria-label="Partes do comunicado">
+        <button type="button" class="aba" role="tab" id="aba-itens" aria-controls="painel-itens" aria-selected="true">Itens do boletim</button>
+        <button type="button" class="aba" role="tab" id="aba-edicoes" aria-controls="painel-edicoes" aria-selected="false">Prévias e envios</button>
+      </div>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <section class="painel-aba" role="tabpanel" id="painel-itens" aria-labelledby="aba-itens">
+            <div class="grade">
+              <label data-dica="Parágrafo de abertura do e-mail. Linguagem simples, sem dados técnicos." class="campo s-2">Introdução
+                <textarea id="introducao" rows="2" maxlength="1000"></textarea>
+              </label>
+            </div>
+            <p class="nota" id="destinatarios"></p>
+            <table class="tabela tabela-edicao">
+              <thead>
+                <tr>
+                  <th scope="col">Seção</th>
+                  <th scope="col">Texto do item (até 300 caracteres)</th>
+                  <th scope="col">Ordem</th>
+                  <th scope="col"><span class="so-leitor">Remover</span></th>
+                </tr>
+              </thead>
+              <tbody id="itens"></tbody>
+            </table>
+            <button data-dica="Acrescenta uma linha nova para escrever um item." type="button" class="botao botao-contorno" id="botao-item" hidden>+ Item</button>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-edicoes" aria-labelledby="aba-edicoes" hidden>
+            <div class="rolagem">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th scope="col">Semana</th>
+                    <th scope="col">Assunto</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col">Gerada em</th>
+                    <th scope="col">Aprovada</th>
+                  </tr>
+                </thead>
+                <tbody id="edicoes"></tbody>
+              </table>
+            </div>
+            <div class="barra-lista">
+              <span class="suave" id="edicao-escolhida">Clique numa linha para ver o e-mail.</span>
+              <button data-dica="Descarta a prévia: nada é enviado." type="button" class="botao" id="botao-descartar" hidden>Descartar prévia</button>
+              <button data-dica="Envia aos destinatários oficiais exatamente o e-mail mostrado abaixo. Pede confirmação antes." type="button" class="botao botao-principal" id="botao-aprovar" hidden>Aprovar e enviar</button>
+            </div>
+            <iframe class="previa-email" id="previa" title="Pré-visualização do e-mail" sandbox="allow-same-origin" hidden></iframe>
+          </section>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -18,6 +18,8 @@
                         cores (valores de fábrica = CMJ).
     v1.3 (16/11/2026) - Etapa 02d: e-mail (domínio interno, minutos preso),
                         pastas de backup e de atualizações.
+    v1.4 (17/11/2026) - Etapa 03c: EMAIL_LOCAL_LIBERADOS (exceção controlada do
+                        banco de teste, pedido do Celso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -66,6 +68,8 @@ FROM (VALUES
          N'Cor das confirmações (pagamento recebido, envio concluído).', 'SIS', 1),
         ('EMAIL_DOMINIO_INTERNO', N'', 'TEXTO',
          N'Domínio(s) do e-mail da empresa (ex.: cmj.com.br), separados por vírgula. Esses endereços saem pela conta interna; os demais pela externa. Vazio = todos pela interna.', 'SIS', 1),
+        ('EMAIL_LOCAL_LIBERADOS', N'', 'TEXTO',
+         N'Só no banco de teste (_LOCAL): tipos de e-mail que saem para os destinatários reais em vez de irem para o EMAIL_TESTE, separados por vírgula (ex.: COMUNICADO). Vazio = todos desviados. Não tem efeito em produção.', 'SIS', 0),
         ('EMAIL_MINUTOS_PRESO', N'15', 'INTEIRO',
          N'Minutos que um e-mail pode ficar "processando" antes de voltar para a fila (serviço parou no meio). Mínimo 5.', 'SIS', 1),
         ('BACKUP_PASTA', N'C:\SistemaCMJ_Arquivos\Backup', 'TEXTO',

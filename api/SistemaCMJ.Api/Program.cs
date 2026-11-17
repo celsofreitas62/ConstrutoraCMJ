@@ -8,6 +8,8 @@
 //              Linha de comando:
 //                dotnet run                         -> sobe o sistema
 //                dotnet run -- senha-inicial celso  -> primeira senha de um usuário
+//              Agendador (17/11/2026, fase 3c): roda as rotinas agendadas e
+//              envia os e-mails da fila a cada minuto (Infra/Agendador.cs).
 //              Licença: nesta fase só é lida (conferência da assinatura numa
 //              parte própria, antes da instalação na CMJ).
 // =============================================================================
@@ -17,12 +19,15 @@ using SistemaCMJ.Api.Infra;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<Banco>();
+builder.Services.AddSingleton<EnvioEmail>();
 
 if (args.Length > 0 && args[0].Equals("senha-inicial", StringComparison.OrdinalIgnoreCase))
 {
     var banco = new Banco(builder.Configuration);
     return await SenhaInicial.RodarAsync(args, banco);
 }
+
+builder.Services.AddHostedService<Agendador>();
 
 var app = builder.Build();
 
@@ -52,6 +57,8 @@ app.UseMiddleware<SessaoMiddleware>();
 AcessoEndpoints.Mapear(app);
 SistemaEndpoints.Mapear(app);
 PessoaEndpoints.Mapear(app);
+ComunicadoEndpoints.Mapear(app);
+ComunicadoEndpoints.MapearLogo(app);
 
 // Rota /api que não existe: resposta padrão (não cai na página).
 app.MapFallback("/api/{**resto}", () => Results.NotFound());

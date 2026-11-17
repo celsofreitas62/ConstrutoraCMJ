@@ -45,6 +45,287 @@ IF COL_LENGTH(N'CAD.Empresa', N'PASTA_OFX') IS NULL
 GO
 
 -- =============================================================================
+-- Arquivo: sql/objetos/SIS/Carga_SIS_Parametro.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : carga inicial de [SIS].[Parametro]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 15/11/2026
+  Descrição   : Parâmetros de fábrica da base SIS. Só insere o que falta
+                (PADRAO_SQL regra 39): valor já alterado pelo administrador
+                nunca é sobrescrito. VALOR_PADRAO recebe o mesmo valor de
+                fábrica. Cada etapa seguinte acrescenta os seus parâmetros
+                (multa, juros, régua de cobrança...) neste arquivo.
+                EDITAVEL_ADMIN = 0: só o instalador muda, por script.
+                Depende de Carga_SIS_Modulo.sql.
+
+  Changelog:
+    v1.0 (15/11/2026) - Criação (etapa 02a).
+    v1.1 (15/11/2026) - Etapa 02b: SENHA_PBKDF2_ITERACOES.
+    v1.2 (15/11/2026) - Identidade visual por cliente: pasta, logomarcas e
+                        cores (valores de fábrica = CMJ).
+    v1.3 (16/11/2026) - Etapa 02d: e-mail (domínio interno, minutos preso),
+                        pastas de backup e de atualizações.
+    v1.4 (17/11/2026) - Etapa 03c: EMAIL_LOCAL_LIBERADOS (exceção controlada do
+                        banco de teste, pedido do Celso).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+INSERT INTO SIS.Parametro (CHAVE, VALOR, VALOR_PADRAO, TIPO, DESCRICAO, ID_MODULO, EDITAVEL_ADMIN)
+SELECT v.CHAVE, v.VALOR, v.VALOR, v.TIPO, v.DESCRICAO, m.ID_MODULO, v.EDITAVEL_ADMIN
+FROM (VALUES
+        (CAST('EMAIL_TESTE' AS VARCHAR(60)), CAST(N'celsofreitas62@gmail.com' AS NVARCHAR(4000)), CAST('EMAIL' AS VARCHAR(10)),
+         CAST(N'Endereço que recebe TODOS os e-mails quando o sistema roda em modo teste (banco _LOCAL).' AS NVARCHAR(400)), CAST('SIS' AS VARCHAR(10)), CAST(0 AS BIT)),
+        ('EMAIL_ADMIN_ALERTA', N'', 'EMAIL',
+         N'Endereço que recebe os alertas técnicos (falha no envio de e-mail, rotina com erro). Vazio = sem alerta.', 'SIS', 1),
+        ('EMAIL_TENTATIVAS_MAX', N'5', 'INTEIRO',
+         N'Quantas vezes o serviço tenta reenviar um e-mail com falha temporária antes de desistir.', 'SIS', 1),
+        ('SENHA_TAMANHO_MINIMO', N'8', 'INTEIRO',
+         N'Quantidade mínima de caracteres da senha dos usuários.', 'SIS', 1),
+        ('SENHA_TENTATIVAS_BLOQUEIO', N'5', 'INTEIRO',
+         N'Tentativas de senha errada seguidas até o usuário ser bloqueado.', 'SIS', 1),
+        ('SESSAO_MINUTOS_INATIVIDADE', N'30', 'INTEIRO',
+         N'Minutos sem uso até a sessão expirar e pedir login de novo.', 'SIS', 1),
+        ('ANEXO_PASTA_RAIZ', N'C:\SistemaCMJ_Arquivos\Anexos', 'TEXTO',
+         N'Pasta do servidor onde os anexos são gravados (o banco guarda só a referência).', 'SIS', 0),
+        ('ANEXO_TAMANHO_MAX_MB', N'20', 'INTEIRO',
+         N'Tamanho máximo de cada anexo, em MB.', 'SIS', 1),
+        ('LOG_PASSO_DIAS_RETENCAO', N'90', 'INTEIRO',
+         N'Dias que o log passo a passo das rotinas é guardado (mínimo 7). O log de erros não é apagado.', 'SIS', 1),
+        ('SENHA_PBKDF2_ITERACOES', N'600000', 'INTEIRO',
+         N'Iterações do PBKDF2-SHA256 usadas pela API ao gravar senha (mínimo aceito: 100000).', 'SIS', 0),
+        ('IDENTIDADE_PASTA', N'C:\SistemaCMJ_Arquivos\Identidade', 'TEXTO',
+         N'Pasta do servidor com os arquivos de identidade visual do cliente (logomarcas).', 'SIS', 0),
+        ('EMPRESA_LOGO', N'logo.png', 'ARQUIVO',
+         N'Logomarca vertical completa (documentos, contratos, telas grandes). Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_LOGO_HORIZONTAL', N'logo_horizontal.png', 'ARQUIVO',
+         N'Logomarca horizontal (cabeçalho do sistema e dos relatórios). Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_LOGO_EMAIL', N'logo_email.png', 'ARQUIVO',
+         N'Logomarca pequena do cabeçalho dos e-mails. Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_LOGO_SIMBOLO', N'logo_simbolo.png', 'ARQUIVO',
+         N'Só o símbolo da logomarca (menu recolhido, ícone). Arquivo na pasta de identidade.', 'SIS', 1),
+        ('EMPRESA_COR_PRINCIPAL', N'#D43414', 'COR',
+         N'Cor principal do cliente: cabeçalhos do sistema, dos relatórios e dos e-mails informativos.', 'SIS', 1),
+        ('EMPRESA_COR_SECUNDARIA', N'#A8A8A8', 'COR',
+         N'Cor secundária do cliente (detalhes, linhas, textos de apoio).', 'SIS', 1),
+        ('EMAIL_COR_ALERTA', N'#E65100', 'COR',
+         N'Cor dos avisos de alerta (vencido, falha, divergência). Diferente da cor principal.', 'SIS', 1),
+        ('EMAIL_COR_SUCESSO', N'#2E7D32', 'COR',
+         N'Cor das confirmações (pagamento recebido, envio concluído).', 'SIS', 1),
+        ('EMAIL_DOMINIO_INTERNO', N'', 'TEXTO',
+         N'Domínio(s) do e-mail da empresa (ex.: cmj.com.br), separados por vírgula. Esses endereços saem pela conta interna; os demais pela externa. Vazio = todos pela interna.', 'SIS', 1),
+        ('EMAIL_LOCAL_LIBERADOS', N'', 'TEXTO',
+         N'Só no banco de teste (_LOCAL): tipos de e-mail que saem para os destinatários reais em vez de irem para o EMAIL_TESTE, separados por vírgula (ex.: COMUNICADO). Vazio = todos desviados. Não tem efeito em produção.', 'SIS', 0),
+        ('EMAIL_MINUTOS_PRESO', N'15', 'INTEIRO',
+         N'Minutos que um e-mail pode ficar "processando" antes de voltar para a fila (serviço parou no meio). Mínimo 5.', 'SIS', 1),
+        ('BACKUP_PASTA', N'C:\SistemaCMJ_Arquivos\Backup', 'TEXTO',
+         N'Pasta do servidor onde ficam os backups do banco.', 'SIS', 0),
+        ('BACKUP_PASTA_EXTERNA', N'', 'TEXTO',
+         N'Pasta fora do servidor (disco externo ou pasta sincronizada com a nuvem) para onde os backups são copiados. Vazio = não copia.', 'SIS', 0),
+        ('ATUALIZACAO_PASTA', N'C:\SistemaCMJ_Arquivos\Atualizacoes', 'TEXTO',
+         N'Pasta do servidor onde ficam os pacotes de atualização e o certificado usados pela tela Instalação e manutenção.', 'SIS', 0),
+        ('CIDADE_PADRAO', N'Poços de Caldas', 'TEXTO',
+         N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1)
+     ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
+INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Parametro p WHERE p.CHAVE = v.CHAVE);
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Email_Enfileirar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Email_Enfileirar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Única porta de entrada da fila de e-mails (PADRAO_EMAIL seção
+                1). Chamada pelas orquestradoras e rotinas, nunca pela tela.
+                Só faz INSERT: quem envia é o serviço.
+                - Destinatários: ";" ou "," como separador; endereços
+                  inválidos são descartados (e registrados no log); sem
+                  nenhum válido, não grava e devolve @IdEmail = NULL.
+                - @ChaveOrigem repetida: não grava de novo; devolve o
+                  @IdEmail que já existe (o mesmo aviso nunca sai duas
+                  vezes).
+                - Banco _LOCAL (teste): o e-mail vai só para o parâmetro
+                  EMAIL_TESTE, com "[TESTE]" no assunto e o endereço pedido
+                  guardado em PARA_ORIGINAL (MODO_TESTE = 1). Proteção
+                  extra, além do @bRunLocal das orquestradoras.
+                  Exceção: tipo listado em EMAIL_LOCAL_LIBERADOS (separado
+                  por vírgula) sai de verdade mesmo no _LOCAL (v1.1).
+                - Assunto sem quebra de linha (texto puro, regra 14).
+                - @Anexos: JSON '[{"caminho":"C:\\...\\a.pdf","nome":"a.pdf",
+                  "cid":""}]'.
+                - ID_LOTE vem do contexto da sessão, se houver.
+                Se quem chamou já está numa transação, o INSERT entra nela
+                (sai junto com a operação de negócio, ou não sai).
+                Erro interno: grava em SIS.Log_Erro e devolve @IdEmail NULL
+                (falha de e-mail não desfaz a operação de negócio), salvo se
+                a transação de quem chamou ficou condenada (aí repassa o
+                erro).
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 02d).
+    v1.1 (17/11/2026) - Exceção controlada à proteção do banco _LOCAL (pedido
+                        do Celso, 03c): tipos listados no parâmetro
+                        EMAIL_LOCAL_LIBERADOS (ex.: COMUNICADO) saem para os
+                        destinatários reais. Vazio = tudo desviado, como antes.
+
+  Homologação (LOCAL):
+    -- DECLARE @Id BIGINT;
+    -- EXEC SIS.SIS_Email_Enfileirar @Para = N'x@y.com', @Assunto = N'Teste', @CorpoHTML = N'<p>oi</p>',
+    --      @Tipo = 'TESTE', @Origem = N'manual', @IdEmail = @Id OUTPUT; SELECT @Id;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Email_Enfileirar]
+    @Para         NVARCHAR(MAX),
+    @Assunto      NVARCHAR(400),
+    @CorpoHTML    NVARCHAR(MAX),
+    @Tipo         VARCHAR(30),
+    @Origem       NVARCHAR(256),
+    @ChaveOrigem  NVARCHAR(200) = NULL,
+    @Cc           NVARCHAR(MAX) = NULL,
+    @Cco          NVARCHAR(MAX) = NULL,
+    @Grupo        VARCHAR(30)   = NULL,
+    @Conta        VARCHAR(10)   = 'INTERNA',
+    @Anexos       NVARCHAR(MAX) = NULL,
+    @IdEmail      BIGINT        OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[SIS].[SIS_Email_Enfileirar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Destinatários';
+    DECLARE @ParaOk      NVARCHAR(MAX);
+    DECLARE @CcOk        NVARCHAR(MAX);
+    DECLARE @CcoOk       NVARCHAR(MAX);
+    DECLARE @Invalidos   NVARCHAR(MAX);
+    DECLARE @ParaOrig    NVARCHAR(MAX) = N'';
+    DECLARE @Teste       BIT           = CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 1 ELSE 0 END;
+    DECLARE @IdLote      BIGINT        = TRY_CONVERT(BIGINT, SESSION_CONTEXT(N'ID_LOTE'));
+    DECLARE @MinhaTran   BIT           = CASE WHEN @@TRANCOUNT = 0 THEN 1 ELSE 0 END;
+
+    SET @IdEmail = NULL;
+
+    BEGIN TRY
+        SET @ChaveOrigem = NULLIF(LTRIM(RTRIM(@ChaveOrigem)), N'');
+        SET @Tipo        = UPPER(LTRIM(RTRIM(ISNULL(@Tipo, ''))));
+        SET @Conta       = UPPER(LTRIM(RTRIM(ISNULL(@Conta, 'INTERNA'))));
+        SET @Assunto     = LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL(@Assunto, N''), NCHAR(13) + NCHAR(10), N' '), NCHAR(13), N' '), NCHAR(10), N' '), NCHAR(9), N' ')));
+
+        IF @ChaveOrigem IS NOT NULL
+        BEGIN
+            SELECT @IdEmail = f.ID_EMAIL FROM SIS.Email_Fila f WHERE f.CHAVE_ORIGEM = @ChaveOrigem;
+            IF @IdEmail IS NOT NULL RETURN;
+        END;
+
+        -- Separa válidos e inválidos (sem repetir, na ordem em que vieram)
+        WITH e AS
+        (
+            SELECT x.LISTA, LTRIM(RTRIM(s.value)) AS EMAIL, MIN(s.ordinal) AS ORDEM
+            FROM (VALUES (1, ISNULL(@Para, N'')), (2, ISNULL(@Cc, N'')), (3, ISNULL(@Cco, N''))) x (LISTA, TEXTO)
+            CROSS APPLY STRING_SPLIT(REPLACE(x.TEXTO, N',', N';'), N';', 1) s
+            WHERE LTRIM(RTRIM(s.value)) <> N''
+            GROUP BY x.LISTA, LTRIM(RTRIM(s.value))
+        )
+        SELECT @ParaOk    = STRING_AGG(CASE WHEN e.LISTA = 1 AND SIS.fn_SIS_Email_Valido(e.EMAIL) = 1 THEN CONVERT(NVARCHAR(MAX), e.EMAIL) END, N'; ') WITHIN GROUP (ORDER BY e.LISTA, e.ORDEM),
+               @CcOk      = STRING_AGG(CASE WHEN e.LISTA = 2 AND SIS.fn_SIS_Email_Valido(e.EMAIL) = 1 THEN CONVERT(NVARCHAR(MAX), e.EMAIL) END, N'; ') WITHIN GROUP (ORDER BY e.LISTA, e.ORDEM),
+               @CcoOk     = STRING_AGG(CASE WHEN e.LISTA = 3 AND SIS.fn_SIS_Email_Valido(e.EMAIL) = 1 THEN CONVERT(NVARCHAR(MAX), e.EMAIL) END, N'; ') WITHIN GROUP (ORDER BY e.LISTA, e.ORDEM),
+               @Invalidos = STRING_AGG(CASE WHEN SIS.fn_SIS_Email_Valido(e.EMAIL) = 0 THEN CONVERT(NVARCHAR(MAX), e.EMAIL) END, N'; ') WITHIN GROUP (ORDER BY e.LISTA, e.ORDEM)
+        FROM e;
+
+        SET @ParaOk = ISNULL(@ParaOk, N'');
+        SET @CcOk   = ISNULL(@CcOk, N'');
+        SET @CcoOk  = ISNULL(@CcoOk, N'');
+
+        IF ISNULL(@Invalidos, N'') <> N''
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, 0,
+                    LEFT(N'Endereços inválidos descartados (' + ISNULL(@Origem, N'') + N' / ' + @Tipo + N'): ' + @Invalidos, 4000), 0, SYSDATETIME());
+
+        IF @ParaOk = N''
+        BEGIN
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, 0,
+                    LEFT(N'E-mail não enfileirado: nenhum destinatário válido (' + ISNULL(@Origem, N'') + N' / ' + @Tipo + N' / ' + @Assunto + N').', 4000), 0, SYSDATETIME());
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Modo teste';
+        IF @Teste = 1
+           AND EXISTS (SELECT 1 FROM STRING_SPLIT(ISNULL(SIS.fn_SIS_Parametro('EMAIL_LOCAL_LIBERADOS'), N''), N',') l
+                       WHERE UPPER(LTRIM(RTRIM(l.value))) = UPPER(@Tipo))
+            SET @Teste = 0;   -- tipo liberado: sai para os destinatários reais
+
+        IF @Teste = 1
+        BEGIN
+            SET @ParaOrig = @ParaOk
+                          + CASE WHEN @CcOk  <> N'' THEN N' | cc: '  + @CcOk  ELSE N'' END
+                          + CASE WHEN @CcoOk <> N'' THEN N' | cco: ' + @CcoOk ELSE N'' END;
+            SET @ParaOk   = ISNULL(SIS.fn_SIS_Parametro('EMAIL_TESTE'), N'');
+            SET @CcOk     = N'';
+            SET @CcoOk    = N'';
+            SET @Assunto  = N'[TESTE] ' + @Assunto;
+
+            IF SIS.fn_SIS_Email_Valido(@ParaOk) = 0
+            BEGIN
+                INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+                VALUES (@NomeProc, @EtapaAtual, 0, N'E-mail não enfileirado: parâmetro EMAIL_TESTE vazio ou inválido.', 0, SYSDATETIME());
+                RETURN;
+            END;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        IF @MinhaTran = 1 BEGIN TRANSACTION;
+
+        INSERT INTO SIS.Email_Fila (CHAVE_ORIGEM, TIPO, CONTA, GRUPO, PARA, CC, CCO, PARA_ORIGINAL, ASSUNTO, CORPO_HTML, ORIGEM, ID_LOTE, MODO_TESTE)
+        VALUES (@ChaveOrigem, @Tipo, @Conta, LTRIM(RTRIM(ISNULL(@Grupo, ''))), LEFT(@ParaOk, 2000), LEFT(@CcOk, 2000), LEFT(@CcoOk, 2000),
+                LEFT(@ParaOrig, 4000), LEFT(@Assunto, 400), ISNULL(@CorpoHTML, N''), LEFT(ISNULL(@Origem, N''), 256), @IdLote, @Teste);
+
+        SET @IdEmail = SCOPE_IDENTITY();
+
+        IF ISNULL(@Anexos, N'') <> N''
+            INSERT INTO SIS.Email_Fila_Anexo (ID_EMAIL, CAMINHO, NOME_EXIBICAO, CID, ORDEM)
+            SELECT @IdEmail,
+                   LTRIM(RTRIM(j.caminho)),
+                   ISNULL(NULLIF(LTRIM(RTRIM(j.nome)), N''), RIGHT(LTRIM(RTRIM(j.caminho)), CHARINDEX(N'\', REVERSE(N'\' + LTRIM(RTRIM(j.caminho)))) - 1)),
+                   LTRIM(RTRIM(ISNULL(j.cid, ''))),
+                   CAST(k.[key] AS SMALLINT) + 1
+            FROM OPENJSON(@Anexos) k
+            CROSS APPLY OPENJSON(k.value) WITH (caminho NVARCHAR(1000) '$.caminho', nome NVARCHAR(260) '$.nome', cid VARCHAR(60) '$.cid') j
+            WHERE LTRIM(RTRIM(ISNULL(j.caminho, N''))) <> N'';
+
+        IF @MinhaTran = 1 COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @MinhaTran = 1 AND @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        -- Mesma chave gravada ao mesmo tempo por outra sessão: devolve a que ficou
+        IF ERROR_NUMBER() IN (2601, 2627) AND @ChaveOrigem IS NOT NULL AND XACT_STATE() <> -1
+        BEGIN
+            SELECT @IdEmail = f.ID_EMAIL FROM SIS.Email_Fila f WHERE f.CHAVE_ORIGEM = @ChaveOrigem;
+            RETURN;
+        END;
+
+        IF XACT_STATE() = -1 THROW;
+
+        SET @IdEmail = NULL;
+        INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+        VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
 -- Arquivo: sql/objetos/FIN/FIN.Historico_Padrao.sql
 -- =============================================================================
 /*******************************************************************************

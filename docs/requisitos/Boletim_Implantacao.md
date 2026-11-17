@@ -2,7 +2,7 @@
 
 Pedido do Celso em 17/11/2026 (documento "Instruções ao Claude"). Conversa "03c – Financeiro e ensaio da migração".
 
-> **Situação: PROPOSTA, aguardando a aprovação do Celso.** Nada criado.
+> **Situação: APROVADA pelo Celso em 17/11/2026** (sexta 9h; remetente celsofreitas62@gmail.com no notebook; acesso do administrador geral e da administradora da CMJ). SQL homologado no LOCAL; API e tela escritas, aguardando compilação e teste pelo Celso.
 
 ## 1. O pedido
 

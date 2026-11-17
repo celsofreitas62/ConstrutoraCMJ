@@ -2,7 +2,7 @@
 
 Conversa "03c – Financeiro e ensaio da migração", 16/11/2026. Base: seção 3.2 do CLAUDE.md (lançamento único, aprovado em 14/11/2026), pedidos do Celso de 16/11/2026 (itens 8, 9 e 10), `CAD`/`BANCO` já criados e o movimento do Access (`legado/dados_brutos/F Movimento Contas.csv`, 102.230 linhas).
 
-> **Situação: PROPOSTA revista em 17/11/2026 com as respostas do Celso (seção 6), aguardando a aprovação final.** Nada foi criado no banco.
+> **Situação: APROVADA pelo Celso em 17/11/2026.** Tabelas criadas e homologadas no LOCAL (pacote 03c). Migração (seção 4): em andamento.
 
 ## 1. Como o Access grava o dinheiro (achados de 16/11/2026, a confirmar com o Celso)
 
@@ -95,4 +95,4 @@ Significado dos campos (**confirmado pelo Celso em 17/11/2026**):
 5. `Material`/`MovMaterial`: continua, integrado ao módulo de Compras (seção 2.5). `PadraoRelatorio`: sem resposta; proposta: não migra.
 6. OFX: **sim**, pasta por empresa (seção 2.6). Contabilidade: **regime de caixa**.
 
-Pontos ainda a confirmar: data de corte pela data do movimento + pendências anteriores a 2018 migrando (seção 4); `PadraoRelatorio` não migra.
+Confirmados em 17/11/2026: data de corte pela data do movimento + pendências anteriores a 2018 migrando (seção 4); `PadraoRelatorio` não migra.

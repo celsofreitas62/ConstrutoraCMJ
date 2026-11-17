@@ -23,7 +23,7 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 
 ## 0. Estado atual e como retomar (atualizar sempre)
 
-**Situação em 17/11/2026 (conversa "03c – Financeiro e ensaio da migração", em andamento)**: a CMJ aprovou a proposta; etapas 01, 02, 03a e 3b concluídas (3b aprovada no notebook, https://localhost:5443; subir com dois cliques em `api\rodar.cmd`; usuários no LOCAL: `celso` nível 2 e `renata` Administrador nível 1). **3c aberta**: proposta do financeiro, arquivo morto e ensaio da migração em `docs/requisitos/Modelo_FIN.md`, revista com as respostas do Celso de 17/11/2026 (Sicredi CNAB 400, significado dos campos do Access, caixinha, corte da migração em 2018, Material via Compras, OFX por empresa, regime de caixa); **aguardando a aprovação final** para criar as tabelas. Pedido novo de 17/11/2026: **boletim semanal da implantação por e-mail**, com prévia para o Celso aprovar (`docs/requisitos/Boletim_Implantacao.md`, aguardando aprovação). GitHub ligado (`origin`); o envio é pelo `enviar_github.cmd`. Servidor da CMJ: Windows 11 Pro.
+**Situação em 17/11/2026 (conversa "03c – Financeiro e ensaio da migração", em andamento)**: etapas 01, 02, 03a e 3b concluídas (3b no notebook, https://localhost:5443; subir: dois cliques em `api\rodar.cmd`; compilar: `api\compilar.cmd`; usuários no LOCAL: `celso` nível 2 e `renata` Administrador nível 1). **3c**: modelo do financeiro **aprovado** (`docs/requisitos/Modelo_FIN.md`) e **SQL homologado no LOCAL** (pacote `03c_FIN_LOCAL`, testes 03c 51/0, 03a 68/0, 02d 127/0). **Boletim semanal da implantação** aprovado (`docs/requisitos/Boletim_Implantacao.md`): SQL homologado; API (agendador de rotinas + envio de e-mail por MailKit) e tela `sis/comunicados.html` escritas, **aguardando o Celso compilar, criar a senha de app do Google (`api\configurar_email.cmd`) e testar**. No notebook, o parâmetro `EMAIL_LOCAL_LIBERADOS = COMUNICADO` deixa só o boletim aprovado sair de verdade. **Falta na 3c**: ensaio da migração do movimento (`MIG`, 2018 em diante + arquivo morto antes de 2018, com saldos). Sicredi: CNAB 400 (faltam manual, posto e regras). GitHub ligado (`origin`); envio pelo `enviar_github.cmd`. Servidor da CMJ: Windows 11 Pro.
 
 **Histórico e decisões**: tudo em [docs/DIARIO_DECISOES.md](docs/DIARIO_DECISOES.md) (separado em 16/11/2026). Ler só quando precisar do motivo de uma decisão.
 
@@ -177,7 +177,9 @@ Vindas do que os sistemas de construtoras e os financeiros atuais oferecem. **Os
 - A CMJ trabalha com mais de uma conta bancária / mais de um banco?
 - ~~Os relatórios da contabilidade são por regime de caixa ou de competência?~~ **Regime de caixa** (17/11/2026).
 
-## 3.4 Parametrização total (decidido em 14/11/2026)
+## 3.4 Parametrização total (decidido em 14/11/2026; reforçado em 17/11/2026)
+
+**Regra do Celso (17/11/2026): tudo o que for possível no sistema deve ser parametrizado, como nos melhores softwares de mercado.** Ao desenhar qualquer rotina, perguntar "isto pode mudar um dia?"; se puder, vira parâmetro ou cadastro.
 
 **Nada fixo no código**: percentuais (multa, juros, desconto), dias (carência, aviso de vencimento, régua de cobrança), contas padrão, e-mails, textos de e-mail, limites de alçada, índices etc. ficam em `SIS.Parametro` (chave, valor, tipo, descrição, módulo, quem alterou e quando), editáveis numa tela do administrador e **auditados**. Regra já prevista no PADRAO_SQL (regra 33), agora obrigatória para tudo.
 

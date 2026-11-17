@@ -243,3 +243,9 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
   background: #2B2B2B; color: #FFFFFF; font-size: 13px; font-weight: 400; line-height: 1.4;
   box-shadow: 0 6px 16px rgba(0, 0, 0, .2); pointer-events: none;
 }
+
+/* Comunicados (03c, 17/11/2026): pré-visualização do e-mail como ele sai. */
+.previa-email { display: block; width: 100%; min-height: 560px; margin-top: 12px; border: 1px solid #dddddd; border-radius: 6px; background: #eeeeee; }
+.tabela-edicao textarea.texto-item { width: 100%; min-height: 2.4em; resize: vertical; }
+.tabela-edicao input.ordem-item { width: 4.5em; }
+.tabela tr.selecionada td { background: #fdeee9; }

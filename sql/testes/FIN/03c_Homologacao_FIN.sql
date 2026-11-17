@@ -82,6 +82,7 @@ DECLARE @IdEd1      BIGINT;
 DECLARE @IdEd2      BIGINT;
 DECLARE @Erro       NVARCHAR(400);
 DECLARE @Json       NVARCHAR(MAX);
+DECLARE @Liberados  NVARCHAR(4000) = ISNULL((SELECT p.VALOR FROM SIS.Parametro p WHERE p.CHAVE = 'EMAIL_LOCAL_LIBERADOS'), N'');
 
 -- Habilitação original (volta no fim); o teste liga o FIN e a tela do arquivo morto
 INSERT INTO #Hab (TIPO, CODIGO, HABILITADO)
@@ -113,6 +114,7 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
   ISNULL((SELECT CONVERT(NVARCHAR(5), DATEDIFF(DAY, '19000101', r.PROXIMA_EXECUCAO) % 7) + N'|' + CONVERT(VARCHAR(5), r.PROXIMA_EXECUCAO, 108) FROM SIS.Rotina r WHERE r.CODIGO = 'COMUNICADO_PREVIA'), N'')),
  (N'Destinatários do boletim', N'construtora.m.judice@gmail.com; dmjdaher@gmail.com', ISNULL(SIS.fn_SIS_Emails_Do_Grupo('BOLETIM_IMPLANTACAO'), N'')),
  (N'Aprovação do boletim', N'celsofreitas62@gmail.com', ISNULL(SIS.fn_SIS_Emails_Do_Grupo('BOLETIM_APROVACAO'), N'')),
+ (N'Parâmetro EMAIL_LOCAL_LIBERADOS existe', N'1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Parametro p WHERE p.CHAVE = 'EMAIL_LOCAL_LIBERADOS'))),
  (N'Itens iniciais do boletim (1 implantado, 2 em teste, 2 próxima)', N'1|2|2',
   (SELECT CONVERT(NVARCHAR(5), SUM(CASE WHEN i.SECAO = 'IMPLANTADO' THEN 1 ELSE 0 END)) + N'|' + CONVERT(NVARCHAR(5), SUM(CASE WHEN i.SECAO = 'EM_TESTE' THEN 1 ELSE 0 END))
           + N'|' + CONVERT(NVARCHAR(5), SUM(CASE WHEN i.SECAO = 'PROXIMA_FASE' THEN 1 ELSE 0 END))
@@ -223,7 +225,9 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Arquivo morto: filtro de p
 
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES (N'Arquivo morto: usuário sem permissão não vê', N'0', CONVERT(NVARCHAR(5), SIS.fn_SIS_Tem_Permissao(-1, 'FIN_ARQUIVO_MORTO', 'VER')));
 
--- 5) Comunicado (um comunicado de teste, com grupos de teste)
+-- 5) Comunicado (um comunicado de teste, com grupos de teste). Durante o teste
+--    nenhum tipo fica liberado: todo e-mail vai para o EMAIL_TESTE (volta no fim).
+UPDATE SIS.Parametro SET VALOR = N'' WHERE CHAVE = 'EMAIL_LOCAL_LIBERADOS' AND VALOR <> N'';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Conteúdo do boletim tem as três seções e os itens', N'1|1|1|1',
   (SELECT CONVERT(NVARCHAR(5), CASE WHEN x.H LIKE N'%Implantado (em uso na empresa)%' THEN 1 ELSE 0 END) + N'|'
@@ -338,6 +342,7 @@ DELETE FROM SIS.Comunicado_Item WHERE ID_COMUNICADO = @IdCom;
 DELETE FROM SIS.Comunicado WHERE ID_COMUNICADO = @IdCom;
 DELETE d FROM SIS.Grupo_Email_Destinatario d INNER JOIN SIS.Grupo_Email g ON g.ID_GRUPO_EMAIL = d.ID_GRUPO_EMAIL WHERE g.CODIGO LIKE 'HML[_]03C%';
 DELETE FROM SIS.Grupo_Email WHERE CODIGO LIKE 'HML[_]03C%';
+UPDATE SIS.Parametro SET VALOR = @Liberados WHERE CHAVE = 'EMAIL_LOCAL_LIBERADOS' AND VALOR <> @Liberados;
 UPDATE m SET m.HABILITADO = h.HABILITADO FROM SIS.Modulo m INNER JOIN #Hab h ON h.TIPO = 'M' AND h.CODIGO = m.CODIGO WHERE m.HABILITADO <> h.HABILITADO;
 UPDATE i SET i.HABILITADO = h.HABILITADO FROM SIS.Item i   INNER JOIN #Hab h ON h.TIPO = 'I' AND h.CODIGO = i.CODIGO WHERE i.HABILITADO <> h.HABILITADO;
 EXEC SIS.SIS_Contexto_Gravar @IdUsuario = NULL;
