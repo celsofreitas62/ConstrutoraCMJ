@@ -8,10 +8,13 @@
                 alfanumérico); não pode repetir. CEP com 8 dígitos, UF com 2 letras,
                 e-mail válido. Conta padrão: qualquer conta ativa (escolha no cadastro,
                 decisão do Celso).
+                CNPJ para notas de compra e DDA (@CnpjCompras): opcional; NULL
+                mantém o que está gravado (na inclusão, fica vazio); '' apaga.
                 Permissão: INCLUIR ou ALTERAR em CAD_EMPRESA. Devolve SUCESSO, MENSAGEM, ID.
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (17/11/2026) - @CnpjCompras (CNPJ para notas de compra e DDA), etapa 03c2.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Gravar @IdUsuario = 2, @RazaoSocial = N'Construtora Teste Ltda', @Cnpj = '11.222.333/0001-81', @Tipo = 'CONSTRUTORA';
@@ -39,7 +42,8 @@ CREATE OR ALTER PROCEDURE [CAD].[CAD_Empresa_Gravar]
     @Uf                      CHAR(2)       = NULL,
     @Email                   NVARCHAR(256) = NULL,
     @Telefone                VARCHAR(30)   = NULL,
-    @IdContaBancariaPadrao   INT           = NULL
+    @IdContaBancariaPadrao   INT           = NULL,
+    @CnpjCompras             VARCHAR(20)   = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -67,6 +71,7 @@ BEGIN
         SET @Uf                 = UPPER(LTRIM(RTRIM(ISNULL(@Uf, ''))));
         SET @Email              = LOWER(LTRIM(RTRIM(ISNULL(@Email, N''))));
         SET @Telefone           = CAD.fn_CAD_Somente_Digitos(@Telefone);
+        IF @CnpjCompras IS NOT NULL SET @CnpjCompras = CAD.fn_CAD_Documento_Limpo(@CnpjCompras);
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', CASE WHEN @IdEmpresa IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar empresas.';
@@ -78,6 +83,10 @@ BEGIN
             SET @Recusa = N'CNPJ inválido. Confira os números (o CNPJ alfanumérico também é aceito).';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Empresa e WHERE e.CNPJ = @Cnpj AND e.ID_EMPRESA <> ISNULL(@IdEmpresa, 0))
             SET @Recusa = N'Já existe uma empresa cadastrada com este CNPJ.';
+        IF @Recusa = N'' AND ISNULL(@CnpjCompras, '') <> '' AND (LEN(@CnpjCompras) <> 14 OR CAD.fn_CAD_Documento_Valido(@CnpjCompras) = 0)
+            SET @Recusa = N'CNPJ para notas de compra e DDA inválido. Confira os números.';
+        IF @Recusa = N'' AND ISNULL(@CnpjCompras, '') <> '' AND @CnpjCompras = @Cnpj
+            SET @Recusa = N'O CNPJ para notas de compra e DDA é igual ao CNPJ da empresa: deixe em branco.';
         IF @Recusa = N'' AND @Tipo NOT IN ('CONSTRUTORA', 'SPE', 'HOLDING', 'OUTRA')
             SET @Recusa = N'Tipo de empresa inválido.';
         IF @Recusa = N'' AND @RegimeTributario NOT IN ('', 'SIMPLES', 'LUCRO_PRESUMIDO', 'LUCRO_REAL', 'RET')
@@ -102,15 +111,15 @@ BEGIN
         SET @EtapaAtual = 'Gravação';
         IF @IdEmpresa IS NULL
         BEGIN
-            INSERT INTO CAD.Empresa (RAZAO_SOCIAL, NOME_FANTASIA, CNPJ, TIPO, INSCRICAO_ESTADUAL, INSCRICAO_MUNICIPAL, REGIME_TRIBUTARIO,
+            INSERT INTO CAD.Empresa (RAZAO_SOCIAL, NOME_FANTASIA, CNPJ, CNPJ_COMPRAS, TIPO, INSCRICAO_ESTADUAL, INSCRICAO_MUNICIPAL, REGIME_TRIBUTARIO,
                                      CEP, LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE, UF, EMAIL, TELEFONE, ID_CONTA_BANCARIA_PADRAO, USUARIO_CRIACAO)
-            VALUES (@RazaoSocial, @NomeFantasia, @Cnpj, @Tipo, @InscricaoEstadual, @InscricaoMunicipal, @RegimeTributario,
+            VALUES (@RazaoSocial, @NomeFantasia, @Cnpj, ISNULL(@CnpjCompras, ''), @Tipo, @InscricaoEstadual, @InscricaoMunicipal, @RegimeTributario,
                     @Cep, @Logradouro, @Numero, @Complemento, @Bairro, @Cidade, @Uf, @Email, @Telefone, @IdContaBancariaPadrao, @Usuario);
             SET @IdEmpresa = SCOPE_IDENTITY();
         END
         ELSE
             UPDATE e
-               SET e.RAZAO_SOCIAL = @RazaoSocial, e.NOME_FANTASIA = @NomeFantasia, e.CNPJ = @Cnpj, e.TIPO = @Tipo,
+               SET e.RAZAO_SOCIAL = @RazaoSocial, e.NOME_FANTASIA = @NomeFantasia, e.CNPJ = @Cnpj, e.CNPJ_COMPRAS = ISNULL(@CnpjCompras, e.CNPJ_COMPRAS), e.TIPO = @Tipo,
                    e.INSCRICAO_ESTADUAL = @InscricaoEstadual, e.INSCRICAO_MUNICIPAL = @InscricaoMunicipal, e.REGIME_TRIBUTARIO = @RegimeTributario,
                    e.CEP = @Cep, e.LOGRADOURO = @Logradouro, e.NUMERO = @Numero, e.COMPLEMENTO = @Complemento, e.BAIRRO = @Bairro,
                    e.CIDADE = @Cidade, e.UF = @Uf, e.EMAIL = @Email, e.TELEFONE = @Telefone, e.ID_CONTA_BANCARIA_PADRAO = @IdContaBancariaPadrao,
