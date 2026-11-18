@@ -158,3 +158,8 @@ Menu **Sistema › Migração › Casos da migração** (`sis/migracao-casos.htm
 
 - Lista: caixinha em cada documento e "selecionar todos" no cabeçalho (todos os da lista com os filtros; trocar filtro desmarca tudo). Barra de lote com quantos estão marcados e o valor, um motivo só e os botões Conferir, Ignorar, Arquivo morto, Desfazer e Desmarcar; confirmação antes de gravar. `MIG.MIG_Caso_Lote_Gravar` (até 1.000 por vez) e `MIG_Caso_Conferir`/`MIG_Movimento_Transformar` com `@Unidades` (lista JSON). API: `/api/mig/casos/lote` e `/conferir-lote`.
 - Documento aberto: "Ignorar" e "Confirmado" no cabeçalho da grade marcam ou desmarcam todas as linhas.
+
+## 14. Troca de lote pela tela (pedido do Celso para a Renata, 18/11/2026)
+
+- Coluna **Lote** na grade do documento: número do lote do Access, editável. Outro número move a linha para aquele lote (precisa existir no Access); 0 tira a linha do lote (vira avulso, ou venda se tiver ligação de venda). Guardado em `MIG.Caso_Correcao_Linha.LOTE` (NULL = mantém).
+- `MIG_Movimento_Transformar` v1.4: o documento da linha passa a ser o do lote novo; o padrão de contas é refeito nos documentos que ganharam ou perderam linha; a conferência de um documento inclui o lote de destino (depois do pedido), e a tela diz como ele ficou. A linha continua aparecendo no documento de origem (onde foi corrigida).

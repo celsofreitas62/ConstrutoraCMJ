@@ -15,6 +15,7 @@
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
     v1.1 (18/11/2026) - Aviso REVISAR no cabeçalho e "mudou" em cada linha
                         alterada no Access depois da correção.
+    v1.2 (18/11/2026) - Lote da linha (original e em uso).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Obter @IdUsuario = 1, @Unidade = 'L:123';
@@ -59,6 +60,7 @@ BEGIN
                           m.VALOR_DEBITO AS debitoOrig, COALESCE(o.VALOR_DEBITO, m.VALOR_DEBITO) AS debito,
                           m.VALOR_CREDITO AS creditoOrig, COALESCE(o.VALOR_CREDITO, m.VALOR_CREDITO) AS credito,
                           m.CONFIRMADO AS confirmadoOrig, COALESCE(o.CONFIRMADO, m.CONFIRMADO) AS confirmado,
+                          m.LOTE AS loteOrig, COALESCE(o.LOTE, m.LOTE) AS lote,
                           m.EFETUADO AS efetuado, m.SOMENTE_INTEGRACAO AS somenteIntegracao,
                           ISNULL(o.IGNORAR_LINHA, CAST(0 AS BIT)) AS ignorar,
                           CAST(CASE WHEN o.ID_CASO_CORRECAO_LINHA IS NULL THEN 0 ELSE 1 END AS BIT) AS corrigida,

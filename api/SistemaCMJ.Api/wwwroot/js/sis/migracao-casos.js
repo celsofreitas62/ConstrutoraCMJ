@@ -320,6 +320,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const tNum = td();
     tNum.append(Util.el('div', 'numero', String(l.num)), Util.el('div', 'suave', (l.tipoConta || '') + (l.lado ? ' ' + l.lado : '')));
+    campos.lote = Util.el('input', 'numero');
+    campos.lote.type = 'number';
+    campos.lote.min = '0';
+    campos.lote.step = '1';
+    campos.lote.value = String(l.lote ?? 0);
+    campos.lote.setAttribute('aria-label', 'Lote');
+    campos.lote.dataset.dica = 'Número do lote de pagamento do Access. Troque para mover a linha para o lote certo (precisa existir no Access). 0 = tirar a linha do lote.';
+    const tLote = td(); tLote.classList.add('numero');
+    vigiar(tLote, campos.lote, () => String(Number(campos.lote.value || 0)), String(l.loteOrig ?? 0), l.loteOrig ? 'lote ' + l.loteOrig : 'sem lote');
+
     const tHist = td();
     tHist.append(Util.el('div', null, l.complemento || l.historico || ''));
     if (l.numDoc) tHist.append(Util.el('div', 'suave', 'Doc. ' + l.numDoc));
@@ -411,7 +421,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         dtPagto: c.dtPagto.value || null,
         debito: Number(c.debito.value || 0),
         credito: Number(c.credito.value || 0),
-        confirmado: c.confirmado.checked
+        confirmado: c.confirmado.checked,
+        lote: Number(c.lote.value || 0)
       };
     });
   }
@@ -477,11 +488,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!(await Mensagens.confirmar(titulo, texto, botao))) return;
     const r = await Api.post('/api/mig/caso/gravar', { unidade: aberto.UNIDADE, acao, motivo, linhas: acao === 'CORRIGIR' ? lerLinhas() : null });
     if (!(await Mensagens.tratar(r, { foco: $('motivo') }))) return;
-    await Mensagens.concluido(r.mensagem || 'Gravado.');
+    const outros = Array.isArray(r.dados) ? r.dados.slice(1) : [];
+    let extra = '';
+    if (outros.length) extra = ' Lote de destino: ' + outros.map((o) => o.UNIDADE.replace(/^L:/, 'lote ').replace(/^V:/, 'venda ').replace(/^A:[MQ]:/, 'avulso ')
+      + ' — ' + (o.REVISAR ? 'revisar' : o.REGRA === 'CASO' ? 'virou caso (' + o.MOTIVO + ')' : 'se encaixa')).join('; ') + '.';
+    await Mensagens.concluido((r.mensagem || 'Gravado.') + extra);
     const unidade = aberto.UNIDADE;
     sujo = false;
     await carregar();
-    await abrir(unidade, r.dados);
+    await abrir(unidade, Array.isArray(r.dados) ? r.dados[0] : r.dados);
   }
 
   $('botao-gravar').addEventListener('click', () => aberto &&

@@ -16,6 +16,7 @@
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, cópia das correções para a 3d).
+    v1.1 (18/11/2026) - Leva também a troca de lote (LOTE).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Correcao_Exportar @IdUsuario = 1;
@@ -48,7 +49,7 @@ BEGIN
                  + CONVERT(NVARCHAR(10), (SELECT COUNT(*) FROM MIG.Caso_Correcao_Linha)) + N' linhas corrigidas.' + NCHAR(13) + NCHAR(10)
                  + N'   Como usar: no servidor de destino, SSMS > Abrir > este arquivo > F5. Substitui as correções de lá pelas deste arquivo. */' + NCHAR(13) + NCHAR(10)
                  + N'SET NOCOUNT ON;' + NCHAR(13) + NCHAR(10) + N'SET XACT_ABORT ON;' + NCHAR(13) + NCHAR(10)
-                 + N'IF SCHEMA_ID(N''MIG'') IS NULL OR OBJECT_ID(N''MIG.Caso_Correcao'', N''U'') IS NULL OR COL_LENGTH(N''MIG.Caso_Correcao_Linha'', N''HASH_ACCESS'') IS NULL' + NCHAR(13) + NCHAR(10)
+                 + N'IF SCHEMA_ID(N''MIG'') IS NULL OR OBJECT_ID(N''MIG.Caso_Correcao'', N''U'') IS NULL OR COL_LENGTH(N''MIG.Caso_Correcao_Linha'', N''LOTE'') IS NULL' + NCHAR(13) + NCHAR(10)
                  + N'    THROW 50001, N''Este banco não tem as tabelas de correção da migração: rode antes o pacote 03c2b.'', 1;' + NCHAR(13) + NCHAR(10)
                  + N'BEGIN TRANSACTION;' + NCHAR(13) + NCHAR(10)
                  + N'DELETE FROM MIG.Caso_Correcao_Linha;' + NCHAR(13) + NCHAR(10)
@@ -65,7 +66,7 @@ BEGIN
             UNION ALL
             SELECT 3, o.ID_CASO_CORRECAO_LINHA,
                    N'INSERT INTO MIG.Caso_Correcao_Linha (ORIGEM, NUM, UNIDADE, EMP_VINCULADA, PARCEIRO, CONTA, PLANO3, DT_MOVTO, DT_VENCTO, DT_PAGTO, '
-                 + N'VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, DT_CRIACAO, USUARIO_CRIACAO, DT_ALTERACAO, USUARIO_ALTERACAO) VALUES ('
+                 + N'VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, LOTE, DT_CRIACAO, USUARIO_CRIACAO, DT_ALTERACAO, USUARIO_ALTERACAO) VALUES ('
                  + N'''' + o.ORIGEM + N''', ' + CONVERT(NVARCHAR(12), o.NUM) + N', ''' + o.UNIDADE + N''', '
                  + ISNULL(CONVERT(NVARCHAR(12), o.EMP_VINCULADA), N'NULL') + N', '
                  + ISNULL(CONVERT(NVARCHAR(12), o.PARCEIRO), N'NULL') + N', '
@@ -80,6 +81,7 @@ BEGIN
                  + CONVERT(NVARCHAR(1), o.IGNORAR_LINHA) + N', '
                  + N'N''' + REPLACE(o.MOTIVO, N'''', N'''''') + N''', '
                  + ISNULL(CONVERT(NVARCHAR(70), o.HASH_ACCESS, 1), N'NULL') + N', '
+                 + ISNULL(CONVERT(NVARCHAR(12), o.LOTE), N'NULL') + N', '
                  + N'''' + CONVERT(NVARCHAR(19), o.DT_CRIACAO, 120) + N''', N''' + REPLACE(o.USUARIO_CRIACAO, N'''', N'''''') + N''', '
                  + ISNULL(N'''' + CONVERT(NVARCHAR(19), o.DT_ALTERACAO, 120) + N'''', N'NULL') + N', '
                  + ISNULL(N'N''' + REPLACE(o.USUARIO_ALTERACAO, N'''', N'''''') + N'''', N'NULL') + N');'

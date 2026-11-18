@@ -511,6 +511,8 @@ GO
                         (impressão digital da linha ou do documento no momento
                         da correção) e MIG.Caso.REVISAR (texto do aviso quando
                         o Access mudou ou apagou o que foi corrigido).
+    v1.3 (18/11/2026) - Caso_Correcao_Linha.LOTE: troca do lote da linha pela
+                        tela (0 = sai do lote; NULL = mantém o do Access).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -635,6 +637,8 @@ IF COL_LENGTH(N'MIG.Caso_Correcao', N'HASH_ACCESS') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao] ADD HASH_ACCESS VARBINARY(32) NULL;
 IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'HASH_ACCESS') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD HASH_ACCESS VARBINARY(32) NULL;
+IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'LOTE') IS NULL
+    ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD LOTE INT NULL CONSTRAINT CK_Caso_Correcao_Linha_LOTE CHECK (LOTE >= 0);
 GO
 
 -- auditoria das correções feitas pela tela (quem, quando, antes e depois)
@@ -737,6 +741,11 @@ GO
     v1.3 (18/11/2026) - @Unidades (lista JSON): confere vários documentos de uma
                         vez (ações em lote da tela de casos); uma linha por
                         documento no retorno.
+    v1.4 (18/11/2026) - Troca de lote pela tela (Caso_Correcao_Linha.LOTE): a
+                        linha passa para o documento do lote novo (0 = sai do
+                        lote: avulso ou venda); padrão de contas recalculado nos
+                        documentos afetados; a conferência inclui o documento
+                        de destino (depois dos pedidos).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
@@ -775,7 +784,7 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM MIG.DePara_Centro) OR NOT EXISTS (SELECT 1 FROM MIG.DePara_Plano)
             THROW 50001, N'Rode antes o MIG.MIG_Cadastros_Processar.', 1;
         -- documentos escolhidos (tela de casos): um (@Unidade) ou vários (@Unidades)
-        CREATE TABLE #Sel (UNIDADE VARCHAR(40) NOT NULL PRIMARY KEY);
+        CREATE TABLE #Sel (UNIDADE VARCHAR(40) NOT NULL PRIMARY KEY, PEDIDO BIT NOT NULL DEFAULT (1));
         IF @Unidade IS NOT NULL
             INSERT INTO #Sel (UNIDADE) VALUES (@Unidade);
         IF ISJSON(ISNULL(@Unidades, N'')) = 1
@@ -783,6 +792,18 @@ BEGIN
             SELECT DISTINCT LEFT(j.value, 40) FROM OPENJSON(@Unidades) j
             WHERE j.value IS NOT NULL AND NOT EXISTS (SELECT 1 FROM #Sel s WHERE s.UNIDADE = LEFT(j.value, 40));
         DECLARE @Filtrar BIT = CASE WHEN EXISTS (SELECT 1 FROM #Sel) THEN 1 ELSE 0 END;
+        -- linha trocada de lote: confere também o documento para onde ela foi
+        INSERT INTO #Sel (UNIDADE, PEDIDO)
+        SELECT DISTINCT d.UNIDADE, 0
+        FROM MIG.Caso_Correcao_Linha o
+        INNER JOIN MIG.Movimento m ON m.ORIGEM = o.ORIGEM AND m.NUM = o.NUM
+        CROSS APPLY (SELECT CAST(CASE WHEN o.LOTE IS NULL THEN m.UNIDADE
+                                         WHEN o.LOTE > 0 THEN 'L:' + CONVERT(VARCHAR(20), o.LOTE)
+                                         WHEN m.LINK_VENDA > 0 THEN 'V:' + CONVERT(VARCHAR(20), m.LINK_VENDA)
+                                         ELSE 'A:' + CASE m.ORIGEM WHEN 'ACCESS_MOVTO' THEN 'M' ELSE 'Q' END + ':' + CONVERT(VARCHAR(20), m.NUM) END AS VARCHAR(40)) AS UNIDADE) d
+        WHERE @Filtrar = 1 AND o.LOTE IS NOT NULL
+          AND o.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s)
+          AND NOT EXISTS (SELECT 1 FROM #Sel s WHERE s.UNIDADE = d.UNIDADE);
         IF (@Unidade IS NOT NULL OR @Unidades IS NOT NULL) AND @Filtrar = 0
             THROW 50001, N'Nenhum documento informado para conferir.', 1;
         IF @Filtrar = 1 AND ISNULL(@Executar, 0) = 1
@@ -806,7 +827,8 @@ BEGIN
                      ORDER BY CASE WHEN x.CODIGO_ACCESS = h.CodHistorico THEN 0 ELSE 1 END) f
         WHERE h.CodHistorico IS NOT NULL;
 
-        SELECT m.ORIGEM, m.NUM, m.UNIDADE, m.PADRAO, m.CONTRATO, m.LINK_VENDA, m.IMOVEL,
+        SELECT m.ORIGEM, m.NUM, eu.UNIDADE, m.PADRAO, m.CONTRATO, m.LINK_VENDA, m.IMOVEL,
+               m.UNIDADE AS UNIDADE_ACCESS, CAST(CASE WHEN o.LOTE IS NULL THEN 0 ELSE 1 END AS BIT) AS MOVIDA,
                COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA) AS EV,
                COALESCE(o.PARCEIRO, m.PARCEIRO)           AS PAR,
                COALESCE(o.CONTA, m.CONTA)                 AS CONTA,
@@ -828,8 +850,12 @@ BEGIN
         INTO #L
         FROM MIG.Movimento m
         LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
+        CROSS APPLY (SELECT CAST(CASE WHEN o.LOTE IS NULL THEN m.UNIDADE
+                                         WHEN o.LOTE > 0 THEN 'L:' + CONVERT(VARCHAR(20), o.LOTE)
+                                         WHEN m.LINK_VENDA > 0 THEN 'V:' + CONVERT(VARCHAR(20), m.LINK_VENDA)
+                                         ELSE 'A:' + CASE m.ORIGEM WHEN 'ACCESS_MOVTO' THEN 'M' ELSE 'Q' END + ':' + CONVERT(VARCHAR(20), m.NUM) END AS VARCHAR(40)) AS UNIDADE) eu
         WHERE m.DESTINO = 'SISTEMA'
-          AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
+          AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s) OR eu.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
           AND ISNULL(o.IGNORAR_LINHA, 0) = 0
           AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao c WHERE c.UNIDADE = m.UNIDADE);
 
@@ -887,6 +913,19 @@ BEGIN
         INTO #U
         FROM #L l
         GROUP BY l.UNIDADE;
+
+        -- documentos que ganharam ou perderam linha por troca de lote: padrão de contas refeito
+        WITH Afetadas AS (
+            SELECT l.UNIDADE FROM #L l WHERE l.MOVIDA = 1
+            UNION SELECT l.UNIDADE_ACCESS FROM #L l WHERE l.MOVIDA = 1),
+        Pares AS (
+            SELECT DISTINCT l.UNIDADE, CONVERT(VARCHAR(20), l.TC + '-' + l.LADO) AS PAR
+            FROM #L l INNER JOIN Afetadas a ON a.UNIDADE = l.UNIDADE)
+        UPDATE u
+           SET u.PADRAO = LEFT(LEFT(u.UNIDADE, 1) + '|' + p.PADRAO, 200)
+        FROM #U u
+        INNER JOIN (SELECT x.UNIDADE, STRING_AGG(x.PAR, '|') WITHIN GROUP (ORDER BY x.PAR) AS PADRAO FROM Pares x GROUP BY x.UNIDADE) p
+                ON p.UNIDADE = u.UNIDADE;
 
         UPDATE u
            SET u.REGRA = CASE
@@ -1135,7 +1174,7 @@ BEGIN
             LEFT JOIN #CasoNovo n ON n.UNIDADE = s.UNIDADE
             LEFT JOIN #U u ON u.UNIDADE = s.UNIDADE
             LEFT JOIN #Rev r ON r.UNIDADE = s.UNIDADE
-            ORDER BY s.UNIDADE;
+            ORDER BY s.PEDIDO DESC, s.UNIDADE;
             DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
             RETURN;
         END;
@@ -1552,6 +1591,7 @@ GO
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
     v1.1 (18/11/2026) - Aviso REVISAR no cabeçalho e "mudou" em cada linha
                         alterada no Access depois da correção.
+    v1.2 (18/11/2026) - Lote da linha (original e em uso).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Obter @IdUsuario = 1, @Unidade = 'L:123';
@@ -1596,6 +1636,7 @@ BEGIN
                           m.VALOR_DEBITO AS debitoOrig, COALESCE(o.VALOR_DEBITO, m.VALOR_DEBITO) AS debito,
                           m.VALOR_CREDITO AS creditoOrig, COALESCE(o.VALOR_CREDITO, m.VALOR_CREDITO) AS credito,
                           m.CONFIRMADO AS confirmadoOrig, COALESCE(o.CONFIRMADO, m.CONFIRMADO) AS confirmado,
+                          m.LOTE AS loteOrig, COALESCE(o.LOTE, m.LOTE) AS lote,
                           m.EFETUADO AS efetuado, m.SOMENTE_INTEGRACAO AS somenteIntegracao,
                           ISNULL(o.IGNORAR_LINHA, CAST(0 AS BIT)) AS ignorar,
                           CAST(CASE WHEN o.ID_CASO_CORRECAO_LINHA IS NULL THEN 0 ELSE 1 END AS BIT) AS corrigida,
@@ -1729,6 +1770,9 @@ GO
     v1.1 (18/11/2026) - Guarda a impressão digital do Access (HASH_ACCESS) da
                         linha ou do documento; gravar de novo um caso marcado
                         "Revisar" atualiza a impressão e tira o aviso.
+    v1.2 (18/11/2026) - Troca de lote ($.lote): 0 tira a linha do lote; outro
+                        número precisa ser um lote que existe no Access; vazio
+                        mantém o do Access.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'IGNORAR', @Motivo = N'Lançado em dobro no Access';
@@ -1785,12 +1829,14 @@ BEGIN
             SET @EtapaAtual = 'Leitura das linhas';
             SELECT j.origem AS ORIGEM, j.num AS NUM, j.emp AS EMP, j.parceiro AS PARCEIRO, j.conta AS CONTA, j.plano AS PLANO,
                    j.dtMovto AS DT_MOVTO, j.dtVencto AS DT_VENCTO, j.dtPagto AS DT_PAGTO,
-                   ISNULL(j.debito, 0) AS DEB, ISNULL(j.credito, 0) AS CRE, ISNULL(j.confirmado, 0) AS CONF, ISNULL(j.ignorar, 0) AS IGN
+                   ISNULL(j.debito, 0) AS DEB, ISNULL(j.credito, 0) AS CRE, ISNULL(j.confirmado, 0) AS CONF, ISNULL(j.ignorar, 0) AS IGN,
+                   j.lote AS LOTE
             INTO #J
             FROM OPENJSON(@LinhasJson) WITH (
                     origem VARCHAR(20) '$.origem', num INT '$.num', emp INT '$.emp', parceiro INT '$.parceiro', conta INT '$.conta',
                     plano INT '$.plano', dtMovto DATE '$.dtMovto', dtVencto DATE '$.dtVencto', dtPagto DATE '$.dtPagto',
-                    debito DECIMAL(18,2) '$.debito', credito DECIMAL(18,2) '$.credito', confirmado BIT '$.confirmado', ignorar BIT '$.ignorar') j;
+                    debito DECIMAL(18,2) '$.debito', credito DECIMAL(18,2) '$.credito', confirmado BIT '$.confirmado', ignorar BIT '$.ignorar',
+                    lote INT '$.lote') j;
 
             IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM AND m.UNIDADE = @Unidade AND m.DESTINO = 'SISTEMA'))
                 SET @Recusa = N'Uma das linhas não pertence a este documento. Atualize a tela.';
@@ -1810,6 +1856,12 @@ BEGIN
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
                                          WHERE j.PARCEIRO > 1 AND j.PARCEIRO <> ISNULL(m.PARCEIRO, 0) AND NOT EXISTS (SELECT 1 FROM MIG.Access_Parceiros p WHERE TRY_CONVERT(INT, p.CodigoParceiro) = j.PARCEIRO))
                 SET @Recusa = N'Pessoa não encontrada no cadastro do Access.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.LOTE < 0)
+                SET @Recusa = N'Lote inválido: use 0 para tirar a linha do lote.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
+                                         WHERE j.LOTE > 0 AND j.LOTE <> m.LOTE
+                                           AND NOT EXISTS (SELECT 1 FROM MIG.Movimento x WHERE x.LOTE = j.LOTE AND x.DESTINO = 'SISTEMA'))
+                SET @Recusa = N'Lote não encontrado no Access. Confira o número do lote.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB < 0 OR j.CRE < 0)
                 SET @Recusa = N'Valor não pode ser negativo.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB > 0 AND j.CRE > 0)
@@ -1837,7 +1889,8 @@ BEGIN
                    CASE WHEN j.DEB = ISNULL(m.VALOR_DEBITO, 0)  THEN NULL ELSE j.DEB END AS VALOR_DEBITO,
                    CASE WHEN j.CRE = ISNULL(m.VALOR_CREDITO, 0) THEN NULL ELSE j.CRE END AS VALOR_CREDITO,
                    CASE WHEN j.CONF = m.CONFIRMADO THEN NULL ELSE j.CONF END AS CONFIRMADO,
-                   j.IGN AS IGNORAR_LINHA, m.HASH_CONTEUDO AS HASH
+                   j.IGN AS IGNORAR_LINHA, m.HASH_CONTEUDO AS HASH,
+                   CASE WHEN j.LOTE IS NULL OR j.LOTE = m.LOTE THEN NULL ELSE j.LOTE END AS LOTE
             INTO #C
             FROM #J j
             INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM;
@@ -1845,7 +1898,7 @@ BEGIN
             DELETE FROM #C
             WHERE EMP_VINCULADA IS NULL AND PARCEIRO IS NULL AND CONTA IS NULL AND PLANO3 IS NULL
               AND DT_MOVTO IS NULL AND DT_VENCTO IS NULL AND DT_PAGTO IS NULL
-              AND VALOR_DEBITO IS NULL AND VALOR_CREDITO IS NULL AND CONFIRMADO IS NULL AND IGNORAR_LINHA = 0;
+              AND VALOR_DEBITO IS NULL AND VALOR_CREDITO IS NULL AND CONFIRMADO IS NULL AND IGNORAR_LINHA = 0 AND LOTE IS NULL;
             SELECT @Qtd = COUNT(*) FROM #C;
 
             IF @Qtd > 0 AND LEN(@Motivo) < 5
@@ -1868,7 +1921,7 @@ BEGIN
                SET o.EMP_VINCULADA = c.EMP_VINCULADA, o.PARCEIRO = c.PARCEIRO, o.CONTA = c.CONTA, o.PLANO3 = c.PLANO3,
                    o.DT_MOVTO = c.DT_MOVTO, o.DT_VENCTO = c.DT_VENCTO, o.DT_PAGTO = c.DT_PAGTO,
                    o.VALOR_DEBITO = c.VALOR_DEBITO, o.VALOR_CREDITO = c.VALOR_CREDITO, o.CONFIRMADO = c.CONFIRMADO,
-                   o.IGNORAR_LINHA = c.IGNORAR_LINHA, o.MOTIVO = @Motivo, o.HASH_ACCESS = c.HASH,
+                   o.IGNORAR_LINHA = c.IGNORAR_LINHA, o.MOTIVO = @Motivo, o.HASH_ACCESS = c.HASH, o.LOTE = c.LOTE,
                    o.DT_ALTERACAO = SYSDATETIME(), o.USUARIO_ALTERACAO = @Usuario
             FROM MIG.Caso_Correcao_Linha o
             INNER JOIN #C c ON c.ORIGEM = o.ORIGEM AND c.NUM = o.NUM
@@ -1880,12 +1933,12 @@ BEGIN
                    AND ISNULL(o.VALOR_DEBITO, -1) = ISNULL(c.VALOR_DEBITO, -1) AND ISNULL(o.VALOR_CREDITO, -1) = ISNULL(c.VALOR_CREDITO, -1)
                    AND ISNULL(CONVERT(TINYINT, o.CONFIRMADO), 9) = ISNULL(CONVERT(TINYINT, c.CONFIRMADO), 9)
                    AND o.IGNORAR_LINHA = c.IGNORAR_LINHA AND o.MOTIVO = @Motivo
-                   AND ISNULL(o.HASH_ACCESS, 0x) = ISNULL(c.HASH, 0x));
+                   AND ISNULL(o.HASH_ACCESS, 0x) = ISNULL(c.HASH, 0x) AND ISNULL(o.LOTE, -1) = ISNULL(c.LOTE, -1));
 
             INSERT INTO MIG.Caso_Correcao_Linha (ORIGEM, NUM, UNIDADE, EMP_VINCULADA, PARCEIRO, CONTA, PLANO3, DT_MOVTO, DT_VENCTO, DT_PAGTO,
-                                                 VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, USUARIO_CRIACAO)
+                                                 VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, LOTE, USUARIO_CRIACAO)
             SELECT c.ORIGEM, c.NUM, @Unidade, c.EMP_VINCULADA, c.PARCEIRO, c.CONTA, c.PLANO3, c.DT_MOVTO, c.DT_VENCTO, c.DT_PAGTO,
-                   c.VALOR_DEBITO, c.VALOR_CREDITO, c.CONFIRMADO, c.IGNORAR_LINHA, @Motivo, c.HASH, @Usuario
+                   c.VALOR_DEBITO, c.VALOR_CREDITO, c.CONFIRMADO, c.IGNORAR_LINHA, @Motivo, c.HASH, c.LOTE, @Usuario
             FROM #C c
             WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.ORIGEM = c.ORIGEM AND o.NUM = c.NUM);
             COMMIT TRANSACTION;
@@ -2150,6 +2203,7 @@ GO
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, cópia das correções para a 3d).
+    v1.1 (18/11/2026) - Leva também a troca de lote (LOTE).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Correcao_Exportar @IdUsuario = 1;
@@ -2182,7 +2236,7 @@ BEGIN
                  + CONVERT(NVARCHAR(10), (SELECT COUNT(*) FROM MIG.Caso_Correcao_Linha)) + N' linhas corrigidas.' + NCHAR(13) + NCHAR(10)
                  + N'   Como usar: no servidor de destino, SSMS > Abrir > este arquivo > F5. Substitui as correções de lá pelas deste arquivo. */' + NCHAR(13) + NCHAR(10)
                  + N'SET NOCOUNT ON;' + NCHAR(13) + NCHAR(10) + N'SET XACT_ABORT ON;' + NCHAR(13) + NCHAR(10)
-                 + N'IF SCHEMA_ID(N''MIG'') IS NULL OR OBJECT_ID(N''MIG.Caso_Correcao'', N''U'') IS NULL OR COL_LENGTH(N''MIG.Caso_Correcao_Linha'', N''HASH_ACCESS'') IS NULL' + NCHAR(13) + NCHAR(10)
+                 + N'IF SCHEMA_ID(N''MIG'') IS NULL OR OBJECT_ID(N''MIG.Caso_Correcao'', N''U'') IS NULL OR COL_LENGTH(N''MIG.Caso_Correcao_Linha'', N''LOTE'') IS NULL' + NCHAR(13) + NCHAR(10)
                  + N'    THROW 50001, N''Este banco não tem as tabelas de correção da migração: rode antes o pacote 03c2b.'', 1;' + NCHAR(13) + NCHAR(10)
                  + N'BEGIN TRANSACTION;' + NCHAR(13) + NCHAR(10)
                  + N'DELETE FROM MIG.Caso_Correcao_Linha;' + NCHAR(13) + NCHAR(10)
@@ -2199,7 +2253,7 @@ BEGIN
             UNION ALL
             SELECT 3, o.ID_CASO_CORRECAO_LINHA,
                    N'INSERT INTO MIG.Caso_Correcao_Linha (ORIGEM, NUM, UNIDADE, EMP_VINCULADA, PARCEIRO, CONTA, PLANO3, DT_MOVTO, DT_VENCTO, DT_PAGTO, '
-                 + N'VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, DT_CRIACAO, USUARIO_CRIACAO, DT_ALTERACAO, USUARIO_ALTERACAO) VALUES ('
+                 + N'VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, LOTE, DT_CRIACAO, USUARIO_CRIACAO, DT_ALTERACAO, USUARIO_ALTERACAO) VALUES ('
                  + N'''' + o.ORIGEM + N''', ' + CONVERT(NVARCHAR(12), o.NUM) + N', ''' + o.UNIDADE + N''', '
                  + ISNULL(CONVERT(NVARCHAR(12), o.EMP_VINCULADA), N'NULL') + N', '
                  + ISNULL(CONVERT(NVARCHAR(12), o.PARCEIRO), N'NULL') + N', '
@@ -2214,6 +2268,7 @@ BEGIN
                  + CONVERT(NVARCHAR(1), o.IGNORAR_LINHA) + N', '
                  + N'N''' + REPLACE(o.MOTIVO, N'''', N'''''') + N''', '
                  + ISNULL(CONVERT(NVARCHAR(70), o.HASH_ACCESS, 1), N'NULL') + N', '
+                 + ISNULL(CONVERT(NVARCHAR(12), o.LOTE), N'NULL') + N', '
                  + N'''' + CONVERT(NVARCHAR(19), o.DT_CRIACAO, 120) + N''', N''' + REPLACE(o.USUARIO_CRIACAO, N'''', N'''''') + N''', '
                  + ISNULL(N'''' + CONVERT(NVARCHAR(19), o.DT_ALTERACAO, 120) + N'''', N'NULL') + N', '
                  + ISNULL(N'N''' + REPLACE(o.USUARIO_ALTERACAO, N'''', N'''''') + N'''', N'NULL') + N');'

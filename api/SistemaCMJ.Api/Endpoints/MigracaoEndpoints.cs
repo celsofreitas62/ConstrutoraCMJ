@@ -93,7 +93,12 @@ public static class MigracaoEndpoints
             if (!resultado.Bool("SUCESSO"))
                 return Resposta.DeGravacao(resultado);
 
-            var conferencia = await ConferirAsync(unidade, usuario, banco, http.RequestAborted);
+            // o documento gravado vem primeiro; depois, o lote de destino de uma linha trocada de lote
+            var conferencia = await banco.ExecutarAsync("MIG.MIG_Caso_Conferir", new Dictionary<string, object?>
+            {
+                ["IdUsuario"] = usuario.IdUsuario,
+                ["Unidade"] = unidade
+            }, usuario, http.RequestAborted);
             return Resposta.Ok(conferencia, resultado.Texto("MENSAGEM"));
         });
 

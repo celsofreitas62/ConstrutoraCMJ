@@ -38,6 +38,8 @@
                         (impressão digital da linha ou do documento no momento
                         da correção) e MIG.Caso.REVISAR (texto do aviso quando
                         o Access mudou ou apagou o que foi corrigido).
+    v1.3 (18/11/2026) - Caso_Correcao_Linha.LOTE: troca do lote da linha pela
+                        tela (0 = sai do lote; NULL = mantém o do Access).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -162,6 +164,8 @@ IF COL_LENGTH(N'MIG.Caso_Correcao', N'HASH_ACCESS') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao] ADD HASH_ACCESS VARBINARY(32) NULL;
 IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'HASH_ACCESS') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD HASH_ACCESS VARBINARY(32) NULL;
+IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'LOTE') IS NULL
+    ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD LOTE INT NULL CONSTRAINT CK_Caso_Correcao_Linha_LOTE CHECK (LOTE >= 0);
 GO
 
 -- auditoria das correções feitas pela tela (quem, quando, antes e depois)

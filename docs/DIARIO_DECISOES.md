@@ -123,3 +123,5 @@
 - **18/11/2026**: pedido do Celso: "selecionar todos" na tela de casos para facilitar a Renata. Feitos os dois: ações em lote na lista (ignorar, arquivo morto, desfazer, conferir) e marcar todas as linhas (Ignorar/Confirmado) no documento aberto. Seção 13 do `Migracao_Movimento.md`.
 
 - **18/11/2026**: proteção das telas no cliente contra troca por versão falsa (pedido do Celso). Decidido: **telas e ajuda embutidas no executável** na publicação de produção (opção 1); no desenvolvimento continuam soltas em `wwwroot`. Pasta do sistema no servidor só com gravação para o admin e a conta do serviço. **Assinatura digital das telas dispensada**, por ser redundante: sem arquivos soltos, trocar uma tela exige trocar o executável inteiro. Limite conhecido: quem tem administrador do Windows e conhecimento técnico pode trocar o executável; cobre-se com o contrato (licença de uso). CLAUDE.md seções 2 e 3 (item 8) atualizadas.
+
+- **18/11/2026**: autorizada pelo Celso a troca do número do lote na tela de casos (pedido da Renata). Seção 14 do `Migracao_Movimento.md`.

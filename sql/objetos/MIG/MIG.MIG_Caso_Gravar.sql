@@ -29,6 +29,9 @@
     v1.1 (18/11/2026) - Guarda a impressão digital do Access (HASH_ACCESS) da
                         linha ou do documento; gravar de novo um caso marcado
                         "Revisar" atualiza a impressão e tira o aviso.
+    v1.2 (18/11/2026) - Troca de lote ($.lote): 0 tira a linha do lote; outro
+                        número precisa ser um lote que existe no Access; vazio
+                        mantém o do Access.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'IGNORAR', @Motivo = N'Lançado em dobro no Access';
@@ -85,12 +88,14 @@ BEGIN
             SET @EtapaAtual = 'Leitura das linhas';
             SELECT j.origem AS ORIGEM, j.num AS NUM, j.emp AS EMP, j.parceiro AS PARCEIRO, j.conta AS CONTA, j.plano AS PLANO,
                    j.dtMovto AS DT_MOVTO, j.dtVencto AS DT_VENCTO, j.dtPagto AS DT_PAGTO,
-                   ISNULL(j.debito, 0) AS DEB, ISNULL(j.credito, 0) AS CRE, ISNULL(j.confirmado, 0) AS CONF, ISNULL(j.ignorar, 0) AS IGN
+                   ISNULL(j.debito, 0) AS DEB, ISNULL(j.credito, 0) AS CRE, ISNULL(j.confirmado, 0) AS CONF, ISNULL(j.ignorar, 0) AS IGN,
+                   j.lote AS LOTE
             INTO #J
             FROM OPENJSON(@LinhasJson) WITH (
                     origem VARCHAR(20) '$.origem', num INT '$.num', emp INT '$.emp', parceiro INT '$.parceiro', conta INT '$.conta',
                     plano INT '$.plano', dtMovto DATE '$.dtMovto', dtVencto DATE '$.dtVencto', dtPagto DATE '$.dtPagto',
-                    debito DECIMAL(18,2) '$.debito', credito DECIMAL(18,2) '$.credito', confirmado BIT '$.confirmado', ignorar BIT '$.ignorar') j;
+                    debito DECIMAL(18,2) '$.debito', credito DECIMAL(18,2) '$.credito', confirmado BIT '$.confirmado', ignorar BIT '$.ignorar',
+                    lote INT '$.lote') j;
 
             IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM AND m.UNIDADE = @Unidade AND m.DESTINO = 'SISTEMA'))
                 SET @Recusa = N'Uma das linhas não pertence a este documento. Atualize a tela.';
@@ -110,6 +115,12 @@ BEGIN
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
                                          WHERE j.PARCEIRO > 1 AND j.PARCEIRO <> ISNULL(m.PARCEIRO, 0) AND NOT EXISTS (SELECT 1 FROM MIG.Access_Parceiros p WHERE TRY_CONVERT(INT, p.CodigoParceiro) = j.PARCEIRO))
                 SET @Recusa = N'Pessoa não encontrada no cadastro do Access.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.LOTE < 0)
+                SET @Recusa = N'Lote inválido: use 0 para tirar a linha do lote.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
+                                         WHERE j.LOTE > 0 AND j.LOTE <> m.LOTE
+                                           AND NOT EXISTS (SELECT 1 FROM MIG.Movimento x WHERE x.LOTE = j.LOTE AND x.DESTINO = 'SISTEMA'))
+                SET @Recusa = N'Lote não encontrado no Access. Confira o número do lote.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB < 0 OR j.CRE < 0)
                 SET @Recusa = N'Valor não pode ser negativo.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB > 0 AND j.CRE > 0)
@@ -137,7 +148,8 @@ BEGIN
                    CASE WHEN j.DEB = ISNULL(m.VALOR_DEBITO, 0)  THEN NULL ELSE j.DEB END AS VALOR_DEBITO,
                    CASE WHEN j.CRE = ISNULL(m.VALOR_CREDITO, 0) THEN NULL ELSE j.CRE END AS VALOR_CREDITO,
                    CASE WHEN j.CONF = m.CONFIRMADO THEN NULL ELSE j.CONF END AS CONFIRMADO,
-                   j.IGN AS IGNORAR_LINHA, m.HASH_CONTEUDO AS HASH
+                   j.IGN AS IGNORAR_LINHA, m.HASH_CONTEUDO AS HASH,
+                   CASE WHEN j.LOTE IS NULL OR j.LOTE = m.LOTE THEN NULL ELSE j.LOTE END AS LOTE
             INTO #C
             FROM #J j
             INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM;
@@ -145,7 +157,7 @@ BEGIN
             DELETE FROM #C
             WHERE EMP_VINCULADA IS NULL AND PARCEIRO IS NULL AND CONTA IS NULL AND PLANO3 IS NULL
               AND DT_MOVTO IS NULL AND DT_VENCTO IS NULL AND DT_PAGTO IS NULL
-              AND VALOR_DEBITO IS NULL AND VALOR_CREDITO IS NULL AND CONFIRMADO IS NULL AND IGNORAR_LINHA = 0;
+              AND VALOR_DEBITO IS NULL AND VALOR_CREDITO IS NULL AND CONFIRMADO IS NULL AND IGNORAR_LINHA = 0 AND LOTE IS NULL;
             SELECT @Qtd = COUNT(*) FROM #C;
 
             IF @Qtd > 0 AND LEN(@Motivo) < 5
@@ -168,7 +180,7 @@ BEGIN
                SET o.EMP_VINCULADA = c.EMP_VINCULADA, o.PARCEIRO = c.PARCEIRO, o.CONTA = c.CONTA, o.PLANO3 = c.PLANO3,
                    o.DT_MOVTO = c.DT_MOVTO, o.DT_VENCTO = c.DT_VENCTO, o.DT_PAGTO = c.DT_PAGTO,
                    o.VALOR_DEBITO = c.VALOR_DEBITO, o.VALOR_CREDITO = c.VALOR_CREDITO, o.CONFIRMADO = c.CONFIRMADO,
-                   o.IGNORAR_LINHA = c.IGNORAR_LINHA, o.MOTIVO = @Motivo, o.HASH_ACCESS = c.HASH,
+                   o.IGNORAR_LINHA = c.IGNORAR_LINHA, o.MOTIVO = @Motivo, o.HASH_ACCESS = c.HASH, o.LOTE = c.LOTE,
                    o.DT_ALTERACAO = SYSDATETIME(), o.USUARIO_ALTERACAO = @Usuario
             FROM MIG.Caso_Correcao_Linha o
             INNER JOIN #C c ON c.ORIGEM = o.ORIGEM AND c.NUM = o.NUM
@@ -180,12 +192,12 @@ BEGIN
                    AND ISNULL(o.VALOR_DEBITO, -1) = ISNULL(c.VALOR_DEBITO, -1) AND ISNULL(o.VALOR_CREDITO, -1) = ISNULL(c.VALOR_CREDITO, -1)
                    AND ISNULL(CONVERT(TINYINT, o.CONFIRMADO), 9) = ISNULL(CONVERT(TINYINT, c.CONFIRMADO), 9)
                    AND o.IGNORAR_LINHA = c.IGNORAR_LINHA AND o.MOTIVO = @Motivo
-                   AND ISNULL(o.HASH_ACCESS, 0x) = ISNULL(c.HASH, 0x));
+                   AND ISNULL(o.HASH_ACCESS, 0x) = ISNULL(c.HASH, 0x) AND ISNULL(o.LOTE, -1) = ISNULL(c.LOTE, -1));
 
             INSERT INTO MIG.Caso_Correcao_Linha (ORIGEM, NUM, UNIDADE, EMP_VINCULADA, PARCEIRO, CONTA, PLANO3, DT_MOVTO, DT_VENCTO, DT_PAGTO,
-                                                 VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, USUARIO_CRIACAO)
+                                                 VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, LOTE, USUARIO_CRIACAO)
             SELECT c.ORIGEM, c.NUM, @Unidade, c.EMP_VINCULADA, c.PARCEIRO, c.CONTA, c.PLANO3, c.DT_MOVTO, c.DT_VENCTO, c.DT_PAGTO,
-                   c.VALOR_DEBITO, c.VALOR_CREDITO, c.CONFIRMADO, c.IGNORAR_LINHA, @Motivo, c.HASH, @Usuario
+                   c.VALOR_DEBITO, c.VALOR_CREDITO, c.CONFIRMADO, c.IGNORAR_LINHA, @Motivo, c.HASH, c.LOTE, @Usuario
             FROM #C c
             WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.ORIGEM = c.ORIGEM AND o.NUM = c.NUM);
             COMMIT TRANSACTION;

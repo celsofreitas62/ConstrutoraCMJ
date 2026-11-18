@@ -19,6 +19,7 @@
                         e arquivo das correções para a instalação.
     v1.3 (18/11/2026) - Ações em lote ("selecionar todos"): ignorar, conferir e
                         desfazer vários documentos de uma vez.
+    v1.4 (18/11/2026) - Troca do lote de uma linha.
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -169,6 +170,38 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
   CONVERT(NVARCHAR(10), (SELECT COUNT(*) FROM #Exp))),
  (N'Arquivo traz a linha corrigida com a impressão digital', N'1',
   CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM #Exp e WHERE e.LINHA LIKE N'%' + CONVERT(NVARCHAR(12), @NumMudou) + N'%' AND e.LINHA LIKE N'%0x01%')));
+
+-- 4d) Troca de lote: a primeira linha vai para um lote que se encaixa
+DECLARE @LoteDest INT = (SELECT TOP (1) TRY_CONVERT(INT, SUBSTRING(d.UNIDADE, 3, 20)) FROM MIG.Linha_Destino d
+                         WHERE d.REGRA = 'LOTE' AND d.UNIDADE NOT IN (SELECT c.UNIDADE FROM MIG.Caso c) ORDER BY d.UNIDADE);
+DECLARE @NumLote INT = (SELECT MIN(m.NUM) FROM MIG.Movimento m WHERE m.UNIDADE = @U AND m.DESTINO = 'SISTEMA');
+DECLARE @JsonL NVARCHAR(MAX) = (SELECT m.ORIGEM AS origem, m.NUM AS num, m.EMP_VINCULADA AS emp, ISNULL(m.PARCEIRO, 0) AS parceiro, m.CONTA AS conta, m.PLANO3 AS plano,
+                                       m.DT_MOVTO AS dtMovto, m.DT_VENCTO AS dtVencto, m.DT_PAGTO AS dtPagto, m.VALOR_DEBITO AS debito, m.VALOR_CREDITO AS credito,
+                                       m.CONFIRMADO AS confirmado, CAST(0 AS BIT) AS ignorar,
+                                       CASE WHEN m.NUM = @NumLote THEN 999999999 ELSE m.LOTE END AS lote
+                                FROM MIG.Movimento m WHERE m.UNIDADE = @U AND m.DESTINO = 'SISTEMA' FOR JSON PATH);
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'CORRIGIR', @Motivo = N'HML 03c2c: troca de lote', @LinhasJson = @JsonL;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES (N'Lote inexistente é recusado', N'0', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret));
+SET @JsonL = REPLACE(@JsonL, N'"lote":999999999', N'"lote":' + CONVERT(NVARCHAR(12), @LoteDest));
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'CORRIGIR', @Motivo = N'HML 03c2c: troca de lote', @LinhasJson = @JsonL;
+DELETE FROM #Conf;
+INSERT INTO #Conf EXEC MIG.MIG_Caso_Conferir @IdUsuario = @IdCelso, @Unidade = @U;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Troca de lote grava', N'1', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret)),
+ (N'Correção guarda o lote novo', CONVERT(NVARCHAR(12), @LoteDest), (SELECT CONVERT(NVARCHAR(12), o.LOTE) FROM MIG.Caso_Correcao_Linha o WHERE o.ORIGEM = (SELECT TOP (1) m.ORIGEM FROM MIG.Movimento m WHERE m.UNIDADE = @U AND m.NUM = @NumLote) AND o.NUM = @NumLote)),
+ (N'Conferir traz o documento e o lote de destino', N'2|1',
+  CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM #Conf)) + N'|' + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM #Conf c WHERE c.UNIDADE = 'L:' + CONVERT(VARCHAR(12), @LoteDest))));
+-- volta: grava de novo sem a troca e confere o lote de destino (sai da lista de casos)
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'CORRIGIR', @Motivo = N'HML 03c2c: teste de correção', @LinhasJson = @Json;
+DECLARE @UDest VARCHAR(40) = 'L:' + CONVERT(VARCHAR(12), @LoteDest);
+DELETE FROM #Conf;
+INSERT INTO #Conf EXEC MIG.MIG_Movimento_Transformar @Unidade = @UDest;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Sem a troca, o lote de destino volta a se encaixar', N'LOTE|0', (SELECT TOP (1) REGRA FROM #Conf) + N'|' + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso c WHERE c.UNIDADE = @UDest))),
+ (N'Sem a troca, nenhuma correção com lote', N'0', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = @U AND o.LOTE IS NOT NULL)));
 
 -- 5) Recusas
 DELETE FROM #Ret;

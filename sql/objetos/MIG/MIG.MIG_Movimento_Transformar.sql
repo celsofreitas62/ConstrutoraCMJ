@@ -52,6 +52,11 @@
     v1.3 (18/11/2026) - @Unidades (lista JSON): confere vários documentos de uma
                         vez (ações em lote da tela de casos); uma linha por
                         documento no retorno.
+    v1.4 (18/11/2026) - Troca de lote pela tela (Caso_Correcao_Linha.LOTE): a
+                        linha passa para o documento do lote novo (0 = sai do
+                        lote: avulso ou venda); padrão de contas recalculado nos
+                        documentos afetados; a conferência inclui o documento
+                        de destino (depois dos pedidos).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
@@ -90,7 +95,7 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM MIG.DePara_Centro) OR NOT EXISTS (SELECT 1 FROM MIG.DePara_Plano)
             THROW 50001, N'Rode antes o MIG.MIG_Cadastros_Processar.', 1;
         -- documentos escolhidos (tela de casos): um (@Unidade) ou vários (@Unidades)
-        CREATE TABLE #Sel (UNIDADE VARCHAR(40) NOT NULL PRIMARY KEY);
+        CREATE TABLE #Sel (UNIDADE VARCHAR(40) NOT NULL PRIMARY KEY, PEDIDO BIT NOT NULL DEFAULT (1));
         IF @Unidade IS NOT NULL
             INSERT INTO #Sel (UNIDADE) VALUES (@Unidade);
         IF ISJSON(ISNULL(@Unidades, N'')) = 1
@@ -98,6 +103,18 @@ BEGIN
             SELECT DISTINCT LEFT(j.value, 40) FROM OPENJSON(@Unidades) j
             WHERE j.value IS NOT NULL AND NOT EXISTS (SELECT 1 FROM #Sel s WHERE s.UNIDADE = LEFT(j.value, 40));
         DECLARE @Filtrar BIT = CASE WHEN EXISTS (SELECT 1 FROM #Sel) THEN 1 ELSE 0 END;
+        -- linha trocada de lote: confere também o documento para onde ela foi
+        INSERT INTO #Sel (UNIDADE, PEDIDO)
+        SELECT DISTINCT d.UNIDADE, 0
+        FROM MIG.Caso_Correcao_Linha o
+        INNER JOIN MIG.Movimento m ON m.ORIGEM = o.ORIGEM AND m.NUM = o.NUM
+        CROSS APPLY (SELECT CAST(CASE WHEN o.LOTE IS NULL THEN m.UNIDADE
+                                         WHEN o.LOTE > 0 THEN 'L:' + CONVERT(VARCHAR(20), o.LOTE)
+                                         WHEN m.LINK_VENDA > 0 THEN 'V:' + CONVERT(VARCHAR(20), m.LINK_VENDA)
+                                         ELSE 'A:' + CASE m.ORIGEM WHEN 'ACCESS_MOVTO' THEN 'M' ELSE 'Q' END + ':' + CONVERT(VARCHAR(20), m.NUM) END AS VARCHAR(40)) AS UNIDADE) d
+        WHERE @Filtrar = 1 AND o.LOTE IS NOT NULL
+          AND o.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s)
+          AND NOT EXISTS (SELECT 1 FROM #Sel s WHERE s.UNIDADE = d.UNIDADE);
         IF (@Unidade IS NOT NULL OR @Unidades IS NOT NULL) AND @Filtrar = 0
             THROW 50001, N'Nenhum documento informado para conferir.', 1;
         IF @Filtrar = 1 AND ISNULL(@Executar, 0) = 1
@@ -121,7 +138,8 @@ BEGIN
                      ORDER BY CASE WHEN x.CODIGO_ACCESS = h.CodHistorico THEN 0 ELSE 1 END) f
         WHERE h.CodHistorico IS NOT NULL;
 
-        SELECT m.ORIGEM, m.NUM, m.UNIDADE, m.PADRAO, m.CONTRATO, m.LINK_VENDA, m.IMOVEL,
+        SELECT m.ORIGEM, m.NUM, eu.UNIDADE, m.PADRAO, m.CONTRATO, m.LINK_VENDA, m.IMOVEL,
+               m.UNIDADE AS UNIDADE_ACCESS, CAST(CASE WHEN o.LOTE IS NULL THEN 0 ELSE 1 END AS BIT) AS MOVIDA,
                COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA) AS EV,
                COALESCE(o.PARCEIRO, m.PARCEIRO)           AS PAR,
                COALESCE(o.CONTA, m.CONTA)                 AS CONTA,
@@ -143,8 +161,12 @@ BEGIN
         INTO #L
         FROM MIG.Movimento m
         LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
+        CROSS APPLY (SELECT CAST(CASE WHEN o.LOTE IS NULL THEN m.UNIDADE
+                                         WHEN o.LOTE > 0 THEN 'L:' + CONVERT(VARCHAR(20), o.LOTE)
+                                         WHEN m.LINK_VENDA > 0 THEN 'V:' + CONVERT(VARCHAR(20), m.LINK_VENDA)
+                                         ELSE 'A:' + CASE m.ORIGEM WHEN 'ACCESS_MOVTO' THEN 'M' ELSE 'Q' END + ':' + CONVERT(VARCHAR(20), m.NUM) END AS VARCHAR(40)) AS UNIDADE) eu
         WHERE m.DESTINO = 'SISTEMA'
-          AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
+          AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s) OR eu.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
           AND ISNULL(o.IGNORAR_LINHA, 0) = 0
           AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao c WHERE c.UNIDADE = m.UNIDADE);
 
@@ -202,6 +224,19 @@ BEGIN
         INTO #U
         FROM #L l
         GROUP BY l.UNIDADE;
+
+        -- documentos que ganharam ou perderam linha por troca de lote: padrão de contas refeito
+        WITH Afetadas AS (
+            SELECT l.UNIDADE FROM #L l WHERE l.MOVIDA = 1
+            UNION SELECT l.UNIDADE_ACCESS FROM #L l WHERE l.MOVIDA = 1),
+        Pares AS (
+            SELECT DISTINCT l.UNIDADE, CONVERT(VARCHAR(20), l.TC + '-' + l.LADO) AS PAR
+            FROM #L l INNER JOIN Afetadas a ON a.UNIDADE = l.UNIDADE)
+        UPDATE u
+           SET u.PADRAO = LEFT(LEFT(u.UNIDADE, 1) + '|' + p.PADRAO, 200)
+        FROM #U u
+        INNER JOIN (SELECT x.UNIDADE, STRING_AGG(x.PAR, '|') WITHIN GROUP (ORDER BY x.PAR) AS PADRAO FROM Pares x GROUP BY x.UNIDADE) p
+                ON p.UNIDADE = u.UNIDADE;
 
         UPDATE u
            SET u.REGRA = CASE
@@ -450,7 +485,7 @@ BEGIN
             LEFT JOIN #CasoNovo n ON n.UNIDADE = s.UNIDADE
             LEFT JOIN #U u ON u.UNIDADE = s.UNIDADE
             LEFT JOIN #Rev r ON r.UNIDADE = s.UNIDADE
-            ORDER BY s.UNIDADE;
+            ORDER BY s.PEDIDO DESC, s.UNIDADE;
             DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
             RETURN;
         END;
