@@ -65,6 +65,8 @@ Usuários: **no máximo 3 simultâneos** (raro). Uso interno, na rede da empresa
 - Envio SMTP com MailKit (UTF-8 correto, anexos); bibliotecas maduras para CNAB e PDF.
 - Publica um único executável; o HTML/JS fica em `wwwroot` do próprio serviço.
 
+**Telas embutidas no executável** (decidido em 18/11/2026): na publicação de produção, todo o `wwwroot` (HTML, CSS, JS, imagens e a ajuda) vai **dentro do `.exe`** (recursos embutidos, servidos pela própria API). No servidor do cliente não existe pasta de telas para alguém trocar por uma versão falsa; atualizar = trocar o executável. No desenvolvimento as telas continuam soltas em `wwwroot` (edição ao vivo). Pasta do sistema no servidor com permissão de gravação só para o administrador e a conta do serviço. Assinatura digital das telas **dispensada** (redundante com as telas embutidas).
+
 Node.js foi avaliado e descartado: o .NET é mais forte para o que a API faz além de ponte (agendador, SMTP, CNAB, PDF) e é nativo no Windows Server.
 
 **Princípio**: a lógica de negócio fica no **SQL** (procedures), como no padrão do autor. A API não decide regra de negócio; ela autentica, valida formato, chama a procedure e devolve o resultado (`SUCESSO` / `MENSAGEM` / dados).
@@ -109,7 +111,7 @@ Schemas aprovados (14/11/2026): `CAD`, `BANCO`, `IMOB`, `VENDA`, `FIN`, `COBR`, 
 8. **Menu do sistema (pedido do Celso, 15/11/2026; revisto em 16/11/2026: árvore que abre e fecha no lugar, caminho sempre visível)**: se possível, **menu lateral em drill-down**: barra à esquerda com os módulos; clicar no módulo abre os itens/telas dele (e subníveis, se houver) na própria barra, com volta ao nível anterior. Só aparecem os módulos liberados na licença (3.5) e os itens permitidos ao usuário (3.6). Definir o desenho na fase das telas (fase 4, Cadastros).
 9. **Ajuda (requisito do Celso, 13/11/2026)**: o sistema terá **Ajuda geral** (visão do sistema, primeiros passos, rotinas do dia a dia, perguntas frequentes, glossário: nosso número, remessa, retorno etc.) e **Ajuda em cada página** (botão "?" fixo em toda tela, abrindo um painel lateral com: para que serve a tela, como preencher cada campo, o que cada botão faz, cuidados e erros comuns). Regras:
    - Conteúdo em linguagem simples, escrito junto com cada tela: **nenhuma página é considerada pronta sem a sua ajuda**.
-   - Textos em arquivos próprios (um por página, ex.: `wwwroot/ajuda/fin-titulos.html`), separados do código da tela, para poder corrigir a ajuda sem mexer no sistema.
+   - Textos em arquivos próprios (um por página, ex.: `wwwroot/ajuda/fin-titulos.html`), separados do código da tela. **Desde 18/11/2026 a ajuda é embutida no executável junto com as telas** (seção 2, "Telas embutidas"): corrigir a ajuda exige publicar de novo.
    - Dica curta (tooltip) nos campos menos óbvios; a ajuda da página leva ao tópico certo da ajuda geral.
    - A ajuda geral tem busca por palavra.
 
