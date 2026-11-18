@@ -147,7 +147,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       corpo.append(tr);
     }
     const total = lista.reduce((s, c) => s + Number(c.VALOR_DEBITO || 0), 0);
-    $('contagem').textContent = lista.length + ' de ' + casos.length + ' documentos · débitos R$ ' + moeda.format(total);
+    $('contagem').textContent = lista.length + ' de ' + casos.length + ' documentos · débitos R$ ' + moeda.format(total)
+      + (lista.length ? ' · clique num documento para abrir as linhas' : '');
   }
 
   $('filtros').addEventListener('submit', (e) => e.preventDefault());
