@@ -149,6 +149,7 @@ ORDEM_03C2B = [
     'objetos/MIG/MIG.MIG_Movimento_Conferencia_Listar.sql',
     'objetos/MIG/MIG.MIG_Caso_Listar.sql', 'objetos/MIG/MIG.MIG_Caso_Obter.sql', 'objetos/MIG/MIG.MIG_Caso_Opcoes.sql',
     'objetos/MIG/MIG.MIG_Caso_Gravar.sql', 'objetos/MIG/MIG.MIG_Caso_Conferir.sql', 'objetos/MIG/Carga_MIG_Tela_Casos.sql',
+    'objetos/MIG/MIG.MIG_Arquivo_Morto_Processar.sql',
 ]
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B}[PARTE]

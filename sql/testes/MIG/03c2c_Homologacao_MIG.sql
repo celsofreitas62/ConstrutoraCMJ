@@ -14,6 +14,7 @@
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos).
+    v1.1 (18/11/2026) - Arquivo morto recebe o documento marcado na tela.
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -42,6 +43,8 @@ CREATE TABLE #Caso  (UNIDADE VARCHAR(40), REGRA_ATUAL VARCHAR(15), MOTIVO NVARCH
                      ACAO_USUARIO NVARCHAR(100), ACAO_DT DATETIME2(0), CORRECAO_MOTIVO NVARCHAR(400), LINHAS_JSON NVARCHAR(MAX));
 CREATE TABLE #Opc   (OBRAS NVARCHAR(MAX), CONTAS NVARCHAR(MAX), PLANOS NVARCHAR(MAX), PESSOAS NVARCHAR(MAX));
 CREATE TABLE #Conf  (UNIDADE VARCHAR(40), REGRA VARCHAR(15), MOTIVO NVARCHAR(400), DETALHE NVARCHAR(400));
+DROP TABLE IF EXISTS #AM;
+CREATE TABLE #AM    (ORIGEM_ACCESS VARCHAR(20), LINHAS INT, DEBITOS DECIMAL(18,2), CREDITOS DECIMAL(18,2), DE DATE, ATE DATE, SEM_PESSOA INT, SEM_CONTA INT);
 
 DECLARE @IdCelso    INT = (SELECT u.ID_USUARIO FROM SIS.Usuario u WHERE u.LOGIN = 'celso');
 DECLARE @IdRenata   INT = (SELECT u.ID_USUARIO FROM SIS.Usuario u WHERE u.LOGIN = 'renata');
@@ -141,12 +144,26 @@ DELETE FROM #Ret;
 INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = 'X:NAO-EXISTE', @Acao = 'IGNORAR', @Motivo = N'HML 03c2c: inexistente';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES (N'Documento inexistente é recusado', N'0', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret));
 
--- 6) Desfazer: volta a ser como está no Access
+-- 6) Arquivo morto: o documento marcado na tela entra no FIN.Arquivo_Morto
+DECLARE @AmAntes INT = (SELECT COUNT(*) FROM FIN.Arquivo_Morto);
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'ARQUIVO_MORTO', @Motivo = N'HML 03c2c: teste de arquivo morto';
+INSERT INTO #AM EXEC MIG.MIG_Arquivo_Morto_Processar;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Marcar para o arquivo morto grava', N'1', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret)),
+ (N'Arquivo morto recebe as linhas do documento', CONVERT(NVARCHAR(10), @AmAntes + (SELECT COUNT(*) FROM MIG.Movimento m WHERE m.UNIDADE = @U AND m.DESTINO = 'SISTEMA')),
+  CONVERT(NVARCHAR(10), (SELECT COUNT(*) FROM FIN.Arquivo_Morto))),
+ (N'Observação traz o motivo da tela', N'1', CASE WHEN EXISTS (SELECT 1 FROM FIN.Arquivo_Morto a WHERE a.OBSERVACAO LIKE N'%HML 03c2c: teste de arquivo morto%') THEN N'1' ELSE N'0' END);
+
+-- 7) Desfazer: volta a ser como está no Access
 DELETE FROM #Ret;
 INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'DESFAZER';
 DELETE FROM #Conf;
 INSERT INTO #Conf EXEC MIG.MIG_Caso_Conferir @IdUsuario = @IdCelso, @Unidade = @U;
+DELETE FROM #AM;
+INSERT INTO #AM EXEC MIG.MIG_Arquivo_Morto_Processar;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Arquivo morto volta ao tamanho de antes', CONVERT(NVARCHAR(10), @AmAntes), CONVERT(NVARCHAR(10), (SELECT COUNT(*) FROM FIN.Arquivo_Morto))),
  (N'Desfazer grava', N'1', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret)),
  (N'Nenhuma correção sobrou', N'0', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = @U) + (SELECT COUNT(*) FROM MIG.Caso_Correcao x WHERE x.UNIDADE = @U))),
  (N'Caso volta a ser caso, com o mesmo motivo', N'CASO|' + @MotivoAntes, (SELECT c.REGRA_ATUAL + N'|' + c.MOTIVO FROM MIG.Caso c WHERE c.UNIDADE = @U)),

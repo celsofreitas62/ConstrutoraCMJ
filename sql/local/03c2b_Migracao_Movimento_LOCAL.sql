@@ -24,6 +24,9 @@ GO
 SELECT 'TRIGGERS_ANTIGAS' AS GRADE, COUNT(*) AS QTD FROM sys.sql_modules m INNER JOIN sys.triggers t ON t.object_id = m.object_id
 WHERE t.name LIKE N'tg[_]%[_]Auditoria' AND m.definition LIKE N'%FROM inserted x WHERE%';
 GO
+-- arquivo morto de novo: recebe os documentos que a tela de casos mandou para lá
+EXEC MIG.MIG_Arquivo_Morto_Processar;
+GO
 EXEC MIG.MIG_Movimento_Transformar @Executar = 0;
 GO
 EXEC MIG.MIG_Movimento_Transformar @Executar = 1;
