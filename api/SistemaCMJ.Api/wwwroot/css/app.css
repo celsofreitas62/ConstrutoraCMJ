@@ -251,7 +251,8 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .tabela tr.selecionada td { background: #fdeee9; }
 
 /* ---------- Casos da migração (etapa 03c2) ---------- */
-.resumo-casos { display: flex; flex-direction: column; gap: 8px; padding: 14px; }
+.s-filtro-situacao { flex: 1 1 100%; }
+.s-filtro-situacao .pilula { cursor: pointer; }
 .caso-detalhe { margin-top: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .caso-detalhe h2 { margin: 0 0 4px; font-size: 17px; }
 .tabela-casos td { vertical-align: top; }

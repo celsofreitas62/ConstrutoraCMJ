@@ -27,13 +27,13 @@
         <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
       </div>
 
-      <div class="cartao resumo-casos">
-        <div class="suave">As etiquetas filtram a lista. Para corrigir, clique no documento na lista abaixo.</div>
-        <div class="etiquetas" id="situacoes" role="group" aria-label="Filtrar por situação"></div>
-        <div class="etiquetas" id="motivos" role="group" aria-label="Filtrar por motivo"></div>
-      </div>
-
       <form class="cartao filtros" id="filtros" role="search">
+        <div class="campo s-filtro-situacao">Situação
+          <div class="etiquetas" id="situacoes" role="group" aria-label="Filtrar por situação"></div>
+        </div>
+        <label data-dica="Mostra só os documentos com este motivo. Entre parênteses, quantos documentos." class="campo f-3">Motivo
+          <select id="motivo-filtro"><option value="">Todos os motivos</option></select>
+        </label>
         <label data-dica="Parte do histórico, da empresa ou o número do documento (lote, venda ou número do Access). A lista filtra na hora." class="campo f-3">Buscar
           <input type="search" id="busca" maxlength="100" placeholder="Ex.: lote 1520, cimento, Orion" autocomplete="off">
         </label>

@@ -99,17 +99,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       sit.append(pilula(nome + ' (' + n + ')', filtroSituacao === cod, null, () => { filtroSituacao = cod; desenhar(); }));
     }
     const porMotivo = new Map();
-    for (const c of filtrados(false, true)) {
-      const m = porMotivo.get(c.MOTIVO) || { n: 0, v: 0 };
-      m.n++; m.v += Number(c.VALOR_DEBITO || 0) + Number(c.VALOR_CREDITO || 0);
-      porMotivo.set(c.MOTIVO, m);
+    for (const c of filtrados(false, true)) porMotivo.set(c.MOTIVO, (porMotivo.get(c.MOTIVO) || 0) + 1);
+    if (filtroMotivo && !porMotivo.has(filtroMotivo)) porMotivo.set(filtroMotivo, 0);
+    const sel = $('motivo-filtro');
+    sel.replaceChildren(sel.options[0]);
+    for (const [motivo, n] of [...porMotivo.entries()].sort((a, b) => b[1] - a[1])) {
+      const o = Util.el('option', null, motivo + ' (' + n + ')');
+      o.value = motivo;
+      sel.append(o);
     }
-    const mot = $('motivos');
-    mot.replaceChildren(pilula('Todos os motivos', !filtroMotivo, null, () => { filtroMotivo = ''; desenhar(); }));
-    for (const [motivo, m] of [...porMotivo.entries()].sort((a, b) => b[1].n - a[1].n)) {
-      mot.append(pilula(motivo + ' (' + m.n + ')', filtroMotivo === motivo, 'Valor movimentado: R$ ' + moeda.format(m.v),
-        () => { filtroMotivo = filtroMotivo === motivo ? '' : motivo; desenhar(); }));
-    }
+    sel.value = filtroMotivo;
   }
 
   function desenhar() {
@@ -154,6 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('filtros').addEventListener('submit', (e) => e.preventDefault());
   $('busca').addEventListener('input', Util.atrasar(desenhar, 200));
   $('empresa').addEventListener('change', desenhar);
+  $('motivo-filtro').addEventListener('change', () => { filtroMotivo = $('motivo-filtro').value; desenhar(); });
   $('ano').addEventListener('change', desenhar);
   $('botao-atualizar').addEventListener('click', carregar);
 
