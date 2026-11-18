@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
-  Pacote      : 03c2 parte B - auditoria rápida em carga grande (SIS_Auditoria_Trigger_Gerar v1.1, vai para o MASTER) e transformação do movimento do Access em lançamento, parcela, baixa, movimento e transferência; casos e correções (schema MIG, NÃO vai para o MASTER)
+  Pacote      : 03c2 parte B - auditoria rápida em carga grande (SIS_Auditoria_Trigger_Gerar v1.1, vai para o MASTER) e transformação, tela de casos do movimento do Access em lançamento, parcela, baixa, movimento e transferência; casos e correções (schema MIG, NÃO vai para o MASTER)
   Banco       : SISTEMACMJ_LOCAL (somente desenvolvimento)
   Gerado em   : 18/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
                 na ordem da regra 59. NÃO EDITAR ESTE ARQUIVO: corrigir o
@@ -479,7 +479,11 @@ GO
   Descrição   : Etapa 03c2, parte B.
                 MIG.Caso                 documentos do Access (unidades: lote,
                                          venda ou avulso) que não se encaixam em
-                                         nenhuma regra; refeita a cada rodada.
+                                         nenhuma regra, mais os que já têm
+                                         correção da tela (REGRA_ATUAL mostra
+                                         como ficaram; MOTIVO_ORIGINAL guarda o
+                                         motivo da primeira vez). Atualizada a
+                                         cada rodada.
                 MIG.Caso_Correcao        decisão por documento, gravada pela
                                          tela de casos: IGNORAR (não migra) ou
                                          ARQUIVO_MORTO (vai para o arquivo morto).
@@ -497,6 +501,12 @@ GO
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, parte B).
+    v1.1 (18/11/2026) - Tela de casos: MIG.Caso ganha REGRA_ATUAL e
+                        MOTIVO_ORIGINAL; tabelas de correção ganham chave
+                        numérica (ID) e campos padrão de criação/alteração, para
+                        a auditoria (SIS.Auditoria) registrar quem corrigiu o
+                        quê; Caso_Correcao_Linha ganha UNIDADE. As tabelas de
+                        correção vazias no formato antigo são refeitas.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -520,15 +530,34 @@ GO
 IF COL_LENGTH(N'MIG.Caso', N'DETALHE') IS NULL
     ALTER TABLE [MIG].[Caso] ADD DETALHE NVARCHAR(400) NOT NULL CONSTRAINT DF_Caso_DETALHE DEFAULT (N'');
 GO
+IF COL_LENGTH(N'MIG.Caso', N'REGRA_ATUAL') IS NULL
+    ALTER TABLE [MIG].[Caso] ADD REGRA_ATUAL VARCHAR(15) NOT NULL CONSTRAINT DF_Caso_REGRA_ATUAL DEFAULT ('CASO');
+GO
+IF COL_LENGTH(N'MIG.Caso', N'MOTIVO_ORIGINAL') IS NULL
+    ALTER TABLE [MIG].[Caso] ADD MOTIVO_ORIGINAL NVARCHAR(400) NOT NULL CONSTRAINT DF_Caso_MOTIVO_ORIGINAL DEFAULT (N'');
+GO
+
+-- formato antigo (sem ID) e vazio: refaz (a auditoria precisa de chave numérica)
+IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NOT NULL AND COL_LENGTH(N'MIG.Caso_Correcao', N'ID_CASO_CORRECAO') IS NULL
+   AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao)
+    DROP TABLE [MIG].[Caso_Correcao];
+IF OBJECT_ID(N'[MIG].[Caso_Correcao_Linha]', N'U') IS NOT NULL AND COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'ID_CASO_CORRECAO_LINHA') IS NULL
+   AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha)
+    DROP TABLE [MIG].[Caso_Correcao_Linha];
+GO
 
 IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NULL
     CREATE TABLE [MIG].[Caso_Correcao]
     (
-        UNIDADE        VARCHAR(40)    NOT NULL CONSTRAINT PK_Caso_Correcao PRIMARY KEY,
-        ACAO           VARCHAR(15)    NOT NULL,
-        MOTIVO         NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caso_Correcao_MOTIVO  DEFAULT (N''),
-        USUARIO        NVARCHAR(100)  NOT NULL CONSTRAINT DF_Caso_Correcao_USUARIO DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
-        DT_DECISAO     DATETIME2(0)   NOT NULL CONSTRAINT DF_Caso_Correcao_DT      DEFAULT (SYSDATETIME()),
+        ID_CASO_CORRECAO   INT            IDENTITY(1,1) NOT NULL CONSTRAINT PK_Caso_Correcao PRIMARY KEY,
+        UNIDADE            VARCHAR(40)    NOT NULL,
+        ACAO               VARCHAR(15)    NOT NULL,
+        MOTIVO             NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caso_Correcao_MOTIVO DEFAULT (N''),
+        DT_CRIACAO         DATETIME2(0)   NOT NULL CONSTRAINT DF_Caso_Correcao_DT_CRIACAO DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO    NVARCHAR(100)  NOT NULL,
+        DT_ALTERACAO       DATETIME2(0)   NULL,
+        USUARIO_ALTERACAO  NVARCHAR(100)  NULL,
+        CONSTRAINT UQ_Caso_Correcao_UNIDADE UNIQUE (UNIDADE),
         CONSTRAINT CK_Caso_Correcao_ACAO CHECK (ACAO IN ('IGNORAR', 'ARQUIVO_MORTO'))
     );
 GO
@@ -536,25 +565,33 @@ GO
 IF OBJECT_ID(N'[MIG].[Caso_Correcao_Linha]', N'U') IS NULL
     CREATE TABLE [MIG].[Caso_Correcao_Linha]
     (
-        ORIGEM         VARCHAR(20)    NOT NULL,
-        NUM            INT            NOT NULL,
-        EMP_VINCULADA  INT            NULL,
-        PARCEIRO       INT            NULL,
-        CONTA          INT            NULL,
-        PLANO3         INT            NULL,
-        DT_MOVTO       DATE           NULL,
-        DT_VENCTO      DATE           NULL,
-        DT_PAGTO       DATE           NULL,
-        VALOR_DEBITO   DECIMAL(18,2)  NULL,
-        VALOR_CREDITO  DECIMAL(18,2)  NULL,
-        CONFIRMADO     BIT            NULL,
-        IGNORAR_LINHA  BIT            NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_IGN     DEFAULT (0),
-        MOTIVO         NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_MOTIVO  DEFAULT (N''),
-        USUARIO        NVARCHAR(100)  NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_USUARIO DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
-        DT_DECISAO     DATETIME2(0)   NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_DT      DEFAULT (SYSDATETIME()),
-        CONSTRAINT PK_Caso_Correcao_Linha PRIMARY KEY (ORIGEM, NUM),
+        ID_CASO_CORRECAO_LINHA INT        IDENTITY(1,1) NOT NULL CONSTRAINT PK_Caso_Correcao_Linha PRIMARY KEY,
+        ORIGEM             VARCHAR(20)    NOT NULL,
+        NUM                INT            NOT NULL,
+        UNIDADE            VARCHAR(40)    NOT NULL,
+        EMP_VINCULADA      INT            NULL,       -- NULL = mantém o valor do Access
+        PARCEIRO           INT            NULL,
+        CONTA              INT            NULL,
+        PLANO3             INT            NULL,
+        DT_MOVTO           DATE           NULL,
+        DT_VENCTO          DATE           NULL,
+        DT_PAGTO           DATE           NULL,
+        VALOR_DEBITO       DECIMAL(18,2)  NULL,
+        VALOR_CREDITO      DECIMAL(18,2)  NULL,
+        CONFIRMADO         BIT            NULL,
+        IGNORAR_LINHA      BIT            NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_IGN    DEFAULT (0),
+        MOTIVO             NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_MOTIVO DEFAULT (N''),
+        DT_CRIACAO         DATETIME2(0)   NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_DT_CRIACAO DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO    NVARCHAR(100)  NOT NULL,
+        DT_ALTERACAO       DATETIME2(0)   NULL,
+        USUARIO_ALTERACAO  NVARCHAR(100)  NULL,
+        CONSTRAINT UQ_Caso_Correcao_Linha UNIQUE (ORIGEM, NUM),
         CONSTRAINT CK_Caso_Correcao_Linha_VALOR CHECK (ISNULL(VALOR_DEBITO, 0) >= 0 AND ISNULL(VALOR_CREDITO, 0) >= 0)
     );
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[MIG].[Caso_Correcao_Linha]') AND name = N'IX_Caso_Correcao_Linha_UNIDADE')
+    CREATE NONCLUSTERED INDEX IX_Caso_Correcao_Linha_UNIDADE ON [MIG].[Caso_Correcao_Linha] (UNIDADE);
 GO
 
 IF OBJECT_ID(N'[MIG].[Linha_Destino]', N'U') IS NULL
@@ -586,6 +623,11 @@ IF OBJECT_ID(N'[MIG].[DePara_Venda]', N'U') IS NULL
         CONTRATO       VARCHAR(40)    NOT NULL,
         NUM_DOC        NVARCHAR(100)  NOT NULL
     );
+GO
+
+-- auditoria das correções feitas pela tela (quem, quando, antes e depois)
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'MIG.Caso_Correcao',       @Criar = 1;
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'MIG.Caso_Correcao_Linha', @Criar = 1;
 GO
 
 -- =============================================================================
@@ -620,6 +662,13 @@ GO
                 com data de pagamento = baixa não compensada (cheque); sem data
                 = parcela em aberto. "Somente integração" = lançamento só
                 contábil e baixa sem movimento no banco.
+                @Unidade (tela de casos, botão "Conferir"): classifica só aquele
+                documento, atualiza a linha dele em MIG.Caso e devolve uma
+                linha (UNIDADE, REGRA, MOTIVO, DETALHE); nada é gravado no
+                financeiro.
+                MIG.Caso guarda os casos e também os documentos que já têm
+                correção da tela (REGRA_ATUAL = como ficaram), para a tela
+                mostrar o que foi resolvido.
                 @Executar = 0 (padrão): só a prévia (classificação e números),
                 nada é gravado no financeiro. @Executar = 1: apaga a carga
                 anterior da migração (lotes de origem MIGRACAO) e grava de novo,
@@ -629,10 +678,14 @@ GO
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, parte B).
+    v1.1 (18/11/2026) - Tela de casos: parâmetro @Unidade (conferir um
+                        documento só); MIG.Caso atualizada por MERGE, mantendo
+                        os documentos corrigidos (REGRA_ATUAL, MOTIVO_ORIGINAL).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
     -- EXEC MIG.MIG_Movimento_Transformar @Executar = 1;   -- grava
+    -- EXEC MIG.MIG_Movimento_Transformar @Unidade = 'L:123'; -- confere um documento
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -641,7 +694,8 @@ GO
 CREATE OR ALTER PROCEDURE [MIG].[MIG_Movimento_Transformar]
     @Executar           BIT          = 0,
     @NomeCaixa          NVARCHAR(60) = N'Caixa',
-    @NomeCaixaContabil  NVARCHAR(60) = N'Caixa contábil'
+    @NomeCaixaContabil  NVARCHAR(60) = N'Caixa contábil',
+    @Unidade            VARCHAR(40)  = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -656,12 +710,14 @@ BEGIN
     DECLARE @Agora        DATETIME2(0) = SYSDATETIME();
 
     BEGIN TRY
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
 
         IF OBJECT_ID(N'MIG.Movimento', N'U') IS NULL
             THROW 50001, N'Rode antes o MIG.MIG_Movimento_Preparar.', 1;
         IF NOT EXISTS (SELECT 1 FROM MIG.DePara_Centro) OR NOT EXISTS (SELECT 1 FROM MIG.DePara_Plano)
             THROW 50001, N'Rode antes o MIG.MIG_Cadastros_Processar.', 1;
+        IF @Unidade IS NOT NULL AND ISNULL(@Executar, 0) = 1
+            THROW 50001, N'A conferência de um documento só (@Unidade) não grava: rode sem @Executar.', 1;
 
         SELECT @IdSistema = u.ID_USUARIO FROM SIS.Usuario u WHERE u.LOGIN = 'sistema';
         SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdSistema);
@@ -704,6 +760,7 @@ BEGIN
         FROM MIG.Movimento m
         LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
         WHERE m.DESTINO = 'SISTEMA'
+          AND (@Unidade IS NULL OR m.UNIDADE = @Unidade)
           AND ISNULL(o.IGNORAR_LINHA, 0) = 0
           AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao c WHERE c.UNIDADE = m.UNIDADE);
 
@@ -927,14 +984,59 @@ BEGIN
         FROM #U u WHERE EXISTS (SELECT 1 FROM #T t WHERE t.UNIDADE = u.UNIDADE AND t.PAGO = 1 AND t.ID_CONTA_PAG IS NULL AND t.TC_PAG = 'BCO');
         DELETE t FROM #T t INNER JOIN #U u ON u.UNIDADE = t.UNIDADE WHERE u.REGRA = 'CASO';
 
-        -- casos para a tela
+        -- casos para a tela, mais os documentos que já têm correção da tela
         SET @EtapaAtual = 'Casos';
+        SELECT m.UNIDADE, MIN(m.PADRAO) AS PADRAO, COUNT(*) AS N, SUM(m.VALOR_DEBITO) AS D, SUM(m.VALOR_CREDITO) AS C,
+               MIN(m.DT_UNIDADE) AS DT, MIN(cc.ACAO) AS ACAO
+        INTO #Dec
+        FROM MIG.Movimento m
+        INNER JOIN MIG.Caso_Correcao cc ON cc.UNIDADE = m.UNIDADE
+        WHERE m.DESTINO = 'SISTEMA' AND (@Unidade IS NULL OR m.UNIDADE = @Unidade)
+        GROUP BY m.UNIDADE;
+
+        SELECT u.UNIDADE, CAST(ISNULL(u.PADRAO, '') AS VARCHAR(200)) AS PADRAO, CAST(u.REGRA AS VARCHAR(15)) AS REGRA,
+               u.MOTIVO, u.DETALHE, u.N, u.S_DEB_TOTAL AS D, u.S_CRE_TOTAL AS C, u.DT_UNIDADE AS DT
+        INTO #CasoNovo
+        FROM #U u
+        WHERE u.REGRA = 'CASO' OR EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = u.UNIDADE)
+        UNION ALL
+        SELECT d.UNIDADE, ISNULL(d.PADRAO, ''), d.ACAO, N'', N'', d.N, d.D, d.C, d.DT
+        FROM #Dec d
+        UNION ALL   -- todas as linhas do documento marcadas "ignorar": o documento fica de fora
+        SELECT m.UNIDADE, MIN(m.PADRAO), 'IGNORAR', N'', N'', COUNT(*), SUM(m.VALOR_DEBITO), SUM(m.VALOR_CREDITO), MIN(m.DT_UNIDADE)
+        FROM MIG.Movimento m
+        WHERE m.DESTINO = 'SISTEMA' AND (@Unidade IS NULL OR m.UNIDADE = @Unidade)
+          AND EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = m.UNIDADE)
+          AND NOT EXISTS (SELECT 1 FROM #U u WHERE u.UNIDADE = m.UNIDADE)
+          AND NOT EXISTS (SELECT 1 FROM #Dec d WHERE d.UNIDADE = m.UNIDADE)
+        GROUP BY m.UNIDADE;
+
         BEGIN TRANSACTION;
-        DELETE FROM MIG.Caso;
-        INSERT INTO MIG.Caso (UNIDADE, PADRAO, MOTIVO, DETALHE, LINHAS, VALOR_DEBITO, VALOR_CREDITO, DT_DOCUMENTO)
-        SELECT u.UNIDADE, ISNULL(u.PADRAO, ''), u.MOTIVO, u.DETALHE, u.N, u.S_DEB_TOTAL, u.S_CRE_TOTAL, u.DT_UNIDADE
-        FROM #U u WHERE u.REGRA = 'CASO';
+        MERGE MIG.Caso AS c
+        USING #CasoNovo AS n ON n.UNIDADE = c.UNIDADE
+        WHEN MATCHED THEN UPDATE SET
+             c.PADRAO = n.PADRAO, c.REGRA_ATUAL = n.REGRA, c.MOTIVO = n.MOTIVO, c.DETALHE = n.DETALHE,
+             c.LINHAS = n.N, c.VALOR_DEBITO = n.D, c.VALOR_CREDITO = n.C, c.DT_DOCUMENTO = n.DT, c.DT_CALCULO = SYSDATETIME(),
+             c.MOTIVO_ORIGINAL = CASE WHEN c.MOTIVO_ORIGINAL = N'' THEN c.MOTIVO ELSE c.MOTIVO_ORIGINAL END
+        WHEN NOT MATCHED BY TARGET THEN
+             INSERT (UNIDADE, PADRAO, REGRA_ATUAL, MOTIVO, MOTIVO_ORIGINAL, DETALHE, LINHAS, VALOR_DEBITO, VALOR_CREDITO, DT_DOCUMENTO)
+             VALUES (n.UNIDADE, n.PADRAO, n.REGRA, n.MOTIVO, n.MOTIVO, n.DETALHE, n.N, n.D, n.C, n.DT)
+        WHEN NOT MATCHED BY SOURCE AND (@Unidade IS NULL OR c.UNIDADE = @Unidade) THEN DELETE;
         COMMIT TRANSACTION;
+
+        -- conferência de um documento só (tela de casos)
+        IF @Unidade IS NOT NULL
+        BEGIN
+            SELECT CAST(@Unidade AS VARCHAR(40)) AS UNIDADE,
+                   CAST(COALESCE(n.REGRA, u.REGRA, 'SEM_LINHAS') AS VARCHAR(15)) AS REGRA,
+                   COALESCE(n.MOTIVO, u.MOTIVO, N'') AS MOTIVO,
+                   COALESCE(n.DETALHE, u.DETALHE, N'') AS DETALHE
+            FROM (SELECT 1 AS X) x
+            LEFT JOIN #CasoNovo n ON n.UNIDADE = @Unidade
+            LEFT JOIN #U u ON u.UNIDADE = @Unidade;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
+            RETURN;
+        END;
 
         /* ------------------------------------------------------------------
            Prévia
@@ -951,8 +1053,8 @@ BEGIN
                    SUM(CASE WHEN t.PAGO = 1 AND t.ID_CONTA_PAG IS NULL THEN 1 ELSE 0 END) AS PAGO_SEM_CONTA
             FROM #T t GROUP BY t.REGRA, t.TIPO ORDER BY t.REGRA, t.TIPO;
             SELECT 'TRANSFERENCIAS' AS GRADE, r.REGRA, r.TC, COUNT(*) AS QTD, SUM(r.VALOR) AS VALOR FROM #TR r GROUP BY r.REGRA, r.TC;
-            SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS FROM MIG.Caso c GROUP BY c.MOTIVO ORDER BY COUNT(*) DESC;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist;
+            SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO' GROUP BY c.MOTIVO ORDER BY COUNT(*) DESC;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
             RETURN;
         END;
 
@@ -1092,7 +1194,7 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
 
         SELECT 'GRAVADO' AS GRADE, r.ORDEM, r.ITEM, r.QTD, r.VALOR
         FROM (
@@ -1103,12 +1205,12 @@ BEGIN
             UNION ALL SELECT 5, N'Movimentos de baixa (banco/caixa)', COUNT(*), SUM(m.VALOR) FROM BANCO.Movimento m INNER JOIN SIS.Lote x ON x.ID_LOTE = m.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO' AND m.TIPO = 'BAIXA'
             UNION ALL SELECT 6, N'Transferências', COUNT(*), SUM(t.VALOR) FROM FIN.Transferencia t INNER JOIN SIS.Lote x ON x.ID_LOTE = t.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO'
             UNION ALL SELECT 7, N'Lotes do Access', COUNT(*) - 1, NULL FROM SIS.Lote x WHERE x.ORIGEM = 'MIGRACAO'
-            UNION ALL SELECT 8, N'Casos para a tela', COUNT(*), SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) FROM MIG.Caso c
+            UNION ALL SELECT 8, N'Casos para a tela', COUNT(*), SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO'
         ) r ORDER BY r.ORDEM;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
         IF XACT_STATE() <> -1
             INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
             VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
@@ -1143,6 +1245,8 @@ GO
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, parte B).
+    v1.1 (18/11/2026) - Casos: só os que ainda não se encaixam, mais a grade
+                        CASOS_SITUACAO (pendentes, corrigidos, ignorados, arquivo morto).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1229,9 +1333,588 @@ BEGIN
     SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS, SUM(c.VALOR_DEBITO) AS DEBITOS, SUM(c.VALOR_CREDITO) AS CREDITOS,
            MIN(c.DT_DOCUMENTO) AS DE, MAX(c.DT_DOCUMENTO) AS ATE
     FROM MIG.Caso c
+    WHERE c.REGRA_ATUAL = 'CASO'
     GROUP BY c.MOTIVO
     ORDER BY COUNT(*) DESC;
+
+    SELECT 'CASOS_SITUACAO' AS GRADE, c.REGRA_ATUAL, COUNT(*) AS DOCUMENTOS, SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) AS VALOR
+    FROM MIG.Caso c
+    GROUP BY c.REGRA_ATUAL
+    ORDER BY c.REGRA_ATUAL;
 END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/MIG/MIG.MIG_Caso_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [MIG].[MIG_Caso_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 18/11/2026
+  Descrição   : Lista da tela "Casos da migração" (MIG_CASOS): um documento do
+                Access por linha (MIG.Caso: os que não se encaixam e os que já
+                têm correção), com obra, histórico, motivo, valores e
+                situação: PENDENTE, EM_CORRECAO (corrigido mas ainda não se
+                encaixa), RESOLVIDO (corrigido e já se encaixa), IGNORADO,
+                ARQUIVO_MORTO. Filtros e totais ficam na tela (são poucos
+                documentos). Permissão: VER em MIG_CASOS.
+                Schema MIG: só migração, NÃO entra no MASTER (regra 60).
+
+  Changelog:
+    v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+
+  Homologação (LOCAL):
+    -- EXEC MIG.MIG_Caso_Listar @IdUsuario = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Listar]
+    @IdUsuario  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Caso_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'MIG_CASOS', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os casos da migração.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT c.UNIDADE,
+               CASE LEFT(c.UNIDADE, 1) WHEN 'L' THEN N'Lote ' WHEN 'V' THEN N'Venda ' ELSE N'Documento ' END
+                 + SUBSTRING(c.UNIDADE, CHARINDEX(':', c.UNIDADE) + 1, 40) AS DOCUMENTO,
+               c.DT_DOCUMENTO, YEAR(c.DT_DOCUMENTO) AS ANO,
+               ISNULL(nv.NOME, N'') AS EMPRESA,
+               ISNULL(NULLIF(pl.COMPLEMENTO, N''), ISNULL(h.DESCRICAO, N'')) AS HISTORICO,
+               CASE WHEN c.REGRA_ATUAL = 'CASO' THEN c.MOTIVO ELSE c.MOTIVO_ORIGINAL END AS MOTIVO,
+               c.MOTIVO_ORIGINAL, c.DETALHE, c.REGRA_ATUAL, c.LINHAS,
+               c.VALOR_DEBITO, c.VALOR_CREDITO, c.VALOR_DEBITO - c.VALOR_CREDITO AS DIFERENCA,
+               CASE WHEN c.REGRA_ATUAL = 'IGNORAR' THEN 'IGNORADO'
+                    WHEN c.REGRA_ATUAL = 'ARQUIVO_MORTO' THEN 'ARQUIVO_MORTO'
+                    WHEN c.REGRA_ATUAL = 'CASO' AND k.QTD > 0 THEN 'EM_CORRECAO'
+                    WHEN c.REGRA_ATUAL = 'CASO' THEN 'PENDENTE'
+                    ELSE 'RESOLVIDO' END AS SITUACAO,
+               ISNULL(k.QTD, 0) AS LINHAS_CORRIGIDAS,
+               COALESCE(cc.USUARIO_ALTERACAO, cc.USUARIO_CRIACAO, k.USUARIO, N'') AS CORRIGIDO_POR,
+               COALESCE(cc.DT_ALTERACAO, cc.DT_CRIACAO, k.DT) AS CORRIGIDO_EM
+        FROM MIG.Caso c
+        OUTER APPLY (SELECT TOP (1) COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA) AS EV, m.COMPLEMENTO, m.HISTORICO
+                     FROM MIG.Movimento m
+                     LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
+                     WHERE m.UNIDADE = c.UNIDADE AND m.DESTINO = 'SISTEMA'
+                     ORDER BY CASE WHEN m.COMPLEMENTO <> N'' THEN 0 ELSE 1 END, m.NUM) pl
+        OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(v.NomeVinculada)) AS NOME FROM MIG.Access_EmpVinculada v WHERE TRY_CONVERT(INT, v.CodigoVinculada) = pl.EV) nv
+        OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS DESCRICAO FROM MIG.Access_Historico x WHERE TRY_CONVERT(INT, x.CodHistorico) = pl.HISTORICO) h
+        OUTER APPLY (SELECT COUNT(*) AS QTD, MAX(COALESCE(o.USUARIO_ALTERACAO, o.USUARIO_CRIACAO)) AS USUARIO, MAX(COALESCE(o.DT_ALTERACAO, o.DT_CRIACAO)) AS DT
+                     FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = c.UNIDADE) k
+        LEFT JOIN MIG.Caso_Correcao cc ON cc.UNIDADE = c.UNIDADE
+        ORDER BY c.DT_DOCUMENTO, c.UNIDADE;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível carregar os casos da migração. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/MIG/MIG.MIG_Caso_Obter.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [MIG].[MIG_Caso_Obter]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 18/11/2026
+  Descrição   : Um caso da tela "Casos da migração": cabeçalho (motivo, situação,
+                decisão gravada) e as linhas do Access (LINHAS_JSON), cada uma
+                com o valor original e o valor em uso (original + correção da
+                tela) de obra, pessoa, conta, plano, datas, valores e
+                confirmado, já com os nomes do Access. Data corrigida para
+                01/01/1900 = "sem data". Permissão: VER em MIG_CASOS.
+                Schema MIG: só migração, NÃO entra no MASTER (regra 60).
+
+  Changelog:
+    v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+
+  Homologação (LOCAL):
+    -- EXEC MIG.MIG_Caso_Obter @IdUsuario = 1, @Unidade = 'L:123';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Obter]
+    @IdUsuario  INT,
+    @Unidade    VARCHAR(40)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Caso_Obter]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'MIG_CASOS', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os casos da migração.', 1;
+        IF NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = @Unidade)
+            THROW 50001, N'Caso não encontrado. Atualize a lista.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT c.UNIDADE, c.REGRA_ATUAL, c.MOTIVO, c.MOTIVO_ORIGINAL, c.DETALHE, c.PADRAO, c.DT_DOCUMENTO, c.DT_CALCULO,
+               ISNULL(cc.ACAO, '') AS ACAO, ISNULL(cc.MOTIVO, N'') AS ACAO_MOTIVO,
+               COALESCE(cc.USUARIO_ALTERACAO, cc.USUARIO_CRIACAO, N'') AS ACAO_USUARIO, COALESCE(cc.DT_ALTERACAO, cc.DT_CRIACAO) AS ACAO_DT,
+               ISNULL((SELECT TOP (1) o.MOTIVO FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = c.UNIDADE AND o.MOTIVO <> N''
+                       ORDER BY COALESCE(o.DT_ALTERACAO, o.DT_CRIACAO) DESC), N'') AS CORRECAO_MOTIVO,
+               ISNULL((
+                   SELECT m.ORIGEM AS origem, m.NUM AS num, m.TIPO_CONTA AS tipoConta, m.LADO AS lado,
+                          m.NUM_DOC AS numDoc, m.COMPLEMENTO AS complemento, ISNULL(h.DESCRICAO, N'') AS historico,
+                          m.EMP_VINCULADA AS empOrig, COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA) AS emp, ISNULL(nv.NOME, N'') AS empNome,
+                          m.PARCEIRO AS parceiroOrig, COALESCE(o.PARCEIRO, m.PARCEIRO) AS parceiro, ISNULL(np.NOME, N'') AS parceiroNome,
+                          m.CONTA AS contaOrig, COALESCE(o.CONTA, m.CONTA) AS conta, ISNULL(nc.NOME, N'') AS contaNome,
+                          m.PLANO3 AS planoOrig, COALESCE(o.PLANO3, m.PLANO3) AS plano, ISNULL(npl.NOME, N'') AS planoNome,
+                          m.DT_MOVTO AS dtMovtoOrig, NULLIF(COALESCE(o.DT_MOVTO, m.DT_MOVTO), '1900-01-01') AS dtMovto,
+                          m.DT_VENCTO AS dtVenctoOrig, NULLIF(COALESCE(o.DT_VENCTO, m.DT_VENCTO), '1900-01-01') AS dtVencto,
+                          m.DT_PAGTO AS dtPagtoOrig, NULLIF(COALESCE(o.DT_PAGTO, m.DT_PAGTO), '1900-01-01') AS dtPagto,
+                          m.VALOR_DEBITO AS debitoOrig, COALESCE(o.VALOR_DEBITO, m.VALOR_DEBITO) AS debito,
+                          m.VALOR_CREDITO AS creditoOrig, COALESCE(o.VALOR_CREDITO, m.VALOR_CREDITO) AS credito,
+                          m.CONFIRMADO AS confirmadoOrig, COALESCE(o.CONFIRMADO, m.CONFIRMADO) AS confirmado,
+                          m.EFETUADO AS efetuado, m.SOMENTE_INTEGRACAO AS somenteIntegracao,
+                          ISNULL(o.IGNORAR_LINHA, CAST(0 AS BIT)) AS ignorar,
+                          CAST(CASE WHEN o.ID_CASO_CORRECAO_LINHA IS NULL THEN 0 ELSE 1 END AS BIT) AS corrigida
+                   FROM MIG.Movimento m
+                   LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
+                   OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS DESCRICAO FROM MIG.Access_Historico x WHERE TRY_CONVERT(INT, x.CodHistorico) = m.HISTORICO) h
+                   OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(v.NomeVinculada)) AS NOME FROM MIG.Access_EmpVinculada v WHERE TRY_CONVERT(INT, v.CodigoVinculada) = COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA)) nv
+                   OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.NomeParceiro)) AS NOME FROM MIG.Access_Parceiros x WHERE TRY_CONVERT(INT, x.CodigoParceiro) = COALESCE(o.PARCEIRO, m.PARCEIRO)) np
+                   OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS NOME FROM MIG.Access_Contas_Financeiras x WHERE TRY_CONVERT(INT, x.CodigoConta) = COALESCE(o.CONTA, m.CONTA)) nc
+                   OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.DescricaoPlano3)) AS NOME FROM MIG.Access_Plano3 x WHERE TRY_CONVERT(INT, x.Plano3) = COALESCE(o.PLANO3, m.PLANO3)) npl
+                   WHERE m.UNIDADE = c.UNIDADE AND m.DESTINO = 'SISTEMA'
+                   ORDER BY m.DT_MOVTO, m.NUM
+                   FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS LINHAS_JSON
+        FROM MIG.Caso c
+        LEFT JOIN MIG.Caso_Correcao cc ON cc.UNIDADE = c.UNIDADE
+        WHERE c.UNIDADE = @Unidade;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível carregar o caso. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/MIG/MIG.MIG_Caso_Opcoes.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [MIG].[MIG_Caso_Opcoes]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 18/11/2026
+  Descrição   : Listas de escolha da tela "Casos da migração", com os códigos e
+                nomes do Access: obras (só as que têm de-para), contas, planos
+                (só os que têm de-para) e pessoas. Uma linha com quatro colunas
+                JSON. Permissão: VER em MIG_CASOS.
+                Schema MIG: só migração, NÃO entra no MASTER (regra 60).
+
+  Changelog:
+    v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+
+  Homologação (LOCAL):
+    -- EXEC MIG.MIG_Caso_Opcoes @IdUsuario = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Opcoes]
+    @IdUsuario  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Caso_Opcoes]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'MIG_CASOS', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os casos da migração.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT
+            ISNULL((SELECT x.c, x.n FROM (SELECT TRY_CONVERT(INT, v.CodigoVinculada) AS c, MIN(LTRIM(RTRIM(v.NomeVinculada))) AS n
+                                          FROM MIG.Access_EmpVinculada v
+                                          WHERE EXISTS (SELECT 1 FROM MIG.DePara_Centro d WHERE d.CODIGO_VINCULADA = TRY_CONVERT(INT, v.CodigoVinculada))
+                                          GROUP BY TRY_CONVERT(INT, v.CodigoVinculada)) x
+                    ORDER BY x.n FOR JSON PATH), N'[]') AS OBRAS_JSON,
+            ISNULL((SELECT x.c, x.n FROM (SELECT TRY_CONVERT(INT, k.CodigoConta) AS c, MIN(LTRIM(RTRIM(k.Descricao))) AS n
+                                          FROM MIG.Access_Contas_Financeiras k
+                                          WHERE TRY_CONVERT(INT, k.CodigoConta) IS NOT NULL
+                                          GROUP BY TRY_CONVERT(INT, k.CodigoConta)) x
+                    ORDER BY x.c FOR JSON PATH), N'[]') AS CONTAS_JSON,
+            ISNULL((SELECT x.c, x.n FROM (SELECT TRY_CONVERT(INT, p.Plano3) AS c, MIN(LTRIM(RTRIM(p.DescricaoPlano3))) AS n
+                                          FROM MIG.Access_Plano3 p
+                                          WHERE EXISTS (SELECT 1 FROM MIG.DePara_Plano d WHERE d.PLANO3_ACCESS = TRY_CONVERT(INT, p.Plano3))
+                                          GROUP BY TRY_CONVERT(INT, p.Plano3)) x
+                    ORDER BY x.n FOR JSON PATH), N'[]') AS PLANOS_JSON,
+            ISNULL((SELECT x.c, x.n FROM (SELECT TRY_CONVERT(INT, p.CodigoParceiro) AS c, MIN(LTRIM(RTRIM(p.NomeParceiro))) AS n
+                                          FROM MIG.Access_Parceiros p
+                                          WHERE TRY_CONVERT(INT, p.CodigoParceiro) > 1
+                                          GROUP BY TRY_CONVERT(INT, p.CodigoParceiro)) x
+                    ORDER BY x.n FOR JSON PATH), N'[]') AS PESSOAS_JSON;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível carregar as listas da tela. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/MIG/MIG.MIG_Caso_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [MIG].[MIG_Caso_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 18/11/2026
+  Descrição   : Grava a decisão da tela "Casos da migração" para um documento
+                do Access (unidade). @Acao:
+                  CORRIGIR       correções linha a linha (@LinhasJson: os
+                                 valores em uso de cada linha; só o que for
+                                 diferente do Access é guardado, em
+                                 MIG.Caso_Correcao_Linha); tira a decisão
+                                 IGNORAR/ARQUIVO_MORTO, se houver;
+                  IGNORAR        o documento não migra (motivo obrigatório);
+                  ARQUIVO_MORTO  o documento vai para o arquivo morto (motivo
+                                 obrigatório);
+                  DESFAZER       apaga todas as correções e decisões do
+                                 documento (volta ao Access).
+                As correções valem em toda nova rodada da migração. Depois de
+                gravar, a tela chama MIG_Caso_Conferir para mostrar se o
+                documento passou a se encaixar.
+                Datas: em @LinhasJson, data vazia onde o Access tinha data é
+                guardada como 01/01/1900 (= "sem data" para a migração).
+                Permissão: ALTERAR em MIG_CASOS (os dois administradores).
+                Devolve SUCESSO, MENSAGEM, ID (padrão das gravações).
+                Schema MIG: só migração, NÃO entra no MASTER (regra 60).
+
+  Changelog:
+    v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+
+  Homologação (LOCAL):
+    -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'IGNORAR', @Motivo = N'Lançado em dobro no Access';
+    -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'DESFAZER';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Gravar]
+    @IdUsuario   INT,
+    @Unidade     VARCHAR(40),
+    @Acao        VARCHAR(15),
+    @Motivo      NVARCHAR(400) = N'',
+    @LinhasJson  NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Caso_Gravar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa     NVARCHAR(400) = N'';
+    DECLARE @Usuario    NVARCHAR(100);
+    DECLARE @SemData    DATE = '1900-01-01';
+    DECLARE @Qtd        INT  = 0;
+
+    BEGIN TRY
+        DROP TABLE IF EXISTS #J, #C;
+        SET @Acao   = UPPER(LTRIM(RTRIM(ISNULL(@Acao, ''))));
+        SET @Motivo = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'MIG_CASOS', 'ALTERAR') = 0
+            SET @Recusa = N'Você não tem permissão para corrigir os casos da migração.';
+        IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = @Unidade)
+            SET @Recusa = N'Caso não encontrado. Atualize a lista.';
+        IF @Recusa = N'' AND @Acao NOT IN ('CORRIGIR', 'IGNORAR', 'ARQUIVO_MORTO', 'DESFAZER')
+            SET @Recusa = N'Ação inválida.';
+        IF @Recusa = N'' AND @Acao IN ('IGNORAR', 'ARQUIVO_MORTO') AND LEN(@Motivo) < 5
+            SET @Recusa = N'Escreva o motivo da decisão (pelo menos 5 letras).';
+        IF @Recusa = N'' AND @Acao = 'CORRIGIR' AND ISJSON(ISNULL(@LinhasJson, N'')) = 0
+            SET @Recusa = N'Lista de linhas inválida.';
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID;
+            RETURN;
+        END;
+
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+
+        IF @Acao = 'CORRIGIR'
+        BEGIN
+            SET @EtapaAtual = 'Leitura das linhas';
+            SELECT j.origem AS ORIGEM, j.num AS NUM, j.emp AS EMP, j.parceiro AS PARCEIRO, j.conta AS CONTA, j.plano AS PLANO,
+                   j.dtMovto AS DT_MOVTO, j.dtVencto AS DT_VENCTO, j.dtPagto AS DT_PAGTO,
+                   ISNULL(j.debito, 0) AS DEB, ISNULL(j.credito, 0) AS CRE, ISNULL(j.confirmado, 0) AS CONF, ISNULL(j.ignorar, 0) AS IGN
+            INTO #J
+            FROM OPENJSON(@LinhasJson) WITH (
+                    origem VARCHAR(20) '$.origem', num INT '$.num', emp INT '$.emp', parceiro INT '$.parceiro', conta INT '$.conta',
+                    plano INT '$.plano', dtMovto DATE '$.dtMovto', dtVencto DATE '$.dtVencto', dtPagto DATE '$.dtPagto',
+                    debito DECIMAL(18,2) '$.debito', credito DECIMAL(18,2) '$.credito', confirmado BIT '$.confirmado', ignorar BIT '$.ignorar') j;
+
+            IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM AND m.UNIDADE = @Unidade AND m.DESTINO = 'SISTEMA'))
+                SET @Recusa = N'Uma das linhas não pertence a este documento. Atualize a tela.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.EMP IS NULL OR NOT EXISTS (SELECT 1 FROM MIG.DePara_Centro d WHERE d.CODIGO_VINCULADA = j.EMP))
+                SET @Recusa = N'Escolha uma obra válida em todas as linhas.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.CONTA IS NULL OR NOT EXISTS (SELECT 1 FROM MIG.Access_Contas_Financeiras k WHERE TRY_CONVERT(INT, k.CodigoConta) = j.CONTA))
+                SET @Recusa = N'Escolha uma conta válida em todas as linhas.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
+                                         WHERE (j.PLANO IS NULL AND m.PLANO3 IS NOT NULL)
+                                            OR (j.PLANO IS NOT NULL AND NOT EXISTS (SELECT 1 FROM MIG.DePara_Plano d WHERE d.PLANO3_ACCESS = j.PLANO))))
+                SET @Recusa = N'Escolha um plano de contas válido nas linhas.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.PARCEIRO > 1 AND NOT EXISTS (SELECT 1 FROM MIG.Access_Parceiros p WHERE TRY_CONVERT(INT, p.CodigoParceiro) = j.PARCEIRO))
+                SET @Recusa = N'Pessoa não encontrada no cadastro do Access.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB < 0 OR j.CRE < 0)
+                SET @Recusa = N'Valor não pode ser negativo.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB > 0 AND j.CRE > 0)
+                SET @Recusa = N'Cada linha tem débito ou crédito, não os dois.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DT_MOVTO NOT BETWEEN '2000-01-01' AND '2060-12-31'
+                                                             OR j.DT_VENCTO NOT BETWEEN '2000-01-01' AND '2060-12-31'
+                                                             OR j.DT_PAGTO NOT BETWEEN '2000-01-01' AND '2060-12-31')
+                SET @Recusa = N'Data fora do intervalo aceito (2000 a 2060).';
+            IF @Recusa <> N''
+            BEGIN
+                DROP TABLE IF EXISTS #J;
+                SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID;
+                RETURN;
+            END;
+
+            -- só o que difere do Access vira correção (NULL = mantém o Access)
+            SELECT j.ORIGEM, j.NUM,
+                   CASE WHEN j.EMP = m.EMP_VINCULADA THEN NULL ELSE j.EMP END AS EMP_VINCULADA,
+                   CASE WHEN ISNULL(j.PARCEIRO, 0) = ISNULL(m.PARCEIRO, 0) THEN NULL ELSE ISNULL(j.PARCEIRO, 0) END AS PARCEIRO,
+                   CASE WHEN j.CONTA = m.CONTA THEN NULL ELSE j.CONTA END AS CONTA,
+                   CASE WHEN j.PLANO = m.PLANO3 OR (j.PLANO IS NULL AND m.PLANO3 IS NULL) THEN NULL ELSE j.PLANO END AS PLANO3,
+                   CASE WHEN j.DT_MOVTO  = m.DT_MOVTO  OR (j.DT_MOVTO  IS NULL AND m.DT_MOVTO  IS NULL) THEN NULL ELSE ISNULL(j.DT_MOVTO,  @SemData) END AS DT_MOVTO,
+                   CASE WHEN j.DT_VENCTO = m.DT_VENCTO OR (j.DT_VENCTO IS NULL AND m.DT_VENCTO IS NULL) THEN NULL ELSE ISNULL(j.DT_VENCTO, @SemData) END AS DT_VENCTO,
+                   CASE WHEN j.DT_PAGTO  = m.DT_PAGTO  OR (j.DT_PAGTO  IS NULL AND m.DT_PAGTO  IS NULL) THEN NULL ELSE ISNULL(j.DT_PAGTO,  @SemData) END AS DT_PAGTO,
+                   CASE WHEN j.DEB = ISNULL(m.VALOR_DEBITO, 0)  THEN NULL ELSE j.DEB END AS VALOR_DEBITO,
+                   CASE WHEN j.CRE = ISNULL(m.VALOR_CREDITO, 0) THEN NULL ELSE j.CRE END AS VALOR_CREDITO,
+                   CASE WHEN j.CONF = m.CONFIRMADO THEN NULL ELSE j.CONF END AS CONFIRMADO,
+                   j.IGN AS IGNORAR_LINHA
+            INTO #C
+            FROM #J j
+            INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM;
+
+            DELETE FROM #C
+            WHERE EMP_VINCULADA IS NULL AND PARCEIRO IS NULL AND CONTA IS NULL AND PLANO3 IS NULL
+              AND DT_MOVTO IS NULL AND DT_VENCTO IS NULL AND DT_PAGTO IS NULL
+              AND VALOR_DEBITO IS NULL AND VALOR_CREDITO IS NULL AND CONFIRMADO IS NULL AND IGNORAR_LINHA = 0;
+            SELECT @Qtd = COUNT(*) FROM #C;
+
+            IF @Qtd > 0 AND LEN(@Motivo) < 5
+            BEGIN
+                DROP TABLE IF EXISTS #J, #C;
+                SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Escreva o motivo da correção (pelo menos 5 letras).' AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID;
+                RETURN;
+            END;
+
+            SET @EtapaAtual = 'Gravação das correções';
+            BEGIN TRANSACTION;
+            DELETE FROM MIG.Caso_Correcao WHERE UNIDADE = @Unidade;
+
+            DELETE o
+            FROM MIG.Caso_Correcao_Linha o
+            WHERE o.UNIDADE = @Unidade
+              AND NOT EXISTS (SELECT 1 FROM #C c WHERE c.ORIGEM = o.ORIGEM AND c.NUM = o.NUM);
+
+            UPDATE o
+               SET o.EMP_VINCULADA = c.EMP_VINCULADA, o.PARCEIRO = c.PARCEIRO, o.CONTA = c.CONTA, o.PLANO3 = c.PLANO3,
+                   o.DT_MOVTO = c.DT_MOVTO, o.DT_VENCTO = c.DT_VENCTO, o.DT_PAGTO = c.DT_PAGTO,
+                   o.VALOR_DEBITO = c.VALOR_DEBITO, o.VALOR_CREDITO = c.VALOR_CREDITO, o.CONFIRMADO = c.CONFIRMADO,
+                   o.IGNORAR_LINHA = c.IGNORAR_LINHA, o.MOTIVO = @Motivo,
+                   o.DT_ALTERACAO = SYSDATETIME(), o.USUARIO_ALTERACAO = @Usuario
+            FROM MIG.Caso_Correcao_Linha o
+            INNER JOIN #C c ON c.ORIGEM = o.ORIGEM AND c.NUM = o.NUM
+            WHERE NOT (ISNULL(o.EMP_VINCULADA, -1) = ISNULL(c.EMP_VINCULADA, -1) AND ISNULL(o.PARCEIRO, -1) = ISNULL(c.PARCEIRO, -1)
+                   AND ISNULL(o.CONTA, -1) = ISNULL(c.CONTA, -1) AND ISNULL(o.PLANO3, -1) = ISNULL(c.PLANO3, -1)
+                   AND ISNULL(o.DT_MOVTO, '1800-01-01') = ISNULL(c.DT_MOVTO, '1800-01-01')
+                   AND ISNULL(o.DT_VENCTO, '1800-01-01') = ISNULL(c.DT_VENCTO, '1800-01-01')
+                   AND ISNULL(o.DT_PAGTO, '1800-01-01') = ISNULL(c.DT_PAGTO, '1800-01-01')
+                   AND ISNULL(o.VALOR_DEBITO, -1) = ISNULL(c.VALOR_DEBITO, -1) AND ISNULL(o.VALOR_CREDITO, -1) = ISNULL(c.VALOR_CREDITO, -1)
+                   AND ISNULL(CONVERT(TINYINT, o.CONFIRMADO), 9) = ISNULL(CONVERT(TINYINT, c.CONFIRMADO), 9)
+                   AND o.IGNORAR_LINHA = c.IGNORAR_LINHA AND o.MOTIVO = @Motivo);
+
+            INSERT INTO MIG.Caso_Correcao_Linha (ORIGEM, NUM, UNIDADE, EMP_VINCULADA, PARCEIRO, CONTA, PLANO3, DT_MOVTO, DT_VENCTO, DT_PAGTO,
+                                                 VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, USUARIO_CRIACAO)
+            SELECT c.ORIGEM, c.NUM, @Unidade, c.EMP_VINCULADA, c.PARCEIRO, c.CONTA, c.PLANO3, c.DT_MOVTO, c.DT_VENCTO, c.DT_PAGTO,
+                   c.VALOR_DEBITO, c.VALOR_CREDITO, c.CONFIRMADO, c.IGNORAR_LINHA, @Motivo, @Usuario
+            FROM #C c
+            WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.ORIGEM = c.ORIGEM AND o.NUM = c.NUM);
+            COMMIT TRANSACTION;
+
+            DROP TABLE IF EXISTS #J, #C;
+            SELECT CAST(1 AS BIT) AS SUCESSO,
+                   CAST(CASE WHEN @Qtd = 0 THEN N'Sem correções: o documento fica como está no Access.'
+                             ELSE N'Correção gravada (' + CONVERT(NVARCHAR(10), @Qtd) + CASE WHEN @Qtd = 1 THEN N' linha).' ELSE N' linhas).' END END AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS BIGINT) AS ID;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação da decisão';
+        BEGIN TRANSACTION;
+        IF @Acao = 'DESFAZER'
+        BEGIN
+            DELETE FROM MIG.Caso_Correcao WHERE UNIDADE = @Unidade;
+            DELETE FROM MIG.Caso_Correcao_Linha WHERE UNIDADE = @Unidade;
+        END
+        ELSE
+        BEGIN
+            UPDATE MIG.Caso_Correcao
+               SET ACAO = @Acao, MOTIVO = @Motivo, DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+            WHERE UNIDADE = @Unidade AND (ACAO <> @Acao OR MOTIVO <> @Motivo);
+            INSERT INTO MIG.Caso_Correcao (UNIDADE, ACAO, MOTIVO, USUARIO_CRIACAO)
+            SELECT @Unidade, @Acao, @Motivo, @Usuario
+            WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao WHERE UNIDADE = @Unidade);
+        END;
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(CASE @Acao WHEN 'DESFAZER' THEN N'Correções desfeitas: o documento volta a ser como está no Access.'
+                               WHEN 'IGNORAR' THEN N'Documento marcado para não migrar.'
+                               ELSE N'Documento marcado para o arquivo morto.' END AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS BIGINT) AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF XACT_STATE() <> -1
+        BEGIN
+            DROP TABLE IF EXISTS #J, #C;
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        END;
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar a correção. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/MIG/MIG.MIG_Caso_Conferir.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [MIG].[MIG_Caso_Conferir]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 18/11/2026
+  Descrição   : Botão "Conferir" da tela "Casos da migração" (e o passo final
+                de cada gravação): classifica de novo só aquele documento, com
+                as correções gravadas, pelas mesmas regras da migração
+                (MIG_Movimento_Transformar @Unidade). Devolve UNIDADE, REGRA,
+                MOTIVO e DETALHE. Nada é gravado no financeiro.
+                Permissão: VER em MIG_CASOS.
+                Schema MIG: só migração, NÃO entra no MASTER (regra 60).
+
+  Changelog:
+    v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+
+  Homologação (LOCAL):
+    -- EXEC MIG.MIG_Caso_Conferir @IdUsuario = 1, @Unidade = 'L:123';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Conferir]
+    @IdUsuario  INT,
+    @Unidade    VARCHAR(40)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Caso_Conferir]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'MIG_CASOS', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os casos da migração.', 1;
+        IF NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = @Unidade)
+            THROW 50001, N'Caso não encontrado. Atualize a lista.', 1;
+
+        SET @EtapaAtual = 'Classificação';
+        EXEC MIG.MIG_Movimento_Transformar @Executar = 0, @Unidade = @Unidade;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível conferir o caso. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/MIG/Carga_MIG_Tela_Casos.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : carga da tela "Casos da migração" (menu e permissões)
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 18/11/2026
+  Descrição   : Menu Sistema > Migração > Casos da migração (MIG_CASOS), com as
+                ações VER e ALTERAR. Para os dois administradores (geral e da
+                CMJ); outro perfil só se receber a permissão. Só existe onde a
+                migração roda (LOCAL e o servidor da CMJ até a virada); na
+                virada, o item é desabilitado. Só insere o que falta (regra 39).
+                Schema MIG: só migração, NÃO entra no MASTER (regra 60).
+
+  Changelog:
+    v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, NULL, 'SIS_MIGRACAO', N'Migração', 'MENU', '', 40, 0, 1, ''
+FROM SIS.Modulo m
+WHERE m.CODIGO = 'SIS'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = 'SIS_MIGRACAO');
+GO
+
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, p.ID_ITEM, 'MIG_CASOS', N'Casos da migração', 'TELA', 'sis/migracao-casos.html', 10, 0, 1,
+       'MIG.Caso_Correcao,MIG.Caso_Correcao_Linha'
+FROM SIS.Modulo m
+INNER JOIN SIS.Item p ON p.CODIGO = 'SIS_MIGRACAO'
+WHERE m.CODIGO = 'SIS'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = 'MIG_CASOS');
+GO
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('VER' AS VARCHAR(20))), ('ALTERAR')) v (ACAO)
+INNER JOIN SIS.Item i ON i.CODIGO = 'MIG_CASOS'
+INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
 GO
 
 PRINT N'Pacote 03c2b concluído sem erro.';

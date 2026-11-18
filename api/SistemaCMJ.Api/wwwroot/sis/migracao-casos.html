@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Casos da migração</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/sis/migracao-casos.js" defer></script>
+</head>
+<body data-tela="sis/migracao-casos.html" data-ajuda="sis-migracao-casos" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Sistema › Migração › Casos da migração</div>
+          <h1>Casos da migração</h1>
+          <div class="subtitulo" id="subtitulo">Documentos do sistema antigo que não se encaixam nas regras da migração.</div>
+        </div>
+        <button data-dica="Baixa a lista que está na tela (com os filtros) como planilha (CSV), para abrir no Excel." type="button" class="botao" id="botao-exportar">Exportar planilha</button>
+        <button data-dica="Lê a lista de novo do banco." type="button" class="botao" id="botao-atualizar">Atualizar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="cartao resumo-casos">
+        <div class="etiquetas" id="situacoes" role="group" aria-label="Filtrar por situação"></div>
+        <div class="etiquetas" id="motivos" role="group" aria-label="Filtrar por motivo"></div>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Parte do histórico, da empresa ou o número do documento (lote, venda ou número do Access). A lista filtra na hora." class="campo f-3">Buscar
+          <input type="search" id="busca" maxlength="100" placeholder="Ex.: lote 1520, cimento, Orion" autocomplete="off">
+        </label>
+        <label data-dica="Mostra só os documentos desta empresa ou obra." class="campo f-1">Empresa
+          <select id="empresa"><option value="">Todas</option></select>
+        </label>
+        <label data-dica="Mostra só os documentos deste ano." class="campo f-1">Ano
+          <select id="ano"><option value="">Todos</option></select>
+        </label>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div class="rolagem">
+            <table class="tabela tabela-larga">
+              <thead>
+                <tr>
+                  <th scope="col">Data</th>
+                  <th scope="col">Documento</th>
+                  <th scope="col">Empresa</th>
+                  <th scope="col">Histórico</th>
+                  <th scope="col">Motivo</th>
+                  <th scope="col" class="numero">Débitos</th>
+                  <th scope="col" class="numero">Créditos</th>
+                  <th scope="col">Situação</th>
+                </tr>
+              </thead>
+              <tbody id="lista"></tbody>
+            </table>
+          </div>
+          <div class="barra-lista rodape-lista"><span class="suave" id="contagem"></span></div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+
+      <section class="cartao caso-detalhe" id="detalhe" hidden aria-labelledby="detalhe-titulo">
+        <div class="barra-lista">
+          <div>
+            <h2 id="detalhe-titulo"></h2>
+            <div class="suave" id="detalhe-motivo"></div>
+          </div>
+          <button data-dica="Fecha o documento (Esc)." type="button" class="botao" id="botao-fechar">Fechar</button>
+        </div>
+        <div class="aviso-faixa" id="resultado" role="status" hidden></div>
+        <p class="nota">Altere o que estiver errado direto na linha. O campo alterado fica destacado e mostra embaixo como estava no sistema antigo. Nada muda no sistema antigo: a correção vale para a migração.</p>
+        <div class="rolagem">
+          <table class="tabela tabela-edicao tabela-casos">
+            <thead>
+              <tr>
+                <th scope="col">Ignorar</th>
+                <th scope="col">Nº Access</th>
+                <th scope="col">Histórico</th>
+                <th scope="col">Conta</th>
+                <th scope="col">Obra</th>
+                <th scope="col">Pessoa</th>
+                <th scope="col">Plano</th>
+                <th scope="col">Movimento</th>
+                <th scope="col">Vencimento</th>
+                <th scope="col">Pagamento</th>
+                <th scope="col" class="numero">Débito</th>
+                <th scope="col" class="numero">Crédito</th>
+                <th scope="col">Confirmado</th>
+              </tr>
+            </thead>
+            <tbody id="linhas"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="10" class="forte">Totais (sem as linhas ignoradas)</td>
+                <td class="numero forte" id="total-debito"></td>
+                <td class="numero forte" id="total-credito"></td>
+                <td class="numero" id="total-diferenca"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <datalist id="lista-pessoas"></datalist>
+        <div class="grade">
+          <label data-dica="Por que o documento foi corrigido, ignorado ou mandado para o arquivo morto. Obrigatório (pelo menos 5 letras)." class="campo s-4">Motivo da correção *
+            <textarea id="motivo" rows="2" maxlength="400" placeholder="Ex.: saída do banco lançada na conta errada no Access"></textarea>
+          </label>
+        </div>
+        <div class="barra-lista acoes-caso">
+          <div class="etiquetas">
+            <button data-dica="Apaga todas as correções e decisões deste documento: ele volta a ser como está no sistema antigo. Pede confirmação." type="button" class="botao botao-contorno" id="botao-desfazer" hidden>Desfazer correções</button>
+            <button data-dica="O documento não vai para o sistema novo. Exige motivo. Pede confirmação." type="button" class="botao" id="botao-ignorar" hidden>Ignorar documento</button>
+            <button data-dica="O documento vai para o arquivo morto (consulta), não para o financeiro novo. Exige motivo. Pede confirmação." type="button" class="botao" id="botao-arquivo" hidden>Mandar para o arquivo morto</button>
+          </div>
+          <div class="etiquetas">
+            <button data-dica="Mostra se o documento, com as correções já gravadas, se encaixa nas regras da migração. Não grava nada." type="button" class="botao" id="botao-conferir">Conferir</button>
+            <button data-dica="Grava as correções das linhas e confere o documento de novo (Ctrl+S). Pede confirmação." type="button" class="botao botao-principal" id="botao-gravar" hidden>Gravar correção</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

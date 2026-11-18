@@ -147,6 +147,8 @@ ORDEM_03C2B = [
     'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql', 'objetos/FIN/Carga_FIN_Auditoria_Triggers.sql',
     'objetos/MIG/MIG.Tabelas_Transformacao.sql', 'objetos/MIG/MIG.MIG_Movimento_Transformar.sql',
     'objetos/MIG/MIG.MIG_Movimento_Conferencia_Listar.sql',
+    'objetos/MIG/MIG.MIG_Caso_Listar.sql', 'objetos/MIG/MIG.MIG_Caso_Obter.sql', 'objetos/MIG/MIG.MIG_Caso_Opcoes.sql',
+    'objetos/MIG/MIG.MIG_Caso_Gravar.sql', 'objetos/MIG/MIG.MIG_Caso_Conferir.sql', 'objetos/MIG/Carga_MIG_Tela_Casos.sql',
 ]
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B}[PARTE]
@@ -157,7 +159,7 @@ TITULO = {'02a': '02a - base SIS (schemas, logs, parâmetros, functions de forma
           '02d': '02d - base SIS (e-mail, agenda das rotinas, comandos de instalação, papel da API, módulo Compras)',
           '03a': '03a - cadastros (CAD: empresas, pessoas, centros de custo, plano de contas) e cadastro do BANCO (bancos e contas)',
           '03c2': '03c2 - migração dos cadastros: CNPJ para notas de compra e DDA na empresa (CAD, vai para o MASTER) e classificação, de-paras e carga dos cadastros do Access (schema MIG, NÃO vai para o MASTER)',
-          '03c2b': '03c2 parte B - auditoria rápida em carga grande (SIS_Auditoria_Trigger_Gerar v1.1, vai para o MASTER) e transformação do movimento do Access em lançamento, parcela, baixa, movimento e transferência; casos e correções (schema MIG, NÃO vai para o MASTER)',
+          '03c2b': '03c2 parte B - auditoria rápida em carga grande (SIS_Auditoria_Trigger_Gerar v1.1, vai para o MASTER) e transformação, tela de casos do movimento do Access em lançamento, parcela, baixa, movimento e transferência; casos e correções (schema MIG, NÃO vai para o MASTER)',
           '03c_mig': '03c - ensaio da migração do movimento (schema MIG: carga crua do Access, classificação, arquivo morto, conferência). NÃO vai para o MASTER',
           '03c': '03c - financeiro (FIN: lançamento, parcela, baixa, transferência, fechamento de mês, arquivo morto), movimento e extrato do BANCO, boletim semanal (comunicados)'}[PARTE]
 # pacote

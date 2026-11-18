@@ -59,6 +59,7 @@ SistemaEndpoints.Mapear(app);
 PessoaEndpoints.Mapear(app);
 ComunicadoEndpoints.Mapear(app);
 ComunicadoEndpoints.MapearLogo(app);
+MigracaoEndpoints.Mapear(app);
 
 // Rota /api que não existe: resposta padrão (não cai na página).
 app.MapFallback("/api/{**resto}", () => Results.NotFound());

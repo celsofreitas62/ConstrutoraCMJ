@@ -27,6 +27,13 @@
                 com data de pagamento = baixa não compensada (cheque); sem data
                 = parcela em aberto. "Somente integração" = lançamento só
                 contábil e baixa sem movimento no banco.
+                @Unidade (tela de casos, botão "Conferir"): classifica só aquele
+                documento, atualiza a linha dele em MIG.Caso e devolve uma
+                linha (UNIDADE, REGRA, MOTIVO, DETALHE); nada é gravado no
+                financeiro.
+                MIG.Caso guarda os casos e também os documentos que já têm
+                correção da tela (REGRA_ATUAL = como ficaram), para a tela
+                mostrar o que foi resolvido.
                 @Executar = 0 (padrão): só a prévia (classificação e números),
                 nada é gravado no financeiro. @Executar = 1: apaga a carga
                 anterior da migração (lotes de origem MIGRACAO) e grava de novo,
@@ -36,10 +43,14 @@
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, parte B).
+    v1.1 (18/11/2026) - Tela de casos: parâmetro @Unidade (conferir um
+                        documento só); MIG.Caso atualizada por MERGE, mantendo
+                        os documentos corrigidos (REGRA_ATUAL, MOTIVO_ORIGINAL).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
     -- EXEC MIG.MIG_Movimento_Transformar @Executar = 1;   -- grava
+    -- EXEC MIG.MIG_Movimento_Transformar @Unidade = 'L:123'; -- confere um documento
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -48,7 +59,8 @@ GO
 CREATE OR ALTER PROCEDURE [MIG].[MIG_Movimento_Transformar]
     @Executar           BIT          = 0,
     @NomeCaixa          NVARCHAR(60) = N'Caixa',
-    @NomeCaixaContabil  NVARCHAR(60) = N'Caixa contábil'
+    @NomeCaixaContabil  NVARCHAR(60) = N'Caixa contábil',
+    @Unidade            VARCHAR(40)  = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -63,12 +75,14 @@ BEGIN
     DECLARE @Agora        DATETIME2(0) = SYSDATETIME();
 
     BEGIN TRY
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
 
         IF OBJECT_ID(N'MIG.Movimento', N'U') IS NULL
             THROW 50001, N'Rode antes o MIG.MIG_Movimento_Preparar.', 1;
         IF NOT EXISTS (SELECT 1 FROM MIG.DePara_Centro) OR NOT EXISTS (SELECT 1 FROM MIG.DePara_Plano)
             THROW 50001, N'Rode antes o MIG.MIG_Cadastros_Processar.', 1;
+        IF @Unidade IS NOT NULL AND ISNULL(@Executar, 0) = 1
+            THROW 50001, N'A conferência de um documento só (@Unidade) não grava: rode sem @Executar.', 1;
 
         SELECT @IdSistema = u.ID_USUARIO FROM SIS.Usuario u WHERE u.LOGIN = 'sistema';
         SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdSistema);
@@ -111,6 +125,7 @@ BEGIN
         FROM MIG.Movimento m
         LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
         WHERE m.DESTINO = 'SISTEMA'
+          AND (@Unidade IS NULL OR m.UNIDADE = @Unidade)
           AND ISNULL(o.IGNORAR_LINHA, 0) = 0
           AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao c WHERE c.UNIDADE = m.UNIDADE);
 
@@ -334,14 +349,59 @@ BEGIN
         FROM #U u WHERE EXISTS (SELECT 1 FROM #T t WHERE t.UNIDADE = u.UNIDADE AND t.PAGO = 1 AND t.ID_CONTA_PAG IS NULL AND t.TC_PAG = 'BCO');
         DELETE t FROM #T t INNER JOIN #U u ON u.UNIDADE = t.UNIDADE WHERE u.REGRA = 'CASO';
 
-        -- casos para a tela
+        -- casos para a tela, mais os documentos que já têm correção da tela
         SET @EtapaAtual = 'Casos';
+        SELECT m.UNIDADE, MIN(m.PADRAO) AS PADRAO, COUNT(*) AS N, SUM(m.VALOR_DEBITO) AS D, SUM(m.VALOR_CREDITO) AS C,
+               MIN(m.DT_UNIDADE) AS DT, MIN(cc.ACAO) AS ACAO
+        INTO #Dec
+        FROM MIG.Movimento m
+        INNER JOIN MIG.Caso_Correcao cc ON cc.UNIDADE = m.UNIDADE
+        WHERE m.DESTINO = 'SISTEMA' AND (@Unidade IS NULL OR m.UNIDADE = @Unidade)
+        GROUP BY m.UNIDADE;
+
+        SELECT u.UNIDADE, CAST(ISNULL(u.PADRAO, '') AS VARCHAR(200)) AS PADRAO, CAST(u.REGRA AS VARCHAR(15)) AS REGRA,
+               u.MOTIVO, u.DETALHE, u.N, u.S_DEB_TOTAL AS D, u.S_CRE_TOTAL AS C, u.DT_UNIDADE AS DT
+        INTO #CasoNovo
+        FROM #U u
+        WHERE u.REGRA = 'CASO' OR EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = u.UNIDADE)
+        UNION ALL
+        SELECT d.UNIDADE, ISNULL(d.PADRAO, ''), d.ACAO, N'', N'', d.N, d.D, d.C, d.DT
+        FROM #Dec d
+        UNION ALL   -- todas as linhas do documento marcadas "ignorar": o documento fica de fora
+        SELECT m.UNIDADE, MIN(m.PADRAO), 'IGNORAR', N'', N'', COUNT(*), SUM(m.VALOR_DEBITO), SUM(m.VALOR_CREDITO), MIN(m.DT_UNIDADE)
+        FROM MIG.Movimento m
+        WHERE m.DESTINO = 'SISTEMA' AND (@Unidade IS NULL OR m.UNIDADE = @Unidade)
+          AND EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = m.UNIDADE)
+          AND NOT EXISTS (SELECT 1 FROM #U u WHERE u.UNIDADE = m.UNIDADE)
+          AND NOT EXISTS (SELECT 1 FROM #Dec d WHERE d.UNIDADE = m.UNIDADE)
+        GROUP BY m.UNIDADE;
+
         BEGIN TRANSACTION;
-        DELETE FROM MIG.Caso;
-        INSERT INTO MIG.Caso (UNIDADE, PADRAO, MOTIVO, DETALHE, LINHAS, VALOR_DEBITO, VALOR_CREDITO, DT_DOCUMENTO)
-        SELECT u.UNIDADE, ISNULL(u.PADRAO, ''), u.MOTIVO, u.DETALHE, u.N, u.S_DEB_TOTAL, u.S_CRE_TOTAL, u.DT_UNIDADE
-        FROM #U u WHERE u.REGRA = 'CASO';
+        MERGE MIG.Caso AS c
+        USING #CasoNovo AS n ON n.UNIDADE = c.UNIDADE
+        WHEN MATCHED THEN UPDATE SET
+             c.PADRAO = n.PADRAO, c.REGRA_ATUAL = n.REGRA, c.MOTIVO = n.MOTIVO, c.DETALHE = n.DETALHE,
+             c.LINHAS = n.N, c.VALOR_DEBITO = n.D, c.VALOR_CREDITO = n.C, c.DT_DOCUMENTO = n.DT, c.DT_CALCULO = SYSDATETIME(),
+             c.MOTIVO_ORIGINAL = CASE WHEN c.MOTIVO_ORIGINAL = N'' THEN c.MOTIVO ELSE c.MOTIVO_ORIGINAL END
+        WHEN NOT MATCHED BY TARGET THEN
+             INSERT (UNIDADE, PADRAO, REGRA_ATUAL, MOTIVO, MOTIVO_ORIGINAL, DETALHE, LINHAS, VALOR_DEBITO, VALOR_CREDITO, DT_DOCUMENTO)
+             VALUES (n.UNIDADE, n.PADRAO, n.REGRA, n.MOTIVO, n.MOTIVO, n.DETALHE, n.N, n.D, n.C, n.DT)
+        WHEN NOT MATCHED BY SOURCE AND (@Unidade IS NULL OR c.UNIDADE = @Unidade) THEN DELETE;
         COMMIT TRANSACTION;
+
+        -- conferência de um documento só (tela de casos)
+        IF @Unidade IS NOT NULL
+        BEGIN
+            SELECT CAST(@Unidade AS VARCHAR(40)) AS UNIDADE,
+                   CAST(COALESCE(n.REGRA, u.REGRA, 'SEM_LINHAS') AS VARCHAR(15)) AS REGRA,
+                   COALESCE(n.MOTIVO, u.MOTIVO, N'') AS MOTIVO,
+                   COALESCE(n.DETALHE, u.DETALHE, N'') AS DETALHE
+            FROM (SELECT 1 AS X) x
+            LEFT JOIN #CasoNovo n ON n.UNIDADE = @Unidade
+            LEFT JOIN #U u ON u.UNIDADE = @Unidade;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
+            RETURN;
+        END;
 
         /* ------------------------------------------------------------------
            Prévia
@@ -358,8 +418,8 @@ BEGIN
                    SUM(CASE WHEN t.PAGO = 1 AND t.ID_CONTA_PAG IS NULL THEN 1 ELSE 0 END) AS PAGO_SEM_CONTA
             FROM #T t GROUP BY t.REGRA, t.TIPO ORDER BY t.REGRA, t.TIPO;
             SELECT 'TRANSFERENCIAS' AS GRADE, r.REGRA, r.TC, COUNT(*) AS QTD, SUM(r.VALOR) AS VALOR FROM #TR r GROUP BY r.REGRA, r.TC;
-            SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS FROM MIG.Caso c GROUP BY c.MOTIVO ORDER BY COUNT(*) DESC;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist;
+            SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO' GROUP BY c.MOTIVO ORDER BY COUNT(*) DESC;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
             RETURN;
         END;
 
@@ -499,7 +559,7 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
 
         SELECT 'GRAVADO' AS GRADE, r.ORDEM, r.ITEM, r.QTD, r.VALOR
         FROM (
@@ -510,12 +570,12 @@ BEGIN
             UNION ALL SELECT 5, N'Movimentos de baixa (banco/caixa)', COUNT(*), SUM(m.VALOR) FROM BANCO.Movimento m INNER JOIN SIS.Lote x ON x.ID_LOTE = m.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO' AND m.TIPO = 'BAIXA'
             UNION ALL SELECT 6, N'Transferências', COUNT(*), SUM(t.VALOR) FROM FIN.Transferencia t INNER JOIN SIS.Lote x ON x.ID_LOTE = t.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO'
             UNION ALL SELECT 7, N'Lotes do Access', COUNT(*) - 1, NULL FROM SIS.Lote x WHERE x.ORIGEM = 'MIGRACAO'
-            UNION ALL SELECT 8, N'Casos para a tela', COUNT(*), SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) FROM MIG.Caso c
+            UNION ALL SELECT 8, N'Casos para a tela', COUNT(*), SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO'
         ) r ORDER BY r.ORDEM;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
         IF XACT_STATE() <> -1
             INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
             VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Casos da migração</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> mostrar os documentos do sistema antigo (Access) que não se encaixam em nenhuma regra da migração e corrigi-los antes da virada. A correção vale só para a migração: o sistema antigo não muda.</p>
+  <h2>A lista</h2>
+  <ul>
+    <li>Cada linha é um documento: um <strong>lote</strong> de pagamentos, uma <strong>parcela de venda</strong> ou um <strong>documento avulso</strong> do Access.</li>
+    <li>No alto, as <strong>situações</strong>: <strong>Pendente</strong> (ninguém mexeu), <strong>Em correção</strong> (corrigido, mas ainda não se encaixa), <strong>Resolvido</strong> (corrigido e já se encaixa), <strong>Ignorado</strong> (não migra) e <strong>Arquivo morto</strong>. Logo abaixo, os <strong>motivos</strong> com a quantidade. Clique para filtrar.</li>
+    <li><strong>Exportar planilha</strong> baixa a lista que está na tela, com os filtros, para abrir no Excel.</li>
+  </ul>
+  <h2>Corrigir um documento</h2>
+  <ul>
+    <li>Clique no documento: as linhas dele aparecem embaixo. Altere direto na linha a conta, a obra, a pessoa, o plano, as datas, os valores ou o "confirmado". O campo alterado fica destacado e mostra como estava no Access.</li>
+    <li>Marque <strong>Ignorar</strong> numa linha lançada em dobro ou por engano: ela fica fora da migração.</li>
+    <li>Escreva o <strong>motivo</strong> e clique em <strong>Gravar correção</strong> (ou Ctrl+S). O sistema confere o documento na hora e diz se ele passou a se encaixar ou o que ainda falta.</li>
+    <li><strong>Conferir</strong> mostra o resultado com o que já está gravado, sem gravar nada.</li>
+    <li><strong>Ignorar documento</strong>: o documento inteiro não migra. <strong>Mandar para o arquivo morto</strong>: fica só para consulta. As duas pedem o motivo.</li>
+    <li><strong>Desfazer correções</strong> apaga tudo o que foi feito no documento: ele volta a ser como está no Access.</li>
+  </ul>
+  <h2>Cuidados</h2>
+  <ul>
+    <li>As correções ficam guardadas e são aplicadas em toda nova rodada da migração, até o dia da virada.</li>
+    <li>Toda correção registra quem fez e quando (tela <strong>Auditoria</strong>).</li>
+    <li>Na dúvida sobre um documento, exporte a planilha e confira com o escritório antes de corrigir.</li>
+  </ul>
+</body>

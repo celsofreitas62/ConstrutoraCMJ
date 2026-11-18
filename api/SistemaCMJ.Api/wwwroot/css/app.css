@@ -249,3 +249,20 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .tabela-edicao textarea.texto-item { width: 100%; min-height: 2.4em; resize: vertical; }
 .tabela-edicao input.ordem-item { width: 4.5em; }
 .tabela tr.selecionada td { background: #fdeee9; }
+
+/* ---------- Casos da migração (etapa 03c2) ---------- */
+.resumo-casos { display: flex; flex-direction: column; gap: 8px; padding: 14px; }
+.caso-detalhe { margin-top: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.caso-detalhe h2 { margin: 0 0 4px; font-size: 17px; }
+.tabela-casos td { vertical-align: top; }
+.tabela-casos select { max-width: 220px; }
+.tabela-casos input[type=number] { width: 8.5em; text-align: right; }
+.tabela-casos td.alterado { background: var(--cor-principal-clara); }
+.tabela-casos .original { font-size: 11px; color: var(--texto-suave); margin-top: 2px; }
+.tabela-casos tr.linha-ignorada td:not(:first-child) { opacity: .45; text-decoration: line-through; }
+.tabela-casos tfoot td { border-top: 2px solid var(--borda); }
+.aviso-faixa.faixa-ok { background: #E7F3E8; color: #1E6B22; border-color: #A5D6A7; }
+.situacao-pendente { background: #FFF4E5; color: #8A3B00; }
+.situacao-em_correcao { background: #FFF8D6; color: #6B5300; }
+.situacao-resolvido { background: #E7F3E8; color: #1E6B22; }
+.situacao-ignorado, .situacao-arquivo_morto { background: #EFEFED; color: #555555; }

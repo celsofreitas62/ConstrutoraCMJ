@@ -132,3 +132,15 @@ Pacote `03c2b_mig_LOCAL`, script `sql/local/03c2b_Migracao_Movimento_LOCAL.sql` 
 **Conferência**: total de títulos por ano e tipo, Access × sistema, **diferença zero em todos os anos (2018 a 2030)**. Saldos por conta: as diferenças grandes das contas Sicredi de Opera, Orion, Music e do Itaú Maui são as **parcelas de venda ainda não pagas**, que no Access já estavam lançadas no banco sem confirmação e no sistema ficam em aberto (bate com o "em aberto" de cada empresa). O restante (cerca de R$ 220 mil na Construtora, menos de R$ 2 mil nos caixas) vem de títulos a pagar em aberto e dos 312 casos; conferir conta a conta na tela de casos.
 
 **Próximo**: tela de casos (linha a linha, os dois administradores), arquivo morto recebendo os casos marcados para ele, segunda rodada para provar que repete igual, e conferência com a Renata.
+
+**Segunda rodada (18/11/2026)**: números idênticos aos da primeira (gravação repetível); triggers de auditoria todas no formato novo.
+
+## 11. Tela "Casos da migração" (aprovada pelo Celso em 18/11/2026)
+
+Menu **Sistema › Migração › Casos da migração** (`sis/migracao-casos.html`, item `MIG_CASOS`, ações VER e ALTERAR; os dois administradores). Só existe onde a migração roda; na virada o item é desabilitado. Ajuda: `ajuda/sis-migracao-casos.html`.
+
+- **Resumo**: etiquetas por situação (Pendente, Em correção, Resolvido, Ignorado, Arquivo morto) e por motivo, clicáveis; filtros por busca, empresa e ano; **Exportar planilha** (CSV para o Excel).
+- **Documento aberto**: as linhas do Access numa grade editável (ignorar a linha, conta, obra, pessoa, plano, datas, débito, crédito, confirmado). Campo alterado fica destacado com o valor do Access embaixo; totais de débito e crédito na hora.
+- **Ações**: Gravar correção (motivo obrigatório; grava e confere na hora se o documento passou a se encaixar), Conferir (sem gravar), Ignorar documento, Mandar para o arquivo morto (motivo obrigatório), Desfazer correções. Confirmação antes de cada uma; Ctrl+S grava, Esc fecha.
+- **Banco**: `MIG.Caso` ganhou `REGRA_ATUAL` e `MOTIVO_ORIGINAL` e passa a guardar também os documentos corrigidos; correções em `MIG.Caso_Correcao` (decisão) e `MIG.Caso_Correcao_Linha` (só o que difere do Access; data vazia = 01/01/1900), com auditoria. Procedures `MIG_Caso_Listar`, `_Obter`, `_Opcoes`, `_Gravar`, `_Conferir`; `MIG_Movimento_Transformar` v1.1 com `@Unidade` (classifica um documento só). API: `Endpoints/MigracaoEndpoints.cs` (`/api/mig/...`). Teste: `sql/testes/MIG/03c2c_Homologacao_MIG.sql`.
+- **Pendente**: o processo do arquivo morto ainda não recebe os documentos marcados "Arquivo morto" na tela.

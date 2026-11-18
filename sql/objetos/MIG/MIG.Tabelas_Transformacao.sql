@@ -6,7 +6,11 @@
   Descrição   : Etapa 03c2, parte B.
                 MIG.Caso                 documentos do Access (unidades: lote,
                                          venda ou avulso) que não se encaixam em
-                                         nenhuma regra; refeita a cada rodada.
+                                         nenhuma regra, mais os que já têm
+                                         correção da tela (REGRA_ATUAL mostra
+                                         como ficaram; MOTIVO_ORIGINAL guarda o
+                                         motivo da primeira vez). Atualizada a
+                                         cada rodada.
                 MIG.Caso_Correcao        decisão por documento, gravada pela
                                          tela de casos: IGNORAR (não migra) ou
                                          ARQUIVO_MORTO (vai para o arquivo morto).
@@ -24,6 +28,12 @@
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, parte B).
+    v1.1 (18/11/2026) - Tela de casos: MIG.Caso ganha REGRA_ATUAL e
+                        MOTIVO_ORIGINAL; tabelas de correção ganham chave
+                        numérica (ID) e campos padrão de criação/alteração, para
+                        a auditoria (SIS.Auditoria) registrar quem corrigiu o
+                        quê; Caso_Correcao_Linha ganha UNIDADE. As tabelas de
+                        correção vazias no formato antigo são refeitas.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -47,15 +57,34 @@ GO
 IF COL_LENGTH(N'MIG.Caso', N'DETALHE') IS NULL
     ALTER TABLE [MIG].[Caso] ADD DETALHE NVARCHAR(400) NOT NULL CONSTRAINT DF_Caso_DETALHE DEFAULT (N'');
 GO
+IF COL_LENGTH(N'MIG.Caso', N'REGRA_ATUAL') IS NULL
+    ALTER TABLE [MIG].[Caso] ADD REGRA_ATUAL VARCHAR(15) NOT NULL CONSTRAINT DF_Caso_REGRA_ATUAL DEFAULT ('CASO');
+GO
+IF COL_LENGTH(N'MIG.Caso', N'MOTIVO_ORIGINAL') IS NULL
+    ALTER TABLE [MIG].[Caso] ADD MOTIVO_ORIGINAL NVARCHAR(400) NOT NULL CONSTRAINT DF_Caso_MOTIVO_ORIGINAL DEFAULT (N'');
+GO
+
+-- formato antigo (sem ID) e vazio: refaz (a auditoria precisa de chave numérica)
+IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NOT NULL AND COL_LENGTH(N'MIG.Caso_Correcao', N'ID_CASO_CORRECAO') IS NULL
+   AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao)
+    DROP TABLE [MIG].[Caso_Correcao];
+IF OBJECT_ID(N'[MIG].[Caso_Correcao_Linha]', N'U') IS NOT NULL AND COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'ID_CASO_CORRECAO_LINHA') IS NULL
+   AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha)
+    DROP TABLE [MIG].[Caso_Correcao_Linha];
+GO
 
 IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NULL
     CREATE TABLE [MIG].[Caso_Correcao]
     (
-        UNIDADE        VARCHAR(40)    NOT NULL CONSTRAINT PK_Caso_Correcao PRIMARY KEY,
-        ACAO           VARCHAR(15)    NOT NULL,
-        MOTIVO         NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caso_Correcao_MOTIVO  DEFAULT (N''),
-        USUARIO        NVARCHAR(100)  NOT NULL CONSTRAINT DF_Caso_Correcao_USUARIO DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
-        DT_DECISAO     DATETIME2(0)   NOT NULL CONSTRAINT DF_Caso_Correcao_DT      DEFAULT (SYSDATETIME()),
+        ID_CASO_CORRECAO   INT            IDENTITY(1,1) NOT NULL CONSTRAINT PK_Caso_Correcao PRIMARY KEY,
+        UNIDADE            VARCHAR(40)    NOT NULL,
+        ACAO               VARCHAR(15)    NOT NULL,
+        MOTIVO             NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caso_Correcao_MOTIVO DEFAULT (N''),
+        DT_CRIACAO         DATETIME2(0)   NOT NULL CONSTRAINT DF_Caso_Correcao_DT_CRIACAO DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO    NVARCHAR(100)  NOT NULL,
+        DT_ALTERACAO       DATETIME2(0)   NULL,
+        USUARIO_ALTERACAO  NVARCHAR(100)  NULL,
+        CONSTRAINT UQ_Caso_Correcao_UNIDADE UNIQUE (UNIDADE),
         CONSTRAINT CK_Caso_Correcao_ACAO CHECK (ACAO IN ('IGNORAR', 'ARQUIVO_MORTO'))
     );
 GO
@@ -63,25 +92,33 @@ GO
 IF OBJECT_ID(N'[MIG].[Caso_Correcao_Linha]', N'U') IS NULL
     CREATE TABLE [MIG].[Caso_Correcao_Linha]
     (
-        ORIGEM         VARCHAR(20)    NOT NULL,
-        NUM            INT            NOT NULL,
-        EMP_VINCULADA  INT            NULL,
-        PARCEIRO       INT            NULL,
-        CONTA          INT            NULL,
-        PLANO3         INT            NULL,
-        DT_MOVTO       DATE           NULL,
-        DT_VENCTO      DATE           NULL,
-        DT_PAGTO       DATE           NULL,
-        VALOR_DEBITO   DECIMAL(18,2)  NULL,
-        VALOR_CREDITO  DECIMAL(18,2)  NULL,
-        CONFIRMADO     BIT            NULL,
-        IGNORAR_LINHA  BIT            NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_IGN     DEFAULT (0),
-        MOTIVO         NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_MOTIVO  DEFAULT (N''),
-        USUARIO        NVARCHAR(100)  NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_USUARIO DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
-        DT_DECISAO     DATETIME2(0)   NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_DT      DEFAULT (SYSDATETIME()),
-        CONSTRAINT PK_Caso_Correcao_Linha PRIMARY KEY (ORIGEM, NUM),
+        ID_CASO_CORRECAO_LINHA INT        IDENTITY(1,1) NOT NULL CONSTRAINT PK_Caso_Correcao_Linha PRIMARY KEY,
+        ORIGEM             VARCHAR(20)    NOT NULL,
+        NUM                INT            NOT NULL,
+        UNIDADE            VARCHAR(40)    NOT NULL,
+        EMP_VINCULADA      INT            NULL,       -- NULL = mantém o valor do Access
+        PARCEIRO           INT            NULL,
+        CONTA              INT            NULL,
+        PLANO3             INT            NULL,
+        DT_MOVTO           DATE           NULL,
+        DT_VENCTO          DATE           NULL,
+        DT_PAGTO           DATE           NULL,
+        VALOR_DEBITO       DECIMAL(18,2)  NULL,
+        VALOR_CREDITO      DECIMAL(18,2)  NULL,
+        CONFIRMADO         BIT            NULL,
+        IGNORAR_LINHA      BIT            NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_IGN    DEFAULT (0),
+        MOTIVO             NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_MOTIVO DEFAULT (N''),
+        DT_CRIACAO         DATETIME2(0)   NOT NULL CONSTRAINT DF_Caso_Correcao_Linha_DT_CRIACAO DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO    NVARCHAR(100)  NOT NULL,
+        DT_ALTERACAO       DATETIME2(0)   NULL,
+        USUARIO_ALTERACAO  NVARCHAR(100)  NULL,
+        CONSTRAINT UQ_Caso_Correcao_Linha UNIQUE (ORIGEM, NUM),
         CONSTRAINT CK_Caso_Correcao_Linha_VALOR CHECK (ISNULL(VALOR_DEBITO, 0) >= 0 AND ISNULL(VALOR_CREDITO, 0) >= 0)
     );
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[MIG].[Caso_Correcao_Linha]') AND name = N'IX_Caso_Correcao_Linha_UNIDADE')
+    CREATE NONCLUSTERED INDEX IX_Caso_Correcao_Linha_UNIDADE ON [MIG].[Caso_Correcao_Linha] (UNIDADE);
 GO
 
 IF OBJECT_ID(N'[MIG].[Linha_Destino]', N'U') IS NULL
@@ -113,4 +150,9 @@ IF OBJECT_ID(N'[MIG].[DePara_Venda]', N'U') IS NULL
         CONTRATO       VARCHAR(40)    NOT NULL,
         NUM_DOC        NVARCHAR(100)  NOT NULL
     );
+GO
+
+-- auditoria das correções feitas pela tela (quem, quando, antes e depois)
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'MIG.Caso_Correcao',       @Criar = 1;
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'MIG.Caso_Correcao_Linha', @Criar = 1;
 GO

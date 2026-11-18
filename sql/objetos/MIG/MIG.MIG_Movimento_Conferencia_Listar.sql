@@ -21,6 +21,8 @@
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, parte B).
+    v1.1 (18/11/2026) - Casos: só os que ainda não se encaixam, mais a grade
+                        CASOS_SITUACAO (pendentes, corrigidos, ignorados, arquivo morto).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -107,7 +109,13 @@ BEGIN
     SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS, SUM(c.VALOR_DEBITO) AS DEBITOS, SUM(c.VALOR_CREDITO) AS CREDITOS,
            MIN(c.DT_DOCUMENTO) AS DE, MAX(c.DT_DOCUMENTO) AS ATE
     FROM MIG.Caso c
+    WHERE c.REGRA_ATUAL = 'CASO'
     GROUP BY c.MOTIVO
     ORDER BY COUNT(*) DESC;
+
+    SELECT 'CASOS_SITUACAO' AS GRADE, c.REGRA_ATUAL, COUNT(*) AS DOCUMENTOS, SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) AS VALOR
+    FROM MIG.Caso c
+    GROUP BY c.REGRA_ATUAL
+    ORDER BY c.REGRA_ATUAL;
 END;
 GO
