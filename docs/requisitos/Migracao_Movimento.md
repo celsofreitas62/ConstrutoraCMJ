@@ -153,3 +153,8 @@ Menu **Sistema › Migração › Casos da migração** (`sis/migracao-casos.htm
 - **Aviso "Revisar"**: a correção guarda a impressão digital do Access (`HASH_ACCESS`: da linha, ou do documento inteiro nas decisões, `MIG.fn_MIG_Hash_Unidade`). Se a linha ou o documento mudar ou sumir do Access, a rodada marca `MIG.Caso.REVISAR` e a tela mostra a situação "Revisar" com o aviso; gravar de novo (ou repetir a decisão) atualiza a impressão e tira o aviso. Documento corrigido que sumiu do Access continua na tela (`REGRA_ATUAL = APAGADO`).
 - **Instalação (3d)**: botão "Baixar correções" da tela (`/api/mig/casos/correcoes.sql`, `MIG.MIG_Caso_Correcao_Exportar`) gera o .sql que substitui as correções do servidor da CMJ pelas do notebook (com usuários, datas e impressões); rodar no servidor depois do pacote 03c2b e antes da migração. **Incluir no roteiro da 3d.**
 - Guia da Renata atualizado (seção 7 "Até a instalação final"). Teste 03c2c v1.2: 43/0.
+
+## 13. Selecionar todos e ações em lote (pedido do Celso, 18/11/2026)
+
+- Lista: caixinha em cada documento e "selecionar todos" no cabeçalho (todos os da lista com os filtros; trocar filtro desmarca tudo). Barra de lote com quantos estão marcados e o valor, um motivo só e os botões Conferir, Ignorar, Arquivo morto, Desfazer e Desmarcar; confirmação antes de gravar. `MIG.MIG_Caso_Lote_Gravar` (até 1.000 por vez) e `MIG_Caso_Conferir`/`MIG_Movimento_Transformar` com `@Unidades` (lista JSON). API: `/api/mig/casos/lote` e `/conferir-lote`.
+- Documento aberto: "Ignorar" e "Confirmado" no cabeçalho da grade marcam ou desmarcam todas as linhas.

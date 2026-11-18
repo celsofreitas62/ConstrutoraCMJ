@@ -119,3 +119,5 @@
 - **18/11/2026**: tela de casos aprovada pelo Celso no navegador, com dois ajustes pedidos: motivo como lista de escolha (eram etiquetas demais) e **topo e menu fixos** em todas as telas. Arquivo morto passa a receber os documentos marcados na tela. Guia de correção entregue para a Renata (`CashBookCMJ`). Combinado: depois da aprovação dela, conferência final da migração (item 3) e etapa 3d (item 4).
 
 - **18/11/2026**: pergunta do Celso: o Access continua em uso, a correção dos casos tem de ser no ambiente real? Não: correções valem pelo número do Access e são reaplicadas a cada cópia nova. Aprovado: aviso "Revisar" quando o Access muda ou apaga o que foi corrigido, e arquivo "Baixar correções" para levar ao servidor na 3d (entra no roteiro da instalação). Guia da Renata ganhou a seção "Até a instalação final".
+
+- **18/11/2026**: pedido do Celso: "selecionar todos" na tela de casos para facilitar a Renata. Feitos os dois: ações em lote na lista (ignorar, arquivo morto, desfazer, conferir) e marcar todas as linhas (Ignorar/Confirmado) no documento aberto. Seção 13 do `Migracao_Movimento.md`.

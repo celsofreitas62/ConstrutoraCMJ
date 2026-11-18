@@ -48,10 +48,24 @@
 
       <div class="area-lista">
         <div class="cartao">
+          <div class="barra-lote" id="barra-lote" hidden>
+            <span class="forte" id="lote-contagem"></span>
+            <label data-dica="Motivo da decisão em lote (obrigatório para ignorar e para o arquivo morto, pelo menos 5 letras). Vale para todos os documentos marcados." class="campo f-3">Motivo da decisão em lote
+              <input type="text" id="lote-motivo" maxlength="400" placeholder="Ex.: estornos lançados com valor negativo no Access">
+            </label>
+            <div class="etiquetas">
+              <button data-dica="Confere os documentos marcados com as correções já gravadas. Não grava nada." type="button" class="botao" id="lote-conferir">Conferir</button>
+              <button data-dica="Os documentos marcados não vão para o sistema novo. Exige motivo. Pede confirmação." type="button" class="botao" id="lote-ignorar">Ignorar</button>
+              <button data-dica="Os documentos marcados vão para o arquivo morto. Exige motivo. Pede confirmação." type="button" class="botao" id="lote-arquivo">Arquivo morto</button>
+              <button data-dica="Apaga as correções e decisões dos documentos marcados: voltam a ser como estão no Access. Pede confirmação." type="button" class="botao botao-contorno" id="lote-desfazer">Desfazer</button>
+              <button data-dica="Desmarca todos." type="button" class="botao botao-contorno" id="lote-limpar">Desmarcar</button>
+            </div>
+          </div>
           <div class="rolagem">
             <table class="tabela tabela-larga">
               <thead>
                 <tr>
+                  <th scope="col" class="celula-marca"><input type="checkbox" id="marcar-todos" aria-label="Selecionar todos" data-dica="Seleciona todos os documentos da lista (com os filtros aplicados), para uma ação em lote."></th>
                   <th scope="col">Data</th>
                   <th scope="col">Documento</th>
                   <th scope="col">Empresa</th>
@@ -84,7 +98,7 @@
           <table class="tabela tabela-edicao tabela-casos">
             <thead>
               <tr>
-                <th scope="col">Ignorar</th>
+                <th scope="col"><label class="marcar-coluna" data-dica="Marca ou desmarca Ignorar em todas as linhas do documento."><input type="checkbox" id="ignorar-todas"> Ignorar</label></th>
                 <th scope="col">Nº Access</th>
                 <th scope="col">Histórico</th>
                 <th scope="col">Conta</th>
@@ -96,7 +110,7 @@
                 <th scope="col">Pagamento</th>
                 <th scope="col" class="numero">Débito</th>
                 <th scope="col" class="numero">Crédito</th>
-                <th scope="col">Confirmado</th>
+                <th scope="col"><label class="marcar-coluna" data-dica="Marca ou desmarca Confirmado em todas as linhas do documento."><input type="checkbox" id="confirmar-todas"> Confirmado</label></th>
               </tr>
             </thead>
             <tbody id="linhas"></tbody>

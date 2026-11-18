@@ -148,7 +148,7 @@ ORDEM_03C2B = [
     'objetos/MIG/MIG.Tabelas_Transformacao.sql', 'objetos/MIG/MIG.fn_MIG_Hash_Unidade.sql', 'objetos/MIG/MIG.MIG_Movimento_Transformar.sql',
     'objetos/MIG/MIG.MIG_Movimento_Conferencia_Listar.sql',
     'objetos/MIG/MIG.MIG_Caso_Listar.sql', 'objetos/MIG/MIG.MIG_Caso_Obter.sql', 'objetos/MIG/MIG.MIG_Caso_Opcoes.sql',
-    'objetos/MIG/MIG.MIG_Caso_Gravar.sql', 'objetos/MIG/MIG.MIG_Caso_Conferir.sql', 'objetos/MIG/MIG.MIG_Caso_Correcao_Exportar.sql', 'objetos/MIG/Carga_MIG_Tela_Casos.sql',
+    'objetos/MIG/MIG.MIG_Caso_Gravar.sql', 'objetos/MIG/MIG.MIG_Caso_Conferir.sql', 'objetos/MIG/MIG.MIG_Caso_Lote_Gravar.sql', 'objetos/MIG/MIG.MIG_Caso_Correcao_Exportar.sql', 'objetos/MIG/Carga_MIG_Tela_Casos.sql',
     'objetos/MIG/MIG.MIG_Arquivo_Morto_Processar.sql',
 ]
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'

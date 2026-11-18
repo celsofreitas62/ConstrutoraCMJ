@@ -734,11 +734,15 @@ GO
     v1.2 (18/11/2026) - Aviso "Revisar" (MIG.Caso.REVISAR): linha corrigida que
                         mudou ou foi apagada no Access, documento com decisão
                         que mudou ou sumiu do Access.
+    v1.3 (18/11/2026) - @Unidades (lista JSON): confere vários documentos de uma
+                        vez (ações em lote da tela de casos); uma linha por
+                        documento no retorno.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
     -- EXEC MIG.MIG_Movimento_Transformar @Executar = 1;   -- grava
     -- EXEC MIG.MIG_Movimento_Transformar @Unidade = 'L:123'; -- confere um documento
+    -- EXEC MIG.MIG_Movimento_Transformar @Unidades = N'["L:123","V:45"]'; -- confere vários
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -748,7 +752,8 @@ CREATE OR ALTER PROCEDURE [MIG].[MIG_Movimento_Transformar]
     @Executar           BIT          = 0,
     @NomeCaixa          NVARCHAR(60) = N'Caixa',
     @NomeCaixaContabil  NVARCHAR(60) = N'Caixa contábil',
-    @Unidade            VARCHAR(40)  = NULL
+    @Unidade            VARCHAR(40)  = NULL,
+    @Unidades           NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -763,14 +768,25 @@ BEGIN
     DECLARE @Agora        DATETIME2(0) = SYSDATETIME();
 
     BEGIN TRY
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
 
         IF OBJECT_ID(N'MIG.Movimento', N'U') IS NULL
             THROW 50001, N'Rode antes o MIG.MIG_Movimento_Preparar.', 1;
         IF NOT EXISTS (SELECT 1 FROM MIG.DePara_Centro) OR NOT EXISTS (SELECT 1 FROM MIG.DePara_Plano)
             THROW 50001, N'Rode antes o MIG.MIG_Cadastros_Processar.', 1;
-        IF @Unidade IS NOT NULL AND ISNULL(@Executar, 0) = 1
-            THROW 50001, N'A conferência de um documento só (@Unidade) não grava: rode sem @Executar.', 1;
+        -- documentos escolhidos (tela de casos): um (@Unidade) ou vários (@Unidades)
+        CREATE TABLE #Sel (UNIDADE VARCHAR(40) NOT NULL PRIMARY KEY);
+        IF @Unidade IS NOT NULL
+            INSERT INTO #Sel (UNIDADE) VALUES (@Unidade);
+        IF ISJSON(ISNULL(@Unidades, N'')) = 1
+            INSERT INTO #Sel (UNIDADE)
+            SELECT DISTINCT LEFT(j.value, 40) FROM OPENJSON(@Unidades) j
+            WHERE j.value IS NOT NULL AND NOT EXISTS (SELECT 1 FROM #Sel s WHERE s.UNIDADE = LEFT(j.value, 40));
+        DECLARE @Filtrar BIT = CASE WHEN EXISTS (SELECT 1 FROM #Sel) THEN 1 ELSE 0 END;
+        IF (@Unidade IS NOT NULL OR @Unidades IS NOT NULL) AND @Filtrar = 0
+            THROW 50001, N'Nenhum documento informado para conferir.', 1;
+        IF @Filtrar = 1 AND ISNULL(@Executar, 0) = 1
+            THROW 50001, N'A conferência de documentos escolhidos (@Unidade/@Unidades) não grava: rode sem @Executar.', 1;
 
         SELECT @IdSistema = u.ID_USUARIO FROM SIS.Usuario u WHERE u.LOGIN = 'sistema';
         SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdSistema);
@@ -813,7 +829,7 @@ BEGIN
         FROM MIG.Movimento m
         LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
         WHERE m.DESTINO = 'SISTEMA'
-          AND (@Unidade IS NULL OR m.UNIDADE = @Unidade)
+          AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
           AND ISNULL(o.IGNORAR_LINHA, 0) = 0
           AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao c WHERE c.UNIDADE = m.UNIDADE);
 
@@ -1044,7 +1060,7 @@ BEGIN
         INTO #Dec
         FROM MIG.Movimento m
         INNER JOIN MIG.Caso_Correcao cc ON cc.UNIDADE = m.UNIDADE
-        WHERE m.DESTINO = 'SISTEMA' AND (@Unidade IS NULL OR m.UNIDADE = @Unidade)
+        WHERE m.DESTINO = 'SISTEMA' AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
         GROUP BY m.UNIDADE;
 
         SELECT u.UNIDADE, CAST(ISNULL(u.PADRAO, '') AS VARCHAR(200)) AS PADRAO, CAST(u.REGRA AS VARCHAR(15)) AS REGRA,
@@ -1058,7 +1074,7 @@ BEGIN
         UNION ALL   -- todas as linhas do documento marcadas "ignorar": o documento fica de fora
         SELECT m.UNIDADE, MIN(m.PADRAO), 'IGNORAR', N'', N'', COUNT(*), SUM(m.VALOR_DEBITO), SUM(m.VALOR_CREDITO), MIN(m.DT_UNIDADE)
         FROM MIG.Movimento m
-        WHERE m.DESTINO = 'SISTEMA' AND (@Unidade IS NULL OR m.UNIDADE = @Unidade)
+        WHERE m.DESTINO = 'SISTEMA' AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
           AND EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = m.UNIDADE)
           AND NOT EXISTS (SELECT 1 FROM #U u WHERE u.UNIDADE = m.UNIDADE)
           AND NOT EXISTS (SELECT 1 FROM #Dec d WHERE d.UNIDADE = m.UNIDADE)
@@ -1083,7 +1099,7 @@ BEGIN
             CROSS APPLY (SELECT MIG.fn_MIG_Hash_Unidade(cc.UNIDADE) AS H) h
             WHERE cc.HASH_ACCESS IS NOT NULL AND (h.H IS NULL OR h.H <> cc.HASH_ACCESS)
         ) x
-        WHERE @Unidade IS NULL OR x.UNIDADE = @Unidade
+        WHERE @Filtrar = 0 OR x.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s)
         GROUP BY x.UNIDADE;
 
         -- documento corrigido que sumiu do Access: continua na tela, para revisar
@@ -1094,7 +1110,8 @@ BEGIN
           AND NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.UNIDADE = r.UNIDADE AND m.DESTINO = 'SISTEMA');
 
         BEGIN TRANSACTION;
-        MERGE MIG.Caso AS c
+        WITH Alvo AS (SELECT * FROM MIG.Caso c WHERE @Filtrar = 0 OR c.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
+        MERGE Alvo AS c
         USING (SELECT n.*, ISNULL(r.MSG, N'') AS REV FROM #CasoNovo n LEFT JOIN #Rev r ON r.UNIDADE = n.UNIDADE) AS n ON n.UNIDADE = c.UNIDADE
         WHEN MATCHED THEN UPDATE SET
              c.PADRAO = n.PADRAO, c.REGRA_ATUAL = n.REGRA, c.MOTIVO = n.MOTIVO, c.DETALHE = n.DETALHE,
@@ -1103,22 +1120,23 @@ BEGIN
         WHEN NOT MATCHED BY TARGET THEN
              INSERT (UNIDADE, PADRAO, REGRA_ATUAL, MOTIVO, MOTIVO_ORIGINAL, DETALHE, LINHAS, VALOR_DEBITO, VALOR_CREDITO, DT_DOCUMENTO, REVISAR)
              VALUES (n.UNIDADE, n.PADRAO, n.REGRA, n.MOTIVO, n.MOTIVO, n.DETALHE, n.N, n.D, n.C, n.DT, n.REV)
-        WHEN NOT MATCHED BY SOURCE AND (@Unidade IS NULL OR c.UNIDADE = @Unidade) THEN DELETE;
+        WHEN NOT MATCHED BY SOURCE THEN DELETE;
         COMMIT TRANSACTION;
 
         -- conferência de um documento só (tela de casos)
-        IF @Unidade IS NOT NULL
+        IF @Filtrar = 1
         BEGIN
-            SELECT CAST(@Unidade AS VARCHAR(40)) AS UNIDADE,
+            SELECT s.UNIDADE,
                    CAST(COALESCE(n.REGRA, u.REGRA, 'SEM_LINHAS') AS VARCHAR(15)) AS REGRA,
                    COALESCE(n.MOTIVO, u.MOTIVO, N'') AS MOTIVO,
                    COALESCE(n.DETALHE, u.DETALHE, N'') AS DETALHE,
                    ISNULL(r.MSG, N'') AS REVISAR
-            FROM (SELECT 1 AS X) x
-            LEFT JOIN #CasoNovo n ON n.UNIDADE = @Unidade
-            LEFT JOIN #U u ON u.UNIDADE = @Unidade
-            LEFT JOIN #Rev r ON r.UNIDADE = @Unidade;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
+            FROM #Sel s
+            LEFT JOIN #CasoNovo n ON n.UNIDADE = s.UNIDADE
+            LEFT JOIN #U u ON u.UNIDADE = s.UNIDADE
+            LEFT JOIN #Rev r ON r.UNIDADE = s.UNIDADE
+            ORDER BY s.UNIDADE;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
             RETURN;
         END;
 
@@ -1138,7 +1156,7 @@ BEGIN
             FROM #T t GROUP BY t.REGRA, t.TIPO ORDER BY t.REGRA, t.TIPO;
             SELECT 'TRANSFERENCIAS' AS GRADE, r.REGRA, r.TC, COUNT(*) AS QTD, SUM(r.VALOR) AS VALOR FROM #TR r GROUP BY r.REGRA, r.TC;
             SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO' GROUP BY c.MOTIVO ORDER BY COUNT(*) DESC;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
             RETURN;
         END;
 
@@ -1278,7 +1296,7 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
 
         SELECT 'GRAVADO' AS GRADE, r.ORDEM, r.ITEM, r.QTD, r.VALOR
         FROM (
@@ -1294,7 +1312,7 @@ BEGIN
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
         IF XACT_STATE() <> -1
             INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
             VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
@@ -1936,6 +1954,8 @@ GO
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+    v1.1 (18/11/2026) - @Unidades (lista JSON): confere vários documentos de uma
+                        vez (ações em lote); uma linha por documento.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Conferir @IdUsuario = 1, @Unidade = 'L:123';
@@ -1946,7 +1966,8 @@ GO
 
 CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Conferir]
     @IdUsuario  INT,
-    @Unidade    VARCHAR(40)
+    @Unidade    VARCHAR(40)   = NULL,
+    @Unidades   NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -1958,11 +1979,13 @@ BEGIN
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'MIG_CASOS', 'VER') = 0
             THROW 50001, N'Você não tem permissão para ver os casos da migração.', 1;
-        IF NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = @Unidade)
+        IF @Unidade IS NOT NULL AND NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = @Unidade)
             THROW 50001, N'Caso não encontrado. Atualize a lista.', 1;
+        IF @Unidade IS NULL AND ISJSON(ISNULL(@Unidades, N'')) = 0
+            THROW 50001, N'Escolha pelo menos um documento.', 1;
 
         SET @EtapaAtual = 'Classificação';
-        EXEC MIG.MIG_Movimento_Transformar @Executar = 0, @Unidade = @Unidade;
+        EXEC MIG.MIG_Movimento_Transformar @Executar = 0, @Unidade = @Unidade, @Unidades = @Unidades;
     END TRY
     BEGIN CATCH
         IF ERROR_NUMBER() = 50001 THROW;
@@ -1970,6 +1993,138 @@ BEGIN
             INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
             VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
         THROW 50001, N'Não foi possível conferir o caso. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/MIG/MIG.MIG_Caso_Lote_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [MIG].[MIG_Caso_Lote_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 18/11/2026
+  Descrição   : Ações em lote da tela "Casos da migração": a mesma decisão para
+                vários documentos de uma vez (os marcados na lista, ou "Selecionar
+                todos" com os filtros). @Acao:
+                  IGNORAR        os documentos não migram (motivo obrigatório);
+                  ARQUIVO_MORTO  vão para o arquivo morto (motivo obrigatório);
+                  DESFAZER       apagam todas as correções e decisões deles.
+                @UnidadesJson: lista JSON dos documentos (ex.: ["L:12","V:7"]),
+                até 1.000 por vez. Cada decisão guarda a impressão digital do
+                documento no Access (aviso "Revisar"). Tudo-ou-nada. Depois de
+                gravar, a tela chama MIG_Caso_Conferir com a mesma lista.
+                Permissão: ALTERAR em MIG_CASOS.
+                Devolve SUCESSO, MENSAGEM, ID (= quantidade de documentos).
+                Schema MIG: só migração, NÃO entra no MASTER (regra 60).
+
+  Changelog:
+    v1.0 (18/11/2026) - Criação (etapa 03c2, "selecionar todos" na tela de casos).
+
+  Homologação (LOCAL):
+    -- EXEC MIG.MIG_Caso_Lote_Gravar @IdUsuario = 1, @Acao = 'IGNORAR', @Motivo = N'Estornos', @UnidadesJson = N'["L:12","A:345"]';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Lote_Gravar]
+    @IdUsuario     INT,
+    @Acao          VARCHAR(15),
+    @Motivo        NVARCHAR(400) = N'',
+    @UnidadesJson  NVARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[MIG].[MIG_Caso_Lote_Gravar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa     NVARCHAR(400) = N'';
+    DECLARE @Usuario    NVARCHAR(100);
+    DECLARE @Qtd        INT = 0;
+
+    BEGIN TRY
+        DROP TABLE IF EXISTS #Sel;
+        SET @Acao   = UPPER(LTRIM(RTRIM(ISNULL(@Acao, ''))));
+        SET @Motivo = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'MIG_CASOS', 'ALTERAR') = 0
+            SET @Recusa = N'Você não tem permissão para corrigir os casos da migração.';
+        IF @Recusa = N'' AND @Acao NOT IN ('IGNORAR', 'ARQUIVO_MORTO', 'DESFAZER')
+            SET @Recusa = N'Ação inválida.';
+        IF @Recusa = N'' AND @Acao IN ('IGNORAR', 'ARQUIVO_MORTO') AND LEN(@Motivo) < 5
+            SET @Recusa = N'Escreva o motivo da decisão (pelo menos 5 letras).';
+        IF @Recusa = N'' AND ISJSON(ISNULL(@UnidadesJson, N'')) = 0
+            SET @Recusa = N'Lista de documentos inválida.';
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(0 AS BIGINT) AS ID;
+            RETURN;
+        END;
+
+        SELECT DISTINCT CAST(LEFT(j.value, 40) AS VARCHAR(40)) AS UNIDADE
+        INTO #Sel
+        FROM OPENJSON(@UnidadesJson) j
+        WHERE j.value IS NOT NULL;
+        SELECT @Qtd = COUNT(*) FROM #Sel;
+
+        IF @Qtd = 0
+            SET @Recusa = N'Escolha pelo menos um documento.';
+        IF @Recusa = N'' AND @Qtd > 1000
+            SET @Recusa = N'No máximo 1.000 documentos por vez. Use os filtros para separar.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #Sel s WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = s.UNIDADE))
+            SET @Recusa = N'Algum documento não está mais na lista. Atualize a tela e tente de novo.';
+        IF @Recusa <> N''
+        BEGIN
+            DROP TABLE IF EXISTS #Sel;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(0 AS BIGINT) AS ID;
+            RETURN;
+        END;
+
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+        IF @Acao = 'DESFAZER'
+        BEGIN
+            DELETE cc FROM MIG.Caso_Correcao cc INNER JOIN #Sel s ON s.UNIDADE = cc.UNIDADE;
+            DELETE o  FROM MIG.Caso_Correcao_Linha o INNER JOIN #Sel s ON s.UNIDADE = o.UNIDADE;
+        END
+        ELSE
+        BEGIN
+            UPDATE cc
+               SET cc.ACAO = @Acao, cc.MOTIVO = @Motivo, cc.HASH_ACCESS = MIG.fn_MIG_Hash_Unidade(cc.UNIDADE),
+                   cc.DT_ALTERACAO = SYSDATETIME(), cc.USUARIO_ALTERACAO = @Usuario
+            FROM MIG.Caso_Correcao cc
+            INNER JOIN #Sel s ON s.UNIDADE = cc.UNIDADE
+            WHERE cc.ACAO <> @Acao OR cc.MOTIVO <> @Motivo OR ISNULL(cc.HASH_ACCESS, 0x) <> ISNULL(MIG.fn_MIG_Hash_Unidade(cc.UNIDADE), 0x);
+
+            INSERT INTO MIG.Caso_Correcao (UNIDADE, ACAO, MOTIVO, HASH_ACCESS, USUARIO_CRIACAO)
+            SELECT s.UNIDADE, @Acao, @Motivo, MIG.fn_MIG_Hash_Unidade(s.UNIDADE), @Usuario
+            FROM #Sel s
+            WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao cc WHERE cc.UNIDADE = s.UNIDADE);
+        END;
+        COMMIT TRANSACTION;
+
+        DROP TABLE IF EXISTS #Sel;
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(CONVERT(NVARCHAR(10), @Qtd) + CASE WHEN @Qtd = 1 THEN N' documento ' ELSE N' documentos ' END
+                    + CASE @Acao WHEN 'DESFAZER' THEN N'voltaram a ser como estão no Access.'
+                                 WHEN 'IGNORAR' THEN N'marcados para não migrar.'
+                                 ELSE N'marcados para o arquivo morto.' END AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(@Qtd AS BIGINT) AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF XACT_STATE() <> -1
+        BEGIN
+            DROP TABLE IF EXISTS #Sel;
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        END;
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar a decisão em lote. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, CAST(0 AS BIGINT) AS ID;
     END CATCH;
 END;
 GO

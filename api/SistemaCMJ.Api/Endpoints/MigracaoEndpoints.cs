@@ -20,6 +20,7 @@ using SistemaCMJ.Api.Infra;
 namespace SistemaCMJ.Api.Endpoints;
 
 public sealed record CasoPedido(string? Unidade, string? Acao, string? Motivo, JsonElement? Linhas);
+public sealed record LotePedido(string? Acao, string? Motivo, JsonElement? Unidades);
 
 public static class MigracaoEndpoints
 {
@@ -31,6 +32,8 @@ public static class MigracaoEndpoints
         app.MapPost("/api/mig/caso/gravar", Gravar);
         app.MapPost("/api/mig/caso/conferir", Conferir);
         app.MapGet("/api/mig/casos/correcoes.sql", ExportarCorrecoes);
+        app.MapPost("/api/mig/casos/lote", GravarLote);
+        app.MapPost("/api/mig/casos/conferir-lote", ConferirLote);
     }
 
     private static Task<IResult> Listar(HttpContext http, Banco banco, ILogger<Program> logger) =>
@@ -97,6 +100,36 @@ public static class MigracaoEndpoints
     private static Task<IResult> Conferir(CasoPedido p, HttpContext http, Banco banco, ILogger<Program> logger) =>
         Resposta.Rodar(http, banco, logger, async () =>
             Resposta.Ok(await ConferirAsync(Banco.Cortar(p.Unidade?.Trim(), 40), http.Usuario(), banco, http.RequestAborted)));
+
+    /// <summary>Ação em lote (ignorar, arquivo morto, desfazer) e conferência dos mesmos documentos.</summary>
+    private static Task<IResult> GravarLote(LotePedido p, HttpContext http, Banco banco, ILogger<Program> logger) =>
+        Resposta.Rodar(http, banco, logger, async () =>
+        {
+            var usuario = http.Usuario();
+            var unidades = p.Unidades is { ValueKind: JsonValueKind.Array } lista ? lista.GetRawText() : null;
+            var resultado = await banco.ExecutarUmaLinhaAsync("MIG.MIG_Caso_Lote_Gravar", new Dictionary<string, object?>
+            {
+                ["IdUsuario"] = usuario.IdUsuario,
+                ["Acao"] = Banco.Cortar(p.Acao?.Trim(), 15),
+                ["Motivo"] = Banco.Cortar(p.Motivo?.Trim(), 400),
+                ["UnidadesJson"] = unidades
+            }, usuario, http.RequestAborted);
+            if (!resultado.Bool("SUCESSO"))
+                return Resposta.DeGravacao(resultado);
+            return Resposta.Ok(await ConferirLoteAsync(unidades, usuario, banco, http.RequestAborted), resultado.Texto("MENSAGEM"));
+        });
+
+    private static Task<IResult> ConferirLote(LotePedido p, HttpContext http, Banco banco, ILogger<Program> logger) =>
+        Resposta.Rodar(http, banco, logger, async () =>
+            Resposta.Ok(await ConferirLoteAsync(p.Unidades is { ValueKind: JsonValueKind.Array } lista ? lista.GetRawText() : null,
+                                                http.Usuario(), banco, http.RequestAborted)));
+
+    private static Task<List<Linha>> ConferirLoteAsync(string? unidades, Contexto usuario, Banco banco, CancellationToken ct) =>
+        banco.ExecutarAsync("MIG.MIG_Caso_Conferir", new Dictionary<string, object?>
+        {
+            ["IdUsuario"] = usuario.IdUsuario,
+            ["Unidades"] = unidades
+        }, usuario, ct);
 
     private static async Task<Linha> ConferirAsync(string unidade, Contexto usuario, Banco banco, CancellationToken ct)
     {

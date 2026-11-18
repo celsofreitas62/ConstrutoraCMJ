@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let filtroSituacao = 'PENDENTE';
   let filtroMotivo = '';
   let aberto = null;     // caso aberto (cabeçalho + linhas)
+  const marcados = new Set();   // documentos marcados na lista (ações em lote)
   let sujo = false;
 
   for (const id of ['botao-gravar', 'botao-ignorar', 'botao-arquivo', 'botao-desfazer', 'botao-baixar-correcoes']) $(id).hidden = !podeAlterar;
@@ -119,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (lista.length === 0) {
       const tr = Util.el('tr');
       const td = Util.el('td', 'vazio', casos.length ? 'Nenhum documento com esses filtros.' : 'Nenhum caso: todos os documentos se encaixam nas regras.');
-      td.colSpan = 8;
+      td.colSpan = 9;
       tr.append(td);
       corpo.append(tr);
     }
@@ -128,6 +129,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       tr.tabIndex = 0;
       tr.dataset.unidade = c.UNIDADE;
       if (aberto && aberto.UNIDADE === c.UNIDADE) tr.classList.add('selecionada');
+      const tdMarca = Util.el('td', 'celula-marca');
+      const marca = Util.el('input');
+      marca.type = 'checkbox';
+      marca.checked = marcados.has(c.UNIDADE);
+      marca.setAttribute('aria-label', 'Selecionar ' + c.DOCUMENTO);
+      marca.hidden = !podeAlterar;
+      marca.addEventListener('click', (e) => e.stopPropagation());
+      marca.addEventListener('change', () => { if (marca.checked) marcados.add(c.UNIDADE); else marcados.delete(c.UNIDADE); atualizarLote(); });
+      tdMarca.append(marca);
+      tdMarca.addEventListener('click', (e) => e.stopPropagation());
+      tr.append(tdMarca);
       const motivo = Util.el('td', null, c.MOTIVO);
       if (c.DETALHE) motivo.append(Util.el('div', 'suave', c.DETALHE));
       if (c.REVISAR) motivo.append(Util.el('div', 'aviso-revisar', c.REVISAR));
@@ -146,16 +158,78 @@ document.addEventListener('DOMContentLoaded', async () => {
       tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') abrir(c.UNIDADE); });
       corpo.append(tr);
     }
+    atualizarLote();
     const total = lista.reduce((s, c) => s + Number(c.VALOR_DEBITO || 0), 0);
     $('contagem').textContent = lista.length + ' de ' + casos.length + ' documentos · débitos R$ ' + moeda.format(total)
       + (lista.length ? ' · clique num documento para abrir as linhas' : '');
   }
 
+  // ---- Ações em lote (documentos marcados) -------------------------------------
+  // Trocar um filtro desmarca tudo: a ação vale sempre só para o que está na tela.
+  function atualizarLote() {
+    const visiveis = new Set(filtrados().map((c) => c.UNIDADE));
+    for (const u of [...marcados]) if (!visiveis.has(u)) marcados.delete(u);
+    const sel = casos.filter((c) => marcados.has(c.UNIDADE));
+    const todos = $('marcar-todos');
+    todos.hidden = !podeAlterar;
+    todos.checked = sel.length > 0 && sel.length === visiveis.size;
+    todos.indeterminate = sel.length > 0 && sel.length < visiveis.size;
+    $('barra-lote').hidden = sel.length === 0;
+    const valor = sel.reduce((s, c) => s + Number(c.VALOR_DEBITO || 0), 0);
+    $('lote-contagem').textContent = sel.length + (sel.length === 1 ? ' documento marcado' : ' documentos marcados') + ' · débitos R$ ' + moeda.format(valor);
+  }
+  function filtroMudou() { marcados.clear(); desenhar(); }
+
+  $('marcar-todos').addEventListener('change', () => {
+    marcados.clear();
+    if ($('marcar-todos').checked) for (const c of filtrados()) marcados.add(c.UNIDADE);
+    desenhar();
+  });
+  $('lote-limpar').addEventListener('click', () => { marcados.clear(); desenhar(); });
+
+  function resumoConferencia(linhas) {
+    const conta = {};
+    for (const l of linhas || []) {
+      const chave = l.REVISAR ? 'Revisar' : l.REGRA === 'CASO' ? 'ainda não se encaixam' : (NOME_REGRA[l.REGRA] || l.REGRA);
+      conta[chave] = (conta[chave] || 0) + 1;
+    }
+    return Object.entries(conta).map(([k, n]) => n + ' ' + k).join('; ');
+  }
+
+  async function lote(acao, titulo, verbo) {
+    const unidades = [...marcados];
+    if (!unidades.length) return;
+    const motivo = $('lote-motivo').value.trim();
+    if (acao !== 'DESFAZER' && motivo.length < 5) {
+      await Mensagens.alerta('Escreva o motivo da decisão em lote (pelo menos 5 letras).', 'ATENCAO', { foco: $('lote-motivo') });
+      return;
+    }
+    const valor = casos.filter((c) => marcados.has(c.UNIDADE)).reduce((s, c) => s + Number(c.VALOR_DEBITO || 0), 0);
+    if (!(await Mensagens.confirmar(titulo, unidades.length + ' documentos (débitos R$ ' + moeda.format(valor) + ') ' + verbo + ' Dá para desfazer depois.', 'Confirmar'))) return;
+    const r = await Api.post('/api/mig/casos/lote', { acao, motivo, unidades });
+    if (!(await Mensagens.tratar(r))) return;
+    await Mensagens.concluido((r.mensagem || 'Gravado.') + ' Conferência: ' + resumoConferencia(r.dados) + '.');
+    marcados.clear();
+    $('lote-motivo').value = '';
+    await carregar();
+  }
+  $('lote-ignorar').addEventListener('click', () => lote('IGNORAR', 'Ignorar os documentos marcados?', 'não vão para o sistema novo.'));
+  $('lote-arquivo').addEventListener('click', () => lote('ARQUIVO_MORTO', 'Mandar para o arquivo morto?', 'vão para o arquivo morto (consulta), não para o financeiro novo.'));
+  $('lote-desfazer').addEventListener('click', () => lote('DESFAZER', 'Desfazer as correções?', 'voltam a ser como estão no Access (todas as correções e decisões deles são apagadas).'));
+  $('lote-conferir').addEventListener('click', async () => {
+    const r = await Api.post('/api/mig/casos/conferir-lote', { unidades: [...marcados] });
+    if (!(await Mensagens.tratar(r))) return;
+    await Mensagens.concluido('Conferência de ' + marcados.size + ' documentos: ' + resumoConferencia(r.dados) + '.');
+    await carregar();
+  });
+  for (const id of ['lote-ignorar', 'lote-arquivo', 'lote-desfazer']) $(id).hidden = !podeAlterar;
+  $('lote-motivo').disabled = !podeAlterar;
+
   $('filtros').addEventListener('submit', (e) => e.preventDefault());
-  $('busca').addEventListener('input', Util.atrasar(desenhar, 200));
-  $('empresa').addEventListener('change', desenhar);
-  $('motivo-filtro').addEventListener('change', () => { filtroMotivo = $('motivo-filtro').value; desenhar(); });
-  $('ano').addEventListener('change', desenhar);
+  $('busca').addEventListener('input', Util.atrasar(filtroMudou, 200));
+  $('empresa').addEventListener('change', filtroMudou);
+  $('motivo-filtro').addEventListener('change', () => { filtroMotivo = $('motivo-filtro').value; filtroMudou(); });
+  $('ano').addEventListener('change', filtroMudou);
   $('botao-atualizar').addEventListener('click', carregar);
 
   // ---- Exportar --------------------------------------------------------------
@@ -238,7 +312,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     campos.ignorar.checked = !!l.ignorar;
     campos.ignorar.setAttribute('aria-label', 'Ignorar a linha');
     campos.ignorar.dataset.dica = 'Marque para a linha não entrar na migração (ex.: lançada em dobro no Access).';
-    const tIgn = td(); tIgn.classList.add('marcacao');
+    const tIgn = td(); tIgn.classList.add('celula-marca');
     vigiar(tIgn, campos.ignorar, () => (campos.ignorar.checked ? 1 : 0), 0, 'não ignorada');
     const marcarIgnorada = () => tr.classList.toggle('linha-ignorada', campos.ignorar.checked);
     campos.ignorar.addEventListener('change', marcarIgnorada);
@@ -292,13 +366,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     campos.confirmado.checked = !!l.confirmado;
     campos.confirmado.setAttribute('aria-label', 'Confirmado');
     campos.confirmado.dataset.dica = 'Confirmado no banco (compensado). Sem confirmação, uma transferência vira caso; um pagamento com data vira cheque não compensado.';
-    const tConf = td(); tConf.classList.add('marcacao');
+    const tConf = td(); tConf.classList.add('celula-marca');
     vigiar(tConf, campos.confirmado, () => (campos.confirmado.checked ? 1 : 0), l.confirmadoOrig ? 1 : 0, l.confirmadoOrig ? 'sim' : 'não');
 
     for (const c of Object.values(campos)) c.disabled = !podeAlterar;
     tr._campos = campos;
     return tr;
   }
+
+  // Cabeçalho "Ignorar" e "Confirmado": marcar ou desmarcar todas as linhas
+  function marcarCabecalhos() {
+    for (const [id, campo] of [['ignorar-todas', 'ignorar'], ['confirmar-todas', 'confirmado']]) {
+      const linhas = [...$('linhas').querySelectorAll('tr')];
+      const n = linhas.filter((tr) => tr._campos[campo].checked).length;
+      $(id).checked = linhas.length > 0 && n === linhas.length;
+      $(id).indeterminate = n > 0 && n < linhas.length;
+      $(id).disabled = !podeAlterar;
+    }
+  }
+  for (const [id, campo] of [['ignorar-todas', 'ignorar'], ['confirmar-todas', 'confirmado']]) {
+    $(id).addEventListener('change', () => {
+      for (const tr of $('linhas').querySelectorAll('tr')) {
+        const c = tr._campos[campo];
+        if (c.checked !== $(id).checked) { c.checked = $(id).checked; c.dispatchEvent(new Event('change')); }
+      }
+      marcarCabecalhos();
+    });
+  }
+  $('linhas').addEventListener('change', marcarCabecalhos);
 
   function lerLinhas() {
     return [...$('linhas').querySelectorAll('tr')].map((tr) => {
@@ -361,6 +456,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('detalhe-motivo').textContent = texto;
     $('motivo').value = caso.ACAO ? caso.ACAO_MOTIVO : caso.CORRECAO_MOTIVO || '';
     $('linhas').replaceChildren(...(caso.LINHAS_JSON || []).map(linhaCaso));
+    marcarCabecalhos();
     sujo = false;
     totais();
     $('botao-desfazer').hidden = !podeAlterar || !(caso.ACAO || (caso.LINHAS_JSON || []).some((l) => l.corrigida));

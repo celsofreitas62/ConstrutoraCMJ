@@ -278,3 +278,7 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
   .topo { position: sticky; top: 0; z-index: 20; }
   .menu { position: sticky; top: 60px; align-self: flex-start; height: calc(100vh - 60px); overflow-y: auto; }
 }
+.barra-lote { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 12px 14px; background: var(--cor-principal-clara); border-bottom: 1px solid var(--borda); }
+.marcar-coluna { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.tabela .celula-marca { width: 40px; text-align: center; }
+.celula-marca input, .marcar-coluna input { width: 18px; height: 18px; accent-color: var(--cor-principal); }

@@ -13,6 +13,8 @@
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+    v1.1 (18/11/2026) - @Unidades (lista JSON): confere vários documentos de uma
+                        vez (ações em lote); uma linha por documento.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Conferir @IdUsuario = 1, @Unidade = 'L:123';
@@ -23,7 +25,8 @@ GO
 
 CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Conferir]
     @IdUsuario  INT,
-    @Unidade    VARCHAR(40)
+    @Unidade    VARCHAR(40)   = NULL,
+    @Unidades   NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -35,11 +38,13 @@ BEGIN
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'MIG_CASOS', 'VER') = 0
             THROW 50001, N'Você não tem permissão para ver os casos da migração.', 1;
-        IF NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = @Unidade)
+        IF @Unidade IS NOT NULL AND NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = @Unidade)
             THROW 50001, N'Caso não encontrado. Atualize a lista.', 1;
+        IF @Unidade IS NULL AND ISJSON(ISNULL(@Unidades, N'')) = 0
+            THROW 50001, N'Escolha pelo menos um documento.', 1;
 
         SET @EtapaAtual = 'Classificação';
-        EXEC MIG.MIG_Movimento_Transformar @Executar = 0, @Unidade = @Unidade;
+        EXEC MIG.MIG_Movimento_Transformar @Executar = 0, @Unidade = @Unidade, @Unidades = @Unidades;
     END TRY
     BEGIN CATCH
         IF ERROR_NUMBER() = 50001 THROW;

@@ -17,6 +17,8 @@
     v1.1 (18/11/2026) - Arquivo morto recebe o documento marcado na tela.
     v1.2 (18/11/2026) - Aviso "Revisar" quando o Access muda depois da correção
                         e arquivo das correções para a instalação.
+    v1.3 (18/11/2026) - Ações em lote ("selecionar todos"): ignorar, conferir e
+                        desfazer vários documentos de uma vez.
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -188,6 +190,36 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
   CONVERT(NVARCHAR(10), (SELECT COUNT(*) FROM FIN.Arquivo_Morto))),
  (N'Decisão guarda a impressão digital do documento', N'1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso_Correcao x WHERE x.UNIDADE = @U AND x.HASH_ACCESS = MIG.fn_MIG_Hash_Unidade(@U)))),
  (N'Observação traz o motivo da tela', N'1', CASE WHEN EXISTS (SELECT 1 FROM FIN.Arquivo_Morto a WHERE a.OBSERVACAO LIKE N'%HML 03c2c: teste de arquivo morto%') THEN N'1' ELSE N'0' END);
+
+-- 6b) Ações em lote: dois outros casos pendentes
+DECLARE @Lote NVARCHAR(MAX) = (SELECT N'[' + STRING_AGG(N'"' + x.UNIDADE + N'"', N',') + N']'
+                               FROM (SELECT TOP (2) c.UNIDADE FROM MIG.Caso c
+                                     WHERE c.REGRA_ATUAL = 'CASO' AND c.UNIDADE <> @U AND c.REVISAR = N''
+                                       AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao x WHERE x.UNIDADE = c.UNIDADE)
+                                       AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha x WHERE x.UNIDADE = c.UNIDADE)
+                                     ORDER BY c.UNIDADE) x);
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Lote_Gravar @IdUsuario = @IdCelso, @Acao = 'IGNORAR', @Motivo = N'ok', @UnidadesJson = @Lote;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES (N'Lote: ignorar sem motivo é recusado', N'0', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret));
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Lote_Gravar @IdUsuario = @IdCelso, @Acao = 'IGNORAR', @Motivo = N'HML 03c2c: teste de lote', @UnidadesJson = @Lote;
+DELETE FROM #Conf;
+INSERT INTO #Conf EXEC MIG.MIG_Caso_Conferir @IdUsuario = @IdCelso, @Unidades = @Lote;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Lote: ignorar 2 documentos', N'2 documentos marcados para não migrar.', (SELECT TOP (1) MENSAGEM FROM #Ret)),
+ (N'Lote: conferir devolve os 2 ignorados', N'2', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM #Conf WHERE REGRA = 'IGNORAR'))),
+ (N'Lote: decisões guardam a impressão digital', N'2', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso_Correcao x WHERE x.UNIDADE IN (SELECT value FROM OPENJSON(@Lote)) AND x.HASH_ACCESS = MIG.fn_MIG_Hash_Unidade(x.UNIDADE))));
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Lote_Gravar @IdUsuario = @IdCelso, @Acao = 'DESFAZER', @UnidadesJson = @Lote;
+DELETE FROM #Conf;
+INSERT INTO #Conf EXEC MIG.MIG_Caso_Conferir @IdUsuario = @IdCelso, @Unidades = @Lote;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Lote: desfazer volta os 2 a caso', N'2|2', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM #Conf WHERE REGRA = 'CASO')) + N'|'
+  + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso c WHERE c.UNIDADE IN (SELECT value FROM OPENJSON(@Lote)) AND c.REGRA_ATUAL = 'CASO'))),
+ (N'Lote: nenhuma decisão sobrou', N'0', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso_Correcao x WHERE x.UNIDADE IN (SELECT value FROM OPENJSON(@Lote)))));
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Lote_Gravar @IdUsuario = @IdCelso, @Acao = 'IGNORAR', @Motivo = N'HML 03c2c: lote inválido', @UnidadesJson = N'["X:NAO-EXISTE"]';
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES (N'Lote: documento fora da lista é recusado', N'0', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret));
 
 -- 7) Desfazer: volta a ser como está no Access
 DELETE FROM #Ret;
