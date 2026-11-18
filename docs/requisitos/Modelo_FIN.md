@@ -63,7 +63,7 @@ Significado dos campos (**confirmado pelo Celso em 17/11/2026**):
   - botão especial **"Retornar ao movimento"**: o usuário marca linhas na lista e elas voltam para o movimento do sistema novo (viram lançamento, parcela e baixa pelas mesmas regras da migração, ligadas à linha de origem, que fica marcada como "retornada" e não pode voltar duas vezes). Pede **confirmação** e **a senha de entrada no sistema de novo**; tudo-ou-nada e auditado (quem, quando, quais linhas). Acesso: só o administrador geral e o administrador do sistema (ação nova `RETORNAR` na tela, que nenhum perfil comum recebe);
   - **relatório simples** do arquivo morto com os filtros escolhidos (A4, PDF, no padrão de `PADRAO_RELATORIOS.md`: cabeçalho, filtros usados, lista e totais de débito e crédito).
 
-## Trava de datas nos lançamentos (pedido do Celso, 18/11/2026; parâmetros propostos, aguardando confirmação)
+## Trava de datas nos lançamentos (pedido do Celso, 18/11/2026; APROVADA com os padrões abaixo)
 
 Bloquear datas digitadas erradas ou muito retroativas em lançamento, parcela, baixa, estorno, transferência e movimento bancário. Tudo em parâmetro (`SIS.Parametro`, módulo FIN), conferido nas procedures do FIN (uma function única de validação) e também na tela, antes de gravar.
 
@@ -81,3 +81,4 @@ Bloquear datas digitadas erradas ou muito retroativas em lançamento, parcela, b
 - O **mês fechado** continua valendo à parte (bloqueia conta contábil mesmo com a exceção).
 - Não se aplica à migração (origem `MIGRACAO`) nem às rotinas automáticas (usuário `sistema`).
 - Entra junto com as procedures e telas do financeiro (fase 4).
+- **Quem altera os dias** (decisão do Celso, 18/11/2026): os **dois administradores** (o geral e o administrador do SisCMJ na CMJ). Como a tela de Parâmetros é exclusiva do administrador geral, cada parâmetro ganha a marca de **nível mínimo para alterar** (1 = administradores, 2 = só o geral); a tela de Parâmetros passa a abrir também para o nível 1, mostrando e deixando alterar só os de nível 1. Tudo auditado. Fase 4.
