@@ -146,3 +146,10 @@ Menu **Sistema › Migração › Casos da migração** (`sis/migracao-casos.htm
 - **Arquivo morto**: `MIG_Arquivo_Morto_Processar` v1.2 recebe os documentos marcados "Arquivo morto" na tela, com o motivo no início da observação; o script `03c2b_Migracao_Movimento_LOCAL.sql` roda o arquivo morto antes da transformação. Teste 03c2c 36/0.
 - **Topo e menu fixos** no computador (pedido do Celso, `PADRAO_TELAS` item 16); motivo virou lista de escolha nos filtros (eram etiquetas demais).
 - **Guia para a Renata**: `CashBookCMJ/Correcao_Casos_Migracao_CMJ_03c2.docx` (casos por motivo, o que costuma ser e o que fazer, espaço para resposta). Observação: os 54 "Documento com valor zero" têm valores negativos no Access (estornos); se forem muitos do mesmo jeito, dá para virar regra.
+
+## 12. Access em uso até a virada (decisão do Celso, 18/11/2026)
+
+- O Access continua em uso; a Renata corrige os casos desde já. Correções guardadas pelo número do Access e reaplicadas a cada nova cópia do Access (sugestão: a cada 15 dias).
+- **Aviso "Revisar"**: a correção guarda a impressão digital do Access (`HASH_ACCESS`: da linha, ou do documento inteiro nas decisões, `MIG.fn_MIG_Hash_Unidade`). Se a linha ou o documento mudar ou sumir do Access, a rodada marca `MIG.Caso.REVISAR` e a tela mostra a situação "Revisar" com o aviso; gravar de novo (ou repetir a decisão) atualiza a impressão e tira o aviso. Documento corrigido que sumiu do Access continua na tela (`REGRA_ATUAL = APAGADO`).
+- **Instalação (3d)**: botão "Baixar correções" da tela (`/api/mig/casos/correcoes.sql`, `MIG.MIG_Caso_Correcao_Exportar`) gera o .sql que substitui as correções do servidor da CMJ pelas do notebook (com usuários, datas e impressões); rodar no servidor depois do pacote 03c2b e antes da migração. **Incluir no roteiro da 3d.**
+- Guia da Renata atualizado (seção 7 "Até a instalação final"). Teste 03c2c v1.2.

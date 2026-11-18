@@ -14,6 +14,8 @@
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+    v1.1 (18/11/2026) - Situação REVISAR (o Access mudou depois da correção) e
+                        coluna REVISAR com o aviso.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Listar @IdUsuario = 1;
@@ -46,14 +48,16 @@ BEGIN
                CASE WHEN c.REGRA_ATUAL = 'CASO' THEN c.MOTIVO ELSE c.MOTIVO_ORIGINAL END AS MOTIVO,
                c.MOTIVO_ORIGINAL, c.DETALHE, c.REGRA_ATUAL, c.LINHAS,
                c.VALOR_DEBITO, c.VALOR_CREDITO, c.VALOR_DEBITO - c.VALOR_CREDITO AS DIFERENCA,
-               CASE WHEN c.REGRA_ATUAL = 'IGNORAR' THEN 'IGNORADO'
+               CASE WHEN c.REVISAR <> N'' THEN 'REVISAR'
+                    WHEN c.REGRA_ATUAL = 'IGNORAR' THEN 'IGNORADO'
                     WHEN c.REGRA_ATUAL = 'ARQUIVO_MORTO' THEN 'ARQUIVO_MORTO'
                     WHEN c.REGRA_ATUAL = 'CASO' AND k.QTD > 0 THEN 'EM_CORRECAO'
                     WHEN c.REGRA_ATUAL = 'CASO' THEN 'PENDENTE'
                     ELSE 'RESOLVIDO' END AS SITUACAO,
                ISNULL(k.QTD, 0) AS LINHAS_CORRIGIDAS,
                COALESCE(cc.USUARIO_ALTERACAO, cc.USUARIO_CRIACAO, k.USUARIO, N'') AS CORRIGIDO_POR,
-               COALESCE(cc.DT_ALTERACAO, cc.DT_CRIACAO, k.DT) AS CORRIGIDO_EM
+               COALESCE(cc.DT_ALTERACAO, cc.DT_CRIACAO, k.DT) AS CORRIGIDO_EM,
+               c.REVISAR
         FROM MIG.Caso c
         OUTER APPLY (SELECT TOP (1) COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA) AS EV, m.COMPLEMENTO, m.HISTORICO
                      FROM MIG.Movimento m

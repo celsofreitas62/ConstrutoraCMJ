@@ -13,6 +13,8 @@
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+    v1.1 (18/11/2026) - Aviso REVISAR no cabeçalho e "mudou" em cada linha
+                        alterada no Access depois da correção.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Obter @IdUsuario = 1, @Unidade = 'L:123';
@@ -39,7 +41,7 @@ BEGIN
             THROW 50001, N'Caso não encontrado. Atualize a lista.', 1;
 
         SET @EtapaAtual = 'Consulta';
-        SELECT c.UNIDADE, c.REGRA_ATUAL, c.MOTIVO, c.MOTIVO_ORIGINAL, c.DETALHE, c.PADRAO, c.DT_DOCUMENTO, c.DT_CALCULO,
+        SELECT c.UNIDADE, c.REGRA_ATUAL, c.REVISAR, c.MOTIVO, c.MOTIVO_ORIGINAL, c.DETALHE, c.PADRAO, c.DT_DOCUMENTO, c.DT_CALCULO,
                ISNULL(cc.ACAO, '') AS ACAO, ISNULL(cc.MOTIVO, N'') AS ACAO_MOTIVO,
                COALESCE(cc.USUARIO_ALTERACAO, cc.USUARIO_CRIACAO, N'') AS ACAO_USUARIO, COALESCE(cc.DT_ALTERACAO, cc.DT_CRIACAO) AS ACAO_DT,
                ISNULL((SELECT TOP (1) o.MOTIVO FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = c.UNIDADE AND o.MOTIVO <> N''
@@ -59,7 +61,8 @@ BEGIN
                           m.CONFIRMADO AS confirmadoOrig, COALESCE(o.CONFIRMADO, m.CONFIRMADO) AS confirmado,
                           m.EFETUADO AS efetuado, m.SOMENTE_INTEGRACAO AS somenteIntegracao,
                           ISNULL(o.IGNORAR_LINHA, CAST(0 AS BIT)) AS ignorar,
-                          CAST(CASE WHEN o.ID_CASO_CORRECAO_LINHA IS NULL THEN 0 ELSE 1 END AS BIT) AS corrigida
+                          CAST(CASE WHEN o.ID_CASO_CORRECAO_LINHA IS NULL THEN 0 ELSE 1 END AS BIT) AS corrigida,
+                          CAST(CASE WHEN o.HASH_ACCESS IS NOT NULL AND o.HASH_ACCESS <> m.HASH_CONTEUDO THEN 1 ELSE 0 END AS BIT) AS mudou
                    FROM MIG.Movimento m
                    LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS DESCRICAO FROM MIG.Access_Historico x WHERE TRY_CONVERT(INT, x.CodHistorico) = m.HISTORICO) h

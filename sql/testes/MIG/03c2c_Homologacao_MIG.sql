@@ -15,6 +15,8 @@
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos).
     v1.1 (18/11/2026) - Arquivo morto recebe o documento marcado na tela.
+    v1.2 (18/11/2026) - Aviso "Revisar" quando o Access muda depois da correção
+                        e arquivo das correções para a instalação.
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -37,12 +39,14 @@ CREATE TABLE #Ret   (SUCESSO BIT, MENSAGEM NVARCHAR(400), ID BIGINT);
 CREATE TABLE #Lista (UNIDADE VARCHAR(40), DOCUMENTO NVARCHAR(60), DT_DOCUMENTO DATE, ANO INT, EMPRESA NVARCHAR(1000), HISTORICO NVARCHAR(1000),
                      MOTIVO NVARCHAR(400), MOTIVO_ORIGINAL NVARCHAR(400), DETALHE NVARCHAR(400), REGRA_ATUAL VARCHAR(15), LINHAS INT,
                      VALOR_DEBITO DECIMAL(18,2), VALOR_CREDITO DECIMAL(18,2), DIFERENCA DECIMAL(18,2), SITUACAO VARCHAR(15),
-                     LINHAS_CORRIGIDAS INT, CORRIGIDO_POR NVARCHAR(100), CORRIGIDO_EM DATETIME2(0));
-CREATE TABLE #Caso  (UNIDADE VARCHAR(40), REGRA_ATUAL VARCHAR(15), MOTIVO NVARCHAR(400), MOTIVO_ORIGINAL NVARCHAR(400), DETALHE NVARCHAR(400),
+                     LINHAS_CORRIGIDAS INT, CORRIGIDO_POR NVARCHAR(100), CORRIGIDO_EM DATETIME2(0), REVISAR NVARCHAR(400));
+CREATE TABLE #Caso  (UNIDADE VARCHAR(40), REGRA_ATUAL VARCHAR(15), REVISAR NVARCHAR(400), MOTIVO NVARCHAR(400), MOTIVO_ORIGINAL NVARCHAR(400), DETALHE NVARCHAR(400),
                      PADRAO VARCHAR(200), DT_DOCUMENTO DATE, DT_CALCULO DATETIME2(0), ACAO VARCHAR(15), ACAO_MOTIVO NVARCHAR(400),
                      ACAO_USUARIO NVARCHAR(100), ACAO_DT DATETIME2(0), CORRECAO_MOTIVO NVARCHAR(400), LINHAS_JSON NVARCHAR(MAX));
 CREATE TABLE #Opc   (OBRAS NVARCHAR(MAX), CONTAS NVARCHAR(MAX), PLANOS NVARCHAR(MAX), PESSOAS NVARCHAR(MAX));
-CREATE TABLE #Conf  (UNIDADE VARCHAR(40), REGRA VARCHAR(15), MOTIVO NVARCHAR(400), DETALHE NVARCHAR(400));
+CREATE TABLE #Conf  (UNIDADE VARCHAR(40), REGRA VARCHAR(15), MOTIVO NVARCHAR(400), DETALHE NVARCHAR(400), REVISAR NVARCHAR(400));
+DROP TABLE IF EXISTS #Exp;
+CREATE TABLE #Exp   (LINHA NVARCHAR(MAX));
 DROP TABLE IF EXISTS #AM;
 CREATE TABLE #AM    (ORIGEM_ACCESS VARCHAR(20), LINHAS INT, DEBITOS DECIMAL(18,2), CREDITOS DECIMAL(18,2), DE DATE, ATE DATE, SEM_PESSOA INT, SEM_CONTA INT);
 
@@ -135,6 +139,35 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Lista mostra em correção ou resolvido', N'1', CASE WHEN (SELECT l.SITUACAO FROM #Lista l WHERE l.UNIDADE = @U) IN ('EM_CORRECAO', 'RESOLVIDO') THEN N'1' ELSE N'0' END),
  (N'Motivo original preservado', @MotivoAntes, (SELECT c.MOTIVO_ORIGINAL FROM MIG.Caso c WHERE c.UNIDADE = @U));
 
+-- 4b) O Access mudou depois da correção: aviso "Revisar"
+DECLARE @NumMudou INT = (SELECT TOP (1) o.NUM FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = @U);
+DECLARE @HashOrig VARBINARY(32) = (SELECT m.HASH_CONTEUDO FROM MIG.Movimento m WHERE m.UNIDADE = @U AND m.NUM = @NumMudou AND m.DESTINO = 'SISTEMA');
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Correção guarda a impressão digital do Access', N'1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = @U AND o.HASH_ACCESS = @HashOrig)));
+UPDATE MIG.Movimento SET HASH_CONTEUDO = 0x01 WHERE UNIDADE = @U AND NUM = @NumMudou AND DESTINO = 'SISTEMA';   -- simula alteração no Access
+DELETE FROM #Conf;
+INSERT INTO #Conf EXEC MIG.MIG_Caso_Conferir @IdUsuario = @IdCelso, @Unidade = @U;
+DELETE FROM #Lista;
+INSERT INTO #Lista EXEC MIG.MIG_Caso_Listar @IdUsuario = @IdCelso;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Conferir avisa que a linha mudou no Access', N'A linha ' + CONVERT(NVARCHAR(12), @NumMudou) + N' mudou no Access depois da correção', (SELECT TOP (1) REVISAR FROM #Conf)),
+ (N'Lista mostra a situação Revisar', N'REVISAR', (SELECT l.SITUACAO FROM #Lista l WHERE l.UNIDADE = @U));
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'CORRIGIR', @Motivo = N'HML 03c2c: teste de correção', @LinhasJson = @Json;
+DELETE FROM #Conf;
+INSERT INTO #Conf EXEC MIG.MIG_Caso_Conferir @IdUsuario = @IdCelso, @Unidade = @U;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Gravar de novo tira o aviso', N'', (SELECT TOP (1) REVISAR FROM #Conf));
+UPDATE MIG.Movimento SET HASH_CONTEUDO = @HashOrig WHERE UNIDADE = @U AND NUM = @NumMudou AND DESTINO = 'SISTEMA';    -- volta ao original
+
+-- 4c) Arquivo das correções para a instalação
+INSERT INTO #Exp EXEC MIG.MIG_Caso_Correcao_Exportar @IdUsuario = @IdCelso;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Arquivo das correções: cabeçalho, uma linha por correção e fim', CONVERT(NVARCHAR(10), 2 + (SELECT COUNT(*) FROM MIG.Caso_Correcao) + (SELECT COUNT(*) FROM MIG.Caso_Correcao_Linha)),
+  CONVERT(NVARCHAR(10), (SELECT COUNT(*) FROM #Exp))),
+ (N'Arquivo traz a linha corrigida com a impressão digital', N'1',
+  CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM #Exp e WHERE e.LINHA LIKE N'%' + CONVERT(NVARCHAR(12), @NumMudou) + N'%' AND e.LINHA LIKE N'%0x01%')));
+
 -- 5) Recusas
 DELETE FROM #Ret;
 SET @Json = REPLACE(@Json, N'"conta":', N'"conta":99999');   -- vira número inválido no início do valor
@@ -144,7 +177,7 @@ DELETE FROM #Ret;
 INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = 'X:NAO-EXISTE', @Acao = 'IGNORAR', @Motivo = N'HML 03c2c: inexistente';
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES (N'Documento inexistente é recusado', N'0', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret));
 
--- 6) Arquivo morto: o documento marcado na tela entra no FIN.Arquivo_Morto
+-- 6) Arquivo morto (e decisão também guarda a impressão digital): o documento marcado na tela entra no FIN.Arquivo_Morto
 DECLARE @AmAntes INT = (SELECT COUNT(*) FROM FIN.Arquivo_Morto);
 DELETE FROM #Ret;
 INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'ARQUIVO_MORTO', @Motivo = N'HML 03c2c: teste de arquivo morto';
@@ -153,6 +186,7 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Marcar para o arquivo morto grava', N'1', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret)),
  (N'Arquivo morto recebe as linhas do documento', CONVERT(NVARCHAR(10), @AmAntes + (SELECT COUNT(*) FROM MIG.Movimento m WHERE m.UNIDADE = @U AND m.DESTINO = 'SISTEMA')),
   CONVERT(NVARCHAR(10), (SELECT COUNT(*) FROM FIN.Arquivo_Morto))),
+ (N'Decisão guarda a impressão digital do documento', N'1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso_Correcao x WHERE x.UNIDADE = @U AND x.HASH_ACCESS = MIG.fn_MIG_Hash_Unidade(@U)))),
  (N'Observação traz o motivo da tela', N'1', CASE WHEN EXISTS (SELECT 1 FROM FIN.Arquivo_Morto a WHERE a.OBSERVACAO LIKE N'%HML 03c2c: teste de arquivo morto%') THEN N'1' ELSE N'0' END);
 
 -- 7) Desfazer: volta a ser como está no Access
@@ -166,7 +200,7 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Arquivo morto volta ao tamanho de antes', CONVERT(NVARCHAR(10), @AmAntes), CONVERT(NVARCHAR(10), (SELECT COUNT(*) FROM FIN.Arquivo_Morto))),
  (N'Desfazer grava', N'1', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret)),
  (N'Nenhuma correção sobrou', N'0', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = @U) + (SELECT COUNT(*) FROM MIG.Caso_Correcao x WHERE x.UNIDADE = @U))),
- (N'Caso volta a ser caso, com o mesmo motivo', N'CASO|' + @MotivoAntes, (SELECT c.REGRA_ATUAL + N'|' + c.MOTIVO FROM MIG.Caso c WHERE c.UNIDADE = @U)),
+ (N'Caso volta a ser caso, com o mesmo motivo e sem aviso', N'CASO|' + @MotivoAntes + N'|', (SELECT c.REGRA_ATUAL + N'|' + c.MOTIVO + N'|' + c.REVISAR FROM MIG.Caso c WHERE c.UNIDADE = @U)),
  (N'Auditoria registrou as linhas (inclusão e exclusão)', N'1', CASE WHEN (SELECT COUNT(DISTINCT a.OPERACAO) FROM SIS.Auditoria a WHERE a.ID_AUDITORIA > @AudInicio AND a.TABELA = N'MIG.Caso_Correcao_Linha') >= 2 THEN N'1' ELSE N'0' END),
  (N'Nenhum erro novo no SIS.Log_Erro', N'0', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Log_Erro e WHERE e.ID_LOG_ERRO > @ErroInicio)));
 

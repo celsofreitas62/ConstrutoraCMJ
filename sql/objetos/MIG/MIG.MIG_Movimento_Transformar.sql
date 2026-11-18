@@ -46,6 +46,9 @@
     v1.1 (18/11/2026) - Tela de casos: parâmetro @Unidade (conferir um
                         documento só); MIG.Caso atualizada por MERGE, mantendo
                         os documentos corrigidos (REGRA_ATUAL, MOTIVO_ORIGINAL).
+    v1.2 (18/11/2026) - Aviso "Revisar" (MIG.Caso.REVISAR): linha corrigida que
+                        mudou ou foi apagada no Access, documento com decisão
+                        que mudou ou sumiu do Access.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
@@ -75,7 +78,7 @@ BEGIN
     DECLARE @Agora        DATETIME2(0) = SYSDATETIME();
 
     BEGIN TRY
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
 
         IF OBJECT_ID(N'MIG.Movimento', N'U') IS NULL
             THROW 50001, N'Rode antes o MIG.MIG_Movimento_Preparar.', 1;
@@ -376,16 +379,45 @@ BEGIN
           AND NOT EXISTS (SELECT 1 FROM #Dec d WHERE d.UNIDADE = m.UNIDADE)
         GROUP BY m.UNIDADE;
 
+        -- Access mudou depois da correção: avisa para revisar
+        SELECT x.UNIDADE, MIN(x.MSG) AS MSG
+        INTO #Rev
+        FROM (
+            SELECT o.UNIDADE, N'A linha ' + CONVERT(NVARCHAR(12), o.NUM) + N' mudou no Access depois da correção' AS MSG
+            FROM MIG.Caso_Correcao_Linha o
+            INNER JOIN MIG.Movimento m ON m.ORIGEM = o.ORIGEM AND m.NUM = o.NUM
+            WHERE o.HASH_ACCESS IS NOT NULL AND o.HASH_ACCESS <> m.HASH_CONTEUDO
+            UNION ALL
+            SELECT o.UNIDADE, N'A linha ' + CONVERT(NVARCHAR(12), o.NUM) + N' foi apagada no Access depois da correção'
+            FROM MIG.Caso_Correcao_Linha o
+            WHERE NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.ORIGEM = o.ORIGEM AND m.NUM = o.NUM AND m.DESTINO = 'SISTEMA')
+            UNION ALL
+            SELECT cc.UNIDADE, CASE WHEN h.H IS NULL THEN N'O documento não existe mais no Access'
+                                    ELSE N'O documento mudou no Access depois da decisão' END
+            FROM MIG.Caso_Correcao cc
+            CROSS APPLY (SELECT MIG.fn_MIG_Hash_Unidade(cc.UNIDADE) AS H) h
+            WHERE cc.HASH_ACCESS IS NOT NULL AND (h.H IS NULL OR h.H <> cc.HASH_ACCESS)
+        ) x
+        WHERE @Unidade IS NULL OR x.UNIDADE = @Unidade
+        GROUP BY x.UNIDADE;
+
+        -- documento corrigido que sumiu do Access: continua na tela, para revisar
+        INSERT INTO #CasoNovo (UNIDADE, PADRAO, REGRA, MOTIVO, DETALHE, N, D, C, DT)
+        SELECT r.UNIDADE, '', 'APAGADO', N'Documento não existe mais no Access', N'', 0, 0, 0, NULL
+        FROM #Rev r
+        WHERE NOT EXISTS (SELECT 1 FROM #CasoNovo n WHERE n.UNIDADE = r.UNIDADE)
+          AND NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.UNIDADE = r.UNIDADE AND m.DESTINO = 'SISTEMA');
+
         BEGIN TRANSACTION;
         MERGE MIG.Caso AS c
-        USING #CasoNovo AS n ON n.UNIDADE = c.UNIDADE
+        USING (SELECT n.*, ISNULL(r.MSG, N'') AS REV FROM #CasoNovo n LEFT JOIN #Rev r ON r.UNIDADE = n.UNIDADE) AS n ON n.UNIDADE = c.UNIDADE
         WHEN MATCHED THEN UPDATE SET
              c.PADRAO = n.PADRAO, c.REGRA_ATUAL = n.REGRA, c.MOTIVO = n.MOTIVO, c.DETALHE = n.DETALHE,
-             c.LINHAS = n.N, c.VALOR_DEBITO = n.D, c.VALOR_CREDITO = n.C, c.DT_DOCUMENTO = n.DT, c.DT_CALCULO = SYSDATETIME(),
+             c.LINHAS = n.N, c.VALOR_DEBITO = n.D, c.VALOR_CREDITO = n.C, c.DT_DOCUMENTO = n.DT, c.DT_CALCULO = SYSDATETIME(), c.REVISAR = n.REV,
              c.MOTIVO_ORIGINAL = CASE WHEN c.MOTIVO_ORIGINAL = N'' THEN c.MOTIVO ELSE c.MOTIVO_ORIGINAL END
         WHEN NOT MATCHED BY TARGET THEN
-             INSERT (UNIDADE, PADRAO, REGRA_ATUAL, MOTIVO, MOTIVO_ORIGINAL, DETALHE, LINHAS, VALOR_DEBITO, VALOR_CREDITO, DT_DOCUMENTO)
-             VALUES (n.UNIDADE, n.PADRAO, n.REGRA, n.MOTIVO, n.MOTIVO, n.DETALHE, n.N, n.D, n.C, n.DT)
+             INSERT (UNIDADE, PADRAO, REGRA_ATUAL, MOTIVO, MOTIVO_ORIGINAL, DETALHE, LINHAS, VALOR_DEBITO, VALOR_CREDITO, DT_DOCUMENTO, REVISAR)
+             VALUES (n.UNIDADE, n.PADRAO, n.REGRA, n.MOTIVO, n.MOTIVO, n.DETALHE, n.N, n.D, n.C, n.DT, n.REV)
         WHEN NOT MATCHED BY SOURCE AND (@Unidade IS NULL OR c.UNIDADE = @Unidade) THEN DELETE;
         COMMIT TRANSACTION;
 
@@ -395,11 +427,13 @@ BEGIN
             SELECT CAST(@Unidade AS VARCHAR(40)) AS UNIDADE,
                    CAST(COALESCE(n.REGRA, u.REGRA, 'SEM_LINHAS') AS VARCHAR(15)) AS REGRA,
                    COALESCE(n.MOTIVO, u.MOTIVO, N'') AS MOTIVO,
-                   COALESCE(n.DETALHE, u.DETALHE, N'') AS DETALHE
+                   COALESCE(n.DETALHE, u.DETALHE, N'') AS DETALHE,
+                   ISNULL(r.MSG, N'') AS REVISAR
             FROM (SELECT 1 AS X) x
             LEFT JOIN #CasoNovo n ON n.UNIDADE = @Unidade
-            LEFT JOIN #U u ON u.UNIDADE = @Unidade;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
+            LEFT JOIN #U u ON u.UNIDADE = @Unidade
+            LEFT JOIN #Rev r ON r.UNIDADE = @Unidade;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
             RETURN;
         END;
 
@@ -419,7 +453,7 @@ BEGIN
             FROM #T t GROUP BY t.REGRA, t.TIPO ORDER BY t.REGRA, t.TIPO;
             SELECT 'TRANSFERENCIAS' AS GRADE, r.REGRA, r.TC, COUNT(*) AS QTD, SUM(r.VALOR) AS VALOR FROM #TR r GROUP BY r.REGRA, r.TC;
             SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO' GROUP BY c.MOTIVO ORDER BY COUNT(*) DESC;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
             RETURN;
         END;
 
@@ -559,7 +593,7 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
 
         SELECT 'GRAVADO' AS GRADE, r.ORDEM, r.ITEM, r.QTD, r.VALOR
         FROM (
@@ -575,7 +609,7 @@ BEGIN
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev;
         IF XACT_STATE() <> -1
             INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
             VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());

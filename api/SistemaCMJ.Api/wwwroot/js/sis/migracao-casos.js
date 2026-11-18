@@ -23,10 +23,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const podeAlterar = acoes.has('ALTERAR');
 
   const SITUACOES = [
-    ['PENDENTE', 'Pendentes'], ['EM_CORRECAO', 'Em correção'], ['RESOLVIDO', 'Resolvidos'],
+    ['REVISAR', 'Revisar'], ['PENDENTE', 'Pendentes'], ['EM_CORRECAO', 'Em correção'], ['RESOLVIDO', 'Resolvidos'],
     ['IGNORADO', 'Ignorados'], ['ARQUIVO_MORTO', 'Arquivo morto']
   ];
-  const NOME_SITUACAO = { PENDENTE: 'Pendente', EM_CORRECAO: 'Em correção', RESOLVIDO: 'Resolvido', IGNORADO: 'Ignorado', ARQUIVO_MORTO: 'Arquivo morto' };
+  const NOME_SITUACAO = { REVISAR: 'Revisar', PENDENTE: 'Pendente', EM_CORRECAO: 'Em correção', RESOLVIDO: 'Resolvido', IGNORADO: 'Ignorado', ARQUIVO_MORTO: 'Arquivo morto' };
   const NOME_REGRA = {
     LOTE: 'pagamento em lote', VENDA: 'parcela de venda', AVULSO: 'pagamento ou recebimento avulso',
     TRANSF: 'transferência', TRANSF_PAR: 'transferência', IGNORAR: 'não migra (ignorado)', ARQUIVO_MORTO: 'arquivo morto'
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let aberto = null;     // caso aberto (cabeçalho + linhas)
   let sujo = false;
 
-  for (const id of ['botao-gravar', 'botao-ignorar', 'botao-arquivo', 'botao-desfazer']) $(id).hidden = !podeAlterar;
+  for (const id of ['botao-gravar', 'botao-ignorar', 'botao-arquivo', 'botao-desfazer', 'botao-baixar-correcoes']) $(id).hidden = !podeAlterar;
   $('motivo').disabled = !podeAlterar;
 
   // ---- Lista -------------------------------------------------------------------
@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (aberto && aberto.UNIDADE === c.UNIDADE) tr.classList.add('selecionada');
       const motivo = Util.el('td', null, c.MOTIVO);
       if (c.DETALHE) motivo.append(Util.el('div', 'suave', c.DETALHE));
+      if (c.REVISAR) motivo.append(Util.el('div', 'aviso-revisar', c.REVISAR));
       tr.append(
         Util.el('td', null, Util.data(c.DT_DOCUMENTO)),
         Util.el('td', null, c.DOCUMENTO),
@@ -225,6 +226,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tr = Util.el('tr');
     tr.dataset.origem = l.origem;
     tr.dataset.num = l.num;
+    if (l.mudou) {
+      tr.classList.add('linha-mudou');
+      tr.title = 'Esta linha mudou no Access depois da correção: confira.';
+    }
     const campos = {};
     const td = () => { const t = Util.el('td'); tr.append(t); return t; };
 
@@ -329,6 +334,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const faixa = $('resultado');
     if (!r || !r.REGRA) { faixa.hidden = true; return; }
     faixa.hidden = false;
+    if (r.REVISAR) {
+      faixa.classList.remove('faixa-ok');
+      faixa.textContent = 'Revisar: ' + r.REVISAR + '. Confira as linhas com o Access e grave de novo (ou repita a decisão) para tirar o aviso.';
+      return;
+    }
     faixa.classList.toggle('faixa-ok', r.REGRA !== 'CASO');
     faixa.textContent = r.REGRA === 'CASO'
       ? 'Ainda não se encaixa: ' + r.MOTIVO + (r.DETALHE ? ' (' + r.DETALHE + ')' : '') + '.'
@@ -354,7 +364,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     sujo = false;
     totais();
     $('botao-desfazer').hidden = !podeAlterar || !(caso.ACAO || (caso.LINHAS_JSON || []).some((l) => l.corrigida));
-    mostrarResultado(resultado || (caso.REGRA_ATUAL && caso.REGRA_ATUAL !== 'CASO' ? { REGRA: caso.REGRA_ATUAL } : null));
+    mostrarResultado(resultado || (caso.REVISAR ? { REGRA: caso.REGRA_ATUAL, REVISAR: caso.REVISAR }
+      : caso.REGRA_ATUAL && caso.REGRA_ATUAL !== 'CASO' ? { REGRA: caso.REGRA_ATUAL } : null));
     $('detalhe').hidden = false;
     for (const tr of $('lista').querySelectorAll('tr')) tr.classList.toggle('selecionada', tr.dataset.unidade === unidade);
     $('detalhe').scrollIntoView({ behavior: 'smooth', block: 'start' });

@@ -264,6 +264,9 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .tabela-casos tfoot td { border-top: 2px solid var(--borda); }
 .aviso-faixa.faixa-ok { background: #E7F3E8; color: #1E6B22; border-color: #A5D6A7; }
 .situacao-pendente { background: #FFF4E5; color: #8A3B00; }
+.situacao-revisar { background: #FDE7E4; color: #9B1C12; }
+.aviso-revisar { margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--erro); }
+.tabela-casos tr.linha-mudou td { box-shadow: inset 3px 0 0 var(--erro); }
 .situacao-em_correcao { background: #FFF8D6; color: #6B5300; }
 .situacao-resolvido { background: #E7F3E8; color: #1E6B22; }
 .situacao-ignorado, .situacao-arquivo_morto { background: #EFEFED; color: #555555; }

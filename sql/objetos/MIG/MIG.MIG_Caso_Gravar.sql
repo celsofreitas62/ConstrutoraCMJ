@@ -26,6 +26,9 @@
 
   Changelog:
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
+    v1.1 (18/11/2026) - Guarda a impressão digital do Access (HASH_ACCESS) da
+                        linha ou do documento; gravar de novo um caso marcado
+                        "Revisar" atualiza a impressão e tira o aviso.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'IGNORAR', @Motivo = N'Lançado em dobro no Access';
@@ -52,6 +55,7 @@ BEGIN
     DECLARE @Usuario    NVARCHAR(100);
     DECLARE @SemData    DATE = '1900-01-01';
     DECLARE @Qtd        INT  = 0;
+    DECLARE @HashDoc    VARBINARY(32);
 
     BEGIN TRY
         DROP TABLE IF EXISTS #J, #C;
@@ -133,7 +137,7 @@ BEGIN
                    CASE WHEN j.DEB = ISNULL(m.VALOR_DEBITO, 0)  THEN NULL ELSE j.DEB END AS VALOR_DEBITO,
                    CASE WHEN j.CRE = ISNULL(m.VALOR_CREDITO, 0) THEN NULL ELSE j.CRE END AS VALOR_CREDITO,
                    CASE WHEN j.CONF = m.CONFIRMADO THEN NULL ELSE j.CONF END AS CONFIRMADO,
-                   j.IGN AS IGNORAR_LINHA
+                   j.IGN AS IGNORAR_LINHA, m.HASH_CONTEUDO AS HASH
             INTO #C
             FROM #J j
             INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM;
@@ -164,7 +168,7 @@ BEGIN
                SET o.EMP_VINCULADA = c.EMP_VINCULADA, o.PARCEIRO = c.PARCEIRO, o.CONTA = c.CONTA, o.PLANO3 = c.PLANO3,
                    o.DT_MOVTO = c.DT_MOVTO, o.DT_VENCTO = c.DT_VENCTO, o.DT_PAGTO = c.DT_PAGTO,
                    o.VALOR_DEBITO = c.VALOR_DEBITO, o.VALOR_CREDITO = c.VALOR_CREDITO, o.CONFIRMADO = c.CONFIRMADO,
-                   o.IGNORAR_LINHA = c.IGNORAR_LINHA, o.MOTIVO = @Motivo,
+                   o.IGNORAR_LINHA = c.IGNORAR_LINHA, o.MOTIVO = @Motivo, o.HASH_ACCESS = c.HASH,
                    o.DT_ALTERACAO = SYSDATETIME(), o.USUARIO_ALTERACAO = @Usuario
             FROM MIG.Caso_Correcao_Linha o
             INNER JOIN #C c ON c.ORIGEM = o.ORIGEM AND c.NUM = o.NUM
@@ -175,12 +179,13 @@ BEGIN
                    AND ISNULL(o.DT_PAGTO, '1800-01-01') = ISNULL(c.DT_PAGTO, '1800-01-01')
                    AND ISNULL(o.VALOR_DEBITO, -1) = ISNULL(c.VALOR_DEBITO, -1) AND ISNULL(o.VALOR_CREDITO, -1) = ISNULL(c.VALOR_CREDITO, -1)
                    AND ISNULL(CONVERT(TINYINT, o.CONFIRMADO), 9) = ISNULL(CONVERT(TINYINT, c.CONFIRMADO), 9)
-                   AND o.IGNORAR_LINHA = c.IGNORAR_LINHA AND o.MOTIVO = @Motivo);
+                   AND o.IGNORAR_LINHA = c.IGNORAR_LINHA AND o.MOTIVO = @Motivo
+                   AND ISNULL(o.HASH_ACCESS, 0x) = ISNULL(c.HASH, 0x));
 
             INSERT INTO MIG.Caso_Correcao_Linha (ORIGEM, NUM, UNIDADE, EMP_VINCULADA, PARCEIRO, CONTA, PLANO3, DT_MOVTO, DT_VENCTO, DT_PAGTO,
-                                                 VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, USUARIO_CRIACAO)
+                                                 VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, USUARIO_CRIACAO)
             SELECT c.ORIGEM, c.NUM, @Unidade, c.EMP_VINCULADA, c.PARCEIRO, c.CONTA, c.PLANO3, c.DT_MOVTO, c.DT_VENCTO, c.DT_PAGTO,
-                   c.VALOR_DEBITO, c.VALOR_CREDITO, c.CONFIRMADO, c.IGNORAR_LINHA, @Motivo, @Usuario
+                   c.VALOR_DEBITO, c.VALOR_CREDITO, c.CONFIRMADO, c.IGNORAR_LINHA, @Motivo, c.HASH, @Usuario
             FROM #C c
             WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.ORIGEM = c.ORIGEM AND o.NUM = c.NUM);
             COMMIT TRANSACTION;
@@ -194,6 +199,7 @@ BEGIN
         END;
 
         SET @EtapaAtual = 'Gravação da decisão';
+        SET @HashDoc = MIG.fn_MIG_Hash_Unidade(@Unidade);
         BEGIN TRANSACTION;
         IF @Acao = 'DESFAZER'
         BEGIN
@@ -203,10 +209,10 @@ BEGIN
         ELSE
         BEGIN
             UPDATE MIG.Caso_Correcao
-               SET ACAO = @Acao, MOTIVO = @Motivo, DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
-            WHERE UNIDADE = @Unidade AND (ACAO <> @Acao OR MOTIVO <> @Motivo);
-            INSERT INTO MIG.Caso_Correcao (UNIDADE, ACAO, MOTIVO, USUARIO_CRIACAO)
-            SELECT @Unidade, @Acao, @Motivo, @Usuario
+               SET ACAO = @Acao, MOTIVO = @Motivo, HASH_ACCESS = @HashDoc, DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+            WHERE UNIDADE = @Unidade AND (ACAO <> @Acao OR MOTIVO <> @Motivo OR ISNULL(HASH_ACCESS, 0x) <> ISNULL(@HashDoc, 0x));
+            INSERT INTO MIG.Caso_Correcao (UNIDADE, ACAO, MOTIVO, HASH_ACCESS, USUARIO_CRIACAO)
+            SELECT @Unidade, @Acao, @Motivo, @HashDoc, @Usuario
             WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao WHERE UNIDADE = @Unidade);
         END;
         COMMIT TRANSACTION;

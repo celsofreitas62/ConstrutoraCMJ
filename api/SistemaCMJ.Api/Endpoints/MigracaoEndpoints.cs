@@ -11,6 +11,8 @@
 //              e devolve como ele ficou (REGRA, MOTIVO).
 //              O schema MIG só existe onde a migração roda; fora dele, a tela
 //              nem aparece no menu.
+//              /correcoes.sql: arquivo com as correções gravadas, para levar ao
+//              servidor da CMJ na instalação (MIG_Caso_Correcao_Exportar).
 // =============================================================================
 using System.Text.Json;
 using SistemaCMJ.Api.Infra;
@@ -28,6 +30,7 @@ public static class MigracaoEndpoints
         app.MapGet("/api/mig/caso", Obter);
         app.MapPost("/api/mig/caso/gravar", Gravar);
         app.MapPost("/api/mig/caso/conferir", Conferir);
+        app.MapGet("/api/mig/casos/correcoes.sql", ExportarCorrecoes);
     }
 
     private static Task<IResult> Listar(HttpContext http, Banco banco, ILogger<Program> logger) =>
@@ -103,6 +106,32 @@ public static class MigracaoEndpoints
             ["Unidade"] = unidade
         }, usuario, ct);
         return linhas.Count > 0 ? linhas[0] : new Linha();
+    }
+
+    /// <summary>Arquivo .sql com as correções, para copiar para outro banco (instalação).</summary>
+    private static async Task<IResult> ExportarCorrecoes(HttpContext http, Banco banco, ILogger<Program> logger)
+    {
+        try
+        {
+            var usuario = http.Usuario();
+            var linhas = await banco.ExecutarAsync("MIG.MIG_Caso_Correcao_Exportar", new Dictionary<string, object?>
+            {
+                ["IdUsuario"] = usuario.IdUsuario
+            }, usuario, http.RequestAborted);
+            var texto = string.Join("\r\n", linhas.Select(l => l.Texto("LINHA"))) + "\r\n";
+            var bytes = System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(texto)).ToArray();
+            return Results.File(bytes, "application/sql", "correcoes-casos-migracao-" + DateTime.Now.ToString("yyyy-MM-dd-HHmm") + ".sql");
+        }
+        catch (Microsoft.Data.SqlClient.SqlException erro) when (erro.Number == 50001)
+        {
+            return Results.Text(erro.Message, "text/plain; charset=utf-8", statusCode: StatusCodes.Status403Forbidden);
+        }
+        catch (Exception erro)
+        {
+            logger.LogError(erro, "Falha ao exportar as correções da migração");
+            await banco.RegistrarErroAsync("API GET /api/mig/casos/correcoes.sql", "Exportação", erro);
+            return Results.Problem("Não foi possível montar o arquivo das correções.");
+        }
     }
 
     private static JsonElement Json(string texto) =>

@@ -34,6 +34,10 @@
                         a auditoria (SIS.Auditoria) registrar quem corrigiu o
                         quê; Caso_Correcao_Linha ganha UNIDADE. As tabelas de
                         correção vazias no formato antigo são refeitas.
+    v1.2 (18/11/2026) - Aviso de mudança no Access: HASH_ACCESS nas correções
+                        (impressão digital da linha ou do documento no momento
+                        da correção) e MIG.Caso.REVISAR (texto do aviso quando
+                        o Access mudou ou apagou o que foi corrigido).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -150,6 +154,14 @@ IF OBJECT_ID(N'[MIG].[DePara_Venda]', N'U') IS NULL
         CONTRATO       VARCHAR(40)    NOT NULL,
         NUM_DOC        NVARCHAR(100)  NOT NULL
     );
+GO
+
+IF COL_LENGTH(N'MIG.Caso', N'REVISAR') IS NULL
+    ALTER TABLE [MIG].[Caso] ADD REVISAR NVARCHAR(400) NOT NULL CONSTRAINT DF_Caso_REVISAR DEFAULT (N'');
+IF COL_LENGTH(N'MIG.Caso_Correcao', N'HASH_ACCESS') IS NULL
+    ALTER TABLE [MIG].[Caso_Correcao] ADD HASH_ACCESS VARBINARY(32) NULL;
+IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'HASH_ACCESS') IS NULL
+    ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD HASH_ACCESS VARBINARY(32) NULL;
 GO
 
 -- auditoria das correções feitas pela tela (quem, quando, antes e depois)
