@@ -62,3 +62,22 @@ Significado dos campos (**confirmado pelo Celso em 17/11/2026**):
   - filtros de consulta (período, empresa, obra, pessoa, conta, plano, valor, busca por parte do texto);
   - botão especial **"Retornar ao movimento"**: o usuário marca linhas na lista e elas voltam para o movimento do sistema novo (viram lançamento, parcela e baixa pelas mesmas regras da migração, ligadas à linha de origem, que fica marcada como "retornada" e não pode voltar duas vezes). Pede **confirmação** e **a senha de entrada no sistema de novo**; tudo-ou-nada e auditado (quem, quando, quais linhas). Acesso: só o administrador geral e o administrador do sistema (ação nova `RETORNAR` na tela, que nenhum perfil comum recebe);
   - **relatório simples** do arquivo morto com os filtros escolhidos (A4, PDF, no padrão de `PADRAO_RELATORIOS.md`: cabeçalho, filtros usados, lista e totais de débito e crédito).
+
+## Trava de datas nos lançamentos (pedido do Celso, 18/11/2026; parâmetros propostos, aguardando confirmação)
+
+Bloquear datas digitadas erradas ou muito retroativas em lançamento, parcela, baixa, estorno, transferência e movimento bancário. Tudo em parâmetro (`SIS.Parametro`, módulo FIN), conferido nas procedures do FIN (uma function única de validação) e também na tela, antes de gravar.
+
+| Parâmetro (proposto) | Padrão | Regra |
+|---|---|---|
+| `FIN_TRAVA_DATAS_ATIVA` | S | liga/desliga a trava (regra 46) |
+| `FIN_DIAS_TOLERANCIA_MES_ANTERIOR` | 5 | data anterior ao 1º dia do mês corrente é recusada, exceto até este dia do mês, quando ainda aceita o mês anterior |
+| `FIN_BAIXA_DIAS_FUTURO` | 0 | pagamento, recebimento, transferência e movimento bancário não podem ter data futura |
+| `FIN_EMISSAO_DIAS_FUTURO` | 0 | data do documento (emissão) não pode ser futura |
+| `FIN_VENCIMENTO_ANOS_FUTURO` | 35 | vencimento até N anos à frente (parcelas de venda longas) |
+| `FIN_DATA_AVISO_DIAS` | 3 | dentro do permitido, mas a mais de N dias de hoje: a tela pede confirmação ("Confirma a data dd/mm/aaaa?") |
+
+- Datas absurdas (ano 0202, 2202...) caem sempre nas faixas acima.
+- Exceção: ação nova **`LANCAR_RETROATIVO`** (dada por perfil; por padrão só os administradores), com **motivo obrigatório**, gravado na auditoria.
+- O **mês fechado** continua valendo à parte (bloqueia conta contábil mesmo com a exceção).
+- Não se aplica à migração (origem `MIGRACAO`) nem às rotinas automáticas (usuário `sistema`).
+- Entra junto com as procedures e telas do financeiro (fase 4).
