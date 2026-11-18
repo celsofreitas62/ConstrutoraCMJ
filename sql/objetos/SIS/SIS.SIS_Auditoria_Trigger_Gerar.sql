@@ -32,6 +32,11 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (18/11/2026) - Desempenho em carga grande: a foto JSON do registro é
+                        montada direto da linha (sem buscar de novo no inserted/
+                        deleted, que não tem índice e deixava a trigger
+                        quadrática: 25 mil linhas levavam horas). Mesmo
+                        resultado gravado na SIS.Auditoria.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'SIS.Parametro';            -- só mostra o script
@@ -172,14 +177,14 @@ BEGIN
             + N'        -- Inclusão: foto do registro novo' + @NL
             + N'        INSERT INTO SIS.Auditoria (TABELA, ID_REGISTRO, OPERACAO, CAMPO, VALOR_ANTES, VALOR_DEPOIS, USUARIO, ID_USUARIO, ESTACAO, ORIGEM, ID_LOTE, TRANSACAO)' + @NL
             + N'        SELECT N''' + @NomeTabela + N''', i.' + QUOTENAME(@Pk) + N', ''I'', N'''', NULL,' + @NL
-            + N'               (SELECT ' + @ListaJson + N' FROM inserted x WHERE x.' + QUOTENAME(@Pk) + N' = i.' + QUOTENAME(@Pk) + N' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES),' + @NL
+            + N'               (SELECT ' + REPLACE(@ListaJson, N'x.[', N'i.[') + N' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES),' + @NL
             + N'               ' + @Contexto + @NL
             + N'        FROM inserted i' + @NL
             + N'        WHERE NOT EXISTS (SELECT 1 FROM deleted d WHERE d.' + QUOTENAME(@Pk) + N' = i.' + QUOTENAME(@Pk) + N');' + @NL + @NL
             + N'        -- Exclusão: foto do registro apagado' + @NL
             + N'        INSERT INTO SIS.Auditoria (TABELA, ID_REGISTRO, OPERACAO, CAMPO, VALOR_ANTES, VALOR_DEPOIS, USUARIO, ID_USUARIO, ESTACAO, ORIGEM, ID_LOTE, TRANSACAO)' + @NL
             + N'        SELECT N''' + @NomeTabela + N''', d.' + QUOTENAME(@Pk) + N', ''E'', N'''',' + @NL
-            + N'               (SELECT ' + @ListaJson + N' FROM deleted x WHERE x.' + QUOTENAME(@Pk) + N' = d.' + QUOTENAME(@Pk) + N' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES),' + @NL
+            + N'               (SELECT ' + REPLACE(@ListaJson, N'x.[', N'd.[') + N' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES),' + @NL
             + N'               NULL, ' + @Contexto + @NL
             + N'        FROM deleted d' + @NL
             + N'        WHERE NOT EXISTS (SELECT 1 FROM inserted i WHERE i.' + QUOTENAME(@Pk) + N' = d.' + QUOTENAME(@Pk) + N');' + @NL
