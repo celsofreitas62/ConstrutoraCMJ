@@ -34,3 +34,7 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 
 14. **Atalhos de teclado** em toda tela de manutenção: **Ctrl+S** grava (com a mesma confirmação do botão), **Esc** cancela/volta, **Enter** passa para o próximo campo (não grava). Os atalhos aparecem na dica do botão.
 15. **Endereço pelo CEP e dados da empresa pelo CNPJ** por serviços públicos gratuitos, preenchendo os campos (o usuário confere antes de gravar). Depende de internet no servidor: liga/desliga em parâmetro. Implementar na fase 4.
+
+## 7. Topo e menu fixos (pedido do Celso, 18/11/2026)
+
+16. No computador, o **topo e o menu lateral ficam parados**; só a área da tela rola. Quando o menu for maior que a janela, ele rola sozinho, sem mexer na tela. No celular, tudo rola junto. Fica no `app.css`, vale para todas as telas.

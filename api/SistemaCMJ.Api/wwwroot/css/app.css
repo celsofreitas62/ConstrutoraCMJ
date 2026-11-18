@@ -267,3 +267,11 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .situacao-em_correcao { background: #FFF8D6; color: #6B5300; }
 .situacao-resolvido { background: #E7F3E8; color: #1E6B22; }
 .situacao-ignorado, .situacao-arquivo_morto { background: #EFEFED; color: #555555; }
+
+/* ---------- Topo e menu fixos (pedido do Celso, 18/11/2026) ----------
+   No computador, o topo e o menu ficam parados; só a área da tela rola.
+   O menu tem rolagem própria quando for maior que a janela. */
+@media (min-width: 761px) {
+  .topo { position: sticky; top: 0; z-index: 20; }
+  .menu { position: sticky; top: 60px; align-self: flex-start; height: calc(100vh - 60px); overflow-y: auto; }
+}
