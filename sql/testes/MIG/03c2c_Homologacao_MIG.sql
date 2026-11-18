@@ -180,6 +180,9 @@ INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = 'X:N
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES (N'Documento inexistente é recusado', N'0', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret));
 
 -- 6) Arquivo morto (e decisão também guarda a impressão digital): o documento marcado na tela entra no FIN.Arquivo_Morto
+-- base: arquivo morto já com as decisões gravadas antes do teste (pela tela)
+INSERT INTO #AM EXEC MIG.MIG_Arquivo_Morto_Processar;
+DELETE FROM #AM;
 DECLARE @AmAntes INT = (SELECT COUNT(*) FROM FIN.Arquivo_Morto);
 DELETE FROM #Ret;
 INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'ARQUIVO_MORTO', @Motivo = N'HML 03c2c: teste de arquivo morto';
