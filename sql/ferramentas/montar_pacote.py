@@ -143,7 +143,7 @@ ORDEM_03C2 = [
     'objetos/MIG/Carga_MIG_Classificacao.sql',
 ]
 ORDEM_03C2B = [
-    'objetos/SIS/SIS.SIS_Auditoria_Trigger_Gerar.sql', 'objetos/SIS/Carga_SIS_Auditoria_Triggers.sql',
+    'objetos/SIS/SIS.SIS_Auditoria_Trigger_Gerar.sql', 'objetos/SIS/Carga_SIS_Auditoria_Triggers.sql', 'objetos/SIS/Carga_SIS_Comunicado.sql',
     'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql', 'objetos/FIN/Carga_FIN_Auditoria_Triggers.sql',
     'objetos/MIG/MIG.Tabelas_Transformacao.sql', 'objetos/MIG/MIG.MIG_Movimento_Transformar.sql',
     'objetos/MIG/MIG.MIG_Movimento_Conferencia_Listar.sql',
