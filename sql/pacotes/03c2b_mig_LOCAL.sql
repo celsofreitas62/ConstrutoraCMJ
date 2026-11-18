@@ -1681,15 +1681,21 @@ BEGIN
 
             IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM AND m.UNIDADE = @Unidade AND m.DESTINO = 'SISTEMA'))
                 SET @Recusa = N'Uma das linhas não pertence a este documento. Atualize a tela.';
-            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.EMP IS NULL OR NOT EXISTS (SELECT 1 FROM MIG.DePara_Centro d WHERE d.CODIGO_VINCULADA = j.EMP))
+            -- só o que mudou em relação ao Access precisa existir no de-para (o Access pode ter código sem de-para)
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
+                                         WHERE (j.EMP IS NULL AND m.EMP_VINCULADA IS NOT NULL)
+                                            OR (j.EMP <> ISNULL(m.EMP_VINCULADA, -1) AND NOT EXISTS (SELECT 1 FROM MIG.DePara_Centro d WHERE d.CODIGO_VINCULADA = j.EMP)))
                 SET @Recusa = N'Escolha uma obra válida em todas as linhas.';
-            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.CONTA IS NULL OR NOT EXISTS (SELECT 1 FROM MIG.Access_Contas_Financeiras k WHERE TRY_CONVERT(INT, k.CodigoConta) = j.CONTA))
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
+                                         WHERE (j.CONTA IS NULL AND m.CONTA IS NOT NULL)
+                                            OR (j.CONTA <> ISNULL(m.CONTA, -1) AND NOT EXISTS (SELECT 1 FROM MIG.Access_Contas_Financeiras k WHERE TRY_CONVERT(INT, k.CodigoConta) = j.CONTA)))
                 SET @Recusa = N'Escolha uma conta válida em todas as linhas.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
                                          WHERE (j.PLANO IS NULL AND m.PLANO3 IS NOT NULL)
-                                            OR (j.PLANO IS NOT NULL AND NOT EXISTS (SELECT 1 FROM MIG.DePara_Plano d WHERE d.PLANO3_ACCESS = j.PLANO))))
+                                            OR (j.PLANO <> ISNULL(m.PLANO3, -1) AND NOT EXISTS (SELECT 1 FROM MIG.DePara_Plano d WHERE d.PLANO3_ACCESS = j.PLANO)))
                 SET @Recusa = N'Escolha um plano de contas válido nas linhas.';
-            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.PARCEIRO > 1 AND NOT EXISTS (SELECT 1 FROM MIG.Access_Parceiros p WHERE TRY_CONVERT(INT, p.CodigoParceiro) = j.PARCEIRO))
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
+                                         WHERE j.PARCEIRO > 1 AND j.PARCEIRO <> ISNULL(m.PARCEIRO, 0) AND NOT EXISTS (SELECT 1 FROM MIG.Access_Parceiros p WHERE TRY_CONVERT(INT, p.CodigoParceiro) = j.PARCEIRO))
                 SET @Recusa = N'Pessoa não encontrada no cadastro do Access.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB < 0 OR j.CRE < 0)
                 SET @Recusa = N'Valor não pode ser negativo.';

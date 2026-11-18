@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       s.append(o);
     }
     if (valor !== null && valor !== undefined && !achou) {
-      const o = Util.el('option', null, valor + ' – (não encontrado)');
+      const o = Util.el('option', null, valor + ' – (sem correspondência no sistema novo)');
       o.value = String(valor);
       s.append(o);
     }
