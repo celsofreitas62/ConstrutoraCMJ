@@ -115,3 +115,5 @@
 - **18/11/2026**: parte B da 03c2 rodada no LOCAL (seção 10 do `Migracao_Movimento.md`): títulos batem com o Access em todos os anos; 312 casos ficam para a tela de correção. A auditoria em carga grande estava quadrática (gravação passou de 20 minutos); `SIS_Auditoria_Trigger_Gerar` v1.1 corrige e a gravação caiu para cerca de 1 minuto.
 
 - **18/11/2026**: segunda rodada da parte B igual à primeira. O Celso aprovou a **tela "Casos da migração"** como proposta (resumo por situação e motivo, correção linha a linha com o valor do Access ao lado, conferir na hora, ignorar, arquivo morto, desfazer, exportar planilha; os dois administradores; a rodada da migração continua pelo SSMS). Construída: seção 11 do `Migracao_Movimento.md`.
+
+- **18/11/2026**: tela de casos aprovada pelo Celso no navegador, com dois ajustes pedidos: motivo como lista de escolha (eram etiquetas demais) e **topo e menu fixos** em todas as telas. Arquivo morto passa a receber os documentos marcados na tela. Guia de correção entregue para a Renata (`CashBookCMJ`). Combinado: depois da aprovação dela, conferência final da migração (item 3) e etapa 3d (item 4).
