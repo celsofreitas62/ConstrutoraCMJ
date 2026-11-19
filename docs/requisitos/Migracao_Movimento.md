@@ -163,3 +163,5 @@ Menu **Sistema › Migração › Casos da migração** (`sis/migracao-casos.htm
 
 - Coluna **Lote** na grade do documento: número do lote do Access, editável. Outro número move a linha para aquele lote (precisa existir no Access); 0 tira a linha do lote (vira avulso, ou venda se tiver ligação de venda). Guardado em `MIG.Caso_Correcao_Linha.LOTE` (NULL = mantém).
 - `MIG_Movimento_Transformar` v1.4: o documento da linha passa a ser o do lote novo; o padrão de contas é refeito nos documentos que ganharam ou perderam linha; a conferência de um documento inclui o lote de destino (depois do pedido), e a tela diz como ele ficou. A linha continua aparecendo no documento de origem (onde foi corrigida).
+
+- **Lote novo da migração** (pedido da Renata, 19/11/2026): número de 900001 em diante não precisa existir no Access; serve para separar linhas de um lote num lote só delas (a tela indica o próximo número livre). O documento novo pode ser aberto, corrigido, ignorado ou mandado ao arquivo morto (`MIG.vw_MIG_Linha_Unidade`, `MIG.fn_MIG_Linhas_Documento`). Desempenho: índice (ORIGEM, NUM) em `MIG.Movimento`. Teste 03c2c 60/0.
