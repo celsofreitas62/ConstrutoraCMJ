@@ -16,6 +16,8 @@
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
     v1.1 (18/11/2026) - Situação REVISAR (o Access mudou depois da correção) e
                         coluna REVISAR com o aviso.
+    v1.2 (19/11/2026) - Empresa e histórico também para documento formado por
+                        troca de lote (lote novo da migração).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Listar @IdUsuario = 1;
@@ -60,9 +62,10 @@ BEGIN
                c.REVISAR
         FROM MIG.Caso c
         OUTER APPLY (SELECT TOP (1) COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA) AS EV, m.COMPLEMENTO, m.HISTORICO
-                     FROM MIG.Movimento m
+                     FROM MIG.vw_MIG_Linha_Unidade v
+                     INNER JOIN MIG.Movimento m ON m.ORIGEM = v.ORIGEM AND m.NUM = v.NUM
                      LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
-                     WHERE m.UNIDADE = c.UNIDADE AND m.DESTINO = 'SISTEMA'
+                     WHERE v.UNIDADE = c.UNIDADE OR v.UNIDADE_ACCESS = c.UNIDADE
                      ORDER BY CASE WHEN m.COMPLEMENTO <> N'' THEN 0 ELSE 1 END, m.NUM) pl
         OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(v.NomeVinculada)) AS NOME FROM MIG.Access_EmpVinculada v WHERE TRY_CONVERT(INT, v.CodigoVinculada) = pl.EV) nv
         OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS DESCRICAO FROM MIG.Access_Historico x WHERE TRY_CONVERT(INT, x.CodHistorico) = pl.HISTORICO) h

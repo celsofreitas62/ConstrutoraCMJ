@@ -57,6 +57,9 @@
                         lote: avulso ou venda); padrão de contas recalculado nos
                         documentos afetados; a conferência inclui o documento
                         de destino (depois dos pedidos).
+    v1.5 (19/11/2026) - Lote novo da migração (900001 em diante); decisões da
+                        tela (ignorar / arquivo morto) valem para o documento
+                        como ele está depois da troca de lote.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
@@ -168,7 +171,7 @@ BEGIN
         WHERE m.DESTINO = 'SISTEMA'
           AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s) OR eu.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
           AND ISNULL(o.IGNORAR_LINHA, 0) = 0
-          AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao c WHERE c.UNIDADE = m.UNIDADE);
+          AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao c WHERE c.UNIDADE = eu.UNIDADE);
 
         CREATE UNIQUE CLUSTERED INDEX IX_L ON #L (ORIGEM, NUM);
         CREATE INDEX IX_L_U ON #L (UNIDADE);
@@ -405,13 +408,14 @@ BEGIN
 
         -- casos para a tela, mais os documentos que já têm correção da tela
         SET @EtapaAtual = 'Casos';
-        SELECT m.UNIDADE, MIN(m.PADRAO) AS PADRAO, COUNT(*) AS N, SUM(m.VALOR_DEBITO) AS D, SUM(m.VALOR_CREDITO) AS C,
+        SELECT v.UNIDADE, MIN(m.PADRAO) AS PADRAO, COUNT(*) AS N, SUM(m.VALOR_DEBITO) AS D, SUM(m.VALOR_CREDITO) AS C,
                MIN(m.DT_UNIDADE) AS DT, MIN(cc.ACAO) AS ACAO
         INTO #Dec
-        FROM MIG.Movimento m
-        INNER JOIN MIG.Caso_Correcao cc ON cc.UNIDADE = m.UNIDADE
-        WHERE m.DESTINO = 'SISTEMA' AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
-        GROUP BY m.UNIDADE;
+        FROM MIG.vw_MIG_Linha_Unidade v
+        INNER JOIN MIG.Movimento m ON m.ORIGEM = v.ORIGEM AND m.NUM = v.NUM
+        INNER JOIN MIG.Caso_Correcao cc ON cc.UNIDADE = v.UNIDADE
+        WHERE @Filtrar = 0 OR v.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s)
+        GROUP BY v.UNIDADE;
 
         SELECT u.UNIDADE, CAST(ISNULL(u.PADRAO, '') AS VARCHAR(200)) AS PADRAO, CAST(u.REGRA AS VARCHAR(15)) AS REGRA,
                u.MOTIVO, u.DETALHE, u.N, u.S_DEB_TOTAL AS D, u.S_CRE_TOTAL AS C, u.DT_UNIDADE AS DT

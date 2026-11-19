@@ -20,6 +20,7 @@
     v1.3 (18/11/2026) - Ações em lote ("selecionar todos"): ignorar, conferir e
                         desfazer vários documentos de uma vez.
     v1.4 (18/11/2026) - Troca do lote de uma linha.
+    v1.5 (19/11/2026) - Lote novo da migração (900001 em diante).
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -45,7 +46,7 @@ CREATE TABLE #Lista (UNIDADE VARCHAR(40), DOCUMENTO NVARCHAR(60), DT_DOCUMENTO D
                      LINHAS_CORRIGIDAS INT, CORRIGIDO_POR NVARCHAR(100), CORRIGIDO_EM DATETIME2(0), REVISAR NVARCHAR(400));
 CREATE TABLE #Caso  (UNIDADE VARCHAR(40), REGRA_ATUAL VARCHAR(15), REVISAR NVARCHAR(400), MOTIVO NVARCHAR(400), MOTIVO_ORIGINAL NVARCHAR(400), DETALHE NVARCHAR(400),
                      PADRAO VARCHAR(200), DT_DOCUMENTO DATE, DT_CALCULO DATETIME2(0), ACAO VARCHAR(15), ACAO_MOTIVO NVARCHAR(400),
-                     ACAO_USUARIO NVARCHAR(100), ACAO_DT DATETIME2(0), CORRECAO_MOTIVO NVARCHAR(400), LINHAS_JSON NVARCHAR(MAX));
+                     ACAO_USUARIO NVARCHAR(100), ACAO_DT DATETIME2(0), PROXIMO_LOTE_NOVO INT, CORRECAO_MOTIVO NVARCHAR(400), LINHAS_JSON NVARCHAR(MAX));
 CREATE TABLE #Opc   (OBRAS NVARCHAR(MAX), CONTAS NVARCHAR(MAX), PLANOS NVARCHAR(MAX), PESSOAS NVARCHAR(MAX));
 CREATE TABLE #Conf  (UNIDADE VARCHAR(40), REGRA VARCHAR(15), MOTIVO NVARCHAR(400), DETALHE NVARCHAR(400), REVISAR NVARCHAR(400));
 DROP TABLE IF EXISTS #Exp;
@@ -178,12 +179,12 @@ DECLARE @NumLote INT = (SELECT MIN(m.NUM) FROM MIG.Movimento m WHERE m.UNIDADE =
 DECLARE @JsonL NVARCHAR(MAX) = (SELECT m.ORIGEM AS origem, m.NUM AS num, m.EMP_VINCULADA AS emp, ISNULL(m.PARCEIRO, 0) AS parceiro, m.CONTA AS conta, m.PLANO3 AS plano,
                                        m.DT_MOVTO AS dtMovto, m.DT_VENCTO AS dtVencto, m.DT_PAGTO AS dtPagto, m.VALOR_DEBITO AS debito, m.VALOR_CREDITO AS credito,
                                        m.CONFIRMADO AS confirmado, CAST(0 AS BIT) AS ignorar,
-                                       CASE WHEN m.NUM = @NumLote THEN 999999999 ELSE m.LOTE END AS lote
+                                       CASE WHEN m.NUM = @NumLote THEN (SELECT MAX(x.LOTE) + 1 FROM MIG.Movimento x) ELSE m.LOTE END AS lote
                                 FROM MIG.Movimento m WHERE m.UNIDADE = @U AND m.DESTINO = 'SISTEMA' FOR JSON PATH);
 DELETE FROM #Ret;
 INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'CORRIGIR', @Motivo = N'HML 03c2c: troca de lote', @LinhasJson = @JsonL;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES (N'Lote inexistente é recusado', N'0', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret));
-SET @JsonL = REPLACE(@JsonL, N'"lote":999999999', N'"lote":' + CONVERT(NVARCHAR(12), @LoteDest));
+SET @JsonL = REPLACE(@JsonL, N'"lote":' + CONVERT(NVARCHAR(12), (SELECT MAX(x.LOTE) + 1 FROM MIG.Movimento x)), N'"lote":' + CONVERT(NVARCHAR(12), @LoteDest));
 DELETE FROM #Ret;
 INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'CORRIGIR', @Motivo = N'HML 03c2c: troca de lote', @LinhasJson = @JsonL;
 DELETE FROM #Conf;
@@ -202,6 +203,28 @@ INSERT INTO #Conf EXEC MIG.MIG_Movimento_Transformar @Unidade = @UDest;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Sem a troca, o lote de destino volta a se encaixar', N'LOTE|0', (SELECT TOP (1) REGRA FROM #Conf) + N'|' + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso c WHERE c.UNIDADE = @UDest))),
  (N'Sem a troca, nenhuma correção com lote', N'0', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = @U AND o.LOTE IS NOT NULL)));
+
+-- 4e) Lote novo da migração: a primeira linha vai sozinha para o lote 900001 (ou o próximo livre)
+DECLARE @LoteNovo INT;
+SET @LoteNovo = (SELECT CASE WHEN ISNULL(MAX(o.LOTE), 0) < 900000 THEN 900001 ELSE MAX(o.LOTE) + 1 END FROM MIG.Caso_Correcao_Linha o WHERE o.LOTE >= 900000);
+SET @JsonL = REPLACE(@JsonL, N'"lote":' + CONVERT(NVARCHAR(12), @LoteDest), N'"lote":' + CONVERT(NVARCHAR(12), @LoteNovo));
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'CORRIGIR', @Motivo = N'HML 03c2c: lote novo', @LinhasJson = @JsonL;
+DELETE FROM #Conf;
+INSERT INTO #Conf EXEC MIG.MIG_Caso_Conferir @IdUsuario = @IdCelso, @Unidade = @U;
+DECLARE @UNovo VARCHAR(40) = 'L:' + CONVERT(VARCHAR(12), @LoteNovo);
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Lote novo (900001 em diante) é aceito', N'1', (SELECT TOP (1) CONVERT(NVARCHAR(5), SUCESSO) FROM #Ret)),
+ (N'Conferir traz o lote novo', N'1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM #Conf WHERE UNIDADE = @UNovo))),
+ (N'Linha do lote novo aparece também no documento novo', N'1',
+  CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.vw_MIG_Linha_Unidade v WHERE v.UNIDADE = @UNovo AND v.UNIDADE_ACCESS = @U)));
+-- volta: sem a troca; o lote novo some da lista
+DELETE FROM #Ret;
+INSERT INTO #Ret EXEC MIG.MIG_Caso_Gravar @IdUsuario = @IdCelso, @Unidade = @U, @Acao = 'CORRIGIR', @Motivo = N'HML 03c2c: teste de correção', @LinhasJson = @Json;
+DELETE FROM #Conf;
+INSERT INTO #Conf EXEC MIG.MIG_Movimento_Transformar @Unidade = @UNovo;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
+ (N'Sem a troca, o lote novo sai da lista de casos', N'0', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM MIG.Caso c WHERE c.UNIDADE = @UNovo)));
 
 -- 5) Recusas
 DELETE FROM #Ret;

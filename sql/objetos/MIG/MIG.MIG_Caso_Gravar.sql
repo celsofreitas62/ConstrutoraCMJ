@@ -32,6 +32,10 @@
     v1.2 (18/11/2026) - Troca de lote ($.lote): 0 tira a linha do lote; outro
                         número precisa ser um lote que existe no Access; vazio
                         mantém o do Access.
+    v1.3 (19/11/2026) - Lote novo da migração: número de 900001 em diante não
+                        precisa existir no Access. Documento formado por troca
+                        de lote também pode ser corrigido (linhas que vieram de
+                        outro lote).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'IGNORAR', @Motivo = N'Lançado em dobro no Access';
@@ -97,7 +101,8 @@ BEGIN
                     debito DECIMAL(18,2) '$.debito', credito DECIMAL(18,2) '$.credito', confirmado BIT '$.confirmado', ignorar BIT '$.ignorar',
                     lote INT '$.lote') j;
 
-            IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM AND m.UNIDADE = @Unidade AND m.DESTINO = 'SISTEMA'))
+            IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.vw_MIG_Linha_Unidade v WHERE v.ORIGEM = j.ORIGEM AND v.NUM = j.NUM
+                                                            AND (v.UNIDADE = @Unidade OR v.UNIDADE_ACCESS = @Unidade)))
                 SET @Recusa = N'Uma das linhas não pertence a este documento. Atualize a tela.';
             -- só o que mudou em relação ao Access precisa existir no de-para (o Access pode ter código sem de-para)
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
@@ -118,9 +123,9 @@ BEGIN
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.LOTE < 0)
                 SET @Recusa = N'Lote inválido: use 0 para tirar a linha do lote.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
-                                         WHERE j.LOTE > 0 AND j.LOTE <> m.LOTE
+                                         WHERE j.LOTE > 0 AND j.LOTE < 900000 AND j.LOTE <> m.LOTE
                                            AND NOT EXISTS (SELECT 1 FROM MIG.Movimento x WHERE x.LOTE = j.LOTE AND x.DESTINO = 'SISTEMA'))
-                SET @Recusa = N'Lote não encontrado no Access. Confira o número do lote.';
+                SET @Recusa = N'Lote não encontrado no Access. Confira o número; para separar linhas num lote novo, use um número a partir de 900001.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB < 0 OR j.CRE < 0)
                 SET @Recusa = N'Valor não pode ser negativo.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB > 0 AND j.CRE > 0)
@@ -173,7 +178,7 @@ BEGIN
 
             DELETE o
             FROM MIG.Caso_Correcao_Linha o
-            WHERE o.UNIDADE = @Unidade
+            WHERE (o.UNIDADE = @Unidade OR EXISTS (SELECT 1 FROM #J j WHERE j.ORIGEM = o.ORIGEM AND j.NUM = o.NUM))
               AND NOT EXISTS (SELECT 1 FROM #C c WHERE c.ORIGEM = o.ORIGEM AND c.NUM = o.NUM);
 
             UPDATE o
@@ -196,7 +201,7 @@ BEGIN
 
             INSERT INTO MIG.Caso_Correcao_Linha (ORIGEM, NUM, UNIDADE, EMP_VINCULADA, PARCEIRO, CONTA, PLANO3, DT_MOVTO, DT_VENCTO, DT_PAGTO,
                                                  VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, LOTE, USUARIO_CRIACAO)
-            SELECT c.ORIGEM, c.NUM, @Unidade, c.EMP_VINCULADA, c.PARCEIRO, c.CONTA, c.PLANO3, c.DT_MOVTO, c.DT_VENCTO, c.DT_PAGTO,
+            SELECT c.ORIGEM, c.NUM, (SELECT m.UNIDADE FROM MIG.Movimento m WHERE m.ORIGEM = c.ORIGEM AND m.NUM = c.NUM), c.EMP_VINCULADA, c.PARCEIRO, c.CONTA, c.PLANO3, c.DT_MOVTO, c.DT_VENCTO, c.DT_PAGTO,
                    c.VALOR_DEBITO, c.VALOR_CREDITO, c.CONFIRMADO, c.IGNORAR_LINHA, @Motivo, c.HASH, c.LOTE, @Usuario
             FROM #C c
             WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.ORIGEM = c.ORIGEM AND o.NUM = c.NUM);

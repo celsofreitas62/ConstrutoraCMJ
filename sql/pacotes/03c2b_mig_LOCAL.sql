@@ -1,7 +1,7 @@
 ﻿/*******************************************************************************
   Pacote      : 03c2 parte B - auditoria rápida em carga grande (SIS_Auditoria_Trigger_Gerar v1.1, vai para o MASTER) e transformação, tela de casos do movimento do Access em lançamento, parcela, baixa, movimento e transferência; casos e correções (schema MIG, NÃO vai para o MASTER)
   Banco       : SISTEMACMJ_LOCAL (somente desenvolvimento)
-  Gerado em   : 18/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
+  Gerado em   : 19/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
                 na ordem da regra 59. NÃO EDITAR ESTE ARQUIVO: corrigir o
                 arquivo do objeto e gerar o pacote de novo.
   Pré-requisito: pacote 03c2 e sql/local/03c2_Migracao_Cadastros_LOCAL.sql já rodados.
@@ -685,6 +685,44 @@ END;
 GO
 
 -- =============================================================================
+-- Arquivo: sql/objetos/MIG/MIG.vw_MIG_Linha_Unidade.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [MIG].[vw_MIG_Linha_Unidade]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 18/11/2026
+  Descrição   : Para cada linha do Access que vai para o sistema (MIG.Movimento,
+                DESTINO = 'SISTEMA'), o documento (unidade) do Access e o
+                documento em uso depois da troca de lote feita pela tela de
+                casos (Caso_Correcao_Linha.LOTE): lote do Access, outro lote do
+                Access, lote novo da migração (900001 em diante) ou, com 0,
+                fora do lote (venda ou avulso). Mesma regra do
+                MIG_Movimento_Preparar. Usada pela tela de casos e pela
+                migração para achar as linhas de um documento.
+                Schema MIG: só migração, NÃO entra no MASTER (regra 60).
+
+  Changelog:
+    v1.0 (19/11/2026) - Criação (etapa 03c2, lote novo da migração).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER VIEW [MIG].[vw_MIG_Linha_Unidade]
+AS
+SELECT m.ORIGEM, m.NUM, m.UNIDADE AS UNIDADE_ACCESS,
+       CAST(CASE WHEN o.LOTE IS NULL THEN m.UNIDADE
+                 WHEN o.LOTE > 0 THEN 'L:' + CONVERT(VARCHAR(20), o.LOTE)
+                 WHEN m.LINK_VENDA > 0 THEN 'V:' + CONVERT(VARCHAR(20), m.LINK_VENDA)
+                 ELSE 'A:' + CASE m.ORIGEM WHEN 'ACCESS_MOVTO' THEN 'M' ELSE 'Q' END + ':' + CONVERT(VARCHAR(20), m.NUM) END AS VARCHAR(40)) AS UNIDADE,
+       CAST(CASE WHEN o.LOTE IS NULL THEN 0 ELSE 1 END AS BIT) AS MOVIDA
+FROM MIG.Movimento m
+LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
+WHERE m.DESTINO = 'SISTEMA';
+GO
+
+-- =============================================================================
 -- Arquivo: sql/objetos/MIG/MIG.MIG_Movimento_Transformar.sql
 -- =============================================================================
 /*******************************************************************************
@@ -746,6 +784,9 @@ GO
                         lote: avulso ou venda); padrão de contas recalculado nos
                         documentos afetados; a conferência inclui o documento
                         de destino (depois dos pedidos).
+    v1.5 (19/11/2026) - Lote novo da migração (900001 em diante); decisões da
+                        tela (ignorar / arquivo morto) valem para o documento
+                        como ele está depois da troca de lote.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
@@ -857,7 +898,7 @@ BEGIN
         WHERE m.DESTINO = 'SISTEMA'
           AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s) OR eu.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
           AND ISNULL(o.IGNORAR_LINHA, 0) = 0
-          AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao c WHERE c.UNIDADE = m.UNIDADE);
+          AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao c WHERE c.UNIDADE = eu.UNIDADE);
 
         CREATE UNIQUE CLUSTERED INDEX IX_L ON #L (ORIGEM, NUM);
         CREATE INDEX IX_L_U ON #L (UNIDADE);
@@ -1094,13 +1135,14 @@ BEGIN
 
         -- casos para a tela, mais os documentos que já têm correção da tela
         SET @EtapaAtual = 'Casos';
-        SELECT m.UNIDADE, MIN(m.PADRAO) AS PADRAO, COUNT(*) AS N, SUM(m.VALOR_DEBITO) AS D, SUM(m.VALOR_CREDITO) AS C,
+        SELECT v.UNIDADE, MIN(m.PADRAO) AS PADRAO, COUNT(*) AS N, SUM(m.VALOR_DEBITO) AS D, SUM(m.VALOR_CREDITO) AS C,
                MIN(m.DT_UNIDADE) AS DT, MIN(cc.ACAO) AS ACAO
         INTO #Dec
-        FROM MIG.Movimento m
-        INNER JOIN MIG.Caso_Correcao cc ON cc.UNIDADE = m.UNIDADE
-        WHERE m.DESTINO = 'SISTEMA' AND (@Filtrar = 0 OR m.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s))
-        GROUP BY m.UNIDADE;
+        FROM MIG.vw_MIG_Linha_Unidade v
+        INNER JOIN MIG.Movimento m ON m.ORIGEM = v.ORIGEM AND m.NUM = v.NUM
+        INNER JOIN MIG.Caso_Correcao cc ON cc.UNIDADE = v.UNIDADE
+        WHERE @Filtrar = 0 OR v.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s)
+        GROUP BY v.UNIDADE;
 
         SELECT u.UNIDADE, CAST(ISNULL(u.PADRAO, '') AS VARCHAR(200)) AS PADRAO, CAST(u.REGRA AS VARCHAR(15)) AS REGRA,
                u.MOTIVO, u.DETALHE, u.N, u.S_DEB_TOTAL AS D, u.S_CRE_TOTAL AS C, u.DT_UNIDADE AS DT
@@ -1506,6 +1548,8 @@ GO
     v1.0 (18/11/2026) - Criação (etapa 03c2, tela de casos da migração).
     v1.1 (18/11/2026) - Situação REVISAR (o Access mudou depois da correção) e
                         coluna REVISAR com o aviso.
+    v1.2 (19/11/2026) - Empresa e histórico também para documento formado por
+                        troca de lote (lote novo da migração).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Listar @IdUsuario = 1;
@@ -1550,9 +1594,10 @@ BEGIN
                c.REVISAR
         FROM MIG.Caso c
         OUTER APPLY (SELECT TOP (1) COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA) AS EV, m.COMPLEMENTO, m.HISTORICO
-                     FROM MIG.Movimento m
+                     FROM MIG.vw_MIG_Linha_Unidade v
+                     INNER JOIN MIG.Movimento m ON m.ORIGEM = v.ORIGEM AND m.NUM = v.NUM
                      LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
-                     WHERE m.UNIDADE = c.UNIDADE AND m.DESTINO = 'SISTEMA'
+                     WHERE v.UNIDADE = c.UNIDADE OR v.UNIDADE_ACCESS = c.UNIDADE
                      ORDER BY CASE WHEN m.COMPLEMENTO <> N'' THEN 0 ELSE 1 END, m.NUM) pl
         OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(v.NomeVinculada)) AS NOME FROM MIG.Access_EmpVinculada v WHERE TRY_CONVERT(INT, v.CodigoVinculada) = pl.EV) nv
         OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS DESCRICAO FROM MIG.Access_Historico x WHERE TRY_CONVERT(INT, x.CodHistorico) = pl.HISTORICO) h
@@ -1592,6 +1637,8 @@ GO
     v1.1 (18/11/2026) - Aviso REVISAR no cabeçalho e "mudou" em cada linha
                         alterada no Access depois da correção.
     v1.2 (18/11/2026) - Lote da linha (original e em uso).
+    v1.3 (19/11/2026) - Linhas do documento: as do Access e as que vieram por
+                        troca de lote; PROXIMO_LOTE_NOVO (lote novo da migração).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Obter @IdUsuario = 1, @Unidade = 'L:123';
@@ -1621,6 +1668,8 @@ BEGIN
         SELECT c.UNIDADE, c.REGRA_ATUAL, c.REVISAR, c.MOTIVO, c.MOTIVO_ORIGINAL, c.DETALHE, c.PADRAO, c.DT_DOCUMENTO, c.DT_CALCULO,
                ISNULL(cc.ACAO, '') AS ACAO, ISNULL(cc.MOTIVO, N'') AS ACAO_MOTIVO,
                COALESCE(cc.USUARIO_ALTERACAO, cc.USUARIO_CRIACAO, N'') AS ACAO_USUARIO, COALESCE(cc.DT_ALTERACAO, cc.DT_CRIACAO) AS ACAO_DT,
+               (SELECT CASE WHEN ISNULL(MAX(o.LOTE), 0) < 900000 THEN 900001 ELSE MAX(o.LOTE) + 1 END
+                FROM MIG.Caso_Correcao_Linha o WHERE o.LOTE >= 900000) AS PROXIMO_LOTE_NOVO,
                ISNULL((SELECT TOP (1) o.MOTIVO FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = c.UNIDADE AND o.MOTIVO <> N''
                        ORDER BY COALESCE(o.DT_ALTERACAO, o.DT_CRIACAO) DESC), N'') AS CORRECAO_MOTIVO,
                ISNULL((
@@ -1648,7 +1697,9 @@ BEGIN
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.NomeParceiro)) AS NOME FROM MIG.Access_Parceiros x WHERE TRY_CONVERT(INT, x.CodigoParceiro) = COALESCE(o.PARCEIRO, m.PARCEIRO)) np
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS NOME FROM MIG.Access_Contas_Financeiras x WHERE TRY_CONVERT(INT, x.CodigoConta) = COALESCE(o.CONTA, m.CONTA)) nc
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.DescricaoPlano3)) AS NOME FROM MIG.Access_Plano3 x WHERE TRY_CONVERT(INT, x.Plano3) = COALESCE(o.PLANO3, m.PLANO3)) npl
-                   WHERE m.UNIDADE = c.UNIDADE AND m.DESTINO = 'SISTEMA'
+                   WHERE m.DESTINO = 'SISTEMA'
+                     AND EXISTS (SELECT 1 FROM MIG.vw_MIG_Linha_Unidade v WHERE v.ORIGEM = m.ORIGEM AND v.NUM = m.NUM
+                                 AND (v.UNIDADE = c.UNIDADE OR v.UNIDADE_ACCESS = c.UNIDADE))
                    ORDER BY m.DT_MOVTO, m.NUM
                    FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS LINHAS_JSON
         FROM MIG.Caso c
@@ -1773,6 +1824,10 @@ GO
     v1.2 (18/11/2026) - Troca de lote ($.lote): 0 tira a linha do lote; outro
                         número precisa ser um lote que existe no Access; vazio
                         mantém o do Access.
+    v1.3 (19/11/2026) - Lote novo da migração: número de 900001 em diante não
+                        precisa existir no Access. Documento formado por troca
+                        de lote também pode ser corrigido (linhas que vieram de
+                        outro lote).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'IGNORAR', @Motivo = N'Lançado em dobro no Access';
@@ -1838,7 +1893,8 @@ BEGIN
                     debito DECIMAL(18,2) '$.debito', credito DECIMAL(18,2) '$.credito', confirmado BIT '$.confirmado', ignorar BIT '$.ignorar',
                     lote INT '$.lote') j;
 
-            IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM AND m.UNIDADE = @Unidade AND m.DESTINO = 'SISTEMA'))
+            IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.vw_MIG_Linha_Unidade v WHERE v.ORIGEM = j.ORIGEM AND v.NUM = j.NUM
+                                                            AND (v.UNIDADE = @Unidade OR v.UNIDADE_ACCESS = @Unidade)))
                 SET @Recusa = N'Uma das linhas não pertence a este documento. Atualize a tela.';
             -- só o que mudou em relação ao Access precisa existir no de-para (o Access pode ter código sem de-para)
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
@@ -1859,9 +1915,9 @@ BEGIN
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.LOTE < 0)
                 SET @Recusa = N'Lote inválido: use 0 para tirar a linha do lote.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
-                                         WHERE j.LOTE > 0 AND j.LOTE <> m.LOTE
+                                         WHERE j.LOTE > 0 AND j.LOTE < 900000 AND j.LOTE <> m.LOTE
                                            AND NOT EXISTS (SELECT 1 FROM MIG.Movimento x WHERE x.LOTE = j.LOTE AND x.DESTINO = 'SISTEMA'))
-                SET @Recusa = N'Lote não encontrado no Access. Confira o número do lote.';
+                SET @Recusa = N'Lote não encontrado no Access. Confira o número; para separar linhas num lote novo, use um número a partir de 900001.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB < 0 OR j.CRE < 0)
                 SET @Recusa = N'Valor não pode ser negativo.';
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j WHERE j.DEB > 0 AND j.CRE > 0)
@@ -1914,7 +1970,7 @@ BEGIN
 
             DELETE o
             FROM MIG.Caso_Correcao_Linha o
-            WHERE o.UNIDADE = @Unidade
+            WHERE (o.UNIDADE = @Unidade OR EXISTS (SELECT 1 FROM #J j WHERE j.ORIGEM = o.ORIGEM AND j.NUM = o.NUM))
               AND NOT EXISTS (SELECT 1 FROM #C c WHERE c.ORIGEM = o.ORIGEM AND c.NUM = o.NUM);
 
             UPDATE o
@@ -1937,7 +1993,7 @@ BEGIN
 
             INSERT INTO MIG.Caso_Correcao_Linha (ORIGEM, NUM, UNIDADE, EMP_VINCULADA, PARCEIRO, CONTA, PLANO3, DT_MOVTO, DT_VENCTO, DT_PAGTO,
                                                  VALOR_DEBITO, VALOR_CREDITO, CONFIRMADO, IGNORAR_LINHA, MOTIVO, HASH_ACCESS, LOTE, USUARIO_CRIACAO)
-            SELECT c.ORIGEM, c.NUM, @Unidade, c.EMP_VINCULADA, c.PARCEIRO, c.CONTA, c.PLANO3, c.DT_MOVTO, c.DT_VENCTO, c.DT_PAGTO,
+            SELECT c.ORIGEM, c.NUM, (SELECT m.UNIDADE FROM MIG.Movimento m WHERE m.ORIGEM = c.ORIGEM AND m.NUM = c.NUM), c.EMP_VINCULADA, c.PARCEIRO, c.CONTA, c.PLANO3, c.DT_MOVTO, c.DT_VENCTO, c.DT_PAGTO,
                    c.VALOR_DEBITO, c.VALOR_CREDITO, c.CONFIRMADO, c.IGNORAR_LINHA, @Motivo, c.HASH, c.LOTE, @Usuario
             FROM #C c
             WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.ORIGEM = c.ORIGEM AND o.NUM = c.NUM);
@@ -2364,6 +2420,7 @@ GO
     v1.1 (17/11/2026) - Saldo pelo último resumo antes do corte (corte 2022).
     v1.2 (18/11/2026) - Recebe os documentos mandados ao arquivo morto pela tela
                         de casos (etapa 03c2).
+    v1.3 (19/11/2026) - Vale também para documento formado por troca de lote.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -2417,7 +2474,8 @@ BEGIN
         LEFT JOIN MIG.Access_Historico hi          ON TRY_CONVERT(INT, hi.CodHistorico) = m.HISTORICO
         OUTER APPLY (SELECT TOP (1) i.NomeImovel FROM MIG.Access_Imoveis i
                      WHERE TRY_CONVERT(INT, i.CodImovel) = m.IMOVEL AND m.IMOVEL > 1 ORDER BY i.NomeImovel) im
-        LEFT JOIN MIG.Caso_Correcao cm             ON cm.UNIDADE = m.UNIDADE AND cm.ACAO = 'ARQUIVO_MORTO' AND m.DESTINO = 'SISTEMA'
+        LEFT JOIN MIG.vw_MIG_Linha_Unidade lu      ON lu.ORIGEM = m.ORIGEM AND lu.NUM = m.NUM
+        LEFT JOIN MIG.Caso_Correcao cm             ON cm.UNIDADE = lu.UNIDADE AND cm.ACAO = 'ARQUIVO_MORTO' AND m.DESTINO = 'SISTEMA'
         WHERE m.DESTINO = 'ARQ_MORTO' OR cm.UNIDADE IS NOT NULL;
 
         SELECT @DtResumo = MAX(m.DT_VALIDA) FROM MIG.Movimento m WHERE m.SD_ACUM = 1 AND m.DESTINO = 'ARQ_MORTO';

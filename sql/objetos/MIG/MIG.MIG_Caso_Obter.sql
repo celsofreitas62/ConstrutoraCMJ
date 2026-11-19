@@ -16,6 +16,8 @@
     v1.1 (18/11/2026) - Aviso REVISAR no cabeçalho e "mudou" em cada linha
                         alterada no Access depois da correção.
     v1.2 (18/11/2026) - Lote da linha (original e em uso).
+    v1.3 (19/11/2026) - Linhas do documento: as do Access e as que vieram por
+                        troca de lote; PROXIMO_LOTE_NOVO (lote novo da migração).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Obter @IdUsuario = 1, @Unidade = 'L:123';
@@ -45,6 +47,8 @@ BEGIN
         SELECT c.UNIDADE, c.REGRA_ATUAL, c.REVISAR, c.MOTIVO, c.MOTIVO_ORIGINAL, c.DETALHE, c.PADRAO, c.DT_DOCUMENTO, c.DT_CALCULO,
                ISNULL(cc.ACAO, '') AS ACAO, ISNULL(cc.MOTIVO, N'') AS ACAO_MOTIVO,
                COALESCE(cc.USUARIO_ALTERACAO, cc.USUARIO_CRIACAO, N'') AS ACAO_USUARIO, COALESCE(cc.DT_ALTERACAO, cc.DT_CRIACAO) AS ACAO_DT,
+               (SELECT CASE WHEN ISNULL(MAX(o.LOTE), 0) < 900000 THEN 900001 ELSE MAX(o.LOTE) + 1 END
+                FROM MIG.Caso_Correcao_Linha o WHERE o.LOTE >= 900000) AS PROXIMO_LOTE_NOVO,
                ISNULL((SELECT TOP (1) o.MOTIVO FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = c.UNIDADE AND o.MOTIVO <> N''
                        ORDER BY COALESCE(o.DT_ALTERACAO, o.DT_CRIACAO) DESC), N'') AS CORRECAO_MOTIVO,
                ISNULL((
@@ -72,7 +76,9 @@ BEGIN
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.NomeParceiro)) AS NOME FROM MIG.Access_Parceiros x WHERE TRY_CONVERT(INT, x.CodigoParceiro) = COALESCE(o.PARCEIRO, m.PARCEIRO)) np
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS NOME FROM MIG.Access_Contas_Financeiras x WHERE TRY_CONVERT(INT, x.CodigoConta) = COALESCE(o.CONTA, m.CONTA)) nc
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.DescricaoPlano3)) AS NOME FROM MIG.Access_Plano3 x WHERE TRY_CONVERT(INT, x.Plano3) = COALESCE(o.PLANO3, m.PLANO3)) npl
-                   WHERE m.UNIDADE = c.UNIDADE AND m.DESTINO = 'SISTEMA'
+                   WHERE m.DESTINO = 'SISTEMA'
+                     AND EXISTS (SELECT 1 FROM MIG.vw_MIG_Linha_Unidade v WHERE v.ORIGEM = m.ORIGEM AND v.NUM = m.NUM
+                                 AND (v.UNIDADE = c.UNIDADE OR v.UNIDADE_ACCESS = c.UNIDADE))
                    ORDER BY m.DT_MOVTO, m.NUM
                    FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS LINHAS_JSON
         FROM MIG.Caso c

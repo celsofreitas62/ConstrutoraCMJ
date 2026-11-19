@@ -23,6 +23,7 @@
     v1.1 (17/11/2026) - Saldo pelo último resumo antes do corte (corte 2022).
     v1.2 (18/11/2026) - Recebe os documentos mandados ao arquivo morto pela tela
                         de casos (etapa 03c2).
+    v1.3 (19/11/2026) - Vale também para documento formado por troca de lote.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -76,7 +77,8 @@ BEGIN
         LEFT JOIN MIG.Access_Historico hi          ON TRY_CONVERT(INT, hi.CodHistorico) = m.HISTORICO
         OUTER APPLY (SELECT TOP (1) i.NomeImovel FROM MIG.Access_Imoveis i
                      WHERE TRY_CONVERT(INT, i.CodImovel) = m.IMOVEL AND m.IMOVEL > 1 ORDER BY i.NomeImovel) im
-        LEFT JOIN MIG.Caso_Correcao cm             ON cm.UNIDADE = m.UNIDADE AND cm.ACAO = 'ARQUIVO_MORTO' AND m.DESTINO = 'SISTEMA'
+        LEFT JOIN MIG.vw_MIG_Linha_Unidade lu      ON lu.ORIGEM = m.ORIGEM AND lu.NUM = m.NUM
+        LEFT JOIN MIG.Caso_Correcao cm             ON cm.UNIDADE = lu.UNIDADE AND cm.ACAO = 'ARQUIVO_MORTO' AND m.DESTINO = 'SISTEMA'
         WHERE m.DESTINO = 'ARQ_MORTO' OR cm.UNIDADE IS NOT NULL;
 
         SELECT @DtResumo = MAX(m.DT_VALIDA) FROM MIG.Movimento m WHERE m.SD_ACUM = 1 AND m.DESTINO = 'ARQ_MORTO';

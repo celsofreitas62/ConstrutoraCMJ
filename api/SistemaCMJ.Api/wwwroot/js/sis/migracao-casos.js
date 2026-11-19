@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let filtroMotivo = '';
   let aberto = null;     // caso aberto (cabeçalho + linhas)
   const marcados = new Set();   // documentos marcados na lista (ações em lote)
+  let proximoLoteNovo = 900001; // lote novo da migração (separar linhas num lote só delas)
   let sujo = false;
 
   for (const id of ['botao-gravar', 'botao-ignorar', 'botao-arquivo', 'botao-desfazer', 'botao-baixar-correcoes']) $(id).hidden = !podeAlterar;
@@ -326,7 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     campos.lote.step = '1';
     campos.lote.value = String(l.lote ?? 0);
     campos.lote.setAttribute('aria-label', 'Lote');
-    campos.lote.dataset.dica = 'Número do lote de pagamento do Access. Troque para mover a linha para o lote certo (precisa existir no Access). 0 = tirar a linha do lote.';
+    campos.lote.dataset.dica = 'Lote de pagamento. Outro lote do Access: move a linha para ele. Lote novo (só para separar linhas): use ' + proximoLoteNovo + ' nas linhas que vão juntas. 0 = tirar a linha do lote.';
     const tLote = td(); tLote.classList.add('numero');
     vigiar(tLote, campos.lote, () => String(Number(campos.lote.value || 0)), String(l.loteOrig ?? 0), l.loteOrig ? 'lote ' + l.loteOrig : 'sem lote');
 
@@ -466,6 +467,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (caso.ACAO) texto += ' · Decisão: ' + (caso.ACAO === 'IGNORAR' ? 'não migrar' : 'arquivo morto') + ' (' + caso.ACAO_MOTIVO + ', por ' + caso.ACAO_USUARIO + ')';
     $('detalhe-motivo').textContent = texto;
     $('motivo').value = caso.ACAO ? caso.ACAO_MOTIVO : caso.CORRECAO_MOTIVO || '';
+    proximoLoteNovo = caso.PROXIMO_LOTE_NOVO || 900001;
+    $('nota-lote-novo').textContent = 'Para separar linhas num lote só delas, digite ' + proximoLoteNovo + ' na coluna Lote dessas linhas e grave.';
     $('linhas').replaceChildren(...(caso.LINHAS_JSON || []).map(linhaCaso));
     marcarCabecalhos();
     sujo = false;
