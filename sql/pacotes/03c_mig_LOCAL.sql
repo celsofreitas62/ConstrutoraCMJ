@@ -1,7 +1,7 @@
 ﻿/*******************************************************************************
   Pacote      : 03c - ensaio da migração do movimento (schema MIG: carga crua do Access, classificação, arquivo morto, conferência). NÃO vai para o MASTER
   Banco       : SISTEMACMJ_LOCAL (somente desenvolvimento)
-  Gerado em   : 17/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
+  Gerado em   : 19/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
                 na ordem da regra 59. NÃO EDITAR ESTE ARQUIVO: corrigir o
                 arquivo do objeto e gerar o pacote de novo.
   Pré-requisito: pacote 03c já rodado; CSV do Access na pasta legado/dados_brutos.
@@ -412,6 +412,7 @@ GO
     v1.0 (17/11/2026) - Criação (etapa 03c, ensaio da migração).
     v1.1 (17/11/2026) - Corte em parâmetro (@Corte, padrão 01/01/2022, decisão
                         do Celso) e contrato de venda inteiro no sistema novo.
+    v1.2 (19/11/2026) - Índice por (ORIGEM, NUM), para a tela de casos.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -513,6 +514,7 @@ BEGIN
         WHERE m.SD_ACUM = 0 AND m.DUPLICADA = 0;
 
         CREATE INDEX IX_MIG_Movimento_UNIDADE ON MIG.Movimento (UNIDADE) INCLUDE (TIPO_CONTA, LADO, DT_VALIDA);
+        CREATE INDEX IX_MIG_Movimento_ORIGEM_NUM ON MIG.Movimento (ORIGEM, NUM) INCLUDE (UNIDADE, DESTINO, LINK_VENDA, LOTE);
 
         SELECT x.UNIDADE,
                COALESCE(MAX(CASE WHEN x.TIPO_CONTA IN ('BCO', 'NA') THEN x.DT_VALIDA END), MAX(x.DT_VALIDA)) AS DT_UNIDADE,
@@ -597,12 +599,19 @@ GO
                 (FIN.Arquivo_Morto_Saldo): soma dos últimos resumos "Sd Acum"
                 antes do corte (o Access só tem até 01/01/2020), como o Access
                 mostrava (só referência: não são os saldos reais do banco).
+                Também entram os documentos que a tela "Casos da migração"
+                mandou para o arquivo morto (MIG.Caso_Correcao, ACAO
+                ARQUIVO_MORTO), com o motivo no início da observação; esses
+                ficam fora do financeiro novo (MIG_Movimento_Transformar).
                 Tudo-ou-nada; repetível: apaga a carga anterior do Access e
                 carrega de novo. Devolve quantidade e totais carregados.
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, ensaio da migração).
     v1.1 (17/11/2026) - Saldo pelo último resumo antes do corte (corte 2022).
+    v1.2 (18/11/2026) - Recebe os documentos mandados ao arquivo morto pela tela
+                        de casos (etapa 03c2).
+    v1.3 (19/11/2026) - Vale também para documento formado por troca de lote.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -637,7 +646,10 @@ BEGIN
                LEFT(ISNULL(p1.DescricaoPlano1, N''), 80), LEFT(ISNULL(p2.DescricaoPlano2, N''), 80), LEFT(ISNULL(p3.DescricaoPlano3, N''), 120),
                LEFT(ISNULL(hi.Descricao, N''), 80),
                LEFT(m.COMPLEMENTO, 255), LEFT(m.NUM_DOC, 60), LEFT(m.NOTA_FISCAL, 60), LEFT(ISNULL(im.NomeImovel, N''), 150),
-               LEFT(m.OBSERVACAO, 2000), m.VALOR_DEBITO, m.VALOR_CREDITO,
+               LEFT(CASE WHEN cm.UNIDADE IS NULL THEN m.OBSERVACAO
+                         ELSE N'[Migração: mandado ao arquivo morto pela tela de casos por ' + ISNULL(cm.USUARIO_ALTERACAO, cm.USUARIO_CRIACAO)
+                              + N': ' + cm.MOTIVO + N'] ' + m.OBSERVACAO END, 2000),
+               m.VALOR_DEBITO, m.VALOR_CREDITO,
                m.DT_VALIDA,
                CASE WHEN m.DT_VENCTO BETWEEN '2000-01-01' AND '2035-12-31' THEN m.DT_VENCTO END,
                CASE WHEN m.DT_PAGTO  BETWEEN '2000-01-01' AND '2035-12-31' THEN m.DT_PAGTO END,
@@ -653,7 +665,9 @@ BEGIN
         LEFT JOIN MIG.Access_Historico hi          ON TRY_CONVERT(INT, hi.CodHistorico) = m.HISTORICO
         OUTER APPLY (SELECT TOP (1) i.NomeImovel FROM MIG.Access_Imoveis i
                      WHERE TRY_CONVERT(INT, i.CodImovel) = m.IMOVEL AND m.IMOVEL > 1 ORDER BY i.NomeImovel) im
-        WHERE m.DESTINO = 'ARQ_MORTO';
+        LEFT JOIN MIG.vw_MIG_Linha_Unidade lu      ON lu.ORIGEM = m.ORIGEM AND lu.NUM = m.NUM
+        LEFT JOIN MIG.Caso_Correcao cm             ON cm.UNIDADE = lu.UNIDADE AND cm.ACAO = 'ARQUIVO_MORTO' AND m.DESTINO = 'SISTEMA'
+        WHERE m.DESTINO = 'ARQ_MORTO' OR cm.UNIDADE IS NOT NULL;
 
         SELECT @DtResumo = MAX(m.DT_VALIDA) FROM MIG.Movimento m WHERE m.SD_ACUM = 1 AND m.DESTINO = 'ARQ_MORTO';
 

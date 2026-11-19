@@ -168,6 +168,12 @@ IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'LOTE') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD LOTE INT NULL CONSTRAINT CK_Caso_Correcao_Linha_LOTE CHECK (LOTE >= 0);
 GO
 
+-- busca de linha do Access pelo código (tela de casos e migração); MIG_Movimento_Preparar também cria
+IF OBJECT_ID(N'[MIG].[Movimento]', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[MIG].[Movimento]') AND name = N'IX_MIG_Movimento_ORIGEM_NUM')
+    CREATE INDEX IX_MIG_Movimento_ORIGEM_NUM ON MIG.Movimento (ORIGEM, NUM) INCLUDE (UNIDADE, DESTINO, LINK_VENDA, LOTE);
+GO
+
 -- auditoria das correções feitas pela tela (quem, quando, antes e depois)
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'MIG.Caso_Correcao',       @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'MIG.Caso_Correcao_Linha', @Criar = 1;

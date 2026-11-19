@@ -76,9 +76,7 @@ BEGIN
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.NomeParceiro)) AS NOME FROM MIG.Access_Parceiros x WHERE TRY_CONVERT(INT, x.CodigoParceiro) = COALESCE(o.PARCEIRO, m.PARCEIRO)) np
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS NOME FROM MIG.Access_Contas_Financeiras x WHERE TRY_CONVERT(INT, x.CodigoConta) = COALESCE(o.CONTA, m.CONTA)) nc
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.DescricaoPlano3)) AS NOME FROM MIG.Access_Plano3 x WHERE TRY_CONVERT(INT, x.Plano3) = COALESCE(o.PLANO3, m.PLANO3)) npl
-                   WHERE m.DESTINO = 'SISTEMA'
-                     AND EXISTS (SELECT 1 FROM MIG.vw_MIG_Linha_Unidade v WHERE v.ORIGEM = m.ORIGEM AND v.NUM = m.NUM
-                                 AND (v.UNIDADE = c.UNIDADE OR v.UNIDADE_ACCESS = c.UNIDADE))
+                   WHERE EXISTS (SELECT 1 FROM MIG.fn_MIG_Linhas_Documento(c.UNIDADE) d WHERE d.ORIGEM = m.ORIGEM AND d.NUM = m.NUM)
                    ORDER BY m.DT_MOVTO, m.NUM
                    FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS LINHAS_JSON
         FROM MIG.Caso c

@@ -145,7 +145,7 @@ ORDEM_03C2 = [
 ORDEM_03C2B = [
     'objetos/SIS/SIS.SIS_Auditoria_Trigger_Gerar.sql', 'objetos/SIS/Carga_SIS_Auditoria_Triggers.sql', 'objetos/SIS/Carga_SIS_Comunicado.sql',
     'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql', 'objetos/FIN/Carga_FIN_Auditoria_Triggers.sql',
-    'objetos/MIG/MIG.Tabelas_Transformacao.sql', 'objetos/MIG/MIG.fn_MIG_Hash_Unidade.sql', 'objetos/MIG/MIG.vw_MIG_Linha_Unidade.sql', 'objetos/MIG/MIG.MIG_Movimento_Transformar.sql',
+    'objetos/MIG/MIG.Tabelas_Transformacao.sql', 'objetos/MIG/MIG.fn_MIG_Hash_Unidade.sql', 'objetos/MIG/MIG.vw_MIG_Linha_Unidade.sql', 'objetos/MIG/MIG.fn_MIG_Linhas_Documento.sql', 'objetos/MIG/MIG.MIG_Movimento_Transformar.sql',
     'objetos/MIG/MIG.MIG_Movimento_Conferencia_Listar.sql',
     'objetos/MIG/MIG.MIG_Caso_Listar.sql', 'objetos/MIG/MIG.MIG_Caso_Obter.sql', 'objetos/MIG/MIG.MIG_Caso_Opcoes.sql',
     'objetos/MIG/MIG.MIG_Caso_Gravar.sql', 'objetos/MIG/MIG.MIG_Caso_Conferir.sql', 'objetos/MIG/MIG.MIG_Caso_Lote_Gravar.sql', 'objetos/MIG/MIG.MIG_Caso_Correcao_Exportar.sql', 'objetos/MIG/Carga_MIG_Tela_Casos.sql',

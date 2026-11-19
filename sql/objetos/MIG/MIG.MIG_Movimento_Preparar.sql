@@ -31,6 +31,7 @@
     v1.0 (17/11/2026) - Criação (etapa 03c, ensaio da migração).
     v1.1 (17/11/2026) - Corte em parâmetro (@Corte, padrão 01/01/2022, decisão
                         do Celso) e contrato de venda inteiro no sistema novo.
+    v1.2 (19/11/2026) - Índice por (ORIGEM, NUM), para a tela de casos.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -132,6 +133,7 @@ BEGIN
         WHERE m.SD_ACUM = 0 AND m.DUPLICADA = 0;
 
         CREATE INDEX IX_MIG_Movimento_UNIDADE ON MIG.Movimento (UNIDADE) INCLUDE (TIPO_CONTA, LADO, DT_VALIDA);
+        CREATE INDEX IX_MIG_Movimento_ORIGEM_NUM ON MIG.Movimento (ORIGEM, NUM) INCLUDE (UNIDADE, DESTINO, LINK_VENDA, LOTE);
 
         SELECT x.UNIDADE,
                COALESCE(MAX(CASE WHEN x.TIPO_CONTA IN ('BCO', 'NA') THEN x.DT_VALIDA END), MAX(x.DT_VALIDA)) AS DT_UNIDADE,

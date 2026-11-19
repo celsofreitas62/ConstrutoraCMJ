@@ -101,8 +101,7 @@ BEGIN
                     debito DECIMAL(18,2) '$.debito', credito DECIMAL(18,2) '$.credito', confirmado BIT '$.confirmado', ignorar BIT '$.ignorar',
                     lote INT '$.lote') j;
 
-            IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.vw_MIG_Linha_Unidade v WHERE v.ORIGEM = j.ORIGEM AND v.NUM = j.NUM
-                                                            AND (v.UNIDADE = @Unidade OR v.UNIDADE_ACCESS = @Unidade)))
+            IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.fn_MIG_Linhas_Documento(@Unidade) d WHERE d.ORIGEM = j.ORIGEM AND d.NUM = j.NUM))
                 SET @Recusa = N'Uma das linhas não pertence a este documento. Atualize a tela.';
             -- só o que mudou em relação ao Access precisa existir no de-para (o Access pode ter código sem de-para)
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM

@@ -641,6 +641,12 @@ IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'LOTE') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD LOTE INT NULL CONSTRAINT CK_Caso_Correcao_Linha_LOTE CHECK (LOTE >= 0);
 GO
 
+-- busca de linha do Access pelo código (tela de casos e migração); MIG_Movimento_Preparar também cria
+IF OBJECT_ID(N'[MIG].[Movimento]', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[MIG].[Movimento]') AND name = N'IX_MIG_Movimento_ORIGEM_NUM')
+    CREATE INDEX IX_MIG_Movimento_ORIGEM_NUM ON MIG.Movimento (ORIGEM, NUM) INCLUDE (UNIDADE, DESTINO, LINK_VENDA, LOTE);
+GO
+
 -- auditoria das correções feitas pela tela (quem, quando, antes e depois)
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'MIG.Caso_Correcao',       @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'MIG.Caso_Correcao_Linha', @Criar = 1;
@@ -720,6 +726,46 @@ SELECT m.ORIGEM, m.NUM, m.UNIDADE AS UNIDADE_ACCESS,
 FROM MIG.Movimento m
 LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
 WHERE m.DESTINO = 'SISTEMA';
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/MIG/MIG.fn_MIG_Linhas_Documento.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [MIG].[fn_MIG_Linhas_Documento]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 19/11/2026
+  Descrição   : Linhas (ORIGEM, NUM) de um documento da tela de casos: as do
+                documento no Access e as que chegaram a ele por troca de lote
+                (inclusive lote novo da migração, 900001 em diante). Função em
+                linha, com busca pelo índice de MIG.Movimento (UNIDADE) e pela
+                tabela pequena de correções: rápida mesmo chamada para cada
+                caso da lista. Mesma regra de MIG.vw_MIG_Linha_Unidade.
+                Schema MIG: só migração, NÃO entra no MASTER (regra 60).
+
+  Changelog:
+    v1.0 (19/11/2026) - Criação (etapa 03c2, desempenho da tela de casos).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [MIG].[fn_MIG_Linhas_Documento] (@Unidade VARCHAR(40))
+RETURNS TABLE
+AS
+RETURN
+    SELECT m.ORIGEM, m.NUM
+    FROM MIG.Movimento m
+    WHERE m.UNIDADE = @Unidade AND m.DESTINO = 'SISTEMA'
+    UNION
+    SELECT o.ORIGEM, o.NUM
+    FROM MIG.Caso_Correcao_Linha o
+    INNER JOIN MIG.Movimento m ON m.ORIGEM = o.ORIGEM AND m.NUM = o.NUM AND m.DESTINO = 'SISTEMA'
+    WHERE o.LOTE IS NOT NULL
+      AND CASE WHEN o.LOTE > 0 THEN 'L:' + CONVERT(VARCHAR(20), o.LOTE)
+               WHEN m.LINK_VENDA > 0 THEN 'V:' + CONVERT(VARCHAR(20), m.LINK_VENDA)
+               ELSE 'A:' + CASE m.ORIGEM WHEN 'ACCESS_MOVTO' THEN 'M' ELSE 'Q' END + ':' + CONVERT(VARCHAR(20), m.NUM) END = @Unidade;
 GO
 
 -- =============================================================================
@@ -1594,10 +1640,9 @@ BEGIN
                c.REVISAR
         FROM MIG.Caso c
         OUTER APPLY (SELECT TOP (1) COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA) AS EV, m.COMPLEMENTO, m.HISTORICO
-                     FROM MIG.vw_MIG_Linha_Unidade v
-                     INNER JOIN MIG.Movimento m ON m.ORIGEM = v.ORIGEM AND m.NUM = v.NUM
+                     FROM MIG.fn_MIG_Linhas_Documento(c.UNIDADE) d
+                     INNER JOIN MIG.Movimento m ON m.ORIGEM = d.ORIGEM AND m.NUM = d.NUM
                      LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
-                     WHERE v.UNIDADE = c.UNIDADE OR v.UNIDADE_ACCESS = c.UNIDADE
                      ORDER BY CASE WHEN m.COMPLEMENTO <> N'' THEN 0 ELSE 1 END, m.NUM) pl
         OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(v.NomeVinculada)) AS NOME FROM MIG.Access_EmpVinculada v WHERE TRY_CONVERT(INT, v.CodigoVinculada) = pl.EV) nv
         OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS DESCRICAO FROM MIG.Access_Historico x WHERE TRY_CONVERT(INT, x.CodHistorico) = pl.HISTORICO) h
@@ -1697,9 +1742,7 @@ BEGIN
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.NomeParceiro)) AS NOME FROM MIG.Access_Parceiros x WHERE TRY_CONVERT(INT, x.CodigoParceiro) = COALESCE(o.PARCEIRO, m.PARCEIRO)) np
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.Descricao)) AS NOME FROM MIG.Access_Contas_Financeiras x WHERE TRY_CONVERT(INT, x.CodigoConta) = COALESCE(o.CONTA, m.CONTA)) nc
                    OUTER APPLY (SELECT TOP (1) LTRIM(RTRIM(x.DescricaoPlano3)) AS NOME FROM MIG.Access_Plano3 x WHERE TRY_CONVERT(INT, x.Plano3) = COALESCE(o.PLANO3, m.PLANO3)) npl
-                   WHERE m.DESTINO = 'SISTEMA'
-                     AND EXISTS (SELECT 1 FROM MIG.vw_MIG_Linha_Unidade v WHERE v.ORIGEM = m.ORIGEM AND v.NUM = m.NUM
-                                 AND (v.UNIDADE = c.UNIDADE OR v.UNIDADE_ACCESS = c.UNIDADE))
+                   WHERE EXISTS (SELECT 1 FROM MIG.fn_MIG_Linhas_Documento(c.UNIDADE) d WHERE d.ORIGEM = m.ORIGEM AND d.NUM = m.NUM)
                    ORDER BY m.DT_MOVTO, m.NUM
                    FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS LINHAS_JSON
         FROM MIG.Caso c
@@ -1893,8 +1936,7 @@ BEGIN
                     debito DECIMAL(18,2) '$.debito', credito DECIMAL(18,2) '$.credito', confirmado BIT '$.confirmado', ignorar BIT '$.ignorar',
                     lote INT '$.lote') j;
 
-            IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.vw_MIG_Linha_Unidade v WHERE v.ORIGEM = j.ORIGEM AND v.NUM = j.NUM
-                                                            AND (v.UNIDADE = @Unidade OR v.UNIDADE_ACCESS = @Unidade)))
+            IF EXISTS (SELECT 1 FROM #J j WHERE NOT EXISTS (SELECT 1 FROM MIG.fn_MIG_Linhas_Documento(@Unidade) d WHERE d.ORIGEM = j.ORIGEM AND d.NUM = j.NUM))
                 SET @Recusa = N'Uma das linhas não pertence a este documento. Atualize a tela.';
             -- só o que mudou em relação ao Access precisa existir no de-para (o Access pode ter código sem de-para)
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #J j INNER JOIN MIG.Movimento m ON m.ORIGEM = j.ORIGEM AND m.NUM = j.NUM
