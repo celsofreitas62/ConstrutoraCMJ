@@ -27,6 +27,7 @@ Situação: **ANOTADO** (só registrado) → **PROPOSTO** (proposta feita, aguar
 | P05 | 19/11/2026 | **Fluxo de caixa gerencial com gráficos** (pizza, barras e o que os programas modernos de análise financeira e de vendas de imóveis usam). **Simulações** que o cliente gosta de fazer: tipo ainda a definir; primeiro o fluxo com dados reais, depois se encaixam as simulações. | 1.x (painel com drill-down) | ANOTADO | Perguntar à CMJ que simulações fazem hoje (planilhas?) antes da proposta. |
 | P06 | 19/11/2026 | **Tema do sistema**: seguir o Windows (claro/escuro) ou outro à escolha do usuário, nas preferências do usuário, se não for oneroso. | Fase 4 (preferências do usuário) | ANOTADO | Viável e barato: o navegador já informa o tema do Windows; as cores do sistema já estão em variáveis. Fazer junto com a tela de preferências (P03). |
 | P07 | 19/11/2026 | **Agenda de compromissos**: pessoal ou corporativo; data; compromisso; aviso por e-mail com antecedência (N dias), aviso no dia, ou sem aviso. Pessoal só aparece para quem cadastrou; corporativo aparece para todos, com fundo levemente diferente. | Fase 4 ou 1.x (independente; pode entrar cedo) | ANOTADO | Reaproveita o envio de e-mail e o agendador de rotinas que já existem (boletim). Mostrar os compromissos também no calendário da tela inicial (P03). |
+| P08 | 19/11/2026 | **Acesso de fora da empresa**: a Renata trabalha em home office (notebook dela) e os proprietários querem acessar pelo celular e de casa. | Instalação (3d) + telas que funcionem no celular (fase 4 em diante) | ANOTADO | Muda o escopo (antes: só rede interna). Caminhos gratuitos: (a) **VPN WireGuard** no roteador da CMJ (código aberto, app no celular, precisa IP público sem CGNAT ou DDNS e porta no roteador); (b) **Cloudflare Tunnel + Access** (plano gratuito até 50 usuários, sem abrir porta, código por e-mail antes do login; precisa de domínio; o tráfego passa decifrado pela Cloudflare: avaliar LGPD). Nunca abrir a porta 5443 ou o SQL direto na internet. Consequências: telas responsivas para celular, segundo fator de autenticação para acesso de fora, upload da internet da CMJ. Perguntas na seção 8 do `CashBookCMJ/Preparacao_Servidor_TI_CMJ.docx`. A proposta comercial deixava o uso fora da empresa fora do escopo: o Celso decide se cobra à parte. |
 
 ## Detalhes que o resumo da tabela não mostra (leva 1)
 
@@ -83,3 +84,9 @@ Situação: **ANOTADO** (só registrado) → **PROPOSTO** (proposta feita, aguar
 > apóes você ler e registrar este documento eu vou “zera-lo” para começe depois outra “leva” de pedidos futuoros e sempre que quiser vou pedir pra você ler e assim por diante
 > avalie minhas idéias e pedidos e vamos em frente estou empolgado com o sistema a IA Claude é simplesmente excelente.
 > só não fazemos tudo de uma vez para a cada etapa desenvolvida darmos nosso melhor e não acabar com meus créditos da semana rapidamente
+
+### Leva 2 (19/11/2026), conversa 03d
+
+> computador da Renata (ela faz home office) o notebook é dela
+>
+> sim vai trabalhar em casa e os proprietários também querem ter acesso externo via celular, em casa etc
