@@ -34,6 +34,8 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 4. Trabalho organizado em **uma conversa por etapa** dentro do projeto **SistemaCMJ**; cada conversa termina atualizando esta seção, a seção 7 e o diário.
 5. **Ao fechar cada etapa, avisar o Celso** para abrir uma conversa nova com o nome da próxima etapa (`docs/GUIA_DO_CELSO.md`, seção 3) e escrever "Vamos continuar o SistemaCMJ".
 
+**Pedidos para mais adiante**: o Celso pode passar pontos para desenvolver no futuro em qualquer conversa; registrar sempre em `docs/requisitos/Pedidos_Futuros.md` (lista única, com número, data e situação), sem desenvolver na hora, e consultar essa lista ao planejar cada fase.
+
 ## 1. Objetivo
 
 Sistema **simples, ágil e moderno** para a construtora:
