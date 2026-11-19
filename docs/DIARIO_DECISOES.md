@@ -133,3 +133,5 @@
 - **19/11/2026**: acesso de fora decidido pelo Celso: **VPN WireGuard** (Cloudflare descartado). Primeiro uso: notebook da Renata em home office (entra na 3d). **Celulares** (vários aparelhos, iPhone e Samsung/Android; o WireGuard tem app oficial para os dois): liberados depois do sistema funcionando, como **utilização paga à parte**. Questionário do técnico ajustado (seção 8: internet/upload, CGNAT, roteador/porta UDP, DDNS).
 
 - **19/11/2026**: a Renata precisou separar 3 linhas de um lote (débito do fornecedor, saída do banco e crédito do fornecedor) num lote só delas: aprovado o "lote novo da migração" (900001 em diante). Na primeira versão a lista de casos ficou lenta (busca sem índice); corrigido com índice e função em linha antes de liberar. Teste 03c2c 60/0.
+
+- **19/11/2026**: o Celso aprovou: saldo oficial só a partir do saldo inicial do extrato na virada (movimento anterior nunca altera saldo); antes da virada resolver só os casos com valor em aberto (filtro novo na tela); os demais casos depois da instalação, com "Migrar casos resolvidos" incremental (fases 3d/8). Seção 15 do `Migracao_Movimento.md`.

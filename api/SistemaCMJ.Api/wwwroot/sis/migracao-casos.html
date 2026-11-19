@@ -38,6 +38,9 @@
         <label data-dica="Parte do histórico, da empresa ou o número do documento (lote, venda ou número do Access). A lista filtra na hora." class="campo f-3">Buscar
           <input type="search" id="busca" maxlength="100" placeholder="Ex.: lote 1520, cimento, Orion" autocomplete="off">
         </label>
+        <label data-dica="Com valor em aberto: o documento tem parcela ou conta ainda não paga. Estes precisam ser resolvidos antes da virada; os outros podem ficar para depois da instalação." class="campo f-1">Valor em aberto
+          <select id="aberto"><option value="">Todos</option><option value="1">Só com valor em aberto (resolver antes da virada)</option><option value="0">Só os já quitados</option></select>
+        </label>
         <label data-dica="Mostra só os documentos desta empresa ou obra." class="campo f-1">Empresa
           <select id="empresa"><option value="">Todas</option></select>
         </label>

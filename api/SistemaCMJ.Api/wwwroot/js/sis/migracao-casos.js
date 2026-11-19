@@ -75,7 +75,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const busca = $('busca').value.trim().toLowerCase();
     const empresa = $('empresa').value;
     const ano = $('ano').value;
+    const aberto = $('aberto').value;
     return casos.filter((c) =>
+      (!aberto || String(c.EM_ABERTO ? 1 : 0) === aberto) &&
       (semSituacao || !filtroSituacao || c.SITUACAO === filtroSituacao) &&
       (semMotivo || !filtroMotivo || c.MOTIVO === filtroMotivo) &&
       (!empresa || c.EMPRESA === empresa) &&
@@ -144,6 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const motivo = Util.el('td', null, c.MOTIVO);
       if (c.DETALHE) motivo.append(Util.el('div', 'suave', c.DETALHE));
       if (c.REVISAR) motivo.append(Util.el('div', 'aviso-revisar', c.REVISAR));
+      if (c.EM_ABERTO && c.SITUACAO !== 'RESOLVIDO') motivo.append(Util.el('div', 'aviso-aberto', 'Valor em aberto: resolver antes da virada'));
       tr.append(
         Util.el('td', null, Util.data(c.DT_DOCUMENTO)),
         Util.el('td', null, c.DOCUMENTO),
@@ -231,6 +234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('empresa').addEventListener('change', filtroMudou);
   $('motivo-filtro').addEventListener('change', () => { filtroMotivo = $('motivo-filtro').value; filtroMudou(); });
   $('ano').addEventListener('change', filtroMudou);
+  $('aberto').addEventListener('change', filtroMudou);
   $('botao-atualizar').addEventListener('click', carregar);
 
   // ---- Exportar --------------------------------------------------------------

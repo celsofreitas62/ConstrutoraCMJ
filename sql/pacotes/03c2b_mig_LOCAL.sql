@@ -1596,6 +1596,11 @@ GO
                         coluna REVISAR com o aviso.
     v1.2 (19/11/2026) - Empresa e histórico também para documento formado por
                         troca de lote (lote novo da migração).
+    v1.3 (19/11/2026) - EM_ABERTO: o documento tem linha sem pagamento
+                        (não confirmada e sem data de pagamento, com as
+                        correções da tela). Estes precisam ser resolvidos antes
+                        da virada (decisão do Celso, 19/11/2026); os demais podem
+                        ficar para depois da instalação.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Listar @IdUsuario = 1;
@@ -1637,7 +1642,15 @@ BEGIN
                ISNULL(k.QTD, 0) AS LINHAS_CORRIGIDAS,
                COALESCE(cc.USUARIO_ALTERACAO, cc.USUARIO_CRIACAO, k.USUARIO, N'') AS CORRIGIDO_POR,
                COALESCE(cc.DT_ALTERACAO, cc.DT_CRIACAO, k.DT) AS CORRIGIDO_EM,
-               c.REVISAR
+               c.REVISAR,
+               CAST(CASE WHEN EXISTS (SELECT 1 FROM MIG.fn_MIG_Linhas_Documento(c.UNIDADE) d
+                                      INNER JOIN MIG.Movimento m ON m.ORIGEM = d.ORIGEM AND m.NUM = d.NUM
+                                      LEFT JOIN MIG.Caso_Correcao_Linha o ON o.ORIGEM = m.ORIGEM AND o.NUM = m.NUM
+                                      WHERE ISNULL(o.IGNORAR_LINHA, 0) = 0
+                                        AND COALESCE(o.CONFIRMADO, m.CONFIRMADO) = 0
+                                        AND NULLIF(COALESCE(o.DT_PAGTO, m.DT_PAGTO), '1900-01-01') IS NULL
+                                        AND COALESCE(o.VALOR_DEBITO, m.VALOR_DEBITO) + COALESCE(o.VALOR_CREDITO, m.VALOR_CREDITO) > 0)
+                         THEN 1 ELSE 0 END AS BIT) AS EM_ABERTO
         FROM MIG.Caso c
         OUTER APPLY (SELECT TOP (1) COALESCE(o.EMP_VINCULADA, m.EMP_VINCULADA) AS EV, m.COMPLEMENTO, m.HISTORICO
                      FROM MIG.fn_MIG_Linhas_Documento(c.UNIDADE) d

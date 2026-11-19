@@ -165,3 +165,10 @@ Menu **Sistema › Migração › Casos da migração** (`sis/migracao-casos.htm
 - `MIG_Movimento_Transformar` v1.4: o documento da linha passa a ser o do lote novo; o padrão de contas é refeito nos documentos que ganharam ou perderam linha; a conferência de um documento inclui o lote de destino (depois do pedido), e a tela diz como ele ficou. A linha continua aparecendo no documento de origem (onde foi corrigida).
 
 - **Lote novo da migração** (pedido da Renata, 19/11/2026): número de 900001 em diante não precisa existir no Access; serve para separar linhas de um lote num lote só delas (a tela indica o próximo número livre). O documento novo pode ser aberto, corrigido, ignorado ou mandado ao arquivo morto (`MIG.vw_MIG_Linha_Unidade`, `MIG.fn_MIG_Linhas_Documento`). Desempenho: índice (ORIGEM, NUM) em `MIG.Movimento`. Teste 03c2c 60/0.
+
+## 15. Casos antes e depois da virada (decisões do Celso, 19/11/2026)
+
+1. **Regra fixa dos saldos**: o saldo inicial de cada conta (banco, caixa) é o saldo do extrato no dia da virada; **movimento com data anterior ao saldo inicial da conta nunca altera o saldo** (é histórico, para relatórios e consultas). Vale para o movimento migrado e para casos incluídos depois.
+2. **Antes da virada**: resolver só os casos **com valor em aberto** (parcela ou conta ainda não paga), senão faltaria cobrança ou pagamento no sistema novo. Filtro "Valor em aberto" na tela e aviso na lista (`MIG_Caso_Listar` v1.3, coluna EM_ABERTO).
+3. **Depois da virada**: os demais casos a Renata resolve com calma no servidor. A tela continua habilitada e ganha **"Migrar casos resolvidos"** (só o administrador geral): inclui só os documentos resolvidos, sem refazer a migração, sempre como histórico. **Entra no roteiro da instalação e da virada (fases 3d e 8).**
+4. Arquivo morto (até 2021) não é afetado pelas correções, salvo documento mandado para lá pela tela.
