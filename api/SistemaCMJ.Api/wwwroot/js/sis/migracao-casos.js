@@ -14,6 +14,9 @@
                Também: ignorar o documento, mandar para o arquivo morto e
                desfazer as correções (todas pedem motivo/confirmação).
                Botões conforme as ações do usuário (VER, ALTERAR).
+               20/11/2026: ignorar e arquivo morto avisam com destaque que o
+               documento NÃO vai para o financeiro novo (e se tem valor a
+               vencer) e que correção já feita no Access não usa esses botões.
    ========================================================================== */
 'use strict';
 
@@ -200,6 +203,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     return Object.entries(conta).map(([k, n]) => n + ' ' + k).join('; ');
   }
 
+  // Aviso reforçado (20/11/2026): ignorar e arquivo morto tiram o documento do financeiro novo
+  const AVISO_ACCESS = 'Se você já corrigiu no Access, NÃO use este botão: deixe o caso como está. Ele se resolve sozinho na próxima cópia do Access.';
+  function avisoNaoMigra(qtdAberto, umSo) {
+    let t = '';
+    if (qtdAberto > 0) t += '\n\nATENÇÃO: ' + (umSo ? 'este documento tem' : qtdAberto + ' destes documentos têm') +
+      ' valor A VENCER sem pagamento. ' + (umSo ? 'Ele não vai virar' : 'Eles não vão virar') + ' conta a pagar nem a receber no sistema novo.';
+    return t + '\n\n' + AVISO_ACCESS;
+  }
+
   async function lote(acao, titulo, verbo) {
     const unidades = [...marcados];
     if (!unidades.length) return;
@@ -209,7 +221,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
     const valor = casos.filter((c) => marcados.has(c.UNIDADE)).reduce((s, c) => s + Number(c.VALOR_DEBITO || 0), 0);
-    if (!(await Mensagens.confirmar(titulo, unidades.length + ' documentos (débitos R$ ' + moeda.format(valor) + ') ' + verbo + ' Dá para desfazer depois.', 'Confirmar'))) return;
+    const qtdAberto = casos.filter((c) => marcados.has(c.UNIDADE) && c.EM_ABERTO).length;
+    const extra = acao === 'DESFAZER' ? '' : avisoNaoMigra(qtdAberto, false);
+    if (!(await Mensagens.confirmar(titulo, unidades.length + ' documentos (débitos R$ ' + moeda.format(valor) + ') ' + verbo + ' Dá para desfazer depois.' + extra,
+      qtdAberto > 0 ? 'Confirmar mesmo assim' : 'Confirmar'))) return;
     const r = await Api.post('/api/mig/casos/lote', { acao, motivo, unidades });
     if (!(await Mensagens.tratar(r))) return;
     await Mensagens.concluido((r.mensagem || 'Gravado.') + ' Conferência: ' + resumoConferencia(r.dados) + '.');
@@ -217,8 +232,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('lote-motivo').value = '';
     await carregar();
   }
-  $('lote-ignorar').addEventListener('click', () => lote('IGNORAR', 'Ignorar os documentos marcados?', 'não vão para o sistema novo.'));
-  $('lote-arquivo').addEventListener('click', () => lote('ARQUIVO_MORTO', 'Mandar para o arquivo morto?', 'vão para o arquivo morto (consulta), não para o financeiro novo.'));
+  $('lote-ignorar').addEventListener('click', () => lote('IGNORAR', 'Ignorar os documentos marcados?', 'NÃO vão para o sistema novo.'));
+  $('lote-arquivo').addEventListener('click', () => lote('ARQUIVO_MORTO', 'Mandar para o arquivo morto?', 'vão só para consulta (arquivo morto) e NÃO vão para o financeiro novo.'));
   $('lote-desfazer').addEventListener('click', () => lote('DESFAZER', 'Desfazer as correções?', 'voltam a ser como estão no Access (todas as correções e decisões deles são apagadas).'));
   $('lote-conferir').addEventListener('click', async () => {
     const r = await Api.post('/api/mig/casos/conferir-lote', { unidades: [...marcados] });
@@ -508,10 +523,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   $('botao-gravar').addEventListener('click', () => aberto &&
     gravar('CORRIGIR', 'Gravar?', 'Grava as correções das linhas de ' + aberto.titulo + ' e confere o documento de novo. O sistema antigo não muda.', 'Gravar'));
+  const abertoTemValor = () => { const item = casos.find((c) => c.UNIDADE === aberto.UNIDADE); return item && item.EM_ABERTO ? 1 : 0; };
   $('botao-ignorar').addEventListener('click', () => aberto &&
-    gravar('IGNORAR', 'Ignorar documento?', aberto.titulo + ' não vai para o sistema novo. Dá para desfazer depois.', 'Ignorar'));
+    gravar('IGNORAR', 'Ignorar documento?', aberto.titulo + ' NÃO vai para o sistema novo. Dá para desfazer depois.' + avisoNaoMigra(abertoTemValor(), true),
+      abertoTemValor() ? 'Ignorar mesmo assim' : 'Ignorar'));
   $('botao-arquivo').addEventListener('click', () => aberto &&
-    gravar('ARQUIVO_MORTO', 'Mandar para o arquivo morto?', aberto.titulo + ' vai para o arquivo morto (consulta) e não para o financeiro novo. Dá para desfazer depois.', 'Mandar'));
+    gravar('ARQUIVO_MORTO', 'Mandar para o arquivo morto?', aberto.titulo + ' vai só para consulta (arquivo morto) e NÃO vai para o financeiro novo. Dá para desfazer depois.' + avisoNaoMigra(abertoTemValor(), true),
+      abertoTemValor() ? 'Mandar mesmo assim' : 'Mandar'));
   $('botao-desfazer').addEventListener('click', () => aberto &&
     gravar('DESFAZER', 'Desfazer correções?', 'Todas as correções e decisões de ' + aberto.titulo + ' serão apagadas: ele volta a ser como está no sistema antigo.', 'Desfazer'));
 
