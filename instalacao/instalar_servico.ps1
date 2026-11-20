@@ -5,6 +5,7 @@
                       de dentro da pasta gerada pelo api\publicar.cmd.
   v1.1 (20/11/2026) - Conferencia final com TLS 1.2 (ensaio: o PS 5.1 nao conectava).
   v1.2 (20/11/2026) - Mostra o codigo do servidor para a licenca (codigo_servidor.txt).
+  v1.4 (20/11/2026) - Conferencia final pelo curl.exe (ensaio: Invoke-WebRequest do PS 5.1 falhava).
   v1.3 (20/11/2026) - Passo 10: backup (completo diario, log de hora em hora, teste semanal),
                       tarefas como SYSTEM; roda o 1o completo e o 1o teste na hora.
   Faz, nesta ordem (pode rodar de novo: atualiza sem perder nada):
@@ -148,13 +149,12 @@ try {
 
     Passo '9/10 Iniciando e conferindo'
     Start-Service -Name $NomeServico
-    # PowerShell 5.1 usa TLS antigo por padrao; o sistema so aceita TLS 1.2 ou mais novo
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+    # Conferencia pelo curl.exe (vem no Windows 10/11): o Invoke-WebRequest do PowerShell 5.1 nao negocia o TLS do sistema
     $Saude = $null
     for ($i = 0; $i -lt 30 -and -not $Saude; $i++) {
         Start-Sleep -Seconds 2
-        try { $Saude = (Invoke-WebRequest -UseBasicParsing -Uri ('https://localhost:' + $Porta + '/api/saude') -TimeoutSec 5).Content } catch { if ($_.Exception.Response) { $Saude = (New-Object IO.StreamReader($_.Exception.Response.GetResponseStream())).ReadToEnd() } }
+        $Resp = (& curl.exe -k -s --max-time 5 ('https://localhost:' + $Porta + '/api/saude')) -join ''
+        if ($Resp -like '*"sistema"*') { $Saude = $Resp }
     }
     Write-Host ('Saude: ' + $(if ($Saude) { $Saude } else { 'sem resposta (veja ' + (Join-Path $PastaConfig 'logs') + ')' }))
 
