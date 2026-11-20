@@ -56,3 +56,9 @@ sql/local/*_Usuario_*_LOCAL.sql
 
 # Contratos de venda reais da CMJ (dados pessoais de compradores, LGPD): nunca no Git
 Contrato de venda de imóvel/
+
+# Executor SQL: scripts e resultados de trabalho (podem ter dados reais): nunca no Git
+executor_sql/entrada/
+executor_sql/saida/
+executor_sql/processados/
+executor_sql/STATUS.txt

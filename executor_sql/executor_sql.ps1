@@ -1,0 +1,202 @@
+<#
+  SistemaCMJ - executor de scripts SQL sem SSMS (fase 3d, 20/11/2026)
+  Autor: Celso de Freitas / Refatorado: Claude
+  v1.0 (20/11/2026) - Criacao. Fica de olho em executor_sql\entrada\*.sql, roda cada
+                      script no banco de DESENVOLVIMENTO (SISTEMACMJ_LOCAL, instancia
+                      .\SQL2025), grava o resultado em executor_sql\saida\<nome>.txt
+                      (mensagens, resultados e erros, como a aba Mensagens do SSMS) e
+                      move o script para executor_sql\processados\.
+  Seguranca: banco e instancia fixos; recusa USE de outro banco, DROP/RESTORE DATABASE,
+             xp_cmdshell, sp_configure, SHUTDOWN e comandos do modo SQLCMD; confere o
+             banco depois de cada lote. Nunca aponta para producao.
+  Uso: iniciado pela tarefa "SistemaCMJ - Executor SQL" (instalar_executor.cmd).
+#>
+param(
+    [string]$Instancia = '.\SQL2025',
+    [string]$Banco     = 'SISTEMACMJ_LOCAL',
+    [int]$IntervaloSeg = 3,
+    [int]$TimeoutSeg   = 3600,
+    [int]$MaxLinhas    = 5000,
+    [int]$MaxCelula    = 300
+)
+$ErrorActionPreference = 'Stop'
+$Raiz        = $PSScriptRoot
+$Entrada     = Join-Path $Raiz 'entrada'
+$Saida       = Join-Path $Raiz 'saida'
+$Processados = Join-Path $Raiz 'processados'
+$Status      = Join-Path $Raiz 'STATUS.txt'
+foreach ($P in @($Entrada, $Saida, $Processados)) { New-Item -ItemType Directory -Force -Path $P | Out-Null }
+$Utf8 = New-Object System.Text.UTF8Encoding($false)
+
+# Uma instancia so
+$Mutex = New-Object System.Threading.Mutex($false, 'Local\SistemaCMJ_ExecutorSQL')
+if (-not $Mutex.WaitOne(0)) { exit 0 }
+
+function Gravar-Status([string]$Texto) {
+    try { [System.IO.File]::WriteAllText($Status, ((Get-Date -Format 'dd/MM/yyyy HH:mm:ss') + ' ' + $Texto + "`r`n"), $Utf8) } catch { }
+}
+
+function Texto-Valor($V) {
+    if ($V -is [System.DBNull] -or $null -eq $V) { return 'NULL' }
+    if ($V -is [datetime]) { return $V.ToString('yyyy-MM-dd HH:mm:ss.fff').Replace(' 00:00:00.000', '') }
+    if ($V -is [byte[]]) { return '0x' + (($V | Select-Object -First 32 | ForEach-Object { $_.ToString('X2') }) -join '') }
+    if ($V -is [decimal] -or $V -is [double] -or $V -is [single]) { return $V.ToString([System.Globalization.CultureInfo]::InvariantCulture) }
+    $T = [string]$V
+    $T = $T.Replace("`r", ' ').Replace("`n", ' ').Replace("`t", ' ')
+    if ($T.Length -gt $MaxCelula) { $T = $T.Substring(0, $MaxCelula) + '...' }
+    return $T
+}
+
+function Escrever-Tabela($Leitor, $Sb) {
+    $N = $Leitor.FieldCount
+    $Nomes = @(); for ($i = 0; $i -lt $N; $i++) { $Nome = $Leitor.GetName($i); if ($Nome -eq '') { $Nome = '(sem nome)' }; $Nomes += $Nome }
+    $Linhas = New-Object System.Collections.Generic.List[object]
+    $Total = 0
+    while ($Leitor.Read()) {
+        $Total++
+        if ($Linhas.Count -lt $MaxLinhas) {
+            $L = New-Object string[] $N
+            for ($i = 0; $i -lt $N; $i++) { $L[$i] = Texto-Valor $Leitor.GetValue($i) }
+            $Linhas.Add($L)
+        }
+    }
+    $Larg = New-Object int[] $N
+    for ($i = 0; $i -lt $N; $i++) { $Larg[$i] = $Nomes[$i].Length }
+    foreach ($L in $Linhas) { for ($i = 0; $i -lt $N; $i++) { if ($L[$i].Length -gt $Larg[$i]) { $Larg[$i] = $L[$i].Length } } }
+    $Cab = @(); $Tra = @()
+    for ($i = 0; $i -lt $N; $i++) { $Cab += $Nomes[$i].PadRight($Larg[$i]); $Tra += ('-' * $Larg[$i]) }
+    [void]$Sb.AppendLine(($Cab -join ' | '))
+    [void]$Sb.AppendLine(($Tra -join '-+-'))
+    foreach ($L in $Linhas) {
+        $C = @(); for ($i = 0; $i -lt $N; $i++) { $C += $L[$i].PadRight($Larg[$i]) }
+        [void]$Sb.AppendLine(($C -join ' | ').TrimEnd())
+    }
+    if ($Total -gt $Linhas.Count) { [void]$Sb.AppendLine('(... mais ' + ($Total - $Linhas.Count) + ' linhas nao mostradas)') }
+    [void]$Sb.AppendLine('(' + $Total + ' linhas)')
+    [void]$Sb.AppendLine('')
+}
+
+function Dividir-Lotes([string]$Texto) {
+    # Separa nos GO sozinhos na linha (como o SSMS); devolve texto e linha inicial de cada lote
+    $Lotes = New-Object System.Collections.Generic.List[object]
+    $Linhas = $Texto -split "`r?`n"
+    $Atual = New-Object System.Text.StringBuilder
+    $Inicio = 1
+    for ($k = 0; $k -lt $Linhas.Length; $k++) {
+        $M = [regex]::Match($Linhas[$k], '^\s*GO\s*(\d+)?\s*(--.*)?$', 'IgnoreCase')
+        if ($M.Success) {
+            $Rep = 1; if ($M.Groups[1].Success) { $Rep = [int]$M.Groups[1].Value }
+            $T = $Atual.ToString()
+            if ($T.Trim() -ne '') { for ($r = 0; $r -lt $Rep; $r++) { $Lotes.Add(@($T, $Inicio)) } }
+            [void]$Atual.Clear(); $Inicio = $k + 2
+        } else { [void]$Atual.AppendLine($Linhas[$k]) }
+    }
+    $T = $Atual.ToString(); if ($T.Trim() -ne '') { $Lotes.Add(@($T, $Inicio)) }
+    return ,$Lotes
+}
+
+function Conferir-Proibidos([string]$Texto) {
+    $SemComent = [regex]::Replace($Texto, '/\*.*?\*/', ' ', 'Singleline')
+    $SemComent = [regex]::Replace($SemComent, '--[^\r\n]*', ' ')
+    $Regras = @(
+        @('(?im)^\s*:', 'comando do modo SQLCMD (:r, :setvar, :connect)'),
+        @('(?im)^\s*USE\s+(?!\[?' + $Banco + '\]?\s*;?\s*$)', 'USE de outro banco'),
+        @('(?i)\bDROP\s+DATABASE\b', 'DROP DATABASE'),
+        @('(?i)\bRESTORE\s+DATABASE\b', 'RESTORE DATABASE'),
+        @('(?i)\bxp_cmdshell\b', 'xp_cmdshell'),
+        @('(?i)\bsp_configure\b', 'sp_configure'),
+        @('(?i)\bSHUTDOWN\b', 'SHUTDOWN'),
+        @('(?i)\bALTER\s+SERVER\b', 'ALTER SERVER')
+    )
+    foreach ($R in $Regras) { if ([regex]::IsMatch($SemComent, $R[0])) { return $R[1] } }
+    return $null
+}
+
+function Executar-Script([string]$Arquivo) {
+    $Nome = [System.IO.Path]::GetFileNameWithoutExtension($Arquivo)
+    $Sb = New-Object System.Text.StringBuilder
+    $script:Sb = $Sb
+    $script:Erros = 0
+    $script:OffsetLinha = 0
+    $Ini = Get-Date
+    [void]$Sb.AppendLine('SistemaCMJ - executor SQL v1.0')
+    [void]$Sb.AppendLine('Script : ' + [System.IO.Path]::GetFileName($Arquivo))
+    [void]$Sb.AppendLine('Banco  : ' + $Instancia + ' / ' + $Banco)
+    [void]$Sb.AppendLine('Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss'))
+    [void]$Sb.AppendLine(('=' * 70))
+    $Resultado = ''
+    $Texto = [System.IO.File]::ReadAllText($Arquivo, [System.Text.Encoding]::UTF8)
+    $Motivo = Conferir-Proibidos $Texto
+    if ($Motivo) {
+        [void]$Sb.AppendLine('RECUSADO: o script contem ' + $Motivo + '. Nada foi executado.')
+        $Resultado = 'RECUSADO'
+    } else {
+        $Lotes = Dividir-Lotes $Texto
+        $Con = New-Object System.Data.SqlClient.SqlConnection("Server=$Instancia;Database=$Banco;Integrated Security=SSPI;Application Name=SistemaCMJ Executor SQL")
+        $Con.FireInfoMessageEventOnUserErrors = $true
+        $Con.add_InfoMessage({
+            param($Origem, $Ev)
+            foreach ($E in $Ev.Errors) {
+                if ($E.Class -gt 10) {
+                    $script:Erros++
+                    [void]$script:Sb.AppendLine('*** ERRO Msg ' + $E.Number + ', Nivel ' + $E.Class + ', Linha ' + ($E.LineNumber + $script:OffsetLinha) + ': ' + $E.Message)
+                } else { [void]$script:Sb.AppendLine($E.Message) }
+            }
+        })
+        try {
+            $Con.Open()
+            $n = 0
+            foreach ($Lote in $Lotes) {
+                $n++
+                $script:OffsetLinha = [int]$Lote[1] - 1
+                $Cmd = $Con.CreateCommand(); $Cmd.CommandText = $Lote[0]; $Cmd.CommandTimeout = $TimeoutSeg
+                try {
+                    $Leitor = $Cmd.ExecuteReader()
+                    do { if ($Leitor.FieldCount -gt 0) { Escrever-Tabela $Leitor $Sb } } while ($Leitor.NextResult())
+                    $Leitor.Close()
+                } catch {
+                    $script:Erros++
+                    [void]$Sb.AppendLine('*** ERRO no lote ' + $n + ' (linha ' + $Lote[1] + '): ' + $_.Exception.Message)
+                    if ($Con.State -ne 'Open') { [void]$Sb.AppendLine('*** Conexao perdida; execucao interrompida.'); break }
+                }
+                $Chk = $Con.CreateCommand(); $Chk.CommandText = 'SELECT DB_NAME()'
+                $Db = [string]$Chk.ExecuteScalar()
+                if ($Db -ne '' -and $Db -ne $Banco) {  # vazio = SET NOEXEC ON (script abortou de proposito)
+                    $script:Erros++; [void]$Sb.AppendLine('*** INTERROMPIDO: o script mudou para o banco ' + $Db + '.'); break }
+            }
+            [void]$Sb.AppendLine(('=' * 70))
+            [void]$Sb.AppendLine('Lotes  : ' + $n + ' de ' + $Lotes.Count)
+        } catch {
+            $script:Erros++
+            [void]$Sb.AppendLine('*** ERRO de conexao: ' + $_.Exception.Message)
+        } finally { $Con.Close() }
+        if ($script:Erros -eq 0) { $Resultado = 'OK' } else { $Resultado = 'COM ERROS (' + $script:Erros + ')' }
+    }
+    $Fim = Get-Date
+    [void]$Sb.AppendLine('Fim    : ' + $Fim.ToString('dd/MM/yyyy HH:mm:ss') + '  (' + [math]::Round(($Fim - $Ini).TotalSeconds, 1) + ' s)')
+    [void]$Sb.AppendLine('RESULTADO: ' + $Resultado)
+    $Destino = Join-Path $Saida ($Nome + '.txt')
+    $Tmp = $Destino + '.tmp'
+    [System.IO.File]::WriteAllText($Tmp, $Sb.ToString(), $Utf8)
+    Move-Item -LiteralPath $Tmp -Destination $Destino -Force
+    Move-Item -LiteralPath $Arquivo -Destination (Join-Path $Processados ((Get-Date -Format 'yyyyMMdd_HHmmss') + '_' + [System.IO.Path]::GetFileName($Arquivo))) -Force
+    return $Resultado
+}
+
+Gravar-Status 'ativo (iniciado)'
+$UltimoStatus = Get-Date
+$TextoStatus = 'ativo'
+while ($true) {
+    try {
+        $Lista = @(Get-ChildItem -LiteralPath $Entrada -Filter '*.sql' -File | Where-Object { $_.LastWriteTime -lt (Get-Date).AddSeconds(-2) } | Sort-Object Name)
+        foreach ($F in $Lista) {
+            Gravar-Status ('executando ' + $F.Name)
+            $R = Executar-Script $F.FullName
+            $TextoStatus = 'ativo; ultimo: ' + $F.Name + ' -> ' + $R
+            Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
+        }
+        # Sinal de vida a cada minuto (sem regravar a cada ciclo, para nao encher a sincronizacao do Drive)
+        if (((Get-Date) - $UltimoStatus).TotalSeconds -ge 60) { Gravar-Status $TextoStatus; $UltimoStatus = Get-Date }
+    } catch { Gravar-Status ('ativo; erro no ciclo: ' + $_.Exception.Message); $UltimoStatus = Get-Date }
+    Start-Sleep -Seconds $IntervaloSeg
+}
