@@ -35,6 +35,11 @@ IF EXISTS (SELECT 1 FROM sys.databases d WHERE d.name = N'SISTEMACMJ_LOCAL' AND 
     ALTER DATABASE [SISTEMACMJ_LOCAL] SET RECOVERY SIMPLE;
 GO
 
+-- SQL Server Express cria o banco com AUTO_CLOSE ligado: desligar (20/11/2026).
+IF EXISTS (SELECT 1 FROM sys.databases d WHERE d.name = N'SISTEMACMJ_LOCAL' AND d.is_auto_close_on = 1)
+    ALTER DATABASE [SISTEMACMJ_LOCAL] SET AUTO_CLOSE OFF;
+GO
+
 SELECT d.name AS BANCO, d.collation_name AS COLLATION, d.recovery_model_desc AS RECUPERACAO, d.compatibility_level AS COMPATIBILIDADE
 FROM sys.databases d
 WHERE d.name = N'SISTEMACMJ_LOCAL';

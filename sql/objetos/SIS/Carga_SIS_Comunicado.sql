@@ -13,6 +13,10 @@
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, boletim semanal da implantação).
+    v1.1 (20/11/2026) - Etapa 03d: a rotina COMUNICADO_PREVIA nasce DESLIGADA fora
+                        do banco de teste (_LOCAL), para o servidor não mandar um
+                        segundo boletim enquanto o notebook manda; o Celso liga
+                        na virada (decisão de 20/11/2026).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -84,7 +88,7 @@ INSERT INTO SIS.Rotina (CODIGO, NOME, DESCRICAO, PROCEDIMENTO, ID_MODULO, FREQUE
                         TEMPO_LIMITE_MINUTOS, ATIVA, PROXIMA_EXECUCAO, USUARIO_CRIACAO)
 SELECT 'COMUNICADO_PREVIA', N'Prévia dos comunicados semanais',
        N'Monta o comunicado da semana (boletim da implantação) e manda a prévia para aprovação. O envio oficial só sai depois de "Aprovar e enviar" na tela Comunicados.',
-       N'SIS.SIS_Comunicado_Previa_Processar', m.ID_MODULO, 'SEMANAL', 0, '09:00', '6', 0, 30, 1,
+       N'SIS.SIS_Comunicado_Previa_Processar', m.ID_MODULO, 'SEMANAL', 0, '09:00', '6', 0, 30, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 1 ELSE 0 END,
        SIS.fn_SIS_Rotina_Proxima('SEMANAL', 0, '09:00', '6', 0, SYSDATETIME()), N'instalacao'
 FROM SIS.Modulo m
 WHERE m.CODIGO = 'SIS'

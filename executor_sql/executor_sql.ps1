@@ -9,11 +9,18 @@
   Seguranca: banco e instancia fixos; recusa USE de outro banco, DROP/RESTORE DATABASE,
              xp_cmdshell, sp_configure, SHUTDOWN e comandos do modo SQLCMD; confere o
              banco depois de cada lote. Nunca aponta para producao.
+  v1.1 (20/11/2026) - Banco escolhido pela linha "-- EXECUTOR: BANCO=<nome>" nas
+                      primeiras linhas do script, so entre os bancos permitidos
+                      (SISTEMACMJ_LOCAL, padrao, e SISTEMACMJ = banco de ensaio da
+                      instalacao no notebook), sempre na instancia .\SQL2025.
+                      Recarrega sozinho quando este arquivo muda (sem precisar
+                      reinstalar a tarefa).
   Uso: iniciado pela tarefa "SistemaCMJ - Executor SQL" (instalar_executor.cmd).
 #>
 param(
     [string]$Instancia = '.\SQL2025',
     [string]$Banco     = 'SISTEMACMJ_LOCAL',
+    [string[]]$Permitidos = @('SISTEMACMJ_LOCAL', 'SISTEMACMJ'),
     [int]$IntervaloSeg = 3,
     [int]$TimeoutSeg   = 3600,
     [int]$MaxLinhas    = 5000,
@@ -30,7 +37,9 @@ $Utf8 = New-Object System.Text.UTF8Encoding($false)
 
 # Uma instancia so
 $Mutex = New-Object System.Threading.Mutex($false, 'Local\SistemaCMJ_ExecutorSQL')
-if (-not $Mutex.WaitOne(0)) { exit 0 }
+if (-not $Mutex.WaitOne(20000)) { exit 0 }
+$MeuArquivo = $MyInvocation.MyCommand.Path
+$MinhaVersao = (Get-Item -LiteralPath $MeuArquivo).LastWriteTimeUtc
 
 function Gravar-Status([string]$Texto) {
     try { [System.IO.File]::WriteAllText($Status, ((Get-Date -Format 'dd/MM/yyyy HH:mm:ss') + ' ' + $Texto + "`r`n"), $Utf8) } catch { }
@@ -95,12 +104,12 @@ function Dividir-Lotes([string]$Texto) {
     return ,$Lotes
 }
 
-function Conferir-Proibidos([string]$Texto) {
+function Conferir-Proibidos([string]$Texto, [string]$Alvo) {
     $SemComent = [regex]::Replace($Texto, '/\*.*?\*/', ' ', 'Singleline')
     $SemComent = [regex]::Replace($SemComent, '--[^\r\n]*', ' ')
     $Regras = @(
         @('(?im)^\s*:', 'comando do modo SQLCMD (:r, :setvar, :connect)'),
-        @('(?im)^\s*USE\s+(?!\[?' + $Banco + '\]?\s*;?\s*$)', 'USE de outro banco'),
+        @('(?im)^\s*USE\s+(?!\[?' + $Alvo + '\]?\s*;?\s*$)', 'USE de outro banco'),
         @('(?i)\bDROP\s+DATABASE\b', 'DROP DATABASE'),
         @('(?i)\bRESTORE\s+DATABASE\b', 'RESTORE DATABASE'),
         @('(?i)\bxp_cmdshell\b', 'xp_cmdshell'),
@@ -119,20 +128,25 @@ function Executar-Script([string]$Arquivo) {
     $script:Erros = 0
     $script:OffsetLinha = 0
     $Ini = Get-Date
-    [void]$Sb.AppendLine('SistemaCMJ - executor SQL v1.0')
+    $Texto = [System.IO.File]::ReadAllText($Arquivo, [System.Text.Encoding]::UTF8)
+    $Alvo = $Banco
+    $Dir = [regex]::Match(($Texto -split "`n" | Select-Object -First 15) -join "`n", '(?im)^\s*--\s*EXECUTOR:\s*BANCO\s*=\s*\[?(\w+)\]?')
+    if ($Dir.Success) { $Alvo = $Dir.Groups[1].Value.ToUpper() }
+    [void]$Sb.AppendLine('SistemaCMJ - executor SQL v1.1')
     [void]$Sb.AppendLine('Script : ' + [System.IO.Path]::GetFileName($Arquivo))
-    [void]$Sb.AppendLine('Banco  : ' + $Instancia + ' / ' + $Banco)
+    [void]$Sb.AppendLine('Banco  : ' + $Instancia + ' / ' + $Alvo)
     [void]$Sb.AppendLine('Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss'))
     [void]$Sb.AppendLine(('=' * 70))
     $Resultado = ''
-    $Texto = [System.IO.File]::ReadAllText($Arquivo, [System.Text.Encoding]::UTF8)
-    $Motivo = Conferir-Proibidos $Texto
+    $Motivo = $null
+    if ($Permitidos -notcontains $Alvo) { $Motivo = 'banco nao permitido (' + $Alvo + '; permitidos: ' + ($Permitidos -join ', ') + ')' }
+    if (-not $Motivo) { $Motivo = Conferir-Proibidos $Texto $Alvo }
     if ($Motivo) {
         [void]$Sb.AppendLine('RECUSADO: o script contem ' + $Motivo + '. Nada foi executado.')
         $Resultado = 'RECUSADO'
     } else {
         $Lotes = Dividir-Lotes $Texto
-        $Con = New-Object System.Data.SqlClient.SqlConnection("Server=$Instancia;Database=$Banco;Integrated Security=SSPI;Application Name=SistemaCMJ Executor SQL")
+        $Con = New-Object System.Data.SqlClient.SqlConnection("Server=$Instancia;Database=$Alvo;Integrated Security=SSPI;Application Name=SistemaCMJ Executor SQL")
         $Con.FireInfoMessageEventOnUserErrors = $true
         $Con.add_InfoMessage({
             param($Origem, $Ev)
@@ -161,7 +175,7 @@ function Executar-Script([string]$Arquivo) {
                 }
                 $Chk = $Con.CreateCommand(); $Chk.CommandText = 'SELECT DB_NAME()'
                 $Db = [string]$Chk.ExecuteScalar()
-                if ($Db -ne '' -and $Db -ne $Banco) {  # vazio = SET NOEXEC ON (script abortou de proposito)
+                if ($Db -ne '' -and $Db -ne $Alvo) {  # vazio = SET NOEXEC ON (script abortou de proposito)
                     $script:Erros++; [void]$Sb.AppendLine('*** INTERROMPIDO: o script mudou para o banco ' + $Db + '.'); break }
             }
             [void]$Sb.AppendLine(('=' * 70))
@@ -198,5 +212,14 @@ while ($true) {
         # Sinal de vida a cada minuto (sem regravar a cada ciclo, para nao encher a sincronizacao do Drive)
         if (((Get-Date) - $UltimoStatus).TotalSeconds -ge 60) { Gravar-Status $TextoStatus; $UltimoStatus = Get-Date }
     } catch { Gravar-Status ('ativo; erro no ciclo: ' + $_.Exception.Message); $UltimoStatus = Get-Date }
+    # Arquivo do executor mudou: abre a versao nova e sai (a nova espera o mutex)
+    try {
+        if ((Get-Item -LiteralPath $MeuArquivo).LastWriteTimeUtc -ne $MinhaVersao) {
+            Gravar-Status 'reiniciando com a versao nova do executor'
+            Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', ('"' + $MeuArquivo + '"'))
+            $Mutex.ReleaseMutex()
+            exit 0
+        }
+    } catch { }
     Start-Sleep -Seconds $IntervaloSeg
 }
