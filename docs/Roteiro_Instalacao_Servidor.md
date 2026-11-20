@@ -48,7 +48,7 @@ Convenções: `[ ]` = marcar quando feito. **⚠️** = ponto em que um erro dá
 - [ ] **Nome do computador** definitivo (ex.: `SERVIDOR-CMJ`). ⚠️ Trocar o nome depois exige refazer o certificado (instalador de novo) e o atalho dos usuários.
 - [ ] **IP fixo** (no Windows ou reserva no roteador, com o técnico). Anotar: IP ____________.
 - [ ] Energia: **nunca suspender nem hibernar** (Configurações › Sistema › Energia); o disco não desliga. Ligar sozinho depois de falta de luz, se a placa permitir (BIOS).
-- [ ] Discos: SSD = Windows, SQL Server e banco; **HD de 1 TB = backups** (pasta, por exemplo, `D:\SisCMJ_Backup`). Backup em outro disco protege contra a falha do SSD.
+- [ ] Discos: SSD = Windows, SQL Server e banco; **HD de 1 TB = backups, na pasta `D:\SisCMJ_Backup`** (decidido pelo Celso em 20/11/2026). Backup em outro disco protege contra a falha do SSD. Conferir a letra do HD no servidor; se não for `D:`, ajustar no parâmetro `BACKUP_PASTA` (item 5).
 - [ ] Google Drive para computador já instalado e sincronizando de madrugada (informação da CMJ). Anotar a pasta que sincroniza: ____________ (ex.: `G:\Meu Drive\SisCMJ_Backup` ou uma pasta espelhada). Vai no parâmetro `BACKUP_PASTA_EXTERNA` (cópia **sem senha**, decisão de 20/11/2026).
 - [ ] Antivírus: se houver um além do Defender, excluir a pasta do banco do SQL e a pasta de backups da varredura em tempo real (pedir ao técnico).
 
