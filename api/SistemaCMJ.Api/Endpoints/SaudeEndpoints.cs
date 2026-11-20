@@ -28,7 +28,7 @@ public static class SaudeEndpoints
         app.MapGet("/api/saude", Saude);
     }
 
-    private static async Task<IResult> Saude(Banco banco, VersaoBanco versao, ILogger<Banco> logger, CancellationToken ct)
+    private static async Task<IResult> Saude(Banco banco, VersaoBanco versao, LicencaServico licenca, ILogger<Banco> logger, CancellationToken ct)
     {
         var relogio = Stopwatch.StartNew();
         var bancoOk = false;
@@ -44,18 +44,21 @@ public static class SaudeEndpoints
         }
         relogio.Stop();
         var versaoOk = bancoOk && await versao.ConferirAsync(ct);
+        var licencaOk = versaoOk && await licenca.ConferirAsync(ct);
 
         var corpo = new
         {
             sistema = "SisCMJ",
-            situacao = !bancoOk ? "banco_fora" : versaoOk ? "ok" : "banco_desatualizado",
+            situacao = !bancoOk ? "banco_fora" : !versaoOk ? "banco_desatualizado" : licencaOk ? "ok" : "licenca_invalida",
             versao = VersaoPrograma,
             versaoBanco = versao.Atual,
             versaoBancoExigida = VersaoBanco.VersaoExigida,
+            licenca = !versaoOk ? "" : licencaOk ? (licenca.Motivo.Length > 0 ? licenca.Motivo : "ok") : licenca.Motivo,
+            codigoServidor = licenca.CodigoServidor,
             banco = bancoOk ? "ok" : "erro",
             tempoBancoMs = relogio.ElapsedMilliseconds,
             horario = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
         };
-        return Results.Json(corpo, statusCode: versaoOk ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
+        return Results.Json(corpo, statusCode: licencaOk ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
     }
 }

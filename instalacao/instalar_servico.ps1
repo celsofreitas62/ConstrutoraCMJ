@@ -4,6 +4,7 @@
   v1.0 (20/11/2026) - Criacao (etapa 03d). Roda pelo instalar_servico.cmd, COMO ADMINISTRADOR,
                       de dentro da pasta gerada pelo api\publicar.cmd.
   v1.1 (20/11/2026) - Conferencia final com TLS 1.2 (ensaio: o PS 5.1 nao conectava).
+  v1.2 (20/11/2026) - Mostra o codigo do servidor para a licenca (codigo_servidor.txt).
   Faz, nesta ordem (pode rodar de novo: atualiza sem perder nada):
     1) confere administrador e o .NET 10 (ASP.NET Core Runtime / Hosting Bundle);
     2) para o servico (se ja existe) e copia o programa para -PastaPrograma;
@@ -61,6 +62,9 @@ try {
     if ($Runtimes -notmatch 'Microsoft\.AspNetCore\.App 10\.') { throw 'Falta o .NET 10 (ASP.NET Core Runtime). Instale o ".NET 10 Hosting Bundle" e rode de novo.' }
     $Existe = [bool](Get-Service -Name $NomeServico -ErrorAction SilentlyContinue)
     Write-Host ('Servico ' + $NomeServico + ': ' + $(if ($Existe) { 'ja existe (atualizacao)' } else { 'novo' }))
+    $CodigoServidor = ([string](Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name MachineGuid).MachineGuid).Trim().ToUpper()
+    Write-Host ('Codigo deste servidor (para a licenca): ' + $CodigoServidor)
+    [System.IO.File]::WriteAllText((Join-Path $PSScriptRoot 'codigo_servidor.txt'), ($env:COMPUTERNAME + ': ' + $CodigoServidor + "`r`n"), (New-Object System.Text.ASCIIEncoding))
     $Versao = [string](Sql $Banco "SELECT SIS.fn_SIS_Versao_Banco()")
     Write-Host ('Banco ' + $Instancia + '/' + $Banco + ': versao ' + $(if ($Versao) { $Versao } else { '(sem versao: rode o MASTER antes)' }))
     if (-not $Versao) { throw 'Rode antes o SISTEMACMJ_00_Criar_Banco.sql e o SISTEMACMJ_MASTER_Instalacao.sql no SSMS.' }
@@ -161,6 +165,7 @@ try {
     Write-Host ('1) Neste servidor, abra https://localhost:' + $Porta + '/instalacao.html e defina as senhas dos administradores (so na primeira instalacao).')
     Write-Host ('2) Nos computadores dos usuarios: copie SisCMJ_certificado.cer e preparar_computador_usuario.cmd e rode o .cmd como administrador. Endereco: ' + $Endereco)
     Write-Host ('3) Preencha o SMTP em ' + $ArquivoConfig + ' e reinicie o servico (Restart-Service ' + $NomeServico + ').')
+    Write-Host ('4) LICENCA: codigo deste servidor ' + $CodigoServidor + ' (tambem em codigo_servidor.txt). Gere a licenca no notebook do Celso e copie como ' + (Join-Path $PastaConfig 'licenca.lic') + ' (vale em ate 1 minuto, sem reiniciar).')
     Write-Host ('Registro desta instalacao: ' + $Log)
 }
 catch {

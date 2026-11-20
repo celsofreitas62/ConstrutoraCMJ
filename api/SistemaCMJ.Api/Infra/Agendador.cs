@@ -14,7 +14,7 @@
 // =============================================================================
 namespace SistemaCMJ.Api.Infra;
 
-public sealed class Agendador(Banco banco, EnvioEmail envio, VersaoBanco versao, IConfiguration configuracao, ILogger<Agendador> logger) : BackgroundService
+public sealed class Agendador(Banco banco, EnvioEmail envio, VersaoBanco versao, LicencaServico licenca, IConfiguration configuracao, ILogger<Agendador> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -31,7 +31,7 @@ public sealed class Agendador(Banco banco, EnvioEmail envio, VersaoBanco versao,
         do
         {
             // Banco em versão diferente da do programa: não roda nada até rodarem o MASTER (fase 3d).
-            if (!await versao.ConferirAsync(ct))
+            if (!await versao.ConferirAsync(ct) || !await licenca.ConferirAsync(ct))
                 continue;
 
             try

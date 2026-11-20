@@ -220,6 +220,12 @@ function Verificar-Compilacao {
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
     $Saida = (& dotnet build $Projeto --nologo --artifacts-path $Pasta 2>&1 | ForEach-Object { "$_" }) -join "`r`n"
     $Codigo = $LASTEXITCODE
+    # v1.4: o gerador de licenca tambem e conferido
+    $Gerador = Join-Path (Split-Path $Raiz -Parent) 'api\GeradorLicenca\GeradorLicenca.csproj'
+    if (Test-Path -LiteralPath $Gerador) {
+        $Saida += "`r`n--- Gerador de licenca ---`r`n" + ((& dotnet build $Gerador --nologo --artifacts-path $Pasta 2>&1 | ForEach-Object { "$_" }) -join "`r`n")
+        if ($LASTEXITCODE -ne 0) { $Codigo = $LASTEXITCODE }
+    }
     $Texto = 'SistemaCMJ - verificacao de compilacao (executor v1.2)' + "`r`n" + 'Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + ('=' * 70) + "`r`n" + $Saida + "`r`n" + ('=' * 70) + "`r`n" + 'CODIGO_SAIDA=' + $Codigo + "`r`n" + 'RESULTADO: ' + $(if ($Codigo -eq 0) { 'OK' } else { 'COM ERROS' }) + "`r`n"
     $Destino = Join-Path (Join-Path $Raiz 'saida') 'compilar.txt'
     [System.IO.File]::WriteAllText($Destino + '.tmp', $Texto, $Utf8)

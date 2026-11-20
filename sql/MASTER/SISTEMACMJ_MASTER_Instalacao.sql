@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v1.3)
+  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v1.4)
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : 20/11/2026 por sql/ferramentas/montar_master.py, juntando os
@@ -18,7 +18,7 @@
                 rl_sistemacmj_api (roteiro de instalacao; a senha nao fica em
                 arquivo).
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > conferir o banco > F5.
-  Objetos     : 191 arquivos.
+  Objetos     : 192 arquivos.
 *******************************************************************************/
 -- =============================================================================
 -- 1. CONFERENCIA DO BANCO
@@ -29,7 +29,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MASTER v1.3: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MASTER v1.4: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- =============================================================================
@@ -4233,6 +4233,38 @@ RETURNS VARCHAR(20)
 AS
 BEGIN
     RETURN ISNULL((SELECT TOP (1) v.VERSAO FROM SIS.Versao_Banco v ORDER BY v.ID_VERSAO_BANCO DESC), '');
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Usuario_Id.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Usuario_Id]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Código (ID_USUARIO) do usuário pelo login. NULL se não existe.
+                Usada pela API para gravar em nome do usuário interno "sistema"
+                (ex.: instalação da licença), sem ler tabela direto (o login da
+                API só executa procedures e functions).
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d, licença).
+
+  Homologação (LOCAL):
+    -- SELECT SIS.fn_SIS_Usuario_Id('sistema');
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Usuario_Id] (@Login VARCHAR(40))
+RETURNS INT
+AS
+BEGIN
+    RETURN (SELECT u.ID_USUARIO FROM SIS.Usuario u WHERE u.LOGIN = LOWER(LTRIM(RTRIM(@Login))));
 END;
 GO
 GO
@@ -14500,20 +14532,21 @@ GO
     v1.0 (20/11/2026) - Criação (etapa 03d): versão 1.1 do banco.
     Versões do banco: 1.1 (20/11/2026) limite de login por computador e versão;
                       1.2 (20/11/2026) primeiro acesso da instalação;
-                      1.3 (20/11/2026) SIS_Registro_Existe (anexos com o login da API).
+                      1.3 (20/11/2026) SIS_Registro_Existe (anexos com o login da API);
+                      1.4 (20/11/2026) fn_SIS_Usuario_Id (licença gravada pela API).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '1.3';
+DECLARE @Versao VARCHAR(20) = '1.4';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;
 GO
 GO
 
-PRINT N'MASTER v1.3 concluido sem erro.';
+PRINT N'MASTER v1.4 concluido sem erro.';
 GO
 
 SET NOEXEC OFF;

@@ -19,9 +19,10 @@ namespace SistemaCMJ.Api.Infra;
 public sealed class SessaoMiddleware(RequestDelegate proximo, ILogger<SessaoMiddleware> logger)
 {
     private static readonly string[] RotasPublicas = ["/api/login", "/api/identidade", "/api/saude", "/api/instalacao"];
+    private static readonly string[] RotasSemLicenca = ["/api/saude", "/api/identidade", "/api/instalacao"];
     private static readonly string[] RotasDuranteTrocaDeSenha = ["/api/senha", "/api/sessao", "/api/logout"];
 
-    public async Task InvokeAsync(HttpContext http, Banco banco, VersaoBanco versao)
+    public async Task InvokeAsync(HttpContext http, Banco banco, VersaoBanco versao, LicencaServico licenca)
     {
         var caminho = http.Request.Path.Value ?? "";
         if (!caminho.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
@@ -39,6 +40,13 @@ public sealed class SessaoMiddleware(RequestDelegate proximo, ILogger<SessaoMidd
         if (!caminho.StartsWith("/api/saude", StringComparison.OrdinalIgnoreCase) && !await versao.ConferirAsync(http.RequestAborted))
         {
             await Resposta.Atencao(versao.Mensagem()).ExecuteAsync(http);
+            return;
+        }
+
+        // Licença inválida: só saúde, identidade (logomarca do login) e primeiro acesso respondem
+        if (!RotasSemLicenca.Any(r => caminho.StartsWith(r, StringComparison.OrdinalIgnoreCase)) && !await licenca.ConferirAsync(http.RequestAborted))
+        {
+            await Resposta.Atencao(licenca.Mensagem()).ExecuteAsync(http);
             return;
         }
 

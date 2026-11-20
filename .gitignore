@@ -65,3 +65,8 @@ executor_sql/STATUS.txt
 
 # Registro da API no desenvolvimento (fase 3d)
 api/logs/
+
+# Licenca de desenvolvimento (ligada a este notebook) e chave privada: nunca no Git
+api/licenca/
+*.lic
+*chave_privada*

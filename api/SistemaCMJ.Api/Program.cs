@@ -28,7 +28,8 @@
 //                  desenvolvimento (decisão de 18/11/2026; Telas:Embutidas);
 //                  no desenvolvimento ficam soltas em wwwroot;
 //                - primeiro acesso da instalação, só no próprio servidor
-//                  (Endpoints/InstalacaoEndpoints.cs, /instalacao.html).
+//                  (Endpoints/InstalacaoEndpoints.cs, /instalacao.html);
+//                - licença conferida (Infra/LicencaServico.cs).
 // =============================================================================
 using SistemaCMJ.Api.Endpoints;
 using SistemaCMJ.Api.Ferramentas;
@@ -62,6 +63,7 @@ builder.Logging.AddProvider(registroArquivo);
 builder.Services.AddSingleton<Banco>();
 builder.Services.AddSingleton<EnvioEmail>();
 builder.Services.AddSingleton<VersaoBanco>();
+builder.Services.AddSingleton<LicencaServico>();
 
 if (args.Length > 0 && args[0].Equals("senha-inicial", StringComparison.OrdinalIgnoreCase))
 {
@@ -76,6 +78,7 @@ var app = builder.Build();
 app.Logger.LogInformation("SisCMJ {Versao} iniciado ({Ambiente}). Pasta do programa: {Pasta}. Configuração do servidor: {Arquivo} ({Existe}). Registro em: {Registro}",
     SaudeEndpoints.VersaoPrograma, app.Environment.EnvironmentName, app.Environment.ContentRootPath,
     arquivoServidor, app.Environment.IsDevelopment() ? "não usada no desenvolvimento" : File.Exists(arquivoServidor) ? "encontrada" : "não existe", registroArquivo.Pasta);
+_ = app.Services.GetRequiredService<LicencaServico>().ConferirAsync();   // registra a situação da licença ao subir
 app.Lifetime.ApplicationStopping.Register(() => app.Logger.LogInformation("SisCMJ parando."));
 
 // Erro não tratado: registra e devolve a resposta padrão (o texto técnico não vai para a tela).
