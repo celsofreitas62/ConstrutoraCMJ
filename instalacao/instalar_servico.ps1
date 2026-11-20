@@ -3,6 +3,7 @@
   Autor: Celso de Freitas / Refatorado: Claude
   v1.0 (20/11/2026) - Criacao (etapa 03d). Roda pelo instalar_servico.cmd, COMO ADMINISTRADOR,
                       de dentro da pasta gerada pelo api\publicar.cmd.
+  v1.1 (20/11/2026) - Conferencia final com TLS 1.2 (ensaio: o PS 5.1 nao conectava).
   Faz, nesta ordem (pode rodar de novo: atualiza sem perder nada):
     1) confere administrador e o .NET 10 (ASP.NET Core Runtime / Hosting Bundle);
     2) para o servico (se ja existe) e copia o programa para -PastaPrograma;
@@ -140,6 +141,8 @@ try {
 
     Passo '9/9 Iniciando e conferindo'
     Start-Service -Name $NomeServico
+    # PowerShell 5.1 usa TLS antigo por padrao; o sistema so aceita TLS 1.2 ou mais novo
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
     $Saude = $null
     for ($i = 0; $i -lt 30 -and -not $Saude; $i++) {
