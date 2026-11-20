@@ -8,10 +8,11 @@
 #                     em banco novo ela ainda nao existe: antes da view e da function
 #                     que a leem, roda a preparacao (com as tabelas do Access vazias
 #                     so cria a estrutura; em reinstalacao refaz a partir do Access).
+# v1.1 (20/11/2026) - GRANT EXECUTE no schema MIG para o papel da API.
 # Uso: python3 sql/ferramentas/montar_migracao.py   (SISTEMACMJ_SQL = pasta sql)
 import os, datetime
 BASE = os.environ.get('SISTEMACMJ_SQL', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-VERSAO = '1.0'
+VERSAO = '1.1'
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)
@@ -73,6 +74,15 @@ for f in ordem:
         partes.append(PASSO_MOVIMENTO)
     partes.append('\n-- -----------------------------------------------------------------------------\n-- Arquivo: sql/' + f + '\n-- -----------------------------------------------------------------------------\n')
     partes.append(ler(f).rstrip('\n') + '\nGO\n')
+partes.append("""
+-- -----------------------------------------------------------------------------
+-- Permissao da API (papel rl_sistemacmj_api, criado no MASTER) nas rotinas do
+-- MIG: a tela "Casos da migracao" roda pelo servico. Sai junto com o MIG.
+-- -----------------------------------------------------------------------------
+IF DATABASE_PRINCIPAL_ID(N'rl_sistemacmj_api') IS NOT NULL
+    GRANT EXECUTE ON SCHEMA::[MIG] TO [rl_sistemacmj_api];
+GO
+""")
 partes.append("\nPRINT N'MIGRACAO v" + VERSAO + " concluida sem erro.';\nGO\n\nSET NOEXEC OFF;\nGO\n")
 texto = ''.join(partes).replace('\n', '\r\n')
 dados = texto.encode('utf-8')

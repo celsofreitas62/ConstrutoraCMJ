@@ -26,7 +26,9 @@
 //                - versão do banco conferida (Infra/VersaoBanco.cs);
 //                - telas e ajuda EMBUTIDAS no executável fora do
 //                  desenvolvimento (decisão de 18/11/2026; Telas:Embutidas);
-//                  no desenvolvimento ficam soltas em wwwroot.
+//                  no desenvolvimento ficam soltas em wwwroot;
+//                - primeiro acesso da instalação, só no próprio servidor
+//                  (Endpoints/InstalacaoEndpoints.cs, /instalacao.html).
 // =============================================================================
 using SistemaCMJ.Api.Endpoints;
 using SistemaCMJ.Api.Ferramentas;
@@ -43,11 +45,16 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 builder.Host.UseWindowsService(opcoes => opcoes.ServiceName = "SisCMJ");
 
 // Configuração do servidor (conexão, e-mail, pastas): arquivo protegido fora da pasta do programa.
+// Só fora do desenvolvimento: no notebook o rodar.cmd nunca lê a configuração de um serviço instalado ali.
 var arquivoServidor = builder.Configuration["SisCMJ:ArquivoConfig"];
 if (string.IsNullOrWhiteSpace(arquivoServidor))
     arquivoServidor = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "SisCMJ", "appsettings.Servidor.json");
-builder.Configuration.AddJsonFile(arquivoServidor, optional: true, reloadOnChange: false);
-builder.Configuration.AddEnvironmentVariables();
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddJsonFile(arquivoServidor, optional: true, reloadOnChange: false);
+    builder.Configuration.AddEnvironmentVariables();
+    builder.Configuration.AddCommandLine(args);
+}
 
 var registroArquivo = new RegistroArquivoProvider(builder.Configuration);
 builder.Logging.AddProvider(registroArquivo);
@@ -68,7 +75,7 @@ var app = builder.Build();
 
 app.Logger.LogInformation("SisCMJ {Versao} iniciado ({Ambiente}). Pasta do programa: {Pasta}. Configuração do servidor: {Arquivo} ({Existe}). Registro em: {Registro}",
     SaudeEndpoints.VersaoPrograma, app.Environment.EnvironmentName, app.Environment.ContentRootPath,
-    arquivoServidor, File.Exists(arquivoServidor) ? "encontrada" : "não existe", registroArquivo.Pasta);
+    arquivoServidor, app.Environment.IsDevelopment() ? "não usada no desenvolvimento" : File.Exists(arquivoServidor) ? "encontrada" : "não existe", registroArquivo.Pasta);
 app.Lifetime.ApplicationStopping.Register(() => app.Logger.LogInformation("SisCMJ parando."));
 
 // Erro não tratado: registra e devolve a resposta padrão (o texto técnico não vai para a tela).
@@ -122,6 +129,7 @@ ComunicadoEndpoints.Mapear(app);
 ComunicadoEndpoints.MapearLogo(app);
 MigracaoEndpoints.Mapear(app);
 SaudeEndpoints.Mapear(app);
+InstalacaoEndpoints.Mapear(app);
 
 // Rota /api que não existe: resposta padrão (não cai na página).
 app.MapFallback("/api/{**resto}", () => Results.NotFound());

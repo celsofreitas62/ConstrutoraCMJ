@@ -153,7 +153,9 @@ ORDEM_03C2B = [
 ]
 ORDEM_03D = ['objetos/SIS/SIS.fn_SIS_Email_HTML.sql', 'objetos/SIS/Carga_SIS_Parametro.sql',
              'objetos/SIS/SIS.Login_Log.sql', 'objetos/SIS/SIS.SIS_Usuario_Login_Processar.sql',
-             'objetos/SIS/SIS.Versao_Banco.sql', 'objetos/SIS/SIS.fn_SIS_Versao_Banco.sql', 'objetos/SIS/Carga_SIS_Versao.sql']
+             'objetos/SIS/SIS.Versao_Banco.sql', 'objetos/SIS/SIS.fn_SIS_Versao_Banco.sql',
+             'objetos/SIS/SIS.SIS_Instalacao_Situacao.sql', 'objetos/SIS/SIS.SIS_Instalacao_Senha_Gravar.sql',
+             'objetos/SIS/Carga_SIS_Versao.sql']
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B, '03d': ORDEM_03D}[PARTE]
 TITULO = {'03d': '03d - ajustes da base SIS na etapa 03d (rodapé dos e-mails sem CNPJ, limite de login por computador, versão do banco)',

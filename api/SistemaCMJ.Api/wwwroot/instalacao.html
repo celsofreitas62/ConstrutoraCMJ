@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SisCMJ – Primeiro acesso</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/instalacao.js" defer></script>
+</head>
+<body data-tela="instalacao.html" data-publica="1">
+  <main class="pagina-login">
+    <form class="caixa-login" id="form-instalacao" novalidate>
+      <img class="logo-login" src="/api/identidade/logo/horizontal" alt="Logomarca da empresa">
+      <div>
+        <h1>Primeiro acesso</h1>
+        <p id="texto-situacao">Conferindo a instalação…</p>
+      </div>
+      <div id="campos" hidden>
+        <label data-dica="Senha do administrador geral (criador do sistema). Obrigatória. Mínimo de caracteres conforme o parâmetro, com letras e números." data-obrigatorio class="campo"><span id="rotulo-geral">Senha do administrador geral</span>
+          <input type="password" id="senha-geral" autocomplete="new-password" maxlength="128" required>
+        </label>
+        <label data-dica="Digite de novo a mesma senha do administrador geral." data-obrigatorio class="campo">Repita a senha
+          <input type="password" id="senha-geral-2" autocomplete="new-password" maxlength="128" required>
+        </label>
+        <label data-dica="Senha PROVISÓRIA do administrador da empresa. Ele troca no primeiro acesso. Obrigatória." data-obrigatorio class="campo"><span id="rotulo-empresa">Senha provisória do administrador da empresa</span>
+          <input type="password" id="senha-empresa" autocomplete="new-password" maxlength="128" required>
+        </label>
+        <label data-dica="Digite de novo a mesma senha provisória." data-obrigatorio class="campo">Repita a senha provisória
+          <input type="password" id="senha-empresa-2" autocomplete="new-password" maxlength="128" required>
+        </label>
+        <button type="submit" class="botao botao-principal" id="botao-gravar">Gravar senhas</button>
+      </div>
+      <p class="nota">Esta tela só abre no próprio servidor e só uma vez, enquanto nenhum administrador tem senha.</p>
+    </form>
+  </main>
+</body>
+</html>

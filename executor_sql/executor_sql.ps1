@@ -27,6 +27,9 @@
                       senha (falha em vez de travar); resultado em
                       saida\enviar_github.txt. Autorizado pelo Celso (envio
                       automatico, 16/11/2026). Comando fixo.
+  v1.4 (20/11/2026) - Pedido de publicacao: entrada\publicar.pedido roda api\publicar.ps1
+                      (gera o pacote de instalacao em C:\SisCMJ_Publicacao, fora do
+                      Drive); resultado em saida\publicar.txt. Comando fixo.
   Uso: iniciado pela tarefa "SistemaCMJ - Executor SQL" (instalar_executor.cmd).
 #>
 param(
@@ -215,7 +218,7 @@ function Verificar-Compilacao {
     $Pasta = Join-Path $env:LOCALAPPDATA 'SistemaCMJ\artifacts_verificacao'
     $Ini = Get-Date
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    $Saida = & dotnet build $Projeto --nologo --artifacts-path $Pasta 2>&1 | Out-String
+    $Saida = (& dotnet build $Projeto --nologo --artifacts-path $Pasta 2>&1 | ForEach-Object { "$_" }) -join "`r`n"
     $Codigo = $LASTEXITCODE
     $Texto = 'SistemaCMJ - verificacao de compilacao (executor v1.2)' + "`r`n" + 'Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + ('=' * 70) + "`r`n" + $Saida + "`r`n" + ('=' * 70) + "`r`n" + 'CODIGO_SAIDA=' + $Codigo + "`r`n" + 'RESULTADO: ' + $(if ($Codigo -eq 0) { 'OK' } else { 'COM ERROS' }) + "`r`n"
     $Destino = Join-Path (Join-Path $Raiz 'saida') 'compilar.txt'
@@ -231,10 +234,24 @@ function Enviar-GitHub {
     $env:GIT_TERMINAL_PROMPT = '0'
     $env:GCM_INTERACTIVE = 'never'
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    $Saida = & git -C $Projeto push origin main 2>&1 | Out-String
+    $Saida = (& git -C $Projeto push origin main 2>&1 | ForEach-Object { "$_" }) -join "`r`n"
     $Codigo = $LASTEXITCODE
     $Texto = 'SistemaCMJ - envio ao GitHub (executor v1.3)' + "`r`n" + 'Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + ('=' * 70) + "`r`n" + $Saida + "`r`n" + ('=' * 70) + "`r`n" + 'CODIGO_SAIDA=' + $Codigo + "`r`n" + 'RESULTADO: ' + $(if ($Codigo -eq 0) { 'OK' } else { 'COM ERROS' }) + "`r`n"
     $Destino = Join-Path (Join-Path $Raiz 'saida') 'enviar_github.txt'
+    [System.IO.File]::WriteAllText($Destino + '.tmp', $Texto, $Utf8)
+    Move-Item -LiteralPath ($Destino + '.tmp') -Destination $Destino -Force
+    return $Codigo
+}
+
+function Publicar {
+    $ErrorActionPreference = 'Continue'
+    $Script = Join-Path (Split-Path $Raiz -Parent) 'api\publicar.ps1'
+    $Ini = Get-Date
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $Saida = (& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Script 2>&1 | ForEach-Object { "$_" }) -join "`r`n"
+    $Codigo = $LASTEXITCODE
+    $Texto = 'SistemaCMJ - publicacao (executor v1.4)' + "`r`n" + 'Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + ('=' * 70) + "`r`n" + $Saida + "`r`n" + ('=' * 70) + "`r`n" + 'CODIGO_SAIDA=' + $Codigo + "`r`n"
+    $Destino = Join-Path (Join-Path $Raiz 'saida') 'publicar.txt'
     [System.IO.File]::WriteAllText($Destino + '.tmp', $Texto, $Utf8)
     Move-Item -LiteralPath ($Destino + '.tmp') -Destination $Destino -Force
     return $Codigo
@@ -266,6 +283,14 @@ while ($true) {
             Gravar-Status 'enviando ao GitHub'
             $C = Enviar-GitHub
             $TextoStatus = 'ativo; ultimo envio ao GitHub -> ' + $(if ($C -eq 0) { 'OK' } else { 'COM ERROS' })
+            Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
+        }
+        $Pedido = Join-Path $Entrada 'publicar.pedido'
+        if (Test-Path -LiteralPath $Pedido) {
+            Remove-Item -LiteralPath $Pedido -Force
+            Gravar-Status 'publicando'
+            $C = Publicar
+            $TextoStatus = 'ativo; ultima publicacao -> ' + $(if ($C -eq 0) { 'OK' } else { 'COM ERROS' })
             Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
         }
         # Sinal de vida a cada minuto (sem regravar a cada ciclo, para nao encher a sincronizacao do Drive)

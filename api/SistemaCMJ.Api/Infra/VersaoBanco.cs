@@ -18,7 +18,7 @@ namespace SistemaCMJ.Api.Infra;
 
 public sealed class VersaoBanco(Banco banco, ILogger<VersaoBanco> logger)
 {
-    public const string VersaoExigida = "1.1";
+    public const string VersaoExigida = "1.2";   // 1.2: primeiro acesso da instalação (20/11/2026)
 
     private readonly SemaphoreSlim trava = new(1, 1);
     private DateTime conferidaEm = DateTime.MinValue;

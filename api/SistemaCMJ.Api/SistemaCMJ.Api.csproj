@@ -33,6 +33,7 @@
   <ItemGroup>
     <EmbeddedResource Include="wwwroot\**" Exclude="wwwroot\**\desktop.ini" />
     <Content Update="wwwroot\**" CopyToPublishDirectory="Never" />
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MIGRACAO_Instalacao.sql   (MIGRACAO v1.0)
+  Arquivo     : SISTEMACMJ_MIGRACAO_Instalacao.sql   (MIGRACAO v1.1)
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : 20/11/2026 por sql/ferramentas/montar_migracao.py, juntando
@@ -27,7 +27,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MIGRACAO v1.0: inicio em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MIGRACAO v1.1: inicio em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- -----------------------------------------------------------------------------
@@ -4080,7 +4080,15 @@ WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AN
 GO
 GO
 
-PRINT N'MIGRACAO v1.0 concluida sem erro.';
+-- -----------------------------------------------------------------------------
+-- Permissao da API (papel rl_sistemacmj_api, criado no MASTER) nas rotinas do
+-- MIG: a tela "Casos da migracao" roda pelo servico. Sai junto com o MIG.
+-- -----------------------------------------------------------------------------
+IF DATABASE_PRINCIPAL_ID(N'rl_sistemacmj_api') IS NOT NULL
+    GRANT EXECUTE ON SCHEMA::[MIG] TO [rl_sistemacmj_api];
+GO
+
+PRINT N'MIGRACAO v1.1 concluida sem erro.';
 GO
 
 SET NOEXEC OFF;
