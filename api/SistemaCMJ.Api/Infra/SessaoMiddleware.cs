@@ -16,7 +16,7 @@ namespace SistemaCMJ.Api.Infra;
 
 public sealed class SessaoMiddleware(RequestDelegate proximo, ILogger<SessaoMiddleware> logger)
 {
-    private static readonly string[] RotasPublicas = ["/api/login", "/api/identidade"];
+    private static readonly string[] RotasPublicas = ["/api/login", "/api/identidade", "/api/saude"];
     private static readonly string[] RotasDuranteTrocaDeSenha = ["/api/senha", "/api/sessao", "/api/logout"];
 
     public async Task InvokeAsync(HttpContext http, Banco banco)

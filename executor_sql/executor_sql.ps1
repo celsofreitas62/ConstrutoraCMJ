@@ -15,6 +15,12 @@
                       instalacao no notebook), sempre na instancia .\SQL2025.
                       Recarrega sozinho quando este arquivo muda (sem precisar
                       reinstalar a tarefa).
+  v1.2 (20/11/2026) - Pedido de verificacao de compilacao: o arquivo
+                      entrada\compilar.pedido faz um "dotnet build" da API numa pasta
+                      separada (%LOCALAPPDATA%\SistemaCMJ\artifacts_verificacao),
+                      sem mexer no sistema que esta rodando; resultado em
+                      saida\compilar.txt. Comando fixo: nao roda nada que venha
+                      do pedido.
   Uso: iniciado pela tarefa "SistemaCMJ - Executor SQL" (instalar_executor.cmd).
 #>
 param(
@@ -197,6 +203,20 @@ function Executar-Script([string]$Arquivo) {
     return $Resultado
 }
 
+function Verificar-Compilacao {
+    $Projeto = Join-Path (Split-Path $Raiz -Parent) 'api\SistemaCMJ.Api\SistemaCMJ.Api.csproj'
+    $Pasta = Join-Path $env:LOCALAPPDATA 'SistemaCMJ\artifacts_verificacao'
+    $Ini = Get-Date
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $Saida = & dotnet build $Projeto --nologo --artifacts-path $Pasta 2>&1 | Out-String
+    $Codigo = $LASTEXITCODE
+    $Texto = 'SistemaCMJ - verificacao de compilacao (executor v1.2)' + "`r`n" + 'Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + ('=' * 70) + "`r`n" + $Saida + "`r`n" + ('=' * 70) + "`r`n" + 'CODIGO_SAIDA=' + $Codigo + "`r`n" + 'RESULTADO: ' + $(if ($Codigo -eq 0) { 'OK' } else { 'COM ERROS' }) + "`r`n"
+    $Destino = Join-Path (Join-Path $Raiz 'saida') 'compilar.txt'
+    [System.IO.File]::WriteAllText($Destino + '.tmp', $Texto, $Utf8)
+    Move-Item -LiteralPath ($Destino + '.tmp') -Destination $Destino -Force
+    return $Codigo
+}
+
 Gravar-Status 'ativo (iniciado)'
 $UltimoStatus = Get-Date
 $TextoStatus = 'ativo'
@@ -207,6 +227,14 @@ while ($true) {
             Gravar-Status ('executando ' + $F.Name)
             $R = Executar-Script $F.FullName
             $TextoStatus = 'ativo; ultimo: ' + $F.Name + ' -> ' + $R
+            Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
+        }
+        $Pedido = Join-Path $Entrada 'compilar.pedido'
+        if (Test-Path -LiteralPath $Pedido) {
+            Remove-Item -LiteralPath $Pedido -Force
+            Gravar-Status 'verificando a compilacao'
+            $C = Verificar-Compilacao
+            $TextoStatus = 'ativo; ultima compilacao -> ' + $(if ($C -eq 0) { 'OK' } else { 'COM ERROS' })
             Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
         }
         # Sinal de vida a cada minuto (sem regravar a cada ciclo, para nao encher a sincronizacao do Drive)

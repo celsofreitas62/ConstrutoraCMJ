@@ -12,12 +12,41 @@
 //              envia os e-mails da fila a cada minuto (Infra/Agendador.cs).
 //              Licença: nesta fase só é lida (conferência da assinatura numa
 //              parte própria, antes da instalação na CMJ).
+//              Servidor (20/11/2026, fase 3d):
+//                - roda como serviço do Windows (nome SisCMJ);
+//                - configuração do servidor fora da pasta do programa:
+//                  %ProgramData%\SisCMJ\appsettings.Servidor.json (opcional;
+//                  outro caminho em SisCMJ:ArquivoConfig), depois as variáveis
+//                  de ambiente; endereço, porta e certificado HTTPS na seção
+//                  "Kestrel" (appsettings.Production.json);
+//                - registro em arquivo (Infra/RegistroArquivo.cs);
+//                - erro não tratado em /api vira resposta padrão e vai para o
+//                  registro;
+//                - GET /api/saude (Endpoints/SaudeEndpoints.cs).
 // =============================================================================
 using SistemaCMJ.Api.Endpoints;
 using SistemaCMJ.Api.Ferramentas;
 using SistemaCMJ.Api.Infra;
+using Microsoft.Extensions.Hosting.WindowsServices;
 
-var builder = WebApplication.CreateBuilder(args);
+// Como serviço do Windows, a pasta de trabalho é a do executável (não C:\Windows\System32).
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : default
+});
+builder.Host.UseWindowsService(opcoes => opcoes.ServiceName = "SisCMJ");
+
+// Configuração do servidor (conexão, e-mail, pastas): arquivo protegido fora da pasta do programa.
+var arquivoServidor = builder.Configuration["SisCMJ:ArquivoConfig"];
+if (string.IsNullOrWhiteSpace(arquivoServidor))
+    arquivoServidor = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "SisCMJ", "appsettings.Servidor.json");
+builder.Configuration.AddJsonFile(arquivoServidor, optional: true, reloadOnChange: false);
+builder.Configuration.AddEnvironmentVariables();
+
+var registroArquivo = new RegistroArquivoProvider(builder.Configuration);
+builder.Logging.AddProvider(registroArquivo);
+
 builder.Services.AddSingleton<Banco>();
 builder.Services.AddSingleton<EnvioEmail>();
 
@@ -30,6 +59,26 @@ if (args.Length > 0 && args[0].Equals("senha-inicial", StringComparison.OrdinalI
 builder.Services.AddHostedService<Agendador>();
 
 var app = builder.Build();
+
+app.Logger.LogInformation("SisCMJ {Versao} iniciado ({Ambiente}). Pasta do programa: {Pasta}. Configuração do servidor: {Arquivo} ({Existe}). Registro em: {Registro}",
+    SaudeEndpoints.VersaoPrograma, app.Environment.EnvironmentName, app.Environment.ContentRootPath,
+    arquivoServidor, File.Exists(arquivoServidor) ? "encontrada" : "não existe", registroArquivo.Pasta);
+app.Lifetime.ApplicationStopping.Register(() => app.Logger.LogInformation("SisCMJ parando."));
+
+// Erro não tratado: registra e devolve a resposta padrão (o texto técnico não vai para a tela).
+app.Use(async (http, proximo) =>
+{
+    try
+    {
+        await proximo();
+    }
+    catch (Exception erro) when (!http.Response.HasStarted && !http.RequestAborted.IsCancellationRequested)
+    {
+        app.Logger.LogError(erro, "Erro não tratado em {Metodo} {Caminho}", http.Request.Method, http.Request.Path);
+        http.Response.Clear();
+        await Resposta.Erro().ExecuteAsync(http);
+    }
+});
 
 // Cabeçalhos de segurança em toda resposta.
 app.Use(async (http, proximo) =>
@@ -60,6 +109,7 @@ PessoaEndpoints.Mapear(app);
 ComunicadoEndpoints.Mapear(app);
 ComunicadoEndpoints.MapearLogo(app);
 MigracaoEndpoints.Mapear(app);
+SaudeEndpoints.Mapear(app);
 
 // Rota /api que não existe: resposta padrão (não cai na página).
 app.MapFallback("/api/{**resto}", () => Results.NotFound());

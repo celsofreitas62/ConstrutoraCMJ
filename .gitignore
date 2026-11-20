@@ -62,3 +62,6 @@ executor_sql/entrada/
 executor_sql/saida/
 executor_sql/processados/
 executor_sql/STATUS.txt
+
+# Registro da API no desenvolvimento (fase 3d)
+api/logs/
