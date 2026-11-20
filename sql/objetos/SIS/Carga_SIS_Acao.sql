@@ -9,6 +9,7 @@
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (16/11/2026) - Ação EXECUTAR (rotinas e comandos; etapa 02d).
+    v1.2 (20/11/2026) - Ação RESTAURAR (restauração de backup pela tela; etapa 03d2).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -31,7 +32,8 @@ FROM (VALUES
         ('ENVIAR',           N'Enviar (e-mail, remessa)',   120),
         ('DESBLOQUEAR',      N'Desbloquear usuário',        130),
         ('REDEFINIR_SENHA',  N'Definir senha provisória',   140),
-        ('EXECUTAR',         N'Executar (rotina, comando)', 150)
+        ('EXECUTAR',         N'Executar (rotina, comando)', 150),
+        ('RESTAURAR',        N'Restaurar backup do banco',  160)
      ) v (CODIGO, NOME, ORDEM)
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Acao a WHERE a.CODIGO = v.CODIGO);
 GO

@@ -158,6 +158,11 @@ ORDEM_03D = ['objetos/SIS/SIS.fn_SIS_Email_HTML.sql', 'objetos/SIS/Carga_SIS_Par
              'objetos/SIS/SIS.SIS_Registro_Existe.sql', 'objetos/SIS/SIS.SIS_Anexo_Gravar.sql',
              'objetos/SIS/SIS.fn_SIS_Usuario_Id.sql',
              'objetos/SIS/SIS.Backup_Execucao.sql', 'objetos/SIS/SIS.SIS_Backup_Registrar.sql', 'objetos/SIS/SIS.SIS_Backup_Conferir_Processar.sql',
+             'objetos/SIS/SIS.Backup_Restauracao.sql', 'objetos/SIS/SIS.fn_SIS_Backup_Plano.sql',
+             'objetos/SIS/SIS.SIS_Backup_Listar.sql', 'objetos/SIS/SIS.SIS_Backup_Situacao_Obter.sql', 'objetos/SIS/SIS.SIS_Backup_Restauracao_Listar.sql',
+             'objetos/SIS/SIS.SIS_Backup_Restauracao_Solicitar.sql', 'objetos/SIS/SIS.SIS_Backup_Restauracao_Cancelar.sql',
+             'objetos/SIS/SIS.SIS_Backup_Restauracao_Resultado.sql', 'objetos/SIS/SIS.SIS_Backup_Restauracao_Capturar.sql',
+             'objetos/SIS/Carga_SIS_Acao.sql',
              'objetos/SIS/Carga_SIS_Backup.sql',
              'objetos/SIS/Carga_SIS_Versao.sql']
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'

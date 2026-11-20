@@ -37,3 +37,13 @@ Criado em 20/11/2026. Pedidos do Celso: backup do log de hora em hora (aprovado)
   7. Se der erro: tenta deixar o banco on-line (RECOVERY), religa o serviço, registra ERRO e avisa. O backup de segurança fica disponível.
 - **Banco**: tabela `SIS.Backup_Restauracao` e as rotinas Solicitar (tela, com permissão), Listar e Capturar/Resultado (só o script, com DENY para a API).
 - **Ensaio** no notebook (porta 5445) antes do servidor.
+
+## 4. Restauração: parte do banco pronta (20/11/2026, conversa 03d2)
+
+- Tabela `SIS.Backup_Restauracao` (pedido, situação PENDENTE → EXECUTANDO → OK/ERRO, ou CANCELADO; plano; backup de segurança; resultado).
+- `SIS.fn_SIS_Backup_Plano`: quais arquivos aplicar (completo + logs até o primeiro que passa do ponto); recusa plano com arquivo apagado.
+- Tela (API repassa): `SIS_Backup_Listar`, `SIS_Backup_Situacao_Obter` (dá para voltar de/até, pedido em aberto, pode restaurar), `SIS_Backup_Restauracao_Listar`, `SIS_Backup_Restauracao_Solicitar` (senha conferida pela API, palavra RESTAURAR, motivo com mínimo no parâmetro `BACKUP_RESTAURACAO_MOTIVO_MINIMO` = 10, um pedido por vez, e-mail ao `EMAIL_ADMIN_ALERTA`), `SIS_Backup_Restauracao_Cancelar` (só enquanto aguarda).
+- Só o script (DENY para a API): `SIS_Backup_Restauracao_Capturar` (marca EXECUTANDO e devolve o plano; plano que não fecha mais vira ERRO) e `SIS_Backup_Restauracao_Resultado` (regrava o pedido com o mesmo ID no banco restaurado; e-mail para o admin e para quem pediu).
+- Menu **Backups › Backups e restauração** (`SIS_BACKUP`, ações VER e RESTAURAR; administradores nível 1 e 2 têm as duas).
+- Teste `sql/testes/SIS/03d2_Homologacao_Restauracao.sql`: **36/0** no LOCAL; `03d_Homologacao_Backup.sql` segue 9/0.
+- **Falta**: API (endpoints, conferência da senha), tela `sis/backups.html` + ajuda, a parte do script (`backup_servidor.ps1`: tarefa "Restauração (pedidos)", backup de segurança, parar o serviço, RESTORE com STOPAT, novo completo depois, regravar pedido e backups), banco e API 1.6, e o ensaio no notebook.

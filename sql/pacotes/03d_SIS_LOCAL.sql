@@ -152,6 +152,8 @@ GO
     v1.7 (20/11/2026) - Etapa 03d: BACKUP_DIAS_MANTER, BACKUP_NUVEM_MANTER e os
                         avisos de atraso (BACKUP_HORAS_ALERTA_COMPLETO/_LOG,
                         BACKUP_DIAS_ALERTA_TESTE).
+    v1.8 (20/11/2026) - Etapa 03d2: BACKUP_RESTAURACAO_MOTIVO_MINIMO (restauração
+                        pela tela).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -230,6 +232,8 @@ FROM (VALUES
          N'Avisa por e-mail se o último backup do log (de hora em hora) sem erro tiver mais horas que isto.', 'SIS', 0),
         ('BACKUP_DIAS_ALERTA_TESTE', N'8', 'INTEIRO',
          N'Avisa por e-mail se o último teste de restauração sem erro tiver mais dias que isto.', 'SIS', 0),
+        ('BACKUP_RESTAURACAO_MOTIVO_MINIMO', N'10', 'INTEIRO',
+         N'Quantidade mínima de letras do motivo obrigatório ao pedir uma restauração de backup pela tela.', 'SIS', 0),
         ('ATUALIZACAO_PASTA', N'C:\SistemaCMJ_Arquivos\Atualizacoes', 'TEXTO',
          N'Pasta do servidor onde ficam os pacotes de atualização e o certificado usados pela tela Instalação e manutenção.', 'SIS', 0),
         ('EMAIL_RODAPE_CNPJ', N'N', 'SN',
@@ -1157,6 +1161,921 @@ END;
 GO
 
 -- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.Backup_Restauracao.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[Backup_Restauracao]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Pedidos de restauração do banco feitos pela tela Sistema >
+                Backups (SIS_BACKUP, ação RESTAURAR). A tela só registra o
+                pedido (PENDENTE); quem restaura é a tarefa do Windows
+                "Restauração (pedidos)" (instalacao\backup_servidor.ps1, como
+                SYSTEM), que captura o pedido (EXECUTANDO), faz o backup de
+                segurança, restaura e grava o resultado (OK ou ERRO).
+                Como a restauração volta esta tabela ao passado, o script
+                regrava o pedido no banco restaurado com o mesmo ID
+                (SIS_Backup_Restauracao_Resultado, IDENTITY_INSERT).
+                TIPO_PONTO: BACKUP (volta para um backup completo ou de
+                segurança, ID_BACKUP) ou DATA_HORA (volta para um dia e hora,
+                DT_PONTO, com os backups do log de hora em hora).
+                Nunca é apagado.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[SIS].[Backup_Restauracao]', N'U') IS NULL
+    CREATE TABLE [SIS].[Backup_Restauracao]
+    (
+        ID_RESTAURACAO       INT             IDENTITY(1,1) NOT NULL,
+        TIPO_PONTO           VARCHAR(10)     NOT NULL,
+        ID_BACKUP            BIGINT          NULL,
+        DT_PONTO             DATETIME2(0)    NULL,
+        MOTIVO               NVARCHAR(400)   NOT NULL,
+        SITUACAO             VARCHAR(12)     NOT NULL CONSTRAINT DF_Backup_Restauracao_SITUACAO  DEFAULT ('PENDENTE'),
+        ID_USUARIO_PEDIDO    INT             NOT NULL,
+        USUARIO_PEDIDO       NVARCHAR(100)   NOT NULL CONSTRAINT DF_Backup_Restauracao_USUARIO_PEDIDO DEFAULT (N''),
+        DT_PEDIDO            DATETIME2(0)    NOT NULL CONSTRAINT DF_Backup_Restauracao_DT_PEDIDO DEFAULT (SYSDATETIME()),
+        DT_INICIO            DATETIME2(0)    NULL,
+        DT_FIM               DATETIME2(0)    NULL,
+        PLANO                NVARCHAR(4000)  NOT NULL CONSTRAINT DF_Backup_Restauracao_PLANO     DEFAULT (N''),
+        ARQUIVO_SEGURANCA    NVARCHAR(400)   NOT NULL CONSTRAINT DF_Backup_Restauracao_ARQUIVO_SEGURANCA DEFAULT (N''),
+        MENSAGEM             NVARCHAR(2000)  NOT NULL CONSTRAINT DF_Backup_Restauracao_MENSAGEM  DEFAULT (N''),
+        SERVIDOR             NVARCHAR(128)   NOT NULL CONSTRAINT DF_Backup_Restauracao_SERVIDOR  DEFAULT (ISNULL(HOST_NAME(), N'')),
+        DT_CRIACAO           DATETIME2(0)    NOT NULL CONSTRAINT DF_Backup_Restauracao_DT_CRIACAO DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO      NVARCHAR(100)   NOT NULL CONSTRAINT DF_Backup_Restauracao_USUARIO_CRIACAO DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
+        DT_ALTERACAO         DATETIME2(0)    NULL,
+        USUARIO_ALTERACAO    NVARCHAR(100)   NULL,
+        CONSTRAINT PK_Backup_Restauracao            PRIMARY KEY CLUSTERED (ID_RESTAURACAO),
+        CONSTRAINT FK_Backup_Restauracao_Backup     FOREIGN KEY (ID_BACKUP) REFERENCES [SIS].[Backup_Execucao] (ID_BACKUP),
+        CONSTRAINT CK_Backup_Restauracao_TIPO_PONTO CHECK (TIPO_PONTO IN ('BACKUP', 'DATA_HORA')),
+        CONSTRAINT CK_Backup_Restauracao_PONTO      CHECK ((TIPO_PONTO = 'BACKUP' AND ID_BACKUP IS NOT NULL) OR (TIPO_PONTO = 'DATA_HORA' AND DT_PONTO IS NOT NULL)),
+        CONSTRAINT CK_Backup_Restauracao_SITUACAO   CHECK (SITUACAO IN ('PENDENTE', 'EXECUTANDO', 'OK', 'ERRO', 'CANCELADO'))
+    );
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Backup_Restauracao]') AND i.name = N'IX_Backup_Restauracao_SITUACAO')
+    CREATE NONCLUSTERED INDEX IX_Backup_Restauracao_SITUACAO ON [SIS].[Backup_Restauracao] (SITUACAO, DT_PEDIDO);
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Backup_Plano.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Backup_Plano]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Plano de uma restauração: quais arquivos de backup aplicar e
+                em que ordem (function inline, só leitura).
+                  @IdBackup preenchido (TIPO_PONTO BACKUP): só aquele backup
+                    completo ou de segurança, ORDEM 0.
+                  @DtPonto preenchido (TIPO_PONTO DATA_HORA): o último backup
+                    COMPLETO que terminou até o ponto (ORDEM 0) e os backups
+                    do LOG seguintes, até o primeiro que passa do ponto
+                    (ORDEM 1, 2...; o último é aplicado com STOPAT).
+                Só backups com SITUACAO OK. ARQUIVO_EXISTE vem junto para quem
+                chama recusar o plano com arquivo que já foi apagado.
+                O plano está completo quando tem a linha 0 e, no DATA_HORA,
+                a última linha tem DT_FIM >= @DtPonto (coluna ALCANCA_PONTO).
+                A conferência fina da sequência do log (LSN) é feita pelo
+                script na hora de restaurar.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+
+  Homologação (LOCAL):
+    -- SELECT * FROM SIS.fn_SIS_Backup_Plano(NULL, '2026-11-20 14:45') ORDER BY ORDEM;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Backup_Plano] (@IdBackup BIGINT, @DtPonto DATETIME2(0))
+RETURNS TABLE
+AS
+RETURN
+WITH Base AS
+(
+    SELECT TOP (1) b.ID_BACKUP, b.TIPO, b.ARQUIVO, b.DT_INICIO, b.DT_FIM, b.ARQUIVO_EXISTE
+    FROM SIS.Backup_Execucao b
+    WHERE b.SITUACAO = 'OK'
+      AND b.ARQUIVO <> N''
+      AND (   (@IdBackup IS NOT NULL AND b.ID_BACKUP = @IdBackup AND b.TIPO IN ('COMPLETO', 'SEGURANCA'))
+           OR (@IdBackup IS NULL AND @DtPonto IS NOT NULL AND b.TIPO = 'COMPLETO' AND b.ARQUIVO_EXISTE = 1 AND b.DT_FIM <= @DtPonto))
+    ORDER BY b.DT_FIM DESC, b.ID_BACKUP DESC
+),
+Corte AS
+(
+    SELECT MIN(l.DT_INICIO) AS DT_CORTE
+    FROM SIS.Backup_Execucao l
+    INNER JOIN Base b ON l.DT_INICIO >= b.DT_INICIO
+    WHERE @IdBackup IS NULL
+      AND l.TIPO = 'LOG'
+      AND l.SITUACAO = 'OK'
+      AND l.DT_FIM >= @DtPonto
+)
+SELECT CAST(0 AS INT) AS ORDEM, b.ID_BACKUP, b.TIPO, b.ARQUIVO, b.DT_INICIO, b.DT_FIM, b.ARQUIVO_EXISTE,
+       CAST(CASE WHEN @IdBackup IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS ALCANCA_PONTO
+FROM Base b
+UNION ALL
+SELECT CAST(ROW_NUMBER() OVER (ORDER BY l.DT_INICIO, l.ID_BACKUP) AS INT), l.ID_BACKUP, l.TIPO, l.ARQUIVO, l.DT_INICIO, l.DT_FIM, l.ARQUIVO_EXISTE,
+       CAST(CASE WHEN l.DT_INICIO = c.DT_CORTE THEN 1 ELSE 0 END AS BIT)
+FROM SIS.Backup_Execucao l
+INNER JOIN Base b  ON l.DT_INICIO >= b.DT_INICIO
+INNER JOIN Corte c ON c.DT_CORTE IS NOT NULL AND l.DT_INICIO <= c.DT_CORTE
+WHERE @IdBackup IS NULL
+  AND l.TIPO = 'LOG'
+  AND l.SITUACAO = 'OK';
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Backup_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Lista dos backups para a tela Sistema > Backups (SIS_BACKUP,
+                ação VER): completos, do log de hora em hora, testes de
+                restauração e backups de segurança, do mais novo para o mais
+                antigo, com a indicação de que o arquivo ainda existe.
+                Mostra os dos últimos @Dias dias (padrão: parâmetro
+                BACKUP_DIAS_MANTER + 7) e qualquer um cujo arquivo ainda exista.
+                Sem permissão: erro 50001 (a tela mostra a mensagem).
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Backup_Listar @IdUsuario = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Backup_Listar]
+    @IdUsuario  INT,
+    @Dias       INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Backup_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Desde      DATETIME2(0);
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os backups.', 1;
+
+        SET @Dias = ISNULL(@Dias, ISNULL(TRY_CONVERT(INT, SIS.fn_SIS_Parametro('BACKUP_DIAS_MANTER')), 7) + 7);
+        IF @Dias < 1 SET @Dias = 1;
+        IF @Dias > 3650 SET @Dias = 3650;
+        SET @Desde = DATEADD(DAY, -@Dias, SYSDATETIME());
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT b.ID_BACKUP,
+               b.TIPO,
+               CAST(CASE b.TIPO WHEN 'COMPLETO' THEN N'Completo' WHEN 'LOG' THEN N'De hora em hora (log)'
+                                WHEN 'TESTE' THEN N'Teste de restauração' WHEN 'SEGURANCA' THEN N'Segurança (antes de restaurar)'
+                                ELSE N'' END AS NVARCHAR(40)) AS TIPO_NOME,
+               b.ARQUIVO,
+               CAST(ISNULL(RIGHT(b.ARQUIVO, CHARINDEX(N'\', REVERSE(b.ARQUIVO) + N'\') - 1), N'') AS NVARCHAR(260)) AS ARQUIVO_NOME,
+               b.DT_INICIO,
+               b.DT_FIM,
+               b.TAMANHO_MB,
+               b.SITUACAO,
+               b.MENSAGEM,
+               b.COPIA_NUVEM,
+               b.ARQUIVO_EXISTE,
+               CAST(CASE WHEN b.TIPO IN ('COMPLETO', 'SEGURANCA') AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
+                         THEN 1 ELSE 0 END AS BIT) AS PODE_ESCOLHER,
+               b.SERVIDOR
+        FROM SIS.Backup_Execucao b WITH (NOLOCK)
+        WHERE b.DT_INICIO >= @Desde
+           OR (b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N'' AND b.TIPO <> 'TESTE')
+        ORDER BY b.DT_INICIO DESC, b.ID_BACKUP DESC;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível listar os backups. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Situacao_Obter.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Backup_Situacao_Obter]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Resumo do topo da tela Sistema > Backups (SIS_BACKUP, VER),
+                1 linha: até onde dá para voltar (do backup completo mais
+                antigo que ainda existe até o último backup do log ou
+                completo), último completo, último log, último teste, pedido
+                de restauração em aberto e se o usuário pode restaurar.
+                Sem permissão: erro 50001.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Backup_Situacao_Obter @IdUsuario = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Backup_Situacao_Obter]
+    @IdUsuario  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc     NVARCHAR(128) = N'[SIS].[SIS_Backup_Situacao_Obter]';
+    DECLARE @EtapaAtual   VARCHAR(100)  = 'Validação';
+    DECLARE @DtMaisAntigo DATETIME2(0), @DtInicioAntigo DATETIME2(0), @DtMaisRecente DATETIME2(0);
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os backups.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT TOP (1) @DtMaisAntigo = b.DT_FIM, @DtInicioAntigo = b.DT_INICIO
+        FROM SIS.Backup_Execucao b WITH (NOLOCK)
+        WHERE b.TIPO = 'COMPLETO' AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N'' AND b.DT_FIM IS NOT NULL
+        ORDER BY b.DT_FIM, b.ID_BACKUP;
+
+        SELECT @DtMaisRecente = MAX(b.DT_FIM)
+        FROM SIS.Backup_Execucao b WITH (NOLOCK)
+        WHERE b.TIPO IN ('COMPLETO', 'LOG') AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
+          AND b.DT_INICIO >= @DtInicioAntigo;
+
+        SELECT @DtMaisAntigo  AS DT_PODE_VOLTAR_DE,
+               @DtMaisRecente AS DT_PODE_VOLTAR_ATE,
+               (SELECT MAX(b.DT_FIM) FROM SIS.Backup_Execucao b WITH (NOLOCK) WHERE b.TIPO = 'COMPLETO' AND b.SITUACAO = 'OK') AS DT_ULTIMO_COMPLETO,
+               (SELECT MAX(b.DT_FIM) FROM SIS.Backup_Execucao b WITH (NOLOCK) WHERE b.TIPO = 'LOG'      AND b.SITUACAO = 'OK') AS DT_ULTIMO_LOG,
+               (SELECT MAX(b.DT_FIM) FROM SIS.Backup_Execucao b WITH (NOLOCK) WHERE b.TIPO = 'TESTE'    AND b.SITUACAO = 'OK') AS DT_ULTIMO_TESTE,
+               CAST(ISNULL((SELECT COUNT(*) FROM SIS.Backup_Execucao b WITH (NOLOCK)
+                            WHERE b.SITUACAO = 'ERRO' AND b.DT_INICIO >= DATEADD(DAY, -7, SYSDATETIME())), 0) AS INT) AS QTD_ERROS_7_DIAS,
+               CAST(ISNULL((SELECT TOP (1) r.ID_RESTAURACAO FROM SIS.Backup_Restauracao r WITH (NOLOCK)
+                            WHERE r.SITUACAO IN ('PENDENTE', 'EXECUTANDO') ORDER BY r.ID_RESTAURACAO), 0) AS INT) AS ID_RESTAURACAO_ABERTA,
+               CAST(ISNULL((SELECT TOP (1) r.SITUACAO FROM SIS.Backup_Restauracao r WITH (NOLOCK)
+                            WHERE r.SITUACAO IN ('PENDENTE', 'EXECUTANDO') ORDER BY r.ID_RESTAURACAO), '') AS VARCHAR(12)) AS SITUACAO_ABERTA,
+               SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'RESTAURAR') AS PODE_RESTAURAR,
+               CAST(DB_NAME() AS NVARCHAR(128)) AS BANCO,
+               SYSDATETIME() AS DT_AGORA;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível carregar a situação dos backups. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Restauracao_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Backup_Restauracao_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Pedidos de restauração e o resultado de cada um, do mais novo
+                para o mais antigo (tela Sistema > Backups, SIS_BACKUP, VER).
+                Sem permissão: erro 50001.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Backup_Restauracao_Listar @IdUsuario = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Backup_Restauracao_Listar]
+    @IdUsuario  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Backup_Restauracao_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os backups.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT r.ID_RESTAURACAO,
+               r.TIPO_PONTO,
+               CAST(CASE r.TIPO_PONTO WHEN 'BACKUP' THEN N'Backup escolhido' ELSE N'Dia e hora' END AS NVARCHAR(30)) AS TIPO_PONTO_NOME,
+               r.ID_BACKUP,
+               CAST(ISNULL(b.ARQUIVO, N'') AS NVARCHAR(400)) AS ARQUIVO_BACKUP,
+               ISNULL(r.DT_PONTO, b.DT_FIM) AS DT_VOLTA_PARA,
+               r.MOTIVO,
+               r.SITUACAO,
+               CAST(CASE r.SITUACAO WHEN 'PENDENTE' THEN N'Aguardando' WHEN 'EXECUTANDO' THEN N'Restaurando'
+                                    WHEN 'OK' THEN N'Concluída' WHEN 'ERRO' THEN N'Com erro' WHEN 'CANCELADO' THEN N'Cancelada'
+                                    ELSE N'' END AS NVARCHAR(20)) AS SITUACAO_NOME,
+               r.USUARIO_PEDIDO,
+               r.DT_PEDIDO,
+               r.DT_INICIO,
+               r.DT_FIM,
+               r.PLANO,
+               r.ARQUIVO_SEGURANCA,
+               r.MENSAGEM,
+               CAST(CASE WHEN r.SITUACAO = 'PENDENTE' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'RESTAURAR') = 1
+                         THEN 1 ELSE 0 END AS BIT) AS PODE_CANCELAR
+        FROM SIS.Backup_Restauracao r WITH (NOLOCK)
+        LEFT JOIN SIS.Backup_Execucao b WITH (NOLOCK) ON b.ID_BACKUP = r.ID_BACKUP
+        ORDER BY r.ID_RESTAURACAO DESC;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível listar os pedidos de restauração. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Restauracao_Solicitar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Backup_Restauracao_Solicitar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Registra um pedido de restauração do banco (tela Sistema >
+                Backups, SIS_BACKUP, ação RESTAURAR). Não restaura nada: a
+                tarefa do Windows "Restauração (pedidos)" confere os pedidos a
+                cada minuto e faz a restauração (o login da API não tem
+                permissão para restaurar).
+                Confirmação forte: a API confere a senha do usuário
+                (@SenhaConferida = 1), o usuário escreve RESTAURAR
+                (@Confirmacao) e informa o motivo (mínimo no parâmetro
+                BACKUP_RESTAURACAO_MOTIVO_MINIMO).
+                @TipoPonto BACKUP: volta para o backup completo ou de
+                segurança @IdBackup. DATA_HORA: volta para @DtPonto, com o
+                último completo antes dele e os backups do log seguintes
+                (fn_SIS_Backup_Plano).
+                Um pedido em aberto (PENDENTE ou EXECUTANDO) por vez.
+                Avisa por e-mail o EMAIL_ADMIN_ALERTA (se preenchido).
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID_RESTAURACAO.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Backup_Restauracao_Solicitar @IdUsuario = 1, @TipoPonto = 'DATA_HORA', @DtPonto = '2026-11-20 14:25',
+    --      @Motivo = N'teste de homologação', @Confirmacao = N'RESTAURAR', @SenhaConferida = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Backup_Restauracao_Solicitar]
+    @IdUsuario       INT,
+    @TipoPonto       VARCHAR(10),
+    @IdBackup        BIGINT        = NULL,
+    @DtPonto         DATETIME2(0)  = NULL,
+    @Motivo          NVARCHAR(400) = NULL,
+    @Confirmacao     NVARCHAR(20)  = NULL,
+    @SenhaConferida  BIT           = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc     NVARCHAR(128) = N'[SIS].[SIS_Backup_Restauracao_Solicitar]';
+    DECLARE @EtapaAtual   VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa       NVARCHAR(400) = N'';
+    DECLARE @MotivoMin    INT;
+    DECLARE @Login        NVARCHAR(100);
+    DECLARE @Plano        NVARCHAR(4000) = N'';
+    DECLARE @QtdLinhas    INT, @QtdSemArquivo INT, @Alcanca INT;
+    DECLARE @DtVolta      DATETIME2(0);
+    DECLARE @IdRestauracao INT;
+    DECLARE @Para NVARCHAR(400), @Corpo NVARCHAR(MAX), @Chave NVARCHAR(200), @IdEmail BIGINT;
+
+    BEGIN TRY
+        SET @TipoPonto = UPPER(LTRIM(RTRIM(ISNULL(@TipoPonto, ''))));
+        SET @Motivo    = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+        SET @MotivoMin = ISNULL(TRY_CONVERT(INT, SIS.fn_SIS_Parametro('BACKUP_RESTAURACAO_MOTIVO_MINIMO')), 10);
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'RESTAURAR') = 0
+            SET @Recusa = N'Você não tem permissão para restaurar backup.';
+        ELSE IF ISNULL(@SenhaConferida, 0) = 0
+            SET @Recusa = N'A senha não confere.';
+        ELSE IF UPPER(LTRIM(RTRIM(ISNULL(@Confirmacao, N'')))) <> N'RESTAURAR'
+            SET @Recusa = N'Para confirmar, escreva a palavra RESTAURAR.';
+        ELSE IF LEN(@Motivo) < @MotivoMin
+            SET @Recusa = N'Informe o motivo da restauração (pelo menos ' + CONVERT(NVARCHAR(10), @MotivoMin) + N' letras).';
+        ELSE IF @TipoPonto NOT IN ('BACKUP', 'DATA_HORA')
+            SET @Recusa = N'Escolha um backup ou um dia e hora para voltar.';
+        ELSE IF @TipoPonto = 'BACKUP' AND @IdBackup IS NULL
+            SET @Recusa = N'Escolha o backup para voltar.';
+        ELSE IF @TipoPonto = 'DATA_HORA' AND @DtPonto IS NULL
+            SET @Recusa = N'Informe o dia e a hora para voltar.';
+        ELSE IF @TipoPonto = 'DATA_HORA' AND @DtPonto >= SYSDATETIME()
+            SET @Recusa = N'O dia e a hora para voltar precisam estar no passado.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS INT) AS ID_RESTAURACAO;
+            RETURN;
+        END;
+
+        IF @TipoPonto = 'BACKUP' SET @DtPonto = NULL;
+        IF @TipoPonto = 'DATA_HORA' SET @IdBackup = NULL;
+
+        SET @EtapaAtual = 'Plano';
+        SELECT @QtdLinhas     = COUNT(*),
+               @QtdSemArquivo = SUM(CASE WHEN p.ARQUIVO_EXISTE = 0 THEN 1 ELSE 0 END),
+               @Alcanca       = MAX(CAST(p.ALCANCA_PONTO AS INT)),
+               @DtVolta       = MAX(CASE WHEN p.ORDEM = 0 THEN p.DT_FIM END)
+        FROM SIS.fn_SIS_Backup_Plano(@IdBackup, @DtPonto) p;
+
+        SET @Plano = ISNULL(STUFF((SELECT N' | ' + CONVERT(NVARCHAR(10), p.ORDEM) + N': ' + p.ARQUIVO
+                                   FROM SIS.fn_SIS_Backup_Plano(@IdBackup, @DtPonto) p
+                                   ORDER BY p.ORDEM
+                                   FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 3, N''), N'');
+
+        IF ISNULL(@QtdLinhas, 0) = 0
+            SET @Recusa = CASE WHEN @TipoPonto = 'BACKUP' THEN N'Backup não encontrado ou não serve para restaurar. Atualize a lista.'
+                               ELSE N'Não há backup completo antes desse dia e hora. Escolha um ponto dentro do período mostrado em "Dá para voltar".' END;
+        ELSE IF ISNULL(@QtdSemArquivo, 0) > 0
+            SET @Recusa = N'Algum arquivo de backup necessário já foi apagado pela limpeza. Escolha um ponto mais recente.';
+        ELSE IF ISNULL(@Alcanca, 0) = 0
+            SET @Recusa = N'Ainda não há backup de hora em hora depois desse dia e hora. Escolha um ponto até o último backup ou espere o próximo backup de hora em hora.';
+        ELSE IF LEN(@Plano) > 3900
+            SET @Recusa = N'O ponto escolhido usa backups demais. Escolha um ponto mais perto de um backup completo.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS INT) AS ID_RESTAURACAO;
+            RETURN;
+        END;
+
+        SELECT @Login = u.LOGIN FROM SIS.Usuario u WITH (NOLOCK) WHERE u.ID_USUARIO = @IdUsuario;
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+            -- sem ROLLBACK na recusa: nada foi gravado e a rotina pode ser chamada por INSERT ... EXEC (teste)
+            IF EXISTS (SELECT 1 FROM SIS.Backup_Restauracao r WITH (UPDLOCK, HOLDLOCK) WHERE r.SITUACAO IN ('PENDENTE', 'EXECUTANDO'))
+                SET @Recusa = N'Já existe um pedido de restauração em andamento. Espere terminar ou cancele o pedido que está aguardando.';
+
+            IF @Recusa = N''
+            BEGIN
+                INSERT INTO SIS.Backup_Restauracao (TIPO_PONTO, ID_BACKUP, DT_PONTO, MOTIVO, SITUACAO, ID_USUARIO_PEDIDO, USUARIO_PEDIDO, PLANO)
+                VALUES (@TipoPonto, @IdBackup, @DtPonto, @Motivo, 'PENDENTE', @IdUsuario, ISNULL(@Login, N''), ISNULL(@Plano, N''));
+                SET @IdRestauracao = CAST(SCOPE_IDENTITY() AS INT);
+            END;
+
+        COMMIT TRANSACTION;
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS INT) AS ID_RESTAURACAO;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Aviso por e-mail';
+        BEGIN TRY
+            SET @Para = LTRIM(RTRIM(ISNULL(SIS.fn_SIS_Parametro('EMAIL_ADMIN_ALERTA'), N'')));
+            IF @Para <> N''
+            BEGIN
+                SET @Corpo = SIS.fn_SIS_Email_HTML(N'Pedido de restauração do banco', 'ALERTA',
+                    N'<p><b>' + SIS.fn_SIS_Texto_HTML(ISNULL(@Login, N'')) + N'</b> pediu para restaurar o banco <b>' + SIS.fn_SIS_Texto_HTML(DB_NAME())
+                    + N'</b>, voltando para <b>' + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(ISNULL(@DtPonto, @DtVolta)), N'') + N'</b>.</p>'
+                    + N'<p>Motivo: ' + SIS.fn_SIS_Texto_HTML(@Motivo) + N'</p>'
+                    + N'<p>Pedido nº ' + CONVERT(NVARCHAR(10), @IdRestauracao) + N'. O sistema fica fora do ar por alguns minutos durante a restauração.</p>',
+                    @NomeProc, NULL, 0);
+                SET @Chave = N'RESTAURACAO_PEDIDO_' + CONVERT(NVARCHAR(10), @IdRestauracao);
+                EXEC SIS.SIS_Email_Enfileirar @Para = @Para, @Assunto = N'ALERTA: pedido de restauração do banco', @CorpoHTML = @Corpo,
+                     @Tipo = 'ALERTA', @Origem = @NomeProc, @ChaveOrigem = @Chave, @IdEmail = @IdEmail OUTPUT;
+            END;
+        END TRY
+        BEGIN CATCH
+            IF XACT_STATE() <> -1
+                INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+                VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        END CATCH;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(N'Pedido de restauração nº ' + CONVERT(NVARCHAR(10), @IdRestauracao)
+                    + N' registrado. Em até 1 minuto o sistema sai do ar por alguns minutos para restaurar; depois, entre de novo.' AS NVARCHAR(400)) AS MENSAGEM,
+               @IdRestauracao AS ID_RESTAURACAO;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        SELECT CAST(0 AS BIT) AS SUCESSO,
+               CAST(N'Não foi possível registrar o pedido de restauração. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS INT) AS ID_RESTAURACAO;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Restauracao_Cancelar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Backup_Restauracao_Cancelar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Cancela um pedido de restauração que ainda está aguardando
+                (PENDENTE), antes de a tarefa do Windows começar (tela
+                Sistema > Backups, SIS_BACKUP, ação RESTAURAR). Depois de
+                EXECUTANDO não dá mais para cancelar.
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID_RESTAURACAO.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Backup_Restauracao_Cancelar @IdUsuario = 1, @IdRestauracao = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Backup_Restauracao_Cancelar]
+    @IdUsuario      INT,
+    @IdRestauracao  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Backup_Restauracao_Cancelar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Linhas     INT;
+    DECLARE @Login      NVARCHAR(100);
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'RESTAURAR') = 0
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Você não tem permissão para restaurar backup.' AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS INT) AS ID_RESTAURACAO;
+            RETURN;
+        END;
+
+        SELECT @Login = u.LOGIN FROM SIS.Usuario u WITH (NOLOCK) WHERE u.ID_USUARIO = @IdUsuario;
+
+        SET @EtapaAtual = 'Gravação';
+        UPDATE r
+           SET r.SITUACAO          = 'CANCELADO',
+               r.DT_FIM            = SYSDATETIME(),
+               r.MENSAGEM          = LEFT(N'Cancelado por ' + ISNULL(@Login, N'') + N' antes de começar.', 2000),
+               r.DT_ALTERACAO      = SYSDATETIME(),
+               r.USUARIO_ALTERACAO = ISNULL(@Login, N'')
+        FROM SIS.Backup_Restauracao r
+        WHERE r.ID_RESTAURACAO = @IdRestauracao
+          AND r.SITUACAO = 'PENDENTE';
+        SET @Linhas = @@ROWCOUNT;
+
+        IF @Linhas = 0
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO,
+                   CAST(N'Este pedido não está mais aguardando (já começou, terminou ou foi cancelado). Atualize a lista.' AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS INT) AS ID_RESTAURACAO;
+            RETURN;
+        END;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Pedido de restauração cancelado.' AS NVARCHAR(400)) AS MENSAGEM, @IdRestauracao AS ID_RESTAURACAO;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        SELECT CAST(0 AS BIT) AS SUCESSO,
+               CAST(N'Não foi possível cancelar o pedido. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS INT) AS ID_RESTAURACAO;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Restauracao_Resultado.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Backup_Restauracao_Resultado]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Grava o resultado (OK ou ERRO) de um pedido de restauração.
+                Chamada SÓ pelo script do servidor (e pela Capturar); o login
+                da API não pode executar (DENY).
+                Depois da restauração o banco volta ao passado e o pedido pode
+                não existir mais nele (ou estar como PENDENTE): por isso o
+                script manda todos os dados do pedido, e esta rotina grava de
+                novo a linha com o MESMO ID (IDENTITY_INSERT), ou atualiza a
+                que existe. Os dados que vierem vazios ficam como estão.
+                @ArquivoBackup: o backup escolhido (TIPO_PONTO BACKUP) é
+                localizado pelo arquivo, porque o ID dele pode ter mudado
+                quando o script registrou de novo os backups que faltavam.
+                Avisa por e-mail o EMAIL_ADMIN_ALERTA e quem pediu.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Backup_Restauracao_Resultado]
+    @IdRestauracao     INT,
+    @Situacao          VARCHAR(12),
+    @Mensagem          NVARCHAR(2000) = N'',
+    @TipoPonto         VARCHAR(10)    = NULL,
+    @ArquivoBackup     NVARCHAR(400)  = NULL,
+    @DtPonto           DATETIME2(0)   = NULL,
+    @Motivo            NVARCHAR(400)  = NULL,
+    @IdUsuarioPedido   INT            = NULL,
+    @UsuarioPedido     NVARCHAR(100)  = NULL,
+    @DtPedido          DATETIME2(0)   = NULL,
+    @DtInicio          DATETIME2(0)   = NULL,
+    @Plano             NVARCHAR(4000) = NULL,
+    @ArquivoSeguranca  NVARCHAR(400)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Backup_Restauracao_Resultado]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @IdBackup   BIGINT;
+    DECLARE @Agora      DATETIME2(0)  = SYSDATETIME();
+    DECLARE @Para NVARCHAR(400), @EmailPedido NVARCHAR(200), @Corpo NVARCHAR(MAX), @Chave NVARCHAR(200), @IdEmail BIGINT;
+    DECLARE @Titulo NVARCHAR(200), @Texto NVARCHAR(MAX);
+    DECLARE @r TABLE (TIPO_PONTO VARCHAR(10), DT_PONTO DATETIME2(0), ID_BACKUP BIGINT, MOTIVO NVARCHAR(400),
+                      ID_USUARIO_PEDIDO INT, USUARIO_PEDIDO NVARCHAR(100), ARQUIVO_SEGURANCA NVARCHAR(400));
+
+    BEGIN TRY
+        IF @IdRestauracao IS NULL OR ISNULL(@Situacao, '') NOT IN ('OK', 'ERRO')
+            THROW 50000, N'Informe o pedido e a situação (OK ou ERRO).', 1;
+
+        IF NULLIF(LTRIM(RTRIM(ISNULL(@ArquivoBackup, N''))), N'') IS NOT NULL
+            SELECT TOP (1) @IdBackup = b.ID_BACKUP
+            FROM SIS.Backup_Execucao b
+            WHERE b.ARQUIVO = @ArquivoBackup AND b.TIPO IN ('COMPLETO', 'SEGURANCA')
+            ORDER BY b.ID_BACKUP DESC;
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+            IF NOT EXISTS (SELECT 1 FROM SIS.Backup_Restauracao r WITH (UPDLOCK, HOLDLOCK) WHERE r.ID_RESTAURACAO = @IdRestauracao)
+            BEGIN
+                IF ISNULL(@TipoPonto, '') NOT IN ('BACKUP', 'DATA_HORA')
+                   OR (@TipoPonto = 'BACKUP' AND @IdBackup IS NULL)
+                   OR (@TipoPonto = 'DATA_HORA' AND @DtPonto IS NULL)
+                    THROW 50000, N'Pedido não existe no banco restaurado e faltam os dados para gravar de novo (tipo, backup ou dia e hora).', 1;
+
+                SET IDENTITY_INSERT SIS.Backup_Restauracao ON;
+                INSERT INTO SIS.Backup_Restauracao (ID_RESTAURACAO, TIPO_PONTO, ID_BACKUP, DT_PONTO, MOTIVO, SITUACAO, ID_USUARIO_PEDIDO, USUARIO_PEDIDO,
+                                                    DT_PEDIDO, DT_INICIO, DT_FIM, PLANO, ARQUIVO_SEGURANCA, MENSAGEM, USUARIO_CRIACAO)
+                VALUES (@IdRestauracao, @TipoPonto, CASE WHEN @TipoPonto = 'BACKUP' THEN @IdBackup END, CASE WHEN @TipoPonto = 'DATA_HORA' THEN @DtPonto END,
+                        ISNULL(@Motivo, N''), @Situacao, ISNULL(@IdUsuarioPedido, 0), ISNULL(@UsuarioPedido, N''),
+                        ISNULL(@DtPedido, @Agora), ISNULL(@DtInicio, @Agora), @Agora, ISNULL(@Plano, N''), ISNULL(@ArquivoSeguranca, N''),
+                        LEFT(ISNULL(@Mensagem, N''), 2000), N'restauracao');
+                SET IDENTITY_INSERT SIS.Backup_Restauracao OFF;
+            END;
+
+            UPDATE r
+               SET r.SITUACAO          = @Situacao,
+                   r.ID_BACKUP         = CASE WHEN r.TIPO_PONTO = 'BACKUP' THEN ISNULL(@IdBackup, r.ID_BACKUP) ELSE r.ID_BACKUP END,
+                   r.DT_INICIO         = ISNULL(r.DT_INICIO, ISNULL(@DtInicio, @Agora)),
+                   r.DT_FIM            = @Agora,
+                   r.PLANO             = CASE WHEN ISNULL(@Plano, N'') <> N'' THEN @Plano ELSE r.PLANO END,
+                   r.ARQUIVO_SEGURANCA = CASE WHEN ISNULL(@ArquivoSeguranca, N'') <> N'' THEN @ArquivoSeguranca ELSE r.ARQUIVO_SEGURANCA END,
+                   r.MENSAGEM          = LEFT(ISNULL(@Mensagem, N''), 2000),
+                   r.DT_ALTERACAO      = @Agora,
+                   r.USUARIO_ALTERACAO = N'restauracao'
+            OUTPUT inserted.TIPO_PONTO, inserted.DT_PONTO, inserted.ID_BACKUP, inserted.MOTIVO, inserted.ID_USUARIO_PEDIDO, inserted.USUARIO_PEDIDO, inserted.ARQUIVO_SEGURANCA
+            INTO @r
+            FROM SIS.Backup_Restauracao r
+            WHERE r.ID_RESTAURACAO = @IdRestauracao;
+
+        COMMIT TRANSACTION;
+
+        SET @EtapaAtual = 'Aviso por e-mail';
+        BEGIN TRY
+            SET @Para = LTRIM(RTRIM(ISNULL(SIS.fn_SIS_Parametro('EMAIL_ADMIN_ALERTA'), N'')));
+            SELECT @EmailPedido = LTRIM(RTRIM(ISNULL(u.EMAIL, N'')))
+            FROM @r x INNER JOIN SIS.Usuario u ON u.ID_USUARIO = x.ID_USUARIO_PEDIDO;
+            IF ISNULL(@EmailPedido, N'') <> N'' AND CHARINDEX(@EmailPedido, @Para) = 0
+                SET @Para = CASE WHEN @Para = N'' THEN @EmailPedido ELSE @Para + N';' + @EmailPedido END;
+
+            IF @Para <> N''
+            BEGIN
+                SET @Titulo = CASE WHEN @Situacao = 'OK' THEN N'Restauração do banco concluída' ELSE N'Falha na restauração do banco' END;
+                SELECT @Texto = N'<p>Pedido nº ' + CONVERT(NVARCHAR(10), @IdRestauracao) + N', feito por <b>' + SIS.fn_SIS_Texto_HTML(ISNULL(x.USUARIO_PEDIDO, N''))
+                              + N'</b>, banco <b>' + SIS.fn_SIS_Texto_HTML(DB_NAME()) + N'</b>.</p>'
+                              + N'<p>Voltar para: <b>' + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(ISNULL(x.DT_PONTO, b.DT_FIM)), N'') + N'</b>.</p>'
+                              + N'<p>Motivo: ' + SIS.fn_SIS_Texto_HTML(ISNULL(x.MOTIVO, N'')) + N'</p>'
+                              + N'<p>Resultado: ' + SIS.fn_SIS_Texto_HTML(ISNULL(@Mensagem, N'')) + N'</p>'
+                              + CASE WHEN ISNULL(x.ARQUIVO_SEGURANCA, N'') <> N''
+                                     THEN N'<p>Backup de segurança feito antes (para desfazer, se preciso): ' + SIS.fn_SIS_Texto_HTML(x.ARQUIVO_SEGURANCA) + N'</p>' ELSE N'' END
+                FROM @r x
+                LEFT JOIN SIS.Backup_Execucao b ON b.ID_BACKUP = x.ID_BACKUP;
+
+                SET @Corpo = SIS.fn_SIS_Email_HTML(@Titulo, 'ALERTA', ISNULL(@Texto, N''), @NomeProc, NULL, 0);
+                SET @Chave = N'RESTAURACAO_RESULTADO_' + CONVERT(NVARCHAR(10), @IdRestauracao) + N'_' + @Situacao;
+                SET @Titulo = CASE WHEN @Situacao = 'OK' THEN N'AVISO: restauração do banco concluída' ELSE N'ALERTA: falha na restauração do banco' END;
+                EXEC SIS.SIS_Email_Enfileirar @Para = @Para, @Assunto = @Titulo, @CorpoHTML = @Corpo,
+                     @Tipo = 'ALERTA', @Origem = @NomeProc, @ChaveOrigem = @Chave, @IdEmail = @IdEmail OUTPUT;
+            END;
+        END TRY
+        BEGIN CATCH
+            IF XACT_STATE() <> -1
+                INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+                VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        END CATCH;
+
+        SELECT @IdRestauracao AS ID_RESTAURACAO, @Situacao AS SITUACAO;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Restauracao_Capturar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Backup_Restauracao_Capturar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Chamada SÓ pelo script do servidor (instalacao\backup_servidor.ps1,
+                tarefa "Restauração (pedidos)", a cada minuto, como SYSTEM). O
+                login da API não pode executar (DENY no papel rl_sistemacmj_api).
+                Pega o pedido PENDENTE mais antigo, marca EXECUTANDO e devolve o
+                plano: uma linha por arquivo a aplicar, na ordem (ORDEM 0 = o
+                backup completo; 1, 2... = os backups do log; ULTIMO = 1 na
+                última linha, aplicada com STOPAT quando TIPO_PONTO = DATA_HORA).
+                Sem pedido, ou com outro pedido já EXECUTANDO: devolve 0 linhas.
+                Se o plano não fecha mais (arquivo apagado pela limpeza), marca
+                o pedido como ERRO, avisa por e-mail e devolve 0 linhas.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Backup_Restauracao_Capturar]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Backup_Restauracao_Capturar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Captura';
+    DECLARE @Capturado  TABLE (ID_RESTAURACAO INT NOT NULL);
+    DECLARE @Id INT, @IdBackup BIGINT, @DtPonto DATETIME2(0);
+    DECLARE @QtdLinhas INT, @QtdSemArquivo INT, @Alcanca INT;
+    DECLARE @Erro NVARCHAR(400) = N'';
+    DECLARE @Resultado  TABLE (ID_RESTAURACAO INT, SITUACAO VARCHAR(12));
+
+    BEGIN TRY
+        IF EXISTS (SELECT 1 FROM SIS.Backup_Restauracao r WHERE r.SITUACAO = 'EXECUTANDO')
+            RETURN;
+
+        BEGIN TRANSACTION;
+            WITH Proximo AS
+            (
+                SELECT TOP (1) r.*
+                FROM SIS.Backup_Restauracao r WITH (UPDLOCK, READPAST, ROWLOCK)
+                WHERE r.SITUACAO = 'PENDENTE'
+                ORDER BY r.ID_RESTAURACAO
+            )
+            UPDATE Proximo
+               SET SITUACAO          = 'EXECUTANDO',
+                   DT_INICIO         = SYSDATETIME(),
+                   MENSAGEM          = N'',
+                   DT_ALTERACAO      = SYSDATETIME(),
+                   USUARIO_ALTERACAO = N'restauracao'
+            OUTPUT inserted.ID_RESTAURACAO INTO @Capturado (ID_RESTAURACAO);
+        COMMIT TRANSACTION;
+
+        SELECT @Id = c.ID_RESTAURACAO FROM @Capturado c;
+        IF @Id IS NULL RETURN;
+
+        SELECT @IdBackup = r.ID_BACKUP, @DtPonto = r.DT_PONTO FROM SIS.Backup_Restauracao r WHERE r.ID_RESTAURACAO = @Id;
+
+        SET @EtapaAtual = 'Plano';
+        SELECT @QtdLinhas     = COUNT(*),
+               @QtdSemArquivo = SUM(CASE WHEN p.ARQUIVO_EXISTE = 0 THEN 1 ELSE 0 END),
+               @Alcanca       = MAX(CAST(p.ALCANCA_PONTO AS INT))
+        FROM SIS.fn_SIS_Backup_Plano(@IdBackup, @DtPonto) p;
+
+        IF ISNULL(@QtdLinhas, 0) = 0 OR ISNULL(@QtdSemArquivo, 0) > 0 OR ISNULL(@Alcanca, 0) = 0
+            SET @Erro = N'O plano da restauração não fecha mais (backup não encontrado ou arquivo apagado pela limpeza). Nada foi restaurado; faça um pedido novo.';
+
+        IF @Erro <> N''
+        BEGIN
+            INSERT INTO @Resultado (ID_RESTAURACAO, SITUACAO)
+            EXEC SIS.SIS_Backup_Restauracao_Resultado @IdRestauracao = @Id, @Situacao = 'ERRO', @Mensagem = @Erro;
+            RETURN;
+        END;
+
+        SELECT r.ID_RESTAURACAO, r.TIPO_PONTO, r.DT_PONTO, r.ID_BACKUP, r.MOTIVO, r.USUARIO_PEDIDO, r.ID_USUARIO_PEDIDO, r.DT_PEDIDO, r.DT_INICIO,
+               p.ORDEM, p.ID_BACKUP AS ID_BACKUP_ARQUIVO, p.TIPO, p.ARQUIVO, p.DT_INICIO AS DT_INICIO_ARQUIVO, p.DT_FIM AS DT_FIM_ARQUIVO,
+               CAST(CASE WHEN p.ORDEM = MAX(p.ORDEM) OVER () THEN 1 ELSE 0 END AS BIT) AS ULTIMO
+        FROM SIS.Backup_Restauracao r
+        CROSS JOIN SIS.fn_SIS_Backup_Plano(@IdBackup, @DtPonto) p
+        WHERE r.ID_RESTAURACAO = @Id
+        ORDER BY p.ORDEM;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/Carga_SIS_Acao.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : carga inicial de [SIS].[Acao]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 15/11/2026
+  Descrição   : Ações que as telas podem ter. Só insere o que falta
+                (regra 39). Ação nova de um módulo futuro entra aqui.
+
+  Changelog:
+    v1.0 (15/11/2026) - Criação (etapa 02b).
+    v1.1 (16/11/2026) - Ação EXECUTAR (rotinas e comandos; etapa 02d).
+    v1.2 (20/11/2026) - Ação RESTAURAR (restauração de backup pela tela; etapa 03d2).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+INSERT INTO SIS.Acao (CODIGO, NOME, ORDEM)
+SELECT v.CODIGO, v.NOME, v.ORDEM
+FROM (VALUES
+        (CAST('VER' AS VARCHAR(20)), CAST(N'Ver / consultar' AS NVARCHAR(60)), CAST(10 AS SMALLINT)),
+        ('INCLUIR',          N'Incluir',                     20),
+        ('ALTERAR',          N'Alterar',                     30),
+        ('EXCLUIR',          N'Excluir / cancelar registro', 40),
+        ('EXPORTAR',         N'Exportar para Excel',         50),
+        ('IMPORTAR',         N'Importar arquivo',            60),
+        ('BAIXAR',           N'Baixar (pagar/receber)',      70),
+        ('ESTORNAR',         N'Estornar',                    80),
+        ('CANCELAR',         N'Cancelar (contrato, boleto)', 90),
+        ('REABRIR',          N'Reabrir (mês, contrato)',    100),
+        ('APROVAR',          N'Aprovar',                    110),
+        ('ENVIAR',           N'Enviar (e-mail, remessa)',   120),
+        ('DESBLOQUEAR',      N'Desbloquear usuário',        130),
+        ('REDEFINIR_SENHA',  N'Definir senha provisória',   140),
+        ('EXECUTAR',         N'Executar (rotina, comando)', 150),
+        ('RESTAURAR',        N'Restaurar backup do banco',  160)
+     ) v (CODIGO, NOME, ORDEM)
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Acao a WHERE a.CODIGO = v.CODIGO);
+GO
+
+-- =============================================================================
 -- Arquivo: sql/objetos/SIS/Carga_SIS_Backup.sql
 -- =============================================================================
 /*******************************************************************************
@@ -1173,6 +2092,9 @@ GO
 
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d, backup no servidor).
+    v1.1 (20/11/2026) - Etapa 03d2: menu Backups e tela SIS_BACKUP (ações VER e
+                        RESTAURAR); DENY para a API nas rotinas só do script
+                        (SIS_Backup_Restauracao_Capturar e _Resultado).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1190,8 +2112,35 @@ WHERE m.CODIGO = 'SIS'
   AND NOT EXISTS (SELECT 1 FROM SIS.Rotina r WHERE r.CODIGO = 'BACKUP_CONFERIR');
 GO
 
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, NULL, 'SIS_BACKUPS', N'Backups', 'MENU', '', 35, 0, 1, ''
+FROM SIS.Modulo m
+WHERE m.CODIGO = 'SIS'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = 'SIS_BACKUPS');
+GO
+
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, p.ID_ITEM, 'SIS_BACKUP', N'Backups e restauração', 'TELA', 'sis/backups.html', 10, 0, 1, 'SIS.Backup_Restauracao'
+FROM SIS.Modulo m
+INNER JOIN SIS.Item p ON p.CODIGO = 'SIS_BACKUPS'
+WHERE m.CODIGO = 'SIS'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = 'SIS_BACKUP');
+GO
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('VER' AS VARCHAR(20))), ('RESTAURAR')) v (ACAO)
+INNER JOIN SIS.Item i ON i.CODIGO = 'SIS_BACKUP'
+INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+GO
+
 IF DATABASE_PRINCIPAL_ID(N'rl_sistemacmj_api') IS NOT NULL
+BEGIN
     DENY EXECUTE ON [SIS].[SIS_Backup_Registrar] TO [rl_sistemacmj_api];
+    DENY EXECUTE ON [SIS].[SIS_Backup_Restauracao_Capturar] TO [rl_sistemacmj_api];
+    DENY EXECUTE ON [SIS].[SIS_Backup_Restauracao_Resultado] TO [rl_sistemacmj_api];
+END;
 GO
 
 -- =============================================================================

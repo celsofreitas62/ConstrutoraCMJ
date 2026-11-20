@@ -12,6 +12,9 @@
 
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d, backup no servidor).
+    v1.1 (20/11/2026) - Etapa 03d2: menu Backups e tela SIS_BACKUP (ações VER e
+                        RESTAURAR); DENY para a API nas rotinas só do script
+                        (SIS_Backup_Restauracao_Capturar e _Resultado).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -29,6 +32,33 @@ WHERE m.CODIGO = 'SIS'
   AND NOT EXISTS (SELECT 1 FROM SIS.Rotina r WHERE r.CODIGO = 'BACKUP_CONFERIR');
 GO
 
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, NULL, 'SIS_BACKUPS', N'Backups', 'MENU', '', 35, 0, 1, ''
+FROM SIS.Modulo m
+WHERE m.CODIGO = 'SIS'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = 'SIS_BACKUPS');
+GO
+
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, p.ID_ITEM, 'SIS_BACKUP', N'Backups e restauração', 'TELA', 'sis/backups.html', 10, 0, 1, 'SIS.Backup_Restauracao'
+FROM SIS.Modulo m
+INNER JOIN SIS.Item p ON p.CODIGO = 'SIS_BACKUPS'
+WHERE m.CODIGO = 'SIS'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = 'SIS_BACKUP');
+GO
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('VER' AS VARCHAR(20))), ('RESTAURAR')) v (ACAO)
+INNER JOIN SIS.Item i ON i.CODIGO = 'SIS_BACKUP'
+INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+GO
+
 IF DATABASE_PRINCIPAL_ID(N'rl_sistemacmj_api') IS NOT NULL
+BEGIN
     DENY EXECUTE ON [SIS].[SIS_Backup_Registrar] TO [rl_sistemacmj_api];
+    DENY EXECUTE ON [SIS].[SIS_Backup_Restauracao_Capturar] TO [rl_sistemacmj_api];
+    DENY EXECUTE ON [SIS].[SIS_Backup_Restauracao_Resultado] TO [rl_sistemacmj_api];
+END;
 GO
