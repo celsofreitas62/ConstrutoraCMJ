@@ -210,6 +210,7 @@ function Executar-Script([string]$Arquivo) {
 }
 
 function Verificar-Compilacao {
+    $ErrorActionPreference = 'Continue'   # git/dotnet escrevem andamento no stderr: nao e erro
     $Projeto = Join-Path (Split-Path $Raiz -Parent) 'api\SistemaCMJ.Api\SistemaCMJ.Api.csproj'
     $Pasta = Join-Path $env:LOCALAPPDATA 'SistemaCMJ\artifacts_verificacao'
     $Ini = Get-Date
@@ -224,6 +225,7 @@ function Verificar-Compilacao {
 }
 
 function Enviar-GitHub {
+    $ErrorActionPreference = 'Continue'   # git/dotnet escrevem andamento no stderr: nao e erro
     $Projeto = Split-Path $Raiz -Parent
     $Ini = Get-Date
     $env:GIT_TERMINAL_PROMPT = '0'
