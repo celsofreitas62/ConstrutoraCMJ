@@ -15,7 +15,8 @@
                 @Rotina: nome da procedure que gerou (variável @NomeProc).
                 @Grupo : código do grupo (só em e-mail interno).
                 @Externo = 1: e-mail a cliente/terceiro; rodapé sem dados
-                técnicos (razão social, CNPJ e aviso de não responder).
+                técnicos (razão social, CNPJ se EMAIL_RODAPE_CNPJ = S, e aviso
+                de não responder).
                 Logomarca: <img src="cid:logo_empresa">; o serviço embute o
                 arquivo do parâmetro EMPRESA_LOGO_EMAIL com esse CID sempre
                 que o corpo citar "cid:logo_empresa".
@@ -26,6 +27,9 @@
     v1.2 (17/11/2026) - Logomarca conforme EMAIL_LOGO_MODO: EMBUTIDA (cid,
                         anexada pelo serviço), ENDERECO (EMAIL_LOGO_ENDERECO)
                         ou SEM_IMAGEM.
+    v1.3 (20/11/2026) - CNPJ no rodapé do e-mail externo só se o parâmetro
+                        EMAIL_RODAPE_CNPJ = S (pedido do Celso: tirar o CNPJ
+                        do boletim; fábrica = N).
 
   Homologação (LOCAL):
     -- SELECT SIS.fn_SIS_Email_HTML(N'Teste', 'INFO', N'<p>Olá</p>', N'[SIS].[Teste]', 'SIS_ALERTA', 0);
@@ -64,7 +68,8 @@ BEGIN
 
     IF ISNULL(@Externo, 0) = 1
         SET @Rodape = N'<div style="font-weight:bold;">' + @Razao + N'</div>'
-                    + N'<div>CNPJ ' + ISNULL(SIS.fn_SIS_Mascarar_CPF_CNPJ(SIS.fn_SIS_Empresa_CNPJ(), 0), N'') + N'</div>'
+                    + CASE WHEN SIS.fn_SIS_Parametro_SN('EMAIL_RODAPE_CNPJ') = 1
+                           THEN N'<div>CNPJ ' + ISNULL(SIS.fn_SIS_Mascarar_CPF_CNPJ(SIS.fn_SIS_Empresa_CNPJ(), 0), N'') + N'</div>' ELSE N'' END
                     + N'<div style="margin-top:6px;">Este e-mail foi enviado automaticamente. Por favor, não responda.</div>';
     ELSE
         SET @Rodape = N'<div>Gerado automaticamente pelo sistema ' + @Sistema + N': ' + SIS.fn_SIS_Texto_HTML(ISNULL(@Rotina, N'')) + N'</div>'

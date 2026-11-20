@@ -23,6 +23,8 @@
                         (nome do sistema por cliente, pedido do Celso: SisCMJ);
                         EMAIL_LOGO_MODO, EMAIL_LOGO_ENDERECO e
                         EMAIL_LOGO_NOME_ARQUIVO (como a logomarca vai no e-mail).
+    v1.5 (20/11/2026) - Etapa 03d: EMAIL_RODAPE_CNPJ (CNPJ no rodapé dos e-mails
+                        a clientes e terceiros; fábrica N, pedido do Celso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -89,6 +91,8 @@ FROM (VALUES
          N'Pasta fora do servidor (disco externo ou pasta sincronizada com a nuvem) para onde os backups são copiados. Vazio = não copia.', 'SIS', 0),
         ('ATUALIZACAO_PASTA', N'C:\SistemaCMJ_Arquivos\Atualizacoes', 'TEXTO',
          N'Pasta do servidor onde ficam os pacotes de atualização e o certificado usados pela tela Instalação e manutenção.', 'SIS', 0),
+        ('EMAIL_RODAPE_CNPJ', N'N', 'SN',
+         N'Mostrar o CNPJ da empresa no rodapé dos e-mails enviados a clientes e terceiros (S/N).', 'SIS', 1),
         ('CIDADE_PADRAO', N'Poços de Caldas', 'TEXTO',
          N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
