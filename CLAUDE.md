@@ -29,6 +29,8 @@ Sistema de gestão financeira e de vendas de imóveis da **Construtora CMJ** (ra
 
 **03d2 (20/11/2026)**: respostas da CMJ: 3º documento (seção 6 do `docs/requisitos/Migracao_Cadastros.md`, ainda não aplicado; entra na próxima rodada da migração), CNPJ da CMJ, e-mails (seção 6, item 10) e **`CashBookCMJ_be.mdb` atualizado** (cópia nova, lote 27730) recebido. Técnico ainda não respondeu; Sicredi aguardando liberação. Backup do log de hora em hora conferido no ensaio (14h30 OK).
 
+**03d2 (20/11/2026, continuação)**: **restauração pela tela pronta e ensaiada** (banco e API **1.6**; aba Restaurar = lista de pontos, versões diferentes não aparecem; regra: não voltar para antes da última atualização de versão; detalhes nas seções 4 a 6 do `docs/requisitos/Backup_Restauracao.md`); **roteiro de instalação escrito** (`docs/Roteiro_Instalacao_Servidor.md`). Falta na 3d: 3d-C (ensaio no notebook da Renata) e 3d-D (CMJ).
+
 **Histórico e decisões**: tudo em [docs/DIARIO_DECISOES.md](docs/DIARIO_DECISOES.md) (separado em 16/11/2026). Ler só quando precisar do motivo de uma decisão.
 
 **Ao retomar, primeiro**:
@@ -272,7 +274,7 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 | Acesso remoto para suporte | depende | AnyDesk/RustDesk resolve; VPN ou acesso de fora da empresa é com o pessoal de rede |
 | Uso fora da empresa (celular, home office) | **especialista** | não está no escopo; exige VPN ou publicação segura na internet |
 
-**A fazer**: escrever `docs/Roteiro_Instalacao_Servidor.md` passo a passo (pedido do Celso em 14/11/2026). API já definida (ASP.NET Core); falta a versão do Windows do servidor. O banco é instalado rodando **um único arquivo**: `sql/MASTER/SISTEMACMJ_MASTER_Instalacao.sql` (PADRAO_SQL regras 58 a 60).
+**Roteiro escrito** em `docs/Roteiro_Instalacao_Servidor.md` (v1.0, 20/11/2026, conversa 03d2): manter atualizado a cada mudança no instalador ou no MASTER. API já definida (ASP.NET Core); falta a versão do Windows do servidor. O banco é instalado rodando **um único arquivo**: `sql/MASTER/SISTEMACMJ_MASTER_Instalacao.sql` (PADRAO_SQL regras 58 a 60).
 
 ## 4.2 Ambiente de desenvolvimento (notebook do Celso, instalado em 14/11/2026)
 
