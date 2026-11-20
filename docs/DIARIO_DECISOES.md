@@ -179,3 +179,5 @@
 - **20/11/2026** (03d2): decisão do Celso: aba Restaurar = **lista de pontos de restauração** (mais recente primeiro), sem digitar dia e hora; versões diferentes não aparecem na lista; na aba Backups, colunas Versão e "Restaurar?" mostrando indisponível e o motivo (seção 6 do `Backup_Restauracao.md`).
 
 - **20/11/2026** (03d2): roteiro de instalação escrito (`docs/Roteiro_Instalacao_Servidor.md` v1.0). Decisão do Celso: **backups do servidor da CMJ no HD de 1 TB, pasta `D:\SisCMJ_Backup`** (parâmetro `BACKUP_PASTA`, ajustado antes do instalador).
+
+- **20/11/2026**: **conversa 03d2 encerrada** (restauração pela tela pronta e ensaiada, banco e API 1.6, roteiro de instalação v1.0, respostas da CMJ registradas). Próxima: **"03e – Ensaio no notebook da Renata e instalação na CMJ"**.
