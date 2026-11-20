@@ -157,6 +157,8 @@ ORDEM_03D = ['objetos/SIS/SIS.fn_SIS_Email_HTML.sql', 'objetos/SIS/Carga_SIS_Par
              'objetos/SIS/SIS.SIS_Instalacao_Situacao.sql', 'objetos/SIS/SIS.SIS_Instalacao_Senha_Gravar.sql',
              'objetos/SIS/SIS.SIS_Registro_Existe.sql', 'objetos/SIS/SIS.SIS_Anexo_Gravar.sql',
              'objetos/SIS/SIS.fn_SIS_Usuario_Id.sql',
+             'objetos/SIS/SIS.Backup_Execucao.sql', 'objetos/SIS/SIS.SIS_Backup_Registrar.sql', 'objetos/SIS/SIS.SIS_Backup_Conferir_Processar.sql',
+             'objetos/SIS/Carga_SIS_Backup.sql',
              'objetos/SIS/Carga_SIS_Versao.sql']
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B, '03d': ORDEM_03D}[PARTE]

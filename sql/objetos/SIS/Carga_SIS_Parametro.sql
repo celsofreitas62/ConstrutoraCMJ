@@ -27,6 +27,9 @@
                         a clientes e terceiros; fábrica N, pedido do Celso).
     v1.6 (20/11/2026) - Etapa 03d: LOGIN_COMPUTADOR_TENTATIVAS e
                         LOGIN_COMPUTADOR_MINUTOS (limite de tentativas por computador).
+    v1.7 (20/11/2026) - Etapa 03d: BACKUP_DIAS_MANTER, BACKUP_NUVEM_MANTER e os
+                        avisos de atraso (BACKUP_HORAS_ALERTA_COMPLETO/_LOG,
+                        BACKUP_DIAS_ALERTA_TESTE).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -95,6 +98,16 @@ FROM (VALUES
          N'Pasta do servidor onde ficam os backups do banco.', 'SIS', 0),
         ('BACKUP_PASTA_EXTERNA', N'', 'TEXTO',
          N'Pasta fora do servidor (disco externo ou pasta sincronizada com a nuvem) para onde os backups são copiados. Vazio = não copia.', 'SIS', 0),
+        ('BACKUP_DIAS_MANTER', N'7', 'INTEIRO',
+         N'Dias de backup guardados na pasta do servidor (completos e do log); os mais antigos são apagados.', 'SIS', 0),
+        ('BACKUP_NUVEM_MANTER', N'1', 'INTEIRO',
+         N'Quantos backups completos ficam na pasta da nuvem (BACKUP_PASTA_EXTERNA). 0 = não copia.', 'SIS', 0),
+        ('BACKUP_HORAS_ALERTA_COMPLETO', N'26', 'INTEIRO',
+         N'Avisa por e-mail se o último backup completo sem erro tiver mais horas que isto.', 'SIS', 0),
+        ('BACKUP_HORAS_ALERTA_LOG', N'3', 'INTEIRO',
+         N'Avisa por e-mail se o último backup do log (de hora em hora) sem erro tiver mais horas que isto.', 'SIS', 0),
+        ('BACKUP_DIAS_ALERTA_TESTE', N'8', 'INTEIRO',
+         N'Avisa por e-mail se o último teste de restauração sem erro tiver mais dias que isto.', 'SIS', 0),
         ('ATUALIZACAO_PASTA', N'C:\SistemaCMJ_Arquivos\Atualizacoes', 'TEXTO',
          N'Pasta do servidor onde ficam os pacotes de atualização e o certificado usados pela tela Instalação e manutenção.', 'SIS', 0),
         ('EMAIL_RODAPE_CNPJ', N'N', 'SN',

@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v1.4)
+  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v1.5)
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : 20/11/2026 por sql/ferramentas/montar_master.py, juntando os
@@ -18,7 +18,7 @@
                 rl_sistemacmj_api (roteiro de instalacao; a senha nao fica em
                 arquivo).
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > conferir o banco > F5.
-  Objetos     : 192 arquivos.
+  Objetos     : 196 arquivos.
 *******************************************************************************/
 -- =============================================================================
 -- 1. CONFERENCIA DO BANCO
@@ -29,7 +29,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MASTER v1.4: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MASTER v1.5: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- =============================================================================
@@ -3015,6 +3015,67 @@ IF OBJECT_ID(N'[SIS].[Versao_Banco]', N'U') IS NULL
         CONSTRAINT PK_Versao_Banco        PRIMARY KEY CLUSTERED (ID_VERSAO_BANCO),
         CONSTRAINT CK_Versao_Banco_ORIGEM CHECK (ORIGEM IN ('MASTER', 'PACOTE_LOCAL'))
     );
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.Backup_Execucao.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[Backup_Execucao]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Registro de cada backup feito pelo script do servidor
+                (instalacao\backup_servidor.ps1, tarefas agendadas do Windows):
+                COMPLETO (diário), LOG (de hora em hora), TESTE (restauração de
+                conferência, semanal) e SEGURANCA (feito logo antes de uma
+                restauração pedida pela tela). Serve para a tela de backups e
+                restauração, para os avisos de atraso/falha
+                (SIS_Backup_Conferir_Processar) e para a auditoria.
+                Os arquivos ficam no disco (parâmetro BACKUP_PASTA); aqui só a
+                referência. Nunca é apagado (o arquivo pode ser, pela retenção:
+                ARQUIVO_EXISTE = 0).
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d, backup no servidor). Nome com sufixo:
+                        BACKUP é palavra reservada do SQL Server.
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+-- Nome antigo (BACKUP é palavra reservada do SQL): apaga se ficou vazio de um ensaio de 20/11/2026
+IF OBJECT_ID(N'[SIS].[Backup]', N'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM [SIS].[Backup])
+        DROP TABLE [SIS].[Backup];
+END;
+GO
+
+IF OBJECT_ID(N'[SIS].[Backup_Execucao]', N'U') IS NULL
+    CREATE TABLE [SIS].[Backup_Execucao]
+    (
+        ID_BACKUP        BIGINT          IDENTITY(1,1) NOT NULL,
+        TIPO             VARCHAR(10)     NOT NULL,
+        ARQUIVO          NVARCHAR(400)   NOT NULL CONSTRAINT DF_Backup_Execucao_ARQUIVO        DEFAULT (N''),
+        DT_INICIO        DATETIME2(0)    NOT NULL,
+        DT_FIM           DATETIME2(0)    NULL,
+        TAMANHO_MB       DECIMAL(12,1)   NOT NULL CONSTRAINT DF_Backup_Execucao_TAMANHO_MB     DEFAULT (0),
+        SITUACAO         VARCHAR(10)     NOT NULL,
+        MENSAGEM         NVARCHAR(2000)  NOT NULL CONSTRAINT DF_Backup_Execucao_MENSAGEM       DEFAULT (N''),
+        COPIA_NUVEM      BIT             NOT NULL CONSTRAINT DF_Backup_Execucao_COPIA_NUVEM    DEFAULT (0),
+        ARQUIVO_EXISTE   BIT             NOT NULL CONSTRAINT DF_Backup_Execucao_ARQUIVO_EXISTE DEFAULT (1),
+        SERVIDOR         NVARCHAR(128)   NOT NULL CONSTRAINT DF_Backup_Execucao_SERVIDOR       DEFAULT (ISNULL(HOST_NAME(), N'')),
+        DT_REGISTRO      DATETIME2(0)    NOT NULL CONSTRAINT DF_Backup_Execucao_DT_REGISTRO    DEFAULT (SYSDATETIME()),
+        CONSTRAINT PK_Backup_Execucao          PRIMARY KEY CLUSTERED (ID_BACKUP),
+        CONSTRAINT CK_Backup_Execucao_TIPO     CHECK (TIPO IN ('COMPLETO', 'LOG', 'TESTE', 'SEGURANCA')),
+        CONSTRAINT CK_Backup_Execucao_SITUACAO CHECK (SITUACAO IN ('OK', 'ERRO'))
+    );
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Backup_Execucao]') AND i.name = N'IX_Backup_Execucao_TIPO_DT')
+    CREATE NONCLUSTERED INDEX IX_Backup_Execucao_TIPO_DT ON [SIS].[Backup_Execucao] (TIPO, SITUACAO, DT_INICIO);
 GO
 GO
 
@@ -13392,6 +13453,143 @@ END;
 GO
 GO
 
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Registrar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Backup_Registrar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Registra um backup em SIS.Backup_Execucao. Chamada SÓ pelo script de
+                backup do servidor (instalacao\backup_servidor.ps1), que roda
+                pelas tarefas do Windows; o login da API não pode executar
+                (DENY no papel rl_sistemacmj_api).
+                Situação ERRO: manda aviso por e-mail para o parâmetro
+                EMAIL_ADMIN_ALERTA (se preenchido), uma vez por backup.
+                @ArquivosExistentes (opcional): lista separada por "|" com os
+                arquivos que ainda existem na pasta depois da limpeza; os
+                demais registros ficam com ARQUIVO_EXISTE = 0.
+                Devolve 1 linha: ID_BACKUP.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d, backup no servidor).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Backup_Registrar]
+    @Tipo                VARCHAR(10),
+    @Arquivo             NVARCHAR(400),
+    @DtInicio            DATETIME2(0),
+    @DtFim               DATETIME2(0)   = NULL,
+    @TamanhoMb           DECIMAL(12,1)  = 0,
+    @Situacao            VARCHAR(10),
+    @Mensagem            NVARCHAR(2000) = N'',
+    @CopiaNuvem          BIT            = 0,
+    @ArquivosExistentes  NVARCHAR(MAX)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @Id BIGINT, @Para NVARCHAR(400), @IdEmail BIGINT, @Corpo NVARCHAR(MAX), @Chave NVARCHAR(200);
+
+    INSERT INTO SIS.Backup_Execucao (TIPO, ARQUIVO, DT_INICIO, DT_FIM, TAMANHO_MB, SITUACAO, MENSAGEM, COPIA_NUVEM)
+    VALUES (@Tipo, ISNULL(@Arquivo, N''), @DtInicio, @DtFim, ISNULL(@TamanhoMb, 0), @Situacao, LEFT(ISNULL(@Mensagem, N''), 2000), ISNULL(@CopiaNuvem, 0));
+    SET @Id = CAST(SCOPE_IDENTITY() AS BIGINT);
+
+    IF @ArquivosExistentes IS NOT NULL
+        UPDATE b SET b.ARQUIVO_EXISTE = 0
+        FROM SIS.Backup_Execucao b
+        WHERE b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
+          AND NOT EXISTS (SELECT 1 FROM STRING_SPLIT(@ArquivosExistentes, '|') s WHERE LTRIM(RTRIM(s.value)) = b.ARQUIVO);
+
+    IF @Situacao = 'ERRO'
+    BEGIN
+        SET @Para = LTRIM(RTRIM(ISNULL(SIS.fn_SIS_Parametro('EMAIL_ADMIN_ALERTA'), N'')));
+        IF @Para <> N''
+        BEGIN
+            SET @Corpo = SIS.fn_SIS_Email_HTML(N'Falha no backup', 'ALERTA',
+                N'<p>O backup <b>' + SIS.fn_SIS_Texto_HTML(@Tipo) + N'</b> do banco <b>' + SIS.fn_SIS_Texto_HTML(DB_NAME()) + N'</b> falhou em '
+                + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(@DtInicio), N'') + N'.</p><p>Mensagem: ' + SIS.fn_SIS_Texto_HTML(ISNULL(@Mensagem, N'')) + N'</p>'
+                + N'<p>Confira o servidor e o registro do backup (pasta do backup, arquivo backup.log).</p>',
+                N'[SIS].[SIS_Backup_Registrar]', NULL, 0);
+            SET @Chave = N'BACKUP_ERRO_' + CONVERT(NVARCHAR(20), @Id);
+            EXEC SIS.SIS_Email_Enfileirar @Para = @Para, @Assunto = N'ALERTA: falha no backup do sistema', @CorpoHTML = @Corpo,
+                 @Tipo = 'ALERTA', @Origem = N'[SIS].[SIS_Backup_Registrar]', @ChaveOrigem = @Chave, @IdEmail = @IdEmail OUTPUT;
+        END;
+    END;
+
+    SELECT @Id AS ID_BACKUP;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Conferir_Processar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Backup_Conferir_Processar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Rotina agendada (BACKUP_CONFERIR, de hora em hora): avisa por
+                e-mail (parâmetro EMAIL_ADMIN_ALERTA) quando o backup ATRASA:
+                  - último backup COMPLETO ok há mais de BACKUP_HORAS_ALERTA_COMPLETO;
+                  - último backup do LOG ok há mais de BACKUP_HORAS_ALERTA_LOG
+                    (só depois do primeiro completo);
+                  - último TESTE de restauração ok há mais de BACKUP_DIAS_ALERTA_TESTE.
+                Cada aviso sai no máximo uma vez por dia (chave de origem com a
+                data). Sem nenhum backup registrado ainda: não avisa (servidor
+                recém-instalado).
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d, backup no servidor).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Backup_Conferir_Processar]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @Para NVARCHAR(400) = LTRIM(RTRIM(ISNULL(SIS.fn_SIS_Parametro('EMAIL_ADMIN_ALERTA'), N'')));
+    DECLARE @HorasCompleto INT = ISNULL(SIS.fn_SIS_Parametro_Inteiro('BACKUP_HORAS_ALERTA_COMPLETO'), 26);
+    DECLARE @HorasLog INT = ISNULL(SIS.fn_SIS_Parametro_Inteiro('BACKUP_HORAS_ALERTA_LOG'), 3);
+    DECLARE @DiasTeste INT = ISNULL(SIS.fn_SIS_Parametro_Inteiro('BACKUP_DIAS_ALERTA_TESTE'), 8);
+    DECLARE @UltCompleto DATETIME2(0) = (SELECT MAX(b.DT_INICIO) FROM SIS.Backup_Execucao b WHERE b.TIPO = 'COMPLETO' AND b.SITUACAO = 'OK');
+    DECLARE @UltLog DATETIME2(0) = (SELECT MAX(b.DT_INICIO) FROM SIS.Backup_Execucao b WHERE b.TIPO IN ('LOG', 'COMPLETO') AND b.SITUACAO = 'OK');
+    DECLARE @UltTeste DATETIME2(0) = (SELECT MAX(b.DT_INICIO) FROM SIS.Backup_Execucao b WHERE b.TIPO = 'TESTE' AND b.SITUACAO = 'OK');
+    DECLARE @Agora DATETIME2(0) = SYSDATETIME();
+    DECLARE @Problemas NVARCHAR(MAX) = N'';
+    DECLARE @Corpo NVARCHAR(MAX), @IdEmail BIGINT, @Chave NVARCHAR(200);
+
+    IF @Para = N'' OR NOT EXISTS (SELECT 1 FROM SIS.Backup_Execucao) RETURN;
+
+    IF @UltCompleto IS NULL OR @UltCompleto < DATEADD(HOUR, -@HorasCompleto, @Agora)
+        SET @Problemas += N'<li>Backup completo: o último sem erro foi em ' + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(@UltCompleto), N'(nenhum)') + N'.</li>';
+    IF @UltCompleto IS NOT NULL AND @UltLog < DATEADD(HOUR, -@HorasLog, @Agora)
+        SET @Problemas += N'<li>Backup do log (de hora em hora): o último sem erro foi em ' + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(@UltLog), N'(nenhum)') + N'.</li>';
+    -- teste: só cobra depois que o servidor tem backups há mais de @DiasTeste dias
+    IF (SELECT MIN(b.DT_INICIO) FROM SIS.Backup_Execucao b WHERE b.TIPO = 'COMPLETO' AND b.SITUACAO = 'OK') < DATEADD(DAY, -@DiasTeste, @Agora)
+       AND (@UltTeste IS NULL OR @UltTeste < DATEADD(DAY, -@DiasTeste, @Agora))
+        SET @Problemas += N'<li>Teste de restauração: o último sem erro foi em ' + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(@UltTeste), N'(nenhum)') + N'.</li>';
+
+    IF @Problemas = N'' RETURN;
+
+    SET @Corpo = SIS.fn_SIS_Email_HTML(N'Backup atrasado', 'ALERTA',
+        N'<p>O backup do banco <b>' + SIS.fn_SIS_Texto_HTML(DB_NAME()) + N'</b> está atrasado:</p><ul>' + @Problemas + N'</ul>'
+        + N'<p>Confira se o servidor ficou desligado, se as tarefas "SisCMJ - Backup" estão ativas no Agendador de Tarefas e o arquivo backup.log na pasta do backup.</p>',
+        N'[SIS].[SIS_Backup_Conferir_Processar]', NULL, 0);
+    SET @Chave = N'BACKUP_ATRASO_' + CONVERT(NVARCHAR(8), @Agora, 112);
+    EXEC SIS.SIS_Email_Enfileirar @Para = @Para, @Assunto = N'ALERTA: backup do sistema atrasado', @CorpoHTML = @Corpo,
+         @Tipo = 'ALERTA', @Origem = N'[SIS].[SIS_Backup_Conferir_Processar]',
+         @ChaveOrigem = @Chave, @IdEmail = @IdEmail OUTPUT;
+END;
+GO
+GO
+
 -- =============================================================================
 -- 8. TRIGGERS
 -- =============================================================================
@@ -13628,6 +13826,9 @@ GO
                         a clientes e terceiros; fábrica N, pedido do Celso).
     v1.6 (20/11/2026) - Etapa 03d: LOGIN_COMPUTADOR_TENTATIVAS e
                         LOGIN_COMPUTADOR_MINUTOS (limite de tentativas por computador).
+    v1.7 (20/11/2026) - Etapa 03d: BACKUP_DIAS_MANTER, BACKUP_NUVEM_MANTER e os
+                        avisos de atraso (BACKUP_HORAS_ALERTA_COMPLETO/_LOG,
+                        BACKUP_DIAS_ALERTA_TESTE).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -13696,6 +13897,16 @@ FROM (VALUES
          N'Pasta do servidor onde ficam os backups do banco.', 'SIS', 0),
         ('BACKUP_PASTA_EXTERNA', N'', 'TEXTO',
          N'Pasta fora do servidor (disco externo ou pasta sincronizada com a nuvem) para onde os backups são copiados. Vazio = não copia.', 'SIS', 0),
+        ('BACKUP_DIAS_MANTER', N'7', 'INTEIRO',
+         N'Dias de backup guardados na pasta do servidor (completos e do log); os mais antigos são apagados.', 'SIS', 0),
+        ('BACKUP_NUVEM_MANTER', N'1', 'INTEIRO',
+         N'Quantos backups completos ficam na pasta da nuvem (BACKUP_PASTA_EXTERNA). 0 = não copia.', 'SIS', 0),
+        ('BACKUP_HORAS_ALERTA_COMPLETO', N'26', 'INTEIRO',
+         N'Avisa por e-mail se o último backup completo sem erro tiver mais horas que isto.', 'SIS', 0),
+        ('BACKUP_HORAS_ALERTA_LOG', N'3', 'INTEIRO',
+         N'Avisa por e-mail se o último backup do log (de hora em hora) sem erro tiver mais horas que isto.', 'SIS', 0),
+        ('BACKUP_DIAS_ALERTA_TESTE', N'8', 'INTEIRO',
+         N'Avisa por e-mail se o último teste de restauração sem erro tiver mais dias que isto.', 'SIS', 0),
         ('ATUALIZACAO_PASTA', N'C:\SistemaCMJ_Arquivos\Atualizacoes', 'TEXTO',
          N'Pasta do servidor onde ficam os pacotes de atualização e o certificado usados pela tela Instalação e manutenção.', 'SIS', 0),
         ('EMAIL_RODAPE_CNPJ', N'N', 'SN',
@@ -14474,6 +14685,45 @@ EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Baixa',            @Criar =
 GO
 GO
 
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/Carga_SIS_Backup.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : carga do backup do servidor
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Rotina BACKUP_CONFERIR (de hora em hora; avisa atraso de backup
+                por e-mail): nasce ATIVA no servidor e DESLIGADA no banco de
+                desenvolvimento (_LOCAL), onde o backup é outro (backup\ do
+                notebook) e não se registra em SIS.Backup.
+                Segurança: o login da API não pode registrar backup (DENY).
+                Só insere o que falta (regra 39).
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d, backup no servidor).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+INSERT INTO SIS.Rotina (CODIGO, NOME, DESCRICAO, PROCEDIMENTO, ID_MODULO, FREQUENCIA, INTERVALO_MINUTOS, HORARIO, DIAS_SEMANA, DIA_MES,
+                        TEMPO_LIMITE_MINUTOS, ATIVA, PROXIMA_EXECUCAO, USUARIO_CRIACAO)
+SELECT 'BACKUP_CONFERIR', N'Conferir o backup',
+       N'Avisa por e-mail (EMAIL_ADMIN_ALERTA) quando o backup completo, o do log ou o teste de restauração atrasam (parâmetros BACKUP_*_ALERTA_*).',
+       N'SIS.SIS_Backup_Conferir_Processar', m.ID_MODULO, 'MINUTOS', 60, '00:00', '', 0, 10,
+       CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 0 ELSE 1 END,
+       SIS.fn_SIS_Rotina_Proxima('MINUTOS', 60, '00:00', '', 0, SYSDATETIME()), N'instalacao'
+FROM SIS.Modulo m
+WHERE m.CODIGO = 'SIS'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Rotina r WHERE r.CODIGO = 'BACKUP_CONFERIR');
+GO
+
+IF DATABASE_PRINCIPAL_ID(N'rl_sistemacmj_api') IS NOT NULL
+    DENY EXECUTE ON [SIS].[SIS_Backup_Registrar] TO [rl_sistemacmj_api];
+GO
+GO
+
 -- =============================================================================
 -- 9. (fim) FINALIZACAO DA INSTALACAO
 -- =============================================================================
@@ -14533,20 +14783,21 @@ GO
     Versões do banco: 1.1 (20/11/2026) limite de login por computador e versão;
                       1.2 (20/11/2026) primeiro acesso da instalação;
                       1.3 (20/11/2026) SIS_Registro_Existe (anexos com o login da API);
-                      1.4 (20/11/2026) fn_SIS_Usuario_Id (licença gravada pela API).
+                      1.4 (20/11/2026) fn_SIS_Usuario_Id (licença gravada pela API);
+                      1.5 (20/11/2026) backup do servidor (SIS.Backup, avisos de atraso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '1.4';
+DECLARE @Versao VARCHAR(20) = '1.5';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;
 GO
 GO
 
-PRINT N'MASTER v1.4 concluido sem erro.';
+PRINT N'MASTER v1.5 concluido sem erro.';
 GO
 
 SET NOEXEC OFF;

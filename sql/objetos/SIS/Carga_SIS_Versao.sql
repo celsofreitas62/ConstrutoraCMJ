@@ -18,13 +18,14 @@
     Versões do banco: 1.1 (20/11/2026) limite de login por computador e versão;
                       1.2 (20/11/2026) primeiro acesso da instalação;
                       1.3 (20/11/2026) SIS_Registro_Existe (anexos com o login da API);
-                      1.4 (20/11/2026) fn_SIS_Usuario_Id (licença gravada pela API).
+                      1.4 (20/11/2026) fn_SIS_Usuario_Id (licença gravada pela API);
+                      1.5 (20/11/2026) backup do servidor (SIS.Backup, avisos de atraso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '1.4';
+DECLARE @Versao VARCHAR(20) = '1.5';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;

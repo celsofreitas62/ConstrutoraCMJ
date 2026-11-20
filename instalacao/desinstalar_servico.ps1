@@ -2,7 +2,7 @@
   SisCMJ - remove o servico (para ensaio ou reinstalacao limpa)
   Autor: Celso de Freitas / Refatorado: Claude
   v1.0 (20/11/2026) - Criacao (etapa 03d). Rodar pelo desinstalar_servico.cmd, como administrador.
-  Remove: servico, regra do Firewall e o programa. NAO apaga o banco nem os arquivos do sistema.
+  Remove: servico, regra do Firewall, o programa e as tarefas de backup (os arquivos de backup ficam). NAO apaga o banco nem os arquivos do sistema.
   Opcionais: -RemoverLoginSql (login do servico no SQL), -RemoverCertificado, -RemoverConfiguracao.
 #>
 param(
@@ -22,6 +22,9 @@ if (Get-Service -Name $NomeServico -ErrorAction SilentlyContinue) {
 }
 Get-NetFirewallRule -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like ('SisCMJ (' + $NomeServico + ')*') } | Remove-NetFirewallRule
 if (Test-Path -LiteralPath $PastaPrograma) { Remove-Item -LiteralPath $PastaPrograma -Recurse -Force }
+Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -like ('SisCMJ (' + $NomeServico + ') - *') } | Unregister-ScheduledTask -Confirm:$false
+$Scripts = Join-Path (Split-Path $PastaPrograma -Parent) 'scripts'
+if (Test-Path -LiteralPath $Scripts) { Remove-Item -LiteralPath $Scripts -Recurse -Force }
 if ($RemoverLoginSql) {
     foreach ($par in @(@($Banco, "IF DATABASE_PRINCIPAL_ID(N'$Conta') IS NOT NULL DROP USER [$Conta];"), @('master', "IF SUSER_ID(N'$Conta') IS NOT NULL DROP LOGIN [$Conta];"))) {
         $Con = New-Object System.Data.SqlClient.SqlConnection("Server=$Instancia;Database=$($par[0]);Integrated Security=SSPI")

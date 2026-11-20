@@ -5,6 +5,8 @@
                       de dentro da pasta gerada pelo api\publicar.cmd.
   v1.1 (20/11/2026) - Conferencia final com TLS 1.2 (ensaio: o PS 5.1 nao conectava).
   v1.2 (20/11/2026) - Mostra o codigo do servidor para a licenca (codigo_servidor.txt).
+  v1.3 (20/11/2026) - Passo 10: backup (completo diario, log de hora em hora, teste semanal),
+                      tarefas como SYSTEM; roda o 1o completo e o 1o teste na hora.
   Faz, nesta ordem (pode rodar de novo: atualiza sem perder nada):
     1) confere administrador e o .NET 10 (ASP.NET Core Runtime / Hosting Bundle);
     2) para o servico (se ja existe) e copia o programa para -PastaPrograma;
@@ -31,7 +33,8 @@ param(
     [string]$Banco          = 'SISTEMACMJ',
     [int]$Porta             = 5443,
     [string[]]$RedesPermitidas = @('LocalSubnet'),
-    [string[]]$NomesExtras  = @()
+    [string[]]$NomesExtras  = @(),
+    [string]$HoraBackupCompleto = '23:00'
 )
 $ErrorActionPreference = 'Stop'
 # Pelo .cmd (-File), listas chegam como um texto so: separa nas virgulas
@@ -54,7 +57,7 @@ function Sql([string]$BancoSql, [string]$Comando) {
 }
 
 try {
-    Passo '1/9 Conferencias'
+    Passo '1/10 Conferencias'
     $Admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if (-not $Admin) { throw 'Rode como administrador (botao direito no instalar_servico.cmd > Executar como administrador).' }
     if (-not (Test-Path -LiteralPath (Join-Path $Origem 'SistemaCMJ.Api.exe'))) { throw ('Nao achei o programa em ' + $Origem + '. Rode este instalador de dentro da pasta gerada pelo publicar.cmd.') }
@@ -69,14 +72,14 @@ try {
     Write-Host ('Banco ' + $Instancia + '/' + $Banco + ': versao ' + $(if ($Versao) { $Versao } else { '(sem versao: rode o MASTER antes)' }))
     if (-not $Versao) { throw 'Rode antes o SISTEMACMJ_00_Criar_Banco.sql e o SISTEMACMJ_MASTER_Instalacao.sql no SSMS.' }
 
-    Passo '2/9 Programa'
+    Passo '2/10 Programa'
     if ($Existe) { Stop-Service -Name $NomeServico -Force; (Get-Service $NomeServico).WaitForStatus('Stopped', (New-TimeSpan -Seconds 60)) }
     New-Item -ItemType Directory -Force -Path $PastaPrograma | Out-Null
     & robocopy $Origem $PastaPrograma /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { throw ('Falha ao copiar o programa (robocopy ' + $LASTEXITCODE + ').') }
     Write-Host ('Copiado para ' + $PastaPrograma)
 
-    Passo '3/9 Servico do Windows'
+    Passo '3/10 Servico do Windows'
     if (-not $Existe) {
         & sc.exe create $NomeServico binPath= ('"' + $Exe + '"') start= delayed-auto obj= $Conta DisplayName= 'SisCMJ - Sistema da construtora' | Out-Host
         if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar o servico.' }
@@ -86,7 +89,7 @@ try {
     & sc.exe description $NomeServico 'SisCMJ: telas, API, rotinas agendadas e e-mails do sistema.' | Out-Null
     & sc.exe failure $NomeServico reset= 86400 actions= restart/60000/restart/60000/restart/300000 | Out-Null
 
-    Passo '4/9 Permissoes das pastas'
+    Passo '4/10 Permissoes das pastas'
     & icacls $PastaPrograma /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' ($Conta + ':(OI)(CI)RX') | Out-Null
     New-Item -ItemType Directory -Force -Path (Join-Path $PastaConfig 'logs') | Out-Null
     & icacls $PastaConfig /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' ($Conta + ':(OI)(CI)RX') | Out-Null
@@ -101,7 +104,7 @@ try {
     }
     Write-Host ('Programa: so leitura para o servico. Configuracao: ' + $PastaConfig + '. Arquivos: ' + $PastaArquivos)
 
-    Passo '5/9 Configuracao do servidor'
+    Passo '5/10 Configuracao do servidor'
     if (-not (Test-Path -LiteralPath $ArquivoConfig)) {
         $Cfg = [ordered]@{
             '_comentario' = 'SisCMJ - configuracao DESTE servidor. Pasta protegida (so administradores e o servico). Preencha o SMTP. Nunca copie este arquivo para o projeto.'
@@ -115,12 +118,12 @@ try {
         Write-Host ('Criado: ' + $ArquivoConfig + ' (preencha o SMTP depois)')
     } else { Write-Host ('Ja existe, mantido: ' + $ArquivoConfig) }
 
-    Passo '6/9 Acesso do servico ao banco (sem senha)'
+    Passo '6/10 Acesso do servico ao banco (sem senha)'
     Sql 'master' ("IF SUSER_ID(N'" + $Conta + "') IS NULL CREATE LOGIN [" + $Conta + "] FROM WINDOWS;") | Out-Null
     Sql $Banco ("IF DATABASE_PRINCIPAL_ID(N'" + $Conta + "') IS NULL CREATE USER [" + $Conta + "] FOR LOGIN [" + $Conta + "]; ALTER ROLE [rl_sistemacmj_api] ADD MEMBER [" + $Conta + "];") | Out-Null
     Write-Host ($Conta + ' no papel rl_sistemacmj_api do banco ' + $Banco)
 
-    Passo '7/9 Certificado HTTPS'
+    Passo '7/10 Certificado HTTPS'
     $Cert = Get-ChildItem Cert:\LocalMachine\My | Where-Object { $_.Subject -eq 'CN=SisCMJ' -and $_.NotAfter -gt (Get-Date).AddDays(30) } | Sort-Object NotAfter -Descending | Select-Object -First 1
     if (-not $Cert) {
         $Nomes = @($env:COMPUTERNAME, 'localhost') + $NomesExtras
@@ -137,13 +140,13 @@ try {
     Import-Certificate -FilePath $Cer -CertStoreLocation Cert:\LocalMachine\Root | Out-Null
     Write-Host ('Copia publica para os usuarios: ' + $Cer)
 
-    Passo '8/9 Firewall'
+    Passo '8/10 Firewall'
     Get-NetFirewallRule -DisplayName ('SisCMJ*') -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like ('SisCMJ (' + $NomeServico + ')*') } | Remove-NetFirewallRule
     New-NetFirewallRule -DisplayName ('SisCMJ (' + $NomeServico + ') HTTPS ' + $Porta) -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Porta `
         -Profile Domain,Private -RemoteAddress $RedesPermitidas | Out-Null
     Write-Host ('Porta ' + $Porta + ' liberada so para: ' + ($RedesPermitidas -join ', ') + ' (perfis Dominio e Privado). SQL Server continua fechado.')
 
-    Passo '9/9 Iniciando e conferindo'
+    Passo '9/10 Iniciando e conferindo'
     Start-Service -Name $NomeServico
     # PowerShell 5.1 usa TLS antigo por padrao; o sistema so aceita TLS 1.2 ou mais novo
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
@@ -154,6 +157,42 @@ try {
         try { $Saude = (Invoke-WebRequest -UseBasicParsing -Uri ('https://localhost:' + $Porta + '/api/saude') -TimeoutSec 5).Content } catch { if ($_.Exception.Response) { $Saude = (New-Object IO.StreamReader($_.Exception.Response.GetResponseStream())).ReadToEnd() } }
     }
     Write-Host ('Saude: ' + $(if ($Saude) { $Saude } else { 'sem resposta (veja ' + (Join-Path $PastaConfig 'logs') + ')' }))
+
+    Passo '10/10 Backup automatico'
+    # SYSTEM (conta das tarefas) faz backup e teste de restauracao no SQL
+    # nome da conta SYSTEM no idioma do Windows (em portugues: AUTORIDADE NT\SISTEMA)
+    $Sistema = (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-18')).Translate([System.Security.Principal.NTAccount]).Value
+    Sql 'master' ("IF SUSER_ID(N'" + $Sistema + "') IS NULL CREATE LOGIN [" + $Sistema + "] FROM WINDOWS; ALTER SERVER ROLE [sysadmin] ADD MEMBER [" + $Sistema + "];") | Out-Null
+    $PastaBackup = [string](Sql $Banco "SELECT SIS.fn_SIS_Parametro('BACKUP_PASTA')")
+    if (-not $PastaBackup) { $PastaBackup = Join-Path $PastaArquivos 'Backup' }
+    New-Item -ItemType Directory -Force -Path $PastaBackup | Out-Null
+    $ContaSql = if ($Instancia -match '\\(.+)$') { 'NT Service\MSSQL$' + $Matches[1] } else { 'NT Service\MSSQLSERVER' }
+    & icacls $PastaBackup /grant ($ContaSql + ':(OI)(CI)M') | Out-Null
+    $PastaScripts = Join-Path (Split-Path $PastaPrograma -Parent) 'scripts'
+    New-Item -ItemType Directory -Force -Path $PastaScripts | Out-Null
+    & icacls $PastaScripts /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' | Out-Null
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'backup_servidor.ps1') -Destination $PastaScripts -Force
+    $Script = Join-Path $PastaScripts 'backup_servidor.ps1'
+    $Quem = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
+    $Config = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 4) -MultipleInstances IgnoreNew
+    $Prefixo = 'SisCMJ (' + $NomeServico + ') - '
+    $Tarefas = [ordered]@{
+        'Backup completo'         = @('COMPLETO', (New-ScheduledTaskTrigger -Daily -At $HoraBackupCompleto))
+        'Backup do log'           = @('LOG', (New-ScheduledTaskTrigger -Once -At ((Get-Date).Date.AddMinutes(30)) -RepetitionInterval (New-TimeSpan -Hours 1)))
+        'Teste de restauracao'    = @('TESTE', (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At '04:00'))
+    }
+    foreach ($Nome in $Tarefas.Keys) {
+        $Acao = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -File "' + $Script + '" -Modo ' + $Tarefas[$Nome][0] + ' -Instancia "' + $Instancia + '" -Banco "' + $Banco + '"')
+        Register-ScheduledTask -TaskName ($Prefixo + $Nome) -Action $Acao -Trigger $Tarefas[$Nome][1] -Principal $Quem -Settings $Config -Force | Out-Null
+    }
+    Write-Host ('Tarefas: completo todo dia as ' + $HoraBackupCompleto + ', log de hora em hora, teste de restauracao aos domingos 04:00. Pasta: ' + $PastaBackup)
+    foreach ($Nome in @('Backup completo', 'Teste de restauracao')) {
+        Start-ScheduledTask -TaskName ($Prefixo + $Nome)
+        Start-Sleep -Seconds 3
+        for ($i = 0; $i -lt 120 -and (Get-ScheduledTask -TaskName ($Prefixo + $Nome)).State -eq 'Running'; $i++) { Start-Sleep -Seconds 2 }
+        $Res = (Get-ScheduledTaskInfo -TaskName ($Prefixo + $Nome)).LastTaskResult
+        Write-Host ($Nome + ' (agora): ' + $(if ($Res -eq 0) { 'OK' } else { 'ERRO (codigo ' + $Res + '), veja ' + (Join-Path $PastaBackup 'backup.log') }))
+    }
 
     # Arquivo para os computadores dos usuarios: certificado + atalho, com o endereco deste servidor
     $Endereco = 'https://' + $env:COMPUTERNAME + ':' + $Porta + '/'
