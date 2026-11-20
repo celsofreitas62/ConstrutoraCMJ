@@ -8,7 +8,8 @@
                 transação desfeita (ROLLBACK): nada fica gravado. Backups
                 fictícios (nenhum arquivo de verdade é usado).
                 Usuários: celso (nível 2), renata (administradora, nível 1),
-                claude (só consulta: sem RESTAURAR).
+                claude (só consulta: sem RESTAURAR). No ensaio: admin no lugar
+                da renata; sem o claude, o caso "sem permissão" usa usuário inexistente.
 *******************************************************************************/
 SET NOCOUNT ON;
 DECLARE @R TABLE (CASO VARCHAR(90), ESPERADO VARCHAR(60), OBTIDO VARCHAR(400));
@@ -20,7 +21,8 @@ DECLARE @X TABLE (ID_RESTAURACAO INT, SITUACAO VARCHAR(12));
 DECLARE @Antes BIGINT = ISNULL((SELECT MAX(ID_EMAIL) FROM SIS.Email_Fila), 0);
 DECLARE @T0 DATETIME2(0) = DATEADD(HOUR, -30, CAST(SYSDATETIME() AS DATETIME2(0)));
 DECLARE @Celso INT = (SELECT ID_USUARIO FROM SIS.Usuario WHERE LOGIN = 'celso');
-DECLARE @Renata INT = (SELECT ID_USUARIO FROM SIS.Usuario WHERE LOGIN = 'renata');
+DECLARE @Renata INT = ISNULL((SELECT ID_USUARIO FROM SIS.Usuario WHERE LOGIN = 'renata'), (SELECT ID_USUARIO FROM SIS.Usuario WHERE LOGIN = 'admin'));   -- no ensaio: admin
+DECLARE @LoginAdm VARCHAR(40) = (SELECT LOGIN FROM SIS.Usuario WHERE ID_USUARIO = @Renata);
 DECLARE @Claude INT = (SELECT ID_USUARIO FROM SIS.Usuario WHERE LOGIN = 'claude');
 DECLARE @P DATETIME2(0), @Id INT, @Id2 INT, @IdS1 BIGINT, @IdL2 BIGINT;
 
@@ -73,7 +75,7 @@ SET @P = DATEADD(MINUTE, 690, @T0);
 INSERT @S EXEC SIS.SIS_Backup_Restauracao_Solicitar @IdUsuario = @Renata, @TipoPonto = 'DATA_HORA', @DtPonto = @P, @Motivo = N'teste de homologação', @Confirmacao = N' restaurar ', @SenhaConferida = 1;
 SELECT @Id = ID_RESTAURACAO FROM @S;
 INSERT @R SELECT 'pedido válido: sucesso', '1', CAST(SUCESSO AS VARCHAR(1)) FROM @S; DELETE @S;
-INSERT @R SELECT 'pedido: PENDENTE, quem pediu e plano com 3 arquivos', 'PENDENTE renata 3', SITUACAO + ' ' + USUARIO_PEDIDO + ' ' + CAST(LEN(PLANO) - LEN(REPLACE(PLANO, '|', '')) + 1 AS VARCHAR(5)) FROM SIS.Backup_Restauracao WHERE ID_RESTAURACAO = @Id;
+INSERT @R SELECT 'pedido: PENDENTE, quem pediu e plano com 3 arquivos', 'PENDENTE ' + @LoginAdm + ' 3', SITUACAO + ' ' + USUARIO_PEDIDO + ' ' + CAST(LEN(PLANO) - LEN(REPLACE(PLANO, '|', '')) + 1 AS VARCHAR(5)) FROM SIS.Backup_Restauracao WHERE ID_RESTAURACAO = @Id;
 INSERT @R SELECT 'pedido: aviso por e-mail na fila', '1', CAST(COUNT(*) AS VARCHAR(5)) FROM SIS.Email_Fila WHERE ID_EMAIL > @Antes AND ASSUNTO LIKE N'%pedido de restauração%';
 INSERT @S EXEC SIS.SIS_Backup_Restauracao_Solicitar @IdUsuario = @Celso, @TipoPonto = 'BACKUP', @IdBackup = @IdS1, @Motivo = N'teste de homologação', @Confirmacao = N'RESTAURAR', @SenhaConferida = 1;
 INSERT @R SELECT 'segundo pedido com um em aberto: recusa', 'SIM', CASE WHEN MENSAGEM LIKE N'Já existe um pedido%' THEN 'SIM' ELSE CAST(MENSAGEM AS VARCHAR(400)) END FROM @S; DELETE @S;
@@ -109,7 +111,7 @@ DECLARE @tp VARCHAR(10), @dp DATETIME2(0), @mo NVARCHAR(400), @iu INT, @us NVARC
 SELECT @tp = TIPO_PONTO, @dp = DT_PONTO, @mo = MOTIVO, @iu = IDU, @us = USU, @dtp = DTP, @dti = DTI, @pl = PLANO FROM @Ped;
 INSERT @X EXEC SIS.SIS_Backup_Restauracao_Resultado @IdRestauracao = @Id, @Situacao = 'OK', @Mensagem = N'Restaurado (teste).', @TipoPonto = @tp, @DtPonto = @dp,
      @Motivo = @mo, @IdUsuarioPedido = @iu, @UsuarioPedido = @us, @DtPedido = @dtp, @DtInicio = @dti, @Plano = @pl, @ArquivoSeguranca = N'C:\t\S2.bak';
-INSERT @R SELECT 'resultado: pedido regravado com o mesmo ID, OK', CAST(@Id AS VARCHAR(10)) + ' OK renata', CAST(ID_RESTAURACAO AS VARCHAR(10)) + ' ' + SITUACAO + ' ' + USUARIO_PEDIDO FROM SIS.Backup_Restauracao WHERE ID_RESTAURACAO = @Id;
+INSERT @R SELECT 'resultado: pedido regravado com o mesmo ID, OK', CAST(@Id AS VARCHAR(10)) + ' OK ' + @LoginAdm, CAST(ID_RESTAURACAO AS VARCHAR(10)) + ' ' + SITUACAO + ' ' + USUARIO_PEDIDO FROM SIS.Backup_Restauracao WHERE ID_RESTAURACAO = @Id;
 INSERT @R SELECT 'resultado: aviso por e-mail', '1', CAST(COUNT(*) AS VARCHAR(5)) FROM SIS.Email_Fila WHERE ID_EMAIL > @Antes2 AND ASSUNTO LIKE N'%restauração do banco concluída%';
 
 -- 7) pedido de um backup escolhido (Celso) e cancelamento antes de começar
@@ -131,7 +133,7 @@ DECLARE @LR TABLE (ID INT, TP VARCHAR(10), TPN NVARCHAR(30), IDB BIGINT, ARQ NVA
                    USU NVARCHAR(100), DTP DATETIME2(0), DTI DATETIME2(0), DTF DATETIME2(0), PLANO NVARCHAR(4000), SEG NVARCHAR(400), MSG NVARCHAR(2000), PODE BIT);
 INSERT @LR EXEC SIS.SIS_Backup_Restauracao_Listar @IdUsuario = @Renata;
 INSERT @R SELECT 'lista de pedidos: 3', '3', CAST(COUNT(*) AS VARCHAR(5)) FROM @LR;
-INSERT @R SELECT 'renata (nível 1) pode RESTAURAR', '1', CAST(SIS.fn_SIS_Tem_Permissao(@Renata, 'SIS_BACKUP', 'RESTAURAR') AS VARCHAR(1));
+INSERT @R SELECT 'administrador nível 1 (' + @LoginAdm + ') pode RESTAURAR', '1', CAST(SIS.fn_SIS_Tem_Permissao(@Renata, 'SIS_BACKUP', 'RESTAURAR') AS VARCHAR(1));
 INSERT @R SELECT 'celso (nível 2) pode RESTAURAR', '1', CAST(SIS.fn_SIS_Tem_Permissao(@Celso, 'SIS_BACKUP', 'RESTAURAR') AS VARCHAR(1));
 INSERT @R SELECT 'claude (consulta) não pode RESTAURAR', '0', CAST(SIS.fn_SIS_Tem_Permissao(@Claude, 'SIS_BACKUP', 'RESTAURAR') AS VARCHAR(1));
 INSERT @R SELECT 'papel da API sem EXECUTE em ' + o.n, 'NEGADO',

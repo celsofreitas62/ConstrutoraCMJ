@@ -8,6 +8,8 @@
   v1.4 (20/11/2026) - Conferencia final pelo curl.exe (ensaio: Invoke-WebRequest do PS 5.1 falhava).
   v1.3 (20/11/2026) - Passo 10: backup (completo diario, log de hora em hora, teste semanal),
                       tarefas como SYSTEM; roda o 1o completo e o 1o teste na hora.
+  v1.5 (20/11/2026) - Etapa 03d2: tarefa "Restauracao (pedidos)", a cada minuto, que faz as
+                      restauracoes pedidas pela tela Sistema > Backups (para e religa o servico).
   Faz, nesta ordem (pode rodar de novo: atualiza sem perder nada):
     1) confere administrador e o .NET 10 (ASP.NET Core Runtime / Hosting Bundle);
     2) para o servico (se ja existe) e copia o programa para -PastaPrograma;
@@ -180,12 +182,13 @@ try {
         'Backup completo'         = @('COMPLETO', (New-ScheduledTaskTrigger -Daily -At $HoraBackupCompleto))
         'Backup do log'           = @('LOG', (New-ScheduledTaskTrigger -Once -At ((Get-Date).Date.AddMinutes(30)) -RepetitionInterval (New-TimeSpan -Hours 1)))
         'Teste de restauracao'    = @('TESTE', (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At '04:00'))
+        'Restauracao (pedidos)'   = @('RESTAURAR', (New-ScheduledTaskTrigger -Once -At ((Get-Date).AddMinutes(1)) -RepetitionInterval (New-TimeSpan -Minutes 1)))
     }
     foreach ($Nome in $Tarefas.Keys) {
-        $Acao = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -File "' + $Script + '" -Modo ' + $Tarefas[$Nome][0] + ' -Instancia "' + $Instancia + '" -Banco "' + $Banco + '"')
+        $Acao = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -File "' + $Script + '" -Modo ' + $Tarefas[$Nome][0] + ' -Instancia "' + $Instancia + '" -Banco "' + $Banco + '" -Servico "' + $NomeServico + '"')
         Register-ScheduledTask -TaskName ($Prefixo + $Nome) -Action $Acao -Trigger $Tarefas[$Nome][1] -Principal $Quem -Settings $Config -Force | Out-Null
     }
-    Write-Host ('Tarefas: completo todo dia as ' + $HoraBackupCompleto + ', log de hora em hora, teste de restauracao aos domingos 04:00. Pasta: ' + $PastaBackup)
+    Write-Host ('Tarefas: completo todo dia as ' + $HoraBackupCompleto + ', log de hora em hora, teste de restauracao aos domingos 04:00, pedidos de restauracao da tela a cada minuto. Pasta: ' + $PastaBackup)
     foreach ($Nome in @('Backup completo', 'Teste de restauracao')) {
         Start-ScheduledTask -TaskName ($Prefixo + $Nome)
         Start-Sleep -Seconds 3
