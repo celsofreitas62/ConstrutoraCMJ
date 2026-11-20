@@ -13,6 +13,8 @@
 
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+    v1.1 (20/11/2026) - PODE_ESCOLHER só para backup feito depois da atualização
+                        para a versão atual (fn_SIS_Backup_Limite_Versao).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Backup_Listar @IdUsuario = 1;
@@ -32,6 +34,7 @@ BEGIN
     DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Backup_Listar]';
     DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
     DECLARE @Desde      DATETIME2(0);
+    DECLARE @DtLimite   DATETIME2(0)  = SIS.fn_SIS_Backup_Limite_Versao();
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'VER') = 0
@@ -58,6 +61,7 @@ BEGIN
                b.COPIA_NUVEM,
                b.ARQUIVO_EXISTE,
                CAST(CASE WHEN b.TIPO IN ('COMPLETO', 'SEGURANCA') AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
+                              AND b.DT_FIM >= @DtLimite
                          THEN 1 ELSE 0 END AS BIT) AS PODE_ESCOLHER,
                b.SERVIDOR
         FROM SIS.Backup_Execucao b WITH (NOLOCK)

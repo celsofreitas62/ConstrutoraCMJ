@@ -1295,6 +1295,41 @@ WHERE @IdBackup IS NULL
 GO
 
 -- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Backup_Limite_Versao.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Backup_Limite_Versao]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Data e hora em que o banco passou para a versão atual (primeiro
+                registro da versão atual em SIS.Versao_Banco). A restauração
+                pela tela não pode voltar para antes disso: o banco voltaria
+                para a versão anterior e o programa (que exige a versão atual)
+                deixaria de funcionar. Sem registro: 01/01/1900. Nunca NULL.
+                Achado no ensaio de 20/11/2026 (pedido nº 5 voltou o banco de
+                ensaio da 1.6 para a 1.5).
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d2, ensaio da restauração).
+
+  Homologação:
+    -- SELECT SIS.fn_SIS_Backup_Limite_Versao();
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Backup_Limite_Versao] ()
+RETURNS DATETIME2(0)
+AS
+BEGIN
+    RETURN ISNULL((SELECT MIN(v.DT_INSTALACAO) FROM SIS.Versao_Banco v WHERE v.VERSAO = SIS.fn_SIS_Versao_Banco()),
+                  CAST('1900-01-01' AS DATETIME2(0)));
+END;
+GO
+
+-- =============================================================================
 -- Arquivo: sql/objetos/SIS/SIS.SIS_Backup_Listar.sql
 -- =============================================================================
 /*******************************************************************************
@@ -1312,6 +1347,8 @@ GO
 
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+    v1.1 (20/11/2026) - PODE_ESCOLHER só para backup feito depois da atualização
+                        para a versão atual (fn_SIS_Backup_Limite_Versao).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Backup_Listar @IdUsuario = 1;
@@ -1331,6 +1368,7 @@ BEGIN
     DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Backup_Listar]';
     DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
     DECLARE @Desde      DATETIME2(0);
+    DECLARE @DtLimite   DATETIME2(0)  = SIS.fn_SIS_Backup_Limite_Versao();
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'VER') = 0
@@ -1357,6 +1395,7 @@ BEGIN
                b.COPIA_NUVEM,
                b.ARQUIVO_EXISTE,
                CAST(CASE WHEN b.TIPO IN ('COMPLETO', 'SEGURANCA') AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
+                              AND b.DT_FIM >= @DtLimite
                          THEN 1 ELSE 0 END AS BIT) AS PODE_ESCOLHER,
                b.SERVIDOR
         FROM SIS.Backup_Execucao b WITH (NOLOCK)
@@ -1391,6 +1430,10 @@ GO
 
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+    v1.1 (20/11/2026) - "De" respeita a última atualização de versão
+                        (fn_SIS_Backup_Limite_Versao); DT_PODE_VOLTAR_ATE_HORA
+                        (último backup do log: limite do "dia e hora"),
+                        DT_LIMITE_VERSAO e VERSAO. Achados no ensaio.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Backup_Situacao_Obter @IdUsuario = 1;
@@ -1408,7 +1451,8 @@ BEGIN
 
     DECLARE @NomeProc     NVARCHAR(128) = N'[SIS].[SIS_Backup_Situacao_Obter]';
     DECLARE @EtapaAtual   VARCHAR(100)  = 'Validação';
-    DECLARE @DtMaisAntigo DATETIME2(0), @DtInicioAntigo DATETIME2(0), @DtMaisRecente DATETIME2(0);
+    DECLARE @DtMaisAntigo DATETIME2(0), @DtInicioAntigo DATETIME2(0), @DtMaisRecente DATETIME2(0), @DtAteHora DATETIME2(0);
+    DECLARE @DtLimite     DATETIME2(0) = SIS.fn_SIS_Backup_Limite_Versao();
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'VER') = 0
@@ -1425,8 +1469,20 @@ BEGIN
         WHERE b.TIPO IN ('COMPLETO', 'LOG') AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
           AND b.DT_INICIO >= @DtInicioAntigo;
 
+        SELECT @DtAteHora = MAX(b.DT_FIM)
+        FROM SIS.Backup_Execucao b WITH (NOLOCK)
+        WHERE b.TIPO = 'LOG' AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
+          AND b.DT_INICIO >= @DtInicioAntigo;
+
+        IF @DtMaisAntigo < @DtLimite SET @DtMaisAntigo = @DtLimite;
+        IF @DtMaisRecente < @DtMaisAntigo SET @DtMaisRecente = NULL;
+        IF @DtAteHora < @DtMaisAntigo SET @DtAteHora = NULL;
+
         SELECT @DtMaisAntigo  AS DT_PODE_VOLTAR_DE,
                @DtMaisRecente AS DT_PODE_VOLTAR_ATE,
+               @DtAteHora     AS DT_PODE_VOLTAR_ATE_HORA,
+               CASE WHEN @DtLimite > '1900-01-01' THEN @DtLimite END AS DT_LIMITE_VERSAO,
+               CAST(SIS.fn_SIS_Versao_Banco() AS VARCHAR(20)) AS VERSAO,
                (SELECT MAX(b.DT_FIM) FROM SIS.Backup_Execucao b WITH (NOLOCK) WHERE b.TIPO = 'COMPLETO' AND b.SITUACAO = 'OK') AS DT_ULTIMO_COMPLETO,
                (SELECT MAX(b.DT_FIM) FROM SIS.Backup_Execucao b WITH (NOLOCK) WHERE b.TIPO = 'LOG'      AND b.SITUACAO = 'OK') AS DT_ULTIMO_LOG,
                (SELECT MAX(b.DT_FIM) FROM SIS.Backup_Execucao b WITH (NOLOCK) WHERE b.TIPO = 'TESTE'    AND b.SITUACAO = 'OK') AS DT_ULTIMO_TESTE,
@@ -1548,6 +1604,8 @@ GO
 
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+    v1.1 (20/11/2026) - Recusa ponto anterior à atualização para a versão atual
+                        do banco (fn_SIS_Backup_Limite_Versao): achado no ensaio.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Backup_Restauracao_Solicitar @IdUsuario = 1, @TipoPonto = 'DATA_HORA', @DtPonto = '2026-11-20 14:25',
@@ -1578,6 +1636,7 @@ BEGIN
     DECLARE @Plano        NVARCHAR(4000) = N'';
     DECLARE @QtdLinhas    INT, @QtdSemArquivo INT, @Alcanca INT;
     DECLARE @DtVolta      DATETIME2(0);
+    DECLARE @DtLimite     DATETIME2(0)  = SIS.fn_SIS_Backup_Limite_Versao();
     DECLARE @IdRestauracao INT;
     DECLARE @Para NVARCHAR(400), @Corpo NVARCHAR(MAX), @Chave NVARCHAR(200), @IdEmail BIGINT;
 
@@ -1631,6 +1690,9 @@ BEGIN
             SET @Recusa = N'Algum arquivo de backup necessário já foi apagado pela limpeza. Escolha um ponto mais recente.';
         ELSE IF ISNULL(@Alcanca, 0) = 0
             SET @Recusa = N'Ainda não há backup de hora em hora depois desse dia e hora. Escolha um ponto até o último backup ou espere o próximo backup de hora em hora.';
+        ELSE IF ISNULL(@DtPonto, @DtVolta) < @DtLimite
+            SET @Recusa = N'Não dá para voltar para antes de ' + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(@DtLimite), N'') + N', quando o sistema foi atualizado para a versão '
+                        + SIS.fn_SIS_Versao_Banco() + N': o banco ficaria numa versão diferente do programa e o sistema pararia.';
         ELSE IF LEN(@Plano) > 3900
             SET @Recusa = N'O ponto escolhido usa backups demais. Escolha um ponto mais perto de um backup completo.';
 

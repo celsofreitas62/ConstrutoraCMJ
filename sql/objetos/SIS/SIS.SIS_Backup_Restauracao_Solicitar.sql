@@ -22,6 +22,8 @@
 
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+    v1.1 (20/11/2026) - Recusa ponto anterior à atualização para a versão atual
+                        do banco (fn_SIS_Backup_Limite_Versao): achado no ensaio.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Backup_Restauracao_Solicitar @IdUsuario = 1, @TipoPonto = 'DATA_HORA', @DtPonto = '2026-11-20 14:25',
@@ -52,6 +54,7 @@ BEGIN
     DECLARE @Plano        NVARCHAR(4000) = N'';
     DECLARE @QtdLinhas    INT, @QtdSemArquivo INT, @Alcanca INT;
     DECLARE @DtVolta      DATETIME2(0);
+    DECLARE @DtLimite     DATETIME2(0)  = SIS.fn_SIS_Backup_Limite_Versao();
     DECLARE @IdRestauracao INT;
     DECLARE @Para NVARCHAR(400), @Corpo NVARCHAR(MAX), @Chave NVARCHAR(200), @IdEmail BIGINT;
 
@@ -105,6 +108,9 @@ BEGIN
             SET @Recusa = N'Algum arquivo de backup necessário já foi apagado pela limpeza. Escolha um ponto mais recente.';
         ELSE IF ISNULL(@Alcanca, 0) = 0
             SET @Recusa = N'Ainda não há backup de hora em hora depois desse dia e hora. Escolha um ponto até o último backup ou espere o próximo backup de hora em hora.';
+        ELSE IF ISNULL(@DtPonto, @DtVolta) < @DtLimite
+            SET @Recusa = N'Não dá para voltar para antes de ' + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(@DtLimite), N'') + N', quando o sistema foi atualizado para a versão '
+                        + SIS.fn_SIS_Versao_Banco() + N': o banco ficaria numa versão diferente do programa e o sistema pararia.';
         ELSE IF LEN(@Plano) > 3900
             SET @Recusa = N'O ponto escolhido usa backups demais. Escolha um ponto mais perto de um backup completo.';
 

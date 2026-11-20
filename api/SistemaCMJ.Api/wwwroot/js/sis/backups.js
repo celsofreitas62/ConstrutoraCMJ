@@ -39,8 +39,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ---- Topo --------------------------------------------------------------------
   function desenharSituacao(s) {
-    $('sit-de').textContent = s.DT_PODE_VOLTAR_DE ? Util.dataHora(s.DT_PODE_VOLTAR_DE) : 'sem backup completo';
-    $('sit-ate').textContent = s.DT_PODE_VOLTAR_ATE ? Util.dataHora(s.DT_PODE_VOLTAR_ATE) : '';
+    const porVersao = s.DT_LIMITE_VERSAO && s.DT_PODE_VOLTAR_DE && paraCampo(s.DT_LIMITE_VERSAO) === paraCampo(s.DT_PODE_VOLTAR_DE);
+    $('sit-de').textContent = s.DT_PODE_VOLTAR_DE
+      ? Util.dataHora(s.DT_PODE_VOLTAR_DE) + (porVersao ? ' (atualização para a versão ' + s.VERSAO + ')' : '')
+      : 'sem backup completo';
+    $('sit-de').title = 'Não dá para voltar para antes da atualização do sistema para a versão atual: o banco ficaria numa versão diferente do programa.';
+    const ateHora = s.DT_PODE_VOLTAR_ATE_HORA && paraCampo(s.DT_PODE_VOLTAR_ATE_HORA) !== paraCampo(s.DT_PODE_VOLTAR_ATE)
+      ? ' (por dia e hora, até ' + Util.dataHora(s.DT_PODE_VOLTAR_ATE_HORA) + ')' : '';
+    $('sit-ate').textContent = s.DT_PODE_VOLTAR_ATE ? Util.dataHora(s.DT_PODE_VOLTAR_ATE) + ateHora : '';
     $('sit-completo').textContent = Util.dataHora(s.DT_ULTIMO_COMPLETO) || 'nenhum';
     $('sit-log').textContent = Util.dataHora(s.DT_ULTIMO_LOG) || 'nenhum';
     $('sit-teste').textContent = Util.dataHora(s.DT_ULTIMO_TESTE) || 'nenhum';
@@ -60,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const minimo = paraCampo(s.DT_PODE_VOLTAR_DE);
-    const maximo = paraCampo(s.DT_PODE_VOLTAR_ATE);
+    const maximo = paraCampo(s.DT_PODE_VOLTAR_ATE_HORA);
     $('dt-ponto').min = minimo;
     $('dt-ponto').max = maximo;
     $('botao-restaurar').disabled = s.ID_RESTAURACAO_ABERTA > 0;

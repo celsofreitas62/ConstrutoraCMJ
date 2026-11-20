@@ -30,6 +30,8 @@ BEGIN TRANSACTION;
 UPDATE SIS.Parametro SET VALOR = N'celsofreitas62@gmail.com' WHERE CHAVE = 'EMAIL_ADMIN_ALERTA';
 DELETE FROM SIS.Backup_Restauracao;   -- (desfeito no fim)
 DELETE FROM SIS.Backup_Execucao;
+-- versão atual "instalada" há 10 dias (desfeito no fim); o caso 10 testa o limite da versão
+UPDATE SIS.Versao_Banco SET DT_INSTALACAO = DATEADD(DAY, -10, DT_INSTALACAO) WHERE VERSAO = SIS.fn_SIS_Versao_Banco();
 
 -- Backups fictícios: completo F1 em T0 com logs L1..L5 (L2 apagado), completo F2 em T0+10h com logs L6..L8, segurança S1 em T0+14h
 INSERT INTO SIS.Backup_Execucao (TIPO, ARQUIVO, DT_INICIO, DT_FIM, TAMANHO_MB, SITUACAO, ARQUIVO_EXISTE)
@@ -81,10 +83,11 @@ INSERT @S EXEC SIS.SIS_Backup_Restauracao_Solicitar @IdUsuario = @Celso, @TipoPo
 INSERT @R SELECT 'segundo pedido com um em aberto: recusa', 'SIM', CASE WHEN MENSAGEM LIKE N'Já existe um pedido%' THEN 'SIM' ELSE CAST(MENSAGEM AS VARCHAR(400)) END FROM @S; DELETE @S;
 
 -- 4) situação e listas da tela
-DECLARE @Sit TABLE (DE DATETIME2(0), ATE DATETIME2(0), UC DATETIME2(0), UL DATETIME2(0), UT DATETIME2(0), ERROS INT, ID_ABERTA INT, SIT_ABERTA VARCHAR(12), PODE BIT, BANCO NVARCHAR(128), AGORA DATETIME2(0));
+DECLARE @Sit TABLE (DE DATETIME2(0), ATE DATETIME2(0), ATE_HORA DATETIME2(0), LIMITE DATETIME2(0), VERSAO VARCHAR(20), UC DATETIME2(0), UL DATETIME2(0), UT DATETIME2(0), ERROS INT, ID_ABERTA INT, SIT_ABERTA VARCHAR(12), PODE BIT, BANCO NVARCHAR(128), AGORA DATETIME2(0));
 INSERT @Sit EXEC SIS.SIS_Backup_Situacao_Obter @IdUsuario = @Renata;
 INSERT @R SELECT 'dá para voltar de (fim do F1)', CONVERT(VARCHAR(19), DATEADD(MINUTE, 1, @T0), 120), CONVERT(VARCHAR(19), DE, 120) FROM @Sit;
 INSERT @R SELECT 'dá para voltar até (fim do L8)', CONVERT(VARCHAR(19), DATEADD(MINUTE, 781, @T0), 120), CONVERT(VARCHAR(19), ATE, 120) FROM @Sit;
+INSERT @R SELECT 'por dia e hora até (fim do L8)', CONVERT(VARCHAR(19), DATEADD(MINUTE, 781, @T0), 120), CONVERT(VARCHAR(19), ATE_HORA, 120) FROM @Sit;
 INSERT @R SELECT 'situação: pedido em aberto e pode restaurar', CAST(@Id AS VARCHAR(10)) + ' PENDENTE 1', CAST(ID_ABERTA AS VARCHAR(10)) + ' ' + SIT_ABERTA + ' ' + CAST(PODE AS VARCHAR(1)) FROM @Sit;
 DECLARE @L TABLE (ID_BACKUP BIGINT, TIPO VARCHAR(10), TIPO_NOME NVARCHAR(40), ARQUIVO NVARCHAR(400), ARQUIVO_NOME NVARCHAR(260), DT_INICIO DATETIME2(0), DT_FIM DATETIME2(0),
                   TAMANHO_MB DECIMAL(12,1), SITUACAO VARCHAR(10), MENSAGEM NVARCHAR(2000), COPIA_NUVEM BIT, ARQUIVO_EXISTE BIT, PODE_ESCOLHER BIT, SERVIDOR NVARCHAR(128));
@@ -140,6 +143,23 @@ INSERT @R SELECT 'papel da API sem EXECUTE em ' + o.n, 'NEGADO',
        CASE WHEN EXISTS (SELECT 1 FROM sys.database_permissions p JOIN sys.database_principals r ON r.principal_id = p.grantee_principal_id
                          WHERE r.name = 'rl_sistemacmj_api' AND p.major_id = OBJECT_ID('SIS.' + o.n) AND p.state_desc = 'DENY') THEN 'NEGADO' ELSE 'LIBERADO' END
 FROM (VALUES ('SIS_Backup_Restauracao_Capturar'), ('SIS_Backup_Restauracao_Resultado')) o (n);
+
+-- 10) limite da versão: o banco não pode voltar para antes da atualização para a versão atual
+UPDATE SIS.Backup_Restauracao SET SITUACAO = 'CANCELADO' WHERE SITUACAO IN ('PENDENTE', 'EXECUTANDO');
+UPDATE SIS.Backup_Execucao SET ARQUIVO_EXISTE = 1 WHERE ID_BACKUP = @IdS1;
+UPDATE SIS.Versao_Banco SET DT_INSTALACAO = DATEADD(MINUTE, 720, @T0) WHERE VERSAO = SIS.fn_SIS_Versao_Banco();
+SET @P = DATEADD(MINUTE, 690, @T0);
+INSERT @S EXEC SIS.SIS_Backup_Restauracao_Solicitar @IdUsuario = @Celso, @TipoPonto = 'DATA_HORA', @DtPonto = @P, @Motivo = N'teste de homologação', @Confirmacao = N'RESTAURAR', @SenhaConferida = 1;
+INSERT @R SELECT 'ponto antes da atualização de versão: recusa', 'SIM', CASE WHEN MENSAGEM LIKE N'Não dá para voltar para antes de%versão%' THEN 'SIM' ELSE CAST(MENSAGEM AS VARCHAR(400)) END FROM @S; DELETE @S;
+DELETE @L;
+INSERT @L EXEC SIS.SIS_Backup_Listar @IdUsuario = @Renata;
+INSERT @R SELECT 'só o backup depois da versão pode ser escolhido', 'S1.bak', REPLACE(CAST(MAX(ARQUIVO) AS VARCHAR(400)), 'C:\t\', '') FROM @L WHERE PODE_ESCOLHER = 1;
+DELETE @Sit;
+INSERT @Sit EXEC SIS.SIS_Backup_Situacao_Obter @IdUsuario = @Renata;
+INSERT @R SELECT 'dá para voltar de = atualização de versão', CONVERT(VARCHAR(19), DATEADD(MINUTE, 720, @T0), 120), CONVERT(VARCHAR(19), DE, 120) FROM @Sit;
+SET @P = DATEADD(MINUTE, 750, @T0);
+INSERT @S EXEC SIS.SIS_Backup_Restauracao_Solicitar @IdUsuario = @Celso, @TipoPonto = 'DATA_HORA', @DtPonto = @P, @Motivo = N'teste de homologação', @Confirmacao = N'RESTAURAR', @SenhaConferida = 1;
+INSERT @R SELECT 'ponto depois da atualização: aceito', '1', CAST(SUCESSO AS VARCHAR(1)) FROM @S; DELETE @S;
 ROLLBACK TRANSACTION;
 
 SELECT CASO, ESPERADO, OBTIDO, CASE WHEN ESPERADO = OBTIDO THEN 'OK' ELSE 'FALHA' END AS RESULTADO FROM @R;

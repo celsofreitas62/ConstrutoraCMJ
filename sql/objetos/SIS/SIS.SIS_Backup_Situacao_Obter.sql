@@ -12,6 +12,10 @@
 
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
+    v1.1 (20/11/2026) - "De" respeita a última atualização de versão
+                        (fn_SIS_Backup_Limite_Versao); DT_PODE_VOLTAR_ATE_HORA
+                        (último backup do log: limite do "dia e hora"),
+                        DT_LIMITE_VERSAO e VERSAO. Achados no ensaio.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Backup_Situacao_Obter @IdUsuario = 1;
@@ -29,7 +33,8 @@ BEGIN
 
     DECLARE @NomeProc     NVARCHAR(128) = N'[SIS].[SIS_Backup_Situacao_Obter]';
     DECLARE @EtapaAtual   VARCHAR(100)  = 'Validação';
-    DECLARE @DtMaisAntigo DATETIME2(0), @DtInicioAntigo DATETIME2(0), @DtMaisRecente DATETIME2(0);
+    DECLARE @DtMaisAntigo DATETIME2(0), @DtInicioAntigo DATETIME2(0), @DtMaisRecente DATETIME2(0), @DtAteHora DATETIME2(0);
+    DECLARE @DtLimite     DATETIME2(0) = SIS.fn_SIS_Backup_Limite_Versao();
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_BACKUP', 'VER') = 0
@@ -46,8 +51,20 @@ BEGIN
         WHERE b.TIPO IN ('COMPLETO', 'LOG') AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
           AND b.DT_INICIO >= @DtInicioAntigo;
 
+        SELECT @DtAteHora = MAX(b.DT_FIM)
+        FROM SIS.Backup_Execucao b WITH (NOLOCK)
+        WHERE b.TIPO = 'LOG' AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
+          AND b.DT_INICIO >= @DtInicioAntigo;
+
+        IF @DtMaisAntigo < @DtLimite SET @DtMaisAntigo = @DtLimite;
+        IF @DtMaisRecente < @DtMaisAntigo SET @DtMaisRecente = NULL;
+        IF @DtAteHora < @DtMaisAntigo SET @DtAteHora = NULL;
+
         SELECT @DtMaisAntigo  AS DT_PODE_VOLTAR_DE,
                @DtMaisRecente AS DT_PODE_VOLTAR_ATE,
+               @DtAteHora     AS DT_PODE_VOLTAR_ATE_HORA,
+               CASE WHEN @DtLimite > '1900-01-01' THEN @DtLimite END AS DT_LIMITE_VERSAO,
+               CAST(SIS.fn_SIS_Versao_Banco() AS VARCHAR(20)) AS VERSAO,
                (SELECT MAX(b.DT_FIM) FROM SIS.Backup_Execucao b WITH (NOLOCK) WHERE b.TIPO = 'COMPLETO' AND b.SITUACAO = 'OK') AS DT_ULTIMO_COMPLETO,
                (SELECT MAX(b.DT_FIM) FROM SIS.Backup_Execucao b WITH (NOLOCK) WHERE b.TIPO = 'LOG'      AND b.SITUACAO = 'OK') AS DT_ULTIMO_LOG,
                (SELECT MAX(b.DT_FIM) FROM SIS.Backup_Execucao b WITH (NOLOCK) WHERE b.TIPO = 'TESTE'    AND b.SITUACAO = 'OK') AS DT_ULTIMO_TESTE,
