@@ -151,10 +151,12 @@ ORDEM_03C2B = [
     'objetos/MIG/MIG.MIG_Caso_Gravar.sql', 'objetos/MIG/MIG.MIG_Caso_Conferir.sql', 'objetos/MIG/MIG.MIG_Caso_Lote_Gravar.sql', 'objetos/MIG/MIG.MIG_Caso_Correcao_Exportar.sql', 'objetos/MIG/Carga_MIG_Tela_Casos.sql',
     'objetos/MIG/MIG.MIG_Arquivo_Morto_Processar.sql',
 ]
-ORDEM_03D = ['objetos/SIS/SIS.fn_SIS_Email_HTML.sql', 'objetos/SIS/Carga_SIS_Parametro.sql']
+ORDEM_03D = ['objetos/SIS/SIS.fn_SIS_Email_HTML.sql', 'objetos/SIS/Carga_SIS_Parametro.sql',
+             'objetos/SIS/SIS.Login_Log.sql', 'objetos/SIS/SIS.SIS_Usuario_Login_Processar.sql',
+             'objetos/SIS/SIS.Versao_Banco.sql', 'objetos/SIS/SIS.fn_SIS_Versao_Banco.sql', 'objetos/SIS/Carga_SIS_Versao.sql']
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B, '03d': ORDEM_03D}[PARTE]
-TITULO = {'03d': '03d - ajustes da base SIS durante a etapa 03d (rodapé dos e-mails sem CNPJ por parâmetro)',
+TITULO = {'03d': '03d - ajustes da base SIS na etapa 03d (rodapé dos e-mails sem CNPJ, limite de login por computador, versão do banco)',
           '02a': '02a - base SIS (schemas, logs, parâmetros, functions de formatação)',
           '02b': '02b - base SIS (licença, usuários, perfis, permissões, sessão, menu, dois níveis de administrador)',
           '02b2': '02b2 - ajuste da base SIS: identidade visual por cliente (logomarcas e cores) e correção de nomes com "_"',

@@ -8,7 +8,7 @@
 //              do programa. Serve para o roteiro de instalação, para conferir
 //              depois de uma atualização e para monitoramento.
 //              Resposta: 200 quando tudo está bem; 503 quando o banco não
-//              responde. Não mostra detalhe técnico do erro (vai para o
+//              responde ou está em versão diferente da do programa. Não mostra detalhe técnico do erro (vai para o
 //              registro em arquivo).
 // =============================================================================
 using System.Diagnostics;
@@ -28,7 +28,7 @@ public static class SaudeEndpoints
         app.MapGet("/api/saude", Saude);
     }
 
-    private static async Task<IResult> Saude(Banco banco, ILogger<Banco> logger, CancellationToken ct)
+    private static async Task<IResult> Saude(Banco banco, VersaoBanco versao, ILogger<Banco> logger, CancellationToken ct)
     {
         var relogio = Stopwatch.StartNew();
         var bancoOk = false;
@@ -43,16 +43,19 @@ public static class SaudeEndpoints
             logger.LogError(erro, "Saúde: o banco não respondeu");
         }
         relogio.Stop();
+        var versaoOk = bancoOk && await versao.ConferirAsync(ct);
 
         var corpo = new
         {
             sistema = "SisCMJ",
-            situacao = bancoOk ? "ok" : "banco_fora",
+            situacao = !bancoOk ? "banco_fora" : versaoOk ? "ok" : "banco_desatualizado",
             versao = VersaoPrograma,
+            versaoBanco = versao.Atual,
+            versaoBancoExigida = VersaoBanco.VersaoExigida,
             banco = bancoOk ? "ok" : "erro",
             tempoBancoMs = relogio.ElapsedMilliseconds,
             horario = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
         };
-        return Results.Json(corpo, statusCode: bancoOk ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
+        return Results.Json(corpo, statusCode: versaoOk ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
     }
 }

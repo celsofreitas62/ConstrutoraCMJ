@@ -11,7 +11,12 @@
                   - bloqueado ou sem senha definida: recusa com o motivo;
                   - senha errada: soma tentativa; ao chegar no limite
                     SENHA_TENTATIVAS_BLOQUEIO (mínimo 3), bloqueia;
-                  - senha certa: zera tentativas, abre a sessão.
+                  - senha certa: zera tentativas, abre a sessão;
+                  - computador (IP) com LOGIN_COMPUTADOR_TENTATIVAS erros
+                    seguidos (qualquer usuário, inclusive inexistente) nos
+                    últimos LOGIN_COMPUTADOR_MINUTOS: recusa sem olhar a
+                    senha nem contar tentativa no usuário (ESTACAO_BLOQUEADA),
+                    até passar o tempo. Um login certo zera a contagem.
                 Toda tentativa vai para SIS.Login_Log.
                 Recusa antes de gravar: COMMIT (nada foi alterado), para a
                 procedure funcionar também dentro de INSERT ... EXEC.
@@ -20,6 +25,7 @@
 
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02b).
+    v1.1 (20/11/2026) - Etapa 03d: limite de tentativas por computador.
 
   Homologação (LOCAL): ver sql/testes/SIS/02b_Homologacao_SIS.sql.
 *******************************************************************************/
@@ -52,6 +58,9 @@ BEGIN
     DECLARE @Resultado    VARCHAR(20)   = '';
     DECLARE @Mensagem     NVARCHAR(400) = N'';
     DECLARE @IdSessao     BIGINT;
+    DECLARE @LimiteIp     INT;
+    DECLARE @MinutosIp    INT;
+    DECLARE @ErrosIp      INT = 0;
 
     BEGIN TRY
         SET @Login          = LOWER(LTRIM(RTRIM(ISNULL(@Login, N''))));
@@ -61,6 +70,10 @@ BEGIN
         SET @Navegador      = ISNULL(@Navegador, N'');
         SET @Limite         = SIS.fn_SIS_Parametro_Inteiro('SENHA_TENTATIVAS_BLOQUEIO');
         IF @Limite < 3 SET @Limite = 3;
+        SET @LimiteIp       = ISNULL(SIS.fn_SIS_Parametro_Inteiro('LOGIN_COMPUTADOR_TENTATIVAS'), 10);
+        IF @LimiteIp < 5 SET @LimiteIp = 5;
+        SET @MinutosIp      = ISNULL(SIS.fn_SIS_Parametro_Inteiro('LOGIN_COMPUTADOR_MINUTOS'), 15);
+        IF @MinutosIp < 1 SET @MinutosIp = 1;
 
         IF @SenhaConferida = 1 AND DATALENGTH(ISNULL(@TokenHash, 0x)) <> 32
         BEGIN
@@ -85,7 +98,22 @@ BEGIN
             WHERE u.LOGIN = @Login
               AND u.INTERNO = 0;
 
-            IF @IdUsuario IS NULL
+            -- Computador que errou demais: espera, sem olhar a senha nem contar no usuário
+            IF @Ip <> ''
+                SELECT @ErrosIp = COUNT(*)
+                FROM SIS.Login_Log l
+                WHERE l.IP = @Ip
+                  AND l.DT_TENTATIVA >= DATEADD(MINUTE, -@MinutosIp, SYSDATETIME())
+                  AND l.RESULTADO IN ('SENHA_ERRADA', 'BLOQUEOU', 'INEXISTENTE', 'INATIVO')
+                  AND l.ID_LOGIN_LOG > ISNULL((SELECT MAX(o.ID_LOGIN_LOG) FROM SIS.Login_Log o WHERE o.IP = @Ip AND o.RESULTADO = 'OK'), 0);
+
+            IF @ErrosIp >= @LimiteIp
+            BEGIN
+                SET @Resultado = 'ESTACAO_BLOQUEADA';
+                SET @Mensagem  = N'Muitas tentativas de login erradas neste computador. Aguarde ' + CONVERT(NVARCHAR(10), @MinutosIp) + N' minutos e tente de novo.';
+            END;
+
+            IF @Resultado = '' AND @IdUsuario IS NULL
             BEGIN
                 SET @Resultado = 'INEXISTENTE';
                 SET @Mensagem  = N'Usuário ou senha inválidos.';

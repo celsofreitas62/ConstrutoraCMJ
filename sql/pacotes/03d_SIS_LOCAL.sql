@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
-  Pacote      : 03d - ajustes da base SIS durante a etapa 03d (rodapé dos e-mails sem CNPJ por parâmetro)
+  Pacote      : 03d - ajustes da base SIS na etapa 03d (rodapé dos e-mails sem CNPJ, limite de login por computador, versão do banco)
   Banco       : SISTEMACMJ_LOCAL (somente desenvolvimento)
   Gerado em   : 20/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
                 na ordem da regra 59. NÃO EDITAR ESTE ARQUIVO: corrigir o
@@ -147,6 +147,8 @@ GO
                         EMAIL_LOGO_NOME_ARQUIVO (como a logomarca vai no e-mail).
     v1.5 (20/11/2026) - Etapa 03d: EMAIL_RODAPE_CNPJ (CNPJ no rodapé dos e-mails
                         a clientes e terceiros; fábrica N, pedido do Celso).
+    v1.6 (20/11/2026) - Etapa 03d: LOGIN_COMPUTADOR_TENTATIVAS e
+                        LOGIN_COMPUTADOR_MINUTOS (limite de tentativas por computador).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -165,6 +167,10 @@ FROM (VALUES
          N'Quantidade mínima de caracteres da senha dos usuários.', 'SIS', 1),
         ('SENHA_TENTATIVAS_BLOQUEIO', N'5', 'INTEIRO',
          N'Tentativas de senha errada seguidas até o usuário ser bloqueado.', 'SIS', 1),
+        ('LOGIN_COMPUTADOR_TENTATIVAS', N'10', 'INTEIRO',
+         N'Tentativas de login erradas seguidas, de um mesmo computador (com qualquer usuário), até ele ficar em espera. Mínimo 5.', 'SIS', 1),
+        ('LOGIN_COMPUTADOR_MINUTOS', N'15', 'INTEIRO',
+         N'Minutos que o computador fica em espera depois de errar o login demais, e janela de contagem das tentativas.', 'SIS', 1),
         ('SESSAO_MINUTOS_INATIVIDADE', N'30', 'INTEIRO',
          N'Minutos sem uso até a sessão expirar e pedir login de novo.', 'SIS', 1),
         ('ANEXO_PASTA_RAIZ', N'C:\SistemaCMJ_Arquivos\Anexos', 'TEXTO',
@@ -220,6 +226,369 @@ FROM (VALUES
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Parametro p WHERE p.CHAVE = v.CHAVE);
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.Login_Log.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[Login_Log]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 15/11/2026
+  Descrição   : Toda tentativa de login, certa ou errada (seção 3.6).
+                RESULTADO: OK, SENHA_ERRADA, BLOQUEOU (errou e foi bloqueado
+                nesta tentativa), BLOQUEADO (já estava), INATIVO, SEM_SENHA,
+                INEXISTENTE, ESTACAO_BLOQUEADA (o computador errou demais
+                em pouco tempo e está em espera). LOGIN_INFORMADO guarda o que foi digitado
+                (para ver tentativas com nomes que não existem).
+                Nunca é apagado.
+
+  Changelog:
+    v1.0 (15/11/2026) - Criação (etapa 02b).
+    v1.1 (20/11/2026) - Etapa 03d: resultado ESTACAO_BLOQUEADA (limite de
+                        tentativas por computador) e índice por IP e data.
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[SIS].[Login_Log]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [SIS].[Login_Log]
+    (
+        ID_LOGIN_LOG     BIGINT          IDENTITY(1,1) NOT NULL,
+        LOGIN_INFORMADO  NVARCHAR(100)   NOT NULL CONSTRAINT DF_Login_Log_LOGIN_INFORMADO DEFAULT (N''),
+        ID_USUARIO       INT             NULL,
+        RESULTADO        VARCHAR(20)     NOT NULL,
+        IP               VARCHAR(45)     NOT NULL CONSTRAINT DF_Login_Log_IP              DEFAULT (''),
+        ESTACAO          NVARCHAR(128)   NOT NULL CONSTRAINT DF_Login_Log_ESTACAO         DEFAULT (N''),
+        DT_TENTATIVA     DATETIME2(0)    NOT NULL CONSTRAINT DF_Login_Log_DT_TENTATIVA    DEFAULT (SYSDATETIME()),
+        CONSTRAINT PK_Login_Log           PRIMARY KEY CLUSTERED (ID_LOGIN_LOG),
+        CONSTRAINT FK_Login_Log_Usuario   FOREIGN KEY (ID_USUARIO) REFERENCES [SIS].[Usuario] (ID_USUARIO),
+        CONSTRAINT CK_Login_Log_RESULTADO CHECK (RESULTADO IN ('OK', 'SENHA_ERRADA', 'BLOQUEOU', 'BLOQUEADO', 'INATIVO', 'SEM_SENHA', 'INEXISTENTE', 'ESTACAO_BLOQUEADA'))
+    );
+END;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Login_Log]') AND i.name = N'IX_Login_Log_DT_TENTATIVA')
+    CREATE NONCLUSTERED INDEX IX_Login_Log_DT_TENTATIVA ON [SIS].[Login_Log] (DT_TENTATIVA) INCLUDE (ID_USUARIO, RESULTADO);
+GO
+
+-- v1.1: novo resultado ESTACAO_BLOQUEADA (troca a restrição só se ainda não aceita)
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints c
+               WHERE c.name = N'CK_Login_Log_RESULTADO' AND c.parent_object_id = OBJECT_ID(N'[SIS].[Login_Log]')
+                 AND c.definition LIKE N'%ESTACAO_BLOQUEADA%')
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.check_constraints c WHERE c.name = N'CK_Login_Log_RESULTADO' AND c.parent_object_id = OBJECT_ID(N'[SIS].[Login_Log]'))
+        ALTER TABLE [SIS].[Login_Log] DROP CONSTRAINT CK_Login_Log_RESULTADO;
+    ALTER TABLE [SIS].[Login_Log] ADD CONSTRAINT CK_Login_Log_RESULTADO
+        CHECK (RESULTADO IN ('OK', 'SENHA_ERRADA', 'BLOQUEOU', 'BLOQUEADO', 'INATIVO', 'SEM_SENHA', 'INEXISTENTE', 'ESTACAO_BLOQUEADA'));
+END;
+GO
+
+-- v1.1: contagem de tentativas erradas por computador (SIS_Usuario_Login_Processar)
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Login_Log]') AND i.name = N'IX_Login_Log_IP_DT')
+    CREATE NONCLUSTERED INDEX IX_Login_Log_IP_DT ON [SIS].[Login_Log] (IP, DT_TENTATIVA) INCLUDE (RESULTADO);
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Usuario_Login_Processar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Usuario_Login_Processar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 15/11/2026
+  Descrição   : 2º passo do login (uso exclusivo da API). A API informa se a
+                senha conferiu (@SenhaConferida) e, se conferiu, o SHA-256 do
+                token de sessão que vai no cookie (@TokenHash, 32 bytes).
+                Regras:
+                  - login inexistente/interno ou inativo: recusa genérica;
+                  - bloqueado ou sem senha definida: recusa com o motivo;
+                  - senha errada: soma tentativa; ao chegar no limite
+                    SENHA_TENTATIVAS_BLOQUEIO (mínimo 3), bloqueia;
+                  - senha certa: zera tentativas, abre a sessão;
+                  - computador (IP) com LOGIN_COMPUTADOR_TENTATIVAS erros
+                    seguidos (qualquer usuário, inclusive inexistente) nos
+                    últimos LOGIN_COMPUTADOR_MINUTOS: recusa sem olhar a
+                    senha nem contar tentativa no usuário (ESTACAO_BLOQUEADA),
+                    até passar o tempo. Um login certo zera a contagem.
+                Toda tentativa vai para SIS.Login_Log.
+                Recusa antes de gravar: COMMIT (nada foi alterado), para a
+                procedure funcionar também dentro de INSERT ... EXEC.
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID_USUARIO, ID_SESSAO,
+                NOME, TROCAR_SENHA.
+
+  Changelog:
+    v1.0 (15/11/2026) - Criação (etapa 02b).
+    v1.1 (20/11/2026) - Etapa 03d: limite de tentativas por computador.
+
+  Homologação (LOCAL): ver sql/testes/SIS/02b_Homologacao_SIS.sql.
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Usuario_Login_Processar]
+    @Login           NVARCHAR(100),
+    @SenhaConferida  BIT,
+    @TokenHash       VARBINARY(32)  = NULL,
+    @Ip              VARCHAR(45)    = NULL,
+    @Estacao         NVARCHAR(128)  = NULL,
+    @Navegador       NVARCHAR(300)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc     NVARCHAR(128) = N'[SIS].[SIS_Usuario_Login_Processar]';
+    DECLARE @EtapaAtual   VARCHAR(100)  = 'Validação';
+    DECLARE @Limite       INT;
+    DECLARE @IdUsuario    INT;
+    DECLARE @Ativo        BIT;
+    DECLARE @Bloqueado    BIT;
+    DECLARE @TemSenha     BIT;
+    DECLARE @Tentativas   SMALLINT;
+    DECLARE @Nome         NVARCHAR(100);
+    DECLARE @TrocarSenha  BIT;
+    DECLARE @Resultado    VARCHAR(20)   = '';
+    DECLARE @Mensagem     NVARCHAR(400) = N'';
+    DECLARE @IdSessao     BIGINT;
+    DECLARE @LimiteIp     INT;
+    DECLARE @MinutosIp    INT;
+    DECLARE @ErrosIp      INT = 0;
+
+    BEGIN TRY
+        SET @Login          = LOWER(LTRIM(RTRIM(ISNULL(@Login, N''))));
+        SET @SenhaConferida = ISNULL(@SenhaConferida, 0);
+        SET @Ip             = ISNULL(@Ip, '');
+        SET @Estacao        = ISNULL(@Estacao, N'');
+        SET @Navegador      = ISNULL(@Navegador, N'');
+        SET @Limite         = SIS.fn_SIS_Parametro_Inteiro('SENHA_TENTATIVAS_BLOQUEIO');
+        IF @Limite < 3 SET @Limite = 3;
+        SET @LimiteIp       = ISNULL(SIS.fn_SIS_Parametro_Inteiro('LOGIN_COMPUTADOR_TENTATIVAS'), 10);
+        IF @LimiteIp < 5 SET @LimiteIp = 5;
+        SET @MinutosIp      = ISNULL(SIS.fn_SIS_Parametro_Inteiro('LOGIN_COMPUTADOR_MINUTOS'), 15);
+        IF @MinutosIp < 1 SET @MinutosIp = 1;
+
+        IF @SenhaConferida = 1 AND DATALENGTH(ISNULL(@TokenHash, 0x)) <> 32
+        BEGIN
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, ORIGEM)
+            VALUES (@NomeProc, @EtapaAtual, 0, N'Token de sessão inválido recebido da API (precisa ter 32 bytes).', 0, 'SQL');
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Falha técnica no login. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS INT) AS ID_USUARIO, CAST(NULL AS BIGINT) AS ID_SESSAO, CAST(N'' AS NVARCHAR(100)) AS NOME, CAST(0 AS BIT) AS TROCAR_SENHA;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Processamento';
+        BEGIN TRANSACTION;
+
+            SELECT @IdUsuario   = u.ID_USUARIO,
+                   @Ativo       = u.ATIVO,
+                   @Bloqueado   = u.BLOQUEADO,
+                   @TemSenha    = CASE WHEN u.SENHA_HASH IS NULL THEN 0 ELSE 1 END,
+                   @Tentativas  = u.TENTATIVAS_ERRADAS,
+                   @Nome        = u.NOME,
+                   @TrocarSenha = u.TROCAR_SENHA
+            FROM SIS.Usuario u WITH (UPDLOCK, HOLDLOCK)
+            WHERE u.LOGIN = @Login
+              AND u.INTERNO = 0;
+
+            -- Computador que errou demais: espera, sem olhar a senha nem contar no usuário
+            IF @Ip <> ''
+                SELECT @ErrosIp = COUNT(*)
+                FROM SIS.Login_Log l
+                WHERE l.IP = @Ip
+                  AND l.DT_TENTATIVA >= DATEADD(MINUTE, -@MinutosIp, SYSDATETIME())
+                  AND l.RESULTADO IN ('SENHA_ERRADA', 'BLOQUEOU', 'INEXISTENTE', 'INATIVO')
+                  AND l.ID_LOGIN_LOG > ISNULL((SELECT MAX(o.ID_LOGIN_LOG) FROM SIS.Login_Log o WHERE o.IP = @Ip AND o.RESULTADO = 'OK'), 0);
+
+            IF @ErrosIp >= @LimiteIp
+            BEGIN
+                SET @Resultado = 'ESTACAO_BLOQUEADA';
+                SET @Mensagem  = N'Muitas tentativas de login erradas neste computador. Aguarde ' + CONVERT(NVARCHAR(10), @MinutosIp) + N' minutos e tente de novo.';
+            END;
+
+            IF @Resultado = '' AND @IdUsuario IS NULL
+            BEGIN
+                SET @Resultado = 'INEXISTENTE';
+                SET @Mensagem  = N'Usuário ou senha inválidos.';
+            END;
+
+            IF @Resultado = '' AND @Ativo = 0
+            BEGIN
+                SET @Resultado = 'INATIVO';
+                SET @Mensagem  = CASE WHEN @SenhaConferida = 1 THEN N'Usuário inativo. Procure o administrador do sistema.' ELSE N'Usuário ou senha inválidos.' END;
+            END;
+
+            IF @Resultado = '' AND @Bloqueado = 1
+            BEGIN
+                SET @Resultado = 'BLOQUEADO';
+                SET @Mensagem  = N'Usuário bloqueado por excesso de tentativas. Procure o administrador do sistema.';
+            END;
+
+            IF @Resultado = '' AND @TemSenha = 0
+            BEGIN
+                SET @Resultado = 'SEM_SENHA';
+                SET @Mensagem  = N'A senha deste usuário ainda não foi definida. Procure o administrador do sistema.';
+            END;
+
+            IF @Resultado = '' AND @SenhaConferida = 0
+            BEGIN
+                SET @Tentativas = @Tentativas + 1;
+
+                UPDATE u
+                   SET u.TENTATIVAS_ERRADAS = @Tentativas,
+                       u.BLOQUEADO          = CASE WHEN @Tentativas >= @Limite THEN 1 ELSE 0 END,
+                       u.DT_BLOQUEIO        = CASE WHEN @Tentativas >= @Limite THEN SYSDATETIME() ELSE u.DT_BLOQUEIO END
+                FROM SIS.Usuario u
+                WHERE u.ID_USUARIO = @IdUsuario;
+
+                SET @Resultado = CASE WHEN @Tentativas >= @Limite THEN 'BLOQUEOU' ELSE 'SENHA_ERRADA' END;
+                SET @Mensagem  = CASE WHEN @Tentativas >= @Limite
+                                      THEN N'Senha incorreta. O usuário foi bloqueado após ' + CONVERT(NVARCHAR(10), @Limite) + N' tentativas. Procure o administrador do sistema.'
+                                      ELSE N'Usuário ou senha inválidos. Restam ' + CONVERT(NVARCHAR(10), @Limite - @Tentativas) + N' tentativa(s) antes do bloqueio.'
+                                 END;
+            END;
+
+            IF @Resultado = ''
+            BEGIN
+                UPDATE u
+                   SET u.TENTATIVAS_ERRADAS = 0,
+                       u.DT_ULTIMO_LOGIN    = SYSDATETIME()
+                FROM SIS.Usuario u
+                WHERE u.ID_USUARIO = @IdUsuario;
+
+                INSERT INTO SIS.Sessao (ID_USUARIO, TOKEN_HASH, IP, ESTACAO, NAVEGADOR)
+                VALUES (@IdUsuario, @TokenHash, @Ip, @Estacao, @Navegador);
+                SET @IdSessao = CAST(SCOPE_IDENTITY() AS BIGINT);
+
+                SET @Resultado = 'OK';
+                SET @Mensagem  = CASE WHEN @TrocarSenha = 1 THEN N'Bem-vindo. Defina uma nova senha para continuar.' ELSE N'Bem-vindo.' END;
+            END;
+
+            INSERT INTO SIS.Login_Log (LOGIN_INFORMADO, ID_USUARIO, RESULTADO, IP, ESTACAO)
+            VALUES (LEFT(@Login, 100), @IdUsuario, @Resultado, @Ip, @Estacao);
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(CASE WHEN @Resultado = 'OK' THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+               CAST(@Mensagem AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(CASE WHEN @Resultado = 'OK' THEN @IdUsuario END AS INT) AS ID_USUARIO,
+               @IdSessao AS ID_SESSAO,
+               CAST(CASE WHEN @Resultado = 'OK' THEN ISNULL(@Nome, N'') ELSE N'' END AS NVARCHAR(100)) AS NOME,
+               CAST(CASE WHEN @Resultado = 'OK' THEN ISNULL(@TrocarSenha, 0) ELSE 0 END AS BIT) AS TROCAR_SENHA;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO,
+               CAST(N'Não foi possível fazer o login. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS INT) AS ID_USUARIO, CAST(NULL AS BIGINT) AS ID_SESSAO, CAST(N'' AS NVARCHAR(100)) AS NOME, CAST(0 AS BIT) AS TROCAR_SENHA;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.Versao_Banco.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[Versao_Banco]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Histórico das instalações do banco: cada vez que o MASTER (ou o
+                pacote do desenvolvimento) roda, grava a versão instalada, quando
+                e por quem. A versão atual é a do registro mais recente
+                (SIS.fn_SIS_Versao_Banco). A API confere essa versão ao subir:
+                programa e banco têm de estar na mesma versão (CLAUDE.md seção 7,
+                fase 3d). Nunca é apagado.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[SIS].[Versao_Banco]', N'U') IS NULL
+    CREATE TABLE [SIS].[Versao_Banco]
+    (
+        ID_VERSAO_BANCO  INT            IDENTITY(1,1) NOT NULL,
+        VERSAO           VARCHAR(20)    NOT NULL,
+        ORIGEM           VARCHAR(20)    NOT NULL,
+        DT_INSTALACAO    DATETIME2(0)   NOT NULL CONSTRAINT DF_Versao_Banco_DT_INSTALACAO DEFAULT (SYSDATETIME()),
+        USUARIO          NVARCHAR(128)  NOT NULL CONSTRAINT DF_Versao_Banco_USUARIO       DEFAULT (SUSER_SNAME()),
+        ESTACAO          NVARCHAR(128)  NOT NULL CONSTRAINT DF_Versao_Banco_ESTACAO       DEFAULT (ISNULL(HOST_NAME(), N'')),
+        CONSTRAINT PK_Versao_Banco        PRIMARY KEY CLUSTERED (ID_VERSAO_BANCO),
+        CONSTRAINT CK_Versao_Banco_ORIGEM CHECK (ORIGEM IN ('MASTER', 'PACOTE_LOCAL'))
+    );
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Versao_Banco.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Versao_Banco]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Versão atual do banco (a da instalação mais recente em
+                SIS.Versao_Banco). Vazio = banco sem versão registrada.
+                Usada pela API ao subir e em /api/saude.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d).
+
+  Homologação (LOCAL):
+    -- SELECT SIS.fn_SIS_Versao_Banco();
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Versao_Banco] ()
+RETURNS VARCHAR(20)
+AS
+BEGIN
+    RETURN ISNULL((SELECT TOP (1) v.VERSAO FROM SIS.Versao_Banco v ORDER BY v.ID_VERSAO_BANCO DESC), '');
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/Carga_SIS_Versao.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : registro da versão do banco em [SIS].[Versao_Banco]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : ÚLTIMA instrução do MASTER (depois da finalização): grava a
+                versão que acabou de ser instalada. É a ÚNICA fonte da versão do
+                banco: o montar_master.py lê o número daqui para o cabeçalho
+                do MASTER, e a API exige o mesmo número
+                (Infra/VersaoBanco.cs, VersaoExigida).
+                REGRA: toda mudança que vai para o MASTER sobe este número e o
+                da API juntos.
+                Em banco de desenvolvimento (_LOCAL) grava com ORIGEM
+                PACOTE_LOCAL. Rodar de novo grava outra linha (histórico).
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d): versão 1.1 do banco.
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+DECLARE @Versao VARCHAR(20) = '1.1';
+INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
+VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
+PRINT N'Versão do banco registrada: ' + @Versao;
 GO
 
 PRINT N'Pacote 03d concluído sem erro.';

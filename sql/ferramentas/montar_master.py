@@ -1,12 +1,14 @@
 # SistemaCMJ - monta sql/MASTER/SISTEMACMJ_MASTER_Instalacao.sql (PADRAO_SQL regras 58 a 60)
 # Autor: Celso de Freitas / Refatorado: Claude
-# v1.0 (20/11/2026) - Criacao (etapa 03d). Junta os arquivos de sql/objetos que ja
+# v1.0 (20/11/2026) - Criacao (etapa 03d).
+# v1.1 (20/11/2026) - Versao lida de Carga_SIS_Versao.sql, que vai por ultimo. Junta os arquivos de sql/objetos que ja
 #                     passaram pelos pacotes homologados, sem o schema MIG, na ordem
 #                     da regra 59; dentro de cada parte, a ordem dos pacotes.
 # Uso: python3 sql/ferramentas/montar_master.py   (SISTEMACMJ_SQL = pasta sql)
 import os, re, datetime
 BASE = os.environ.get('SISTEMACMJ_SQL', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-VERSAO = '1.0'
+# A versao do banco vem de Carga_SIS_Versao.sql (fonte unica).
+VERSAO = re.search(r"@Versao\s+VARCHAR\(20\)\s*=\s*'([0-9.]+)'", open(os.path.join(BASE, 'objetos', 'SIS', 'Carga_SIS_Versao.sql'), encoding='utf-8-sig').read()).group(1)
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)
@@ -21,7 +23,8 @@ def ler(p):
     return open(os.path.join(BASE, p), encoding='utf-8-sig').read().replace('\r\n', '\n')
 
 ESPECIAL = {'objetos/CAD/CAD.Empresa_Pasta_OFX.sql': 3, 'objetos/CAD/CAD.FK_Conta_Padrao.sql': 3,
-            'objetos/SIS/SIS.rl_sistemacmj_api.sql': 8.5, 'objetos/SIS/Carga_SIS_Finalizar.sql': 9.9}
+            'objetos/SIS/SIS.rl_sistemacmj_api.sql': 8.5, 'objetos/SIS/Carga_SIS_Finalizar.sql': 9.9,
+            'objetos/SIS/Carga_SIS_Versao.sql': 9.95}
 def parte(f):
     if f in ESPECIAL: return ESPECIAL[f]
     n = os.path.basename(f); t = ler(f)
@@ -37,7 +40,7 @@ def parte(f):
 
 NOMES = {2: '2. SCHEMAS', 3: '3. TABELAS E RESTRICOES', 4: '4. SEQUENCES', 5: '5. FUNCTIONS', 6: '6. VIEWS',
          7: '7. PROCEDURES', 8: '8. TRIGGERS', 8.5: '8b. SEGURANCA (papel da API)', 9: '9. PARAMETROS E CARGA INICIAL',
-         9.9: '9. (fim) FINALIZACAO DA INSTALACAO'}
+         9.9: '9. (fim) FINALIZACAO DA INSTALACAO', 9.95: '9. (fim) REGISTRO DA VERSAO DO BANCO'}
 grupos = {}
 for f in ordem:
     grupos.setdefault(parte(f), []).append(f)

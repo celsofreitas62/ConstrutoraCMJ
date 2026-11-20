@@ -25,6 +25,8 @@
                         EMAIL_LOGO_NOME_ARQUIVO (como a logomarca vai no e-mail).
     v1.5 (20/11/2026) - Etapa 03d: EMAIL_RODAPE_CNPJ (CNPJ no rodapé dos e-mails
                         a clientes e terceiros; fábrica N, pedido do Celso).
+    v1.6 (20/11/2026) - Etapa 03d: LOGIN_COMPUTADOR_TENTATIVAS e
+                        LOGIN_COMPUTADOR_MINUTOS (limite de tentativas por computador).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -43,6 +45,10 @@ FROM (VALUES
          N'Quantidade mínima de caracteres da senha dos usuários.', 'SIS', 1),
         ('SENHA_TENTATIVAS_BLOQUEIO', N'5', 'INTEIRO',
          N'Tentativas de senha errada seguidas até o usuário ser bloqueado.', 'SIS', 1),
+        ('LOGIN_COMPUTADOR_TENTATIVAS', N'10', 'INTEIRO',
+         N'Tentativas de login erradas seguidas, de um mesmo computador (com qualquer usuário), até ele ficar em espera. Mínimo 5.', 'SIS', 1),
+        ('LOGIN_COMPUTADOR_MINUTOS', N'15', 'INTEIRO',
+         N'Minutos que o computador fica em espera depois de errar o login demais, e janela de contagem das tentativas.', 'SIS', 1),
         ('SESSAO_MINUTOS_INATIVIDADE', N'30', 'INTEIRO',
          N'Minutos sem uso até a sessão expirar e pedir login de novo.', 'SIS', 1),
         ('ANEXO_PASTA_RAIZ', N'C:\SistemaCMJ_Arquivos\Anexos', 'TEXTO',

@@ -22,11 +22,16 @@
 //                - registro em arquivo (Infra/RegistroArquivo.cs);
 //                - erro não tratado em /api vira resposta padrão e vai para o
 //                  registro;
-//                - GET /api/saude (Endpoints/SaudeEndpoints.cs).
+//                - GET /api/saude (Endpoints/SaudeEndpoints.cs);
+//                - versão do banco conferida (Infra/VersaoBanco.cs);
+//                - telas e ajuda EMBUTIDAS no executável fora do
+//                  desenvolvimento (decisão de 18/11/2026; Telas:Embutidas);
+//                  no desenvolvimento ficam soltas em wwwroot.
 // =============================================================================
 using SistemaCMJ.Api.Endpoints;
 using SistemaCMJ.Api.Ferramentas;
 using SistemaCMJ.Api.Infra;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting.WindowsServices;
 
 // Como serviço do Windows, a pasta de trabalho é a do executável (não C:\Windows\System32).
@@ -49,6 +54,7 @@ builder.Logging.AddProvider(registroArquivo);
 
 builder.Services.AddSingleton<Banco>();
 builder.Services.AddSingleton<EnvioEmail>();
+builder.Services.AddSingleton<VersaoBanco>();
 
 if (args.Length > 0 && args[0].Equals("senha-inicial", StringComparison.OrdinalIgnoreCase))
 {
@@ -93,6 +99,12 @@ app.Use(async (http, proximo) =>
         cabecalhos.CacheControl = "no-store";
     await proximo();
 });
+
+// Telas: embutidas no executável (servidor) ou soltas em wwwroot (desenvolvimento).
+var telasEmbutidas = app.Configuration.GetValue("Telas:Embutidas", !app.Environment.IsDevelopment());
+if (telasEmbutidas)
+    app.Environment.WebRootFileProvider = new ManifestEmbeddedFileProvider(typeof(Program).Assembly, "wwwroot");
+app.Logger.LogInformation("Telas {Origem}.", telasEmbutidas ? "embutidas no executável" : "soltas em " + app.Environment.WebRootPath);
 
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions

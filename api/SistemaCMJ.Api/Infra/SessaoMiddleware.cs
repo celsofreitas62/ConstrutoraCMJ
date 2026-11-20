@@ -10,6 +10,8 @@
 //                   SIS_Sessao_Validar (inatividade, usuário ativo, bloqueio);
 //                3) com TROCAR_SENHA = 1, só deixa trocar a senha, ver a
 //                   sessão e sair.
+//              20/11/2026 (fase 3d): banco em versão diferente da do
+//              programa: só /api/saude responde; o resto recebe o aviso.
 //              O usuário conferido fica em HttpContext.Items["contexto"].
 // =============================================================================
 namespace SistemaCMJ.Api.Infra;
@@ -19,7 +21,7 @@ public sealed class SessaoMiddleware(RequestDelegate proximo, ILogger<SessaoMidd
     private static readonly string[] RotasPublicas = ["/api/login", "/api/identidade", "/api/saude"];
     private static readonly string[] RotasDuranteTrocaDeSenha = ["/api/senha", "/api/sessao", "/api/logout"];
 
-    public async Task InvokeAsync(HttpContext http, Banco banco)
+    public async Task InvokeAsync(HttpContext http, Banco banco, VersaoBanco versao)
     {
         var caminho = http.Request.Path.Value ?? "";
         if (!caminho.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
@@ -31,6 +33,12 @@ public sealed class SessaoMiddleware(RequestDelegate proximo, ILogger<SessaoMidd
         if (!HttpMethods.IsGet(http.Request.Method) && http.Request.Headers["X-CMJ"] != "1")
         {
             http.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        if (!caminho.StartsWith("/api/saude", StringComparison.OrdinalIgnoreCase) && !await versao.ConferirAsync(http.RequestAborted))
+        {
+            await Resposta.Atencao(versao.Mensagem()).ExecuteAsync(http);
             return;
         }
 
