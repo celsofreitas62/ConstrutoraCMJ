@@ -21,6 +21,12 @@
                       sem mexer no sistema que esta rodando; resultado em
                       saida\compilar.txt. Comando fixo: nao roda nada que venha
                       do pedido.
+  v1.3 (20/11/2026) - Pedido de envio ao GitHub: entrada\enviar_github.pedido faz
+                      "git push origin main" na pasta do projeto, com o usuario do
+                      Windows (credencial ja guardada), sem janela e sem pedir
+                      senha (falha em vez de travar); resultado em
+                      saida\enviar_github.txt. Autorizado pelo Celso (envio
+                      automatico, 16/11/2026). Comando fixo.
   Uso: iniciado pela tarefa "SistemaCMJ - Executor SQL" (instalar_executor.cmd).
 #>
 param(
@@ -217,6 +223,21 @@ function Verificar-Compilacao {
     return $Codigo
 }
 
+function Enviar-GitHub {
+    $Projeto = Split-Path $Raiz -Parent
+    $Ini = Get-Date
+    $env:GIT_TERMINAL_PROMPT = '0'
+    $env:GCM_INTERACTIVE = 'never'
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $Saida = & git -C $Projeto push origin main 2>&1 | Out-String
+    $Codigo = $LASTEXITCODE
+    $Texto = 'SistemaCMJ - envio ao GitHub (executor v1.3)' + "`r`n" + 'Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + ('=' * 70) + "`r`n" + $Saida + "`r`n" + ('=' * 70) + "`r`n" + 'CODIGO_SAIDA=' + $Codigo + "`r`n" + 'RESULTADO: ' + $(if ($Codigo -eq 0) { 'OK' } else { 'COM ERROS' }) + "`r`n"
+    $Destino = Join-Path (Join-Path $Raiz 'saida') 'enviar_github.txt'
+    [System.IO.File]::WriteAllText($Destino + '.tmp', $Texto, $Utf8)
+    Move-Item -LiteralPath ($Destino + '.tmp') -Destination $Destino -Force
+    return $Codigo
+}
+
 Gravar-Status 'ativo (iniciado)'
 $UltimoStatus = Get-Date
 $TextoStatus = 'ativo'
@@ -235,6 +256,14 @@ while ($true) {
             Gravar-Status 'verificando a compilacao'
             $C = Verificar-Compilacao
             $TextoStatus = 'ativo; ultima compilacao -> ' + $(if ($C -eq 0) { 'OK' } else { 'COM ERROS' })
+            Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
+        }
+        $Pedido = Join-Path $Entrada 'enviar_github.pedido'
+        if (Test-Path -LiteralPath $Pedido) {
+            Remove-Item -LiteralPath $Pedido -Force
+            Gravar-Status 'enviando ao GitHub'
+            $C = Enviar-GitHub
+            $TextoStatus = 'ativo; ultimo envio ao GitHub -> ' + $(if ($C -eq 0) { 'OK' } else { 'COM ERROS' })
             Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
         }
         # Sinal de vida a cada minuto (sem regravar a cada ciclo, para nao encher a sincronizacao do Drive)
