@@ -15,7 +15,7 @@ Criado em 20/11/2026. Pedidos do Celso: backup do log de hora em hora (aprovado)
 ## 2. Pendências do motor
 
 - Conferir o primeiro **backup do log** de hora em hora no ensaio (tarefa às :30) e um teste de restauração **com logs**.
-- **Cópia na nuvem com dados pessoais (LGPD)**: o Express não cifra o backup. Avaliar compactar com senha (7-Zip, gratuito) antes de mandar para o Google Drive. A decisão é do Celso.
+- **Cópia na nuvem com dados pessoais (LGPD)**: o Express não cifra o backup. **Decidido pelo Celso em 20/11/2026: a cópia vai para o Google Drive sem senha** (como está hoje).
 
 ## 3. Restauração pela tela (APROVADO, a fazer)
 

@@ -62,13 +62,13 @@ De-para do plano: 166 contas do plano novo, 412 do plano antigo (histórico), 34
 
 ## 6. Respostas da CMJ ao 3º documento (recebidas em 20/11/2026)
 
-Arquivo respondido: `CashBookCMJ/Conferencia_Cadastros_CMJ_03c2_parte3_RESPONDIDO.docx` (o original de 17/11 ficou ao lado). **Ainda não aplicado** no banco: entra na próxima rodada da migração, depois da confirmação do Celso nos pontos marcados "(a confirmar)".
+Arquivo respondido: `CashBookCMJ/Conferencia_Cadastros_CMJ_03c2_parte3_RESPONDIDO.docx` (o original de 17/11 ficou ao lado). **Ainda não aplicado** no banco: entra na próxima rodada da migração, com tudo confirmado pelo Celso em 20/11/2026.
 
-1. **Custo de obra por grupo**: correto, exceto **11 (vendas), 12, 13 e 14 (impostos municipais, estaduais e federais)**, marcados "Correção" sobre o "Não" proposto. Leitura: esses quatro grupos **entram no custo da obra** (a confirmar).
+1. **Custo de obra por grupo**: correto, exceto **11 (vendas), 12, 13 e 14 (impostos municipais, estaduais e federais)**, marcados "Correção" sobre o "Não" proposto. Esses quatro grupos **entram no custo da obra** (confirmado pelo Celso em 20/11/2026).
 2. **Contas que mudaram de lugar**: todas corretas. Desoneração (CPRB) fica em 03.1.03 INSS, **sem conta própria** ("Correto (não)").
 3. **Nomes dos subgrupos**: sem sugestão; ficam os do Access (podem mudar pela tela).
 4. **Imóveis próprios**:
-   - La Sante Sala 110/vaga 9: **vendida**; Allegro Apto. 52: **vendido**; Giuseppina Apto. 12: **vendido**. Leitura: centro de custo **inativo** (só histórico) (a confirmar).
+   - La Sante Sala 110/vaga 9: **vendida**; Allegro Apto. 52: **vendido**; Giuseppina Apto. 12: **vendido**. Centro de custo **inativo** (só histórico) (confirmado pelo Celso em 20/11/2026).
    - La Sante Sala 113/vaga 40: **verificar** (talvez vendida): fica ativa até a CMJ confirmar.
    - La Sante Sala 112/vaga 10: Holding, correto; **alugada pela Construtora**.
    - Vagas La Sante e Allegro Apto. 13: Holding, correto.
