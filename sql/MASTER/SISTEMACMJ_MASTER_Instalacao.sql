@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v1.2)
+  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v1.3)
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : 20/11/2026 por sql/ferramentas/montar_master.py, juntando os
@@ -18,7 +18,7 @@
                 rl_sistemacmj_api (roteiro de instalacao; a senha nao fica em
                 arquivo).
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > conferir o banco > F5.
-  Objetos     : 190 arquivos.
+  Objetos     : 191 arquivos.
 *******************************************************************************/
 -- =============================================================================
 -- 1. CONFERENCIA DO BANCO
@@ -29,7 +29,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MASTER v1.2: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MASTER v1.3: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- =============================================================================
@@ -7684,6 +7684,8 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (20/11/2026) - Etapa 03d: conferência do registro pelo SIS_Registro_Existe
+                        (o SELECT dinâmico falhava com o login da API no servidor).
 
   Homologação (LOCAL): ver sql/testes/SIS/02c_Homologacao_SIS.sql.
 *******************************************************************************/
@@ -7716,10 +7718,7 @@ BEGIN
     DECLARE @Extensoes   VARCHAR(200);
     DECLARE @Extensao    VARCHAR(10);
     DECLARE @MaxMb       INT;
-    DECLARE @ObjId       INT;
-    DECLARE @Pk          SYSNAME;
-    DECLARE @Sql         NVARCHAR(1000);
-    DECLARE @Existe      INT           = 0;
+    DECLARE @Existe      BIT           = 0;
     DECLARE @IdAnexo     BIGINT;
 
     BEGIN TRY
@@ -7755,22 +7754,12 @@ BEGIN
                               OR DATALENGTH(ISNULL(@HashSha256, 0x)) <> 32)
             SET @Recusa = N'Falha técnica no envio do arquivo (nome, pasta ou hash inválido).';
 
-        SET @ObjId = OBJECT_ID(@Tabela, N'U');
-        SELECT @Pk = c.name
-        FROM sys.indexes ix
-        INNER JOIN sys.index_columns ic ON ic.object_id = ix.object_id AND ic.index_id = ix.index_id
-        INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-        WHERE ix.object_id = @ObjId AND ix.is_primary_key = 1;
-
-        IF @Recusa = N'' AND (@ObjId IS NULL OR @Pk IS NULL)
-            SET @Recusa = N'Registro não encontrado.';
-
         IF @Recusa = N''
         BEGIN
+            -- v1.1: conferência pelo SIS_Registro_Existe (SQL dinâmico com a permissão do dono:
+            -- no servidor o login da API só executa procedures)
             SET @EtapaAtual = 'Registro de referência';
-            SET @Sql = N'SELECT @Existe = 1 FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId))
-                     + N' WHERE ' + QUOTENAME(@Pk) + N' = @Id;';
-            EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @Existe INT OUTPUT', @Id = @IdRegistro, @Existe = @Existe OUTPUT;
+            EXEC SIS.SIS_Registro_Existe @Item = @Item, @Tabela = @Tabela, @Id = @IdRegistro, @Existe = @Existe OUTPUT;
             IF ISNULL(@Existe, 0) = 0
                 SET @Recusa = N'Registro não encontrado.';
         END;
@@ -13310,6 +13299,67 @@ END;
 GO
 GO
 
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Registro_Existe.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Registro_Existe]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 20/11/2026
+  Descrição   : Diz se existe o registro @Id (chave primária de uma coluna) na
+                tabela @Tabela, que precisa estar entre as TABELAS_DA_TELA do
+                item @Item (SIS.fn_SIS_Item_Tem_Tabela); qualquer outra tabela
+                devolve 0. Usada por quem precisa conferir um registro de
+                tabela variável (ex.: SIS_Anexo_Gravar).
+                Roda com a permissão do dono do banco (EXECUTE AS OWNER) porque
+                a consulta é montada na hora (SQL dinâmico) e, no servidor, o
+                login da API só executa procedures (papel rl_sistemacmj_api):
+                sem isso o SELECT seria recusado. O escopo elevado fica só nesta
+                consulta; nomes vêm do catálogo e vão com QUOTENAME.
+
+  Changelog:
+    v1.0 (20/11/2026) - Criação (etapa 03d; achado no ensaio do serviço).
+
+  Homologação (LOCAL e ensaio): sql/testes/SIS/03d_Homologacao_Registro_Existe.sql.
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Registro_Existe]
+    @Item    VARCHAR(40),
+    @Tabela  NVARCHAR(256),
+    @Id      BIGINT,
+    @Existe  BIT OUTPUT
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @ObjId INT, @Pk SYSNAME, @Qtd INT, @Achou INT, @Sql NVARCHAR(MAX);
+    SET @Existe = 0;
+
+    IF SIS.fn_SIS_Item_Tem_Tabela(@Item, @Tabela) = 0 OR @Id IS NULL
+        RETURN;
+
+    SET @ObjId = OBJECT_ID(@Tabela, N'U');
+    SELECT @Pk = MAX(c.name), @Qtd = COUNT(*)
+    FROM sys.indexes ix
+    INNER JOIN sys.index_columns ic ON ic.object_id = ix.object_id AND ic.index_id = ix.index_id
+    INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+    WHERE ix.object_id = @ObjId AND ix.is_primary_key = 1;
+
+    IF @ObjId IS NULL OR @Pk IS NULL OR @Qtd <> 1
+        RETURN;
+
+    SET @Sql = N'SELECT @Achou = 1 FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId))
+             + N' WHERE ' + QUOTENAME(@Pk) + N' = @Id;';
+    EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @Achou INT OUTPUT', @Id = @Id, @Achou = @Achou OUTPUT;
+    SET @Existe = CASE WHEN @Achou = 1 THEN 1 ELSE 0 END;
+END;
+GO
+GO
+
 -- =============================================================================
 -- 8. TRIGGERS
 -- =============================================================================
@@ -14449,20 +14499,21 @@ GO
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d): versão 1.1 do banco.
     Versões do banco: 1.1 (20/11/2026) limite de login por computador e versão;
-                      1.2 (20/11/2026) primeiro acesso da instalação.
+                      1.2 (20/11/2026) primeiro acesso da instalação;
+                      1.3 (20/11/2026) SIS_Registro_Existe (anexos com o login da API).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '1.2';
+DECLARE @Versao VARCHAR(20) = '1.3';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;
 GO
 GO
 
-PRINT N'MASTER v1.2 concluido sem erro.';
+PRINT N'MASTER v1.3 concluido sem erro.';
 GO
 
 SET NOEXEC OFF;

@@ -19,6 +19,8 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (20/11/2026) - Etapa 03d: conferência do registro pelo SIS_Registro_Existe
+                        (o SELECT dinâmico falhava com o login da API no servidor).
 
   Homologação (LOCAL): ver sql/testes/SIS/02c_Homologacao_SIS.sql.
 *******************************************************************************/
@@ -51,10 +53,7 @@ BEGIN
     DECLARE @Extensoes   VARCHAR(200);
     DECLARE @Extensao    VARCHAR(10);
     DECLARE @MaxMb       INT;
-    DECLARE @ObjId       INT;
-    DECLARE @Pk          SYSNAME;
-    DECLARE @Sql         NVARCHAR(1000);
-    DECLARE @Existe      INT           = 0;
+    DECLARE @Existe      BIT           = 0;
     DECLARE @IdAnexo     BIGINT;
 
     BEGIN TRY
@@ -90,22 +89,12 @@ BEGIN
                               OR DATALENGTH(ISNULL(@HashSha256, 0x)) <> 32)
             SET @Recusa = N'Falha técnica no envio do arquivo (nome, pasta ou hash inválido).';
 
-        SET @ObjId = OBJECT_ID(@Tabela, N'U');
-        SELECT @Pk = c.name
-        FROM sys.indexes ix
-        INNER JOIN sys.index_columns ic ON ic.object_id = ix.object_id AND ic.index_id = ix.index_id
-        INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-        WHERE ix.object_id = @ObjId AND ix.is_primary_key = 1;
-
-        IF @Recusa = N'' AND (@ObjId IS NULL OR @Pk IS NULL)
-            SET @Recusa = N'Registro não encontrado.';
-
         IF @Recusa = N''
         BEGIN
+            -- v1.1: conferência pelo SIS_Registro_Existe (SQL dinâmico com a permissão do dono:
+            -- no servidor o login da API só executa procedures)
             SET @EtapaAtual = 'Registro de referência';
-            SET @Sql = N'SELECT @Existe = 1 FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId))
-                     + N' WHERE ' + QUOTENAME(@Pk) + N' = @Id;';
-            EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @Existe INT OUTPUT', @Id = @IdRegistro, @Existe = @Existe OUTPUT;
+            EXEC SIS.SIS_Registro_Existe @Item = @Item, @Tabela = @Tabela, @Id = @IdRegistro, @Existe = @Existe OUTPUT;
             IF ISNULL(@Existe, 0) = 0
                 SET @Recusa = N'Registro não encontrado.';
         END;

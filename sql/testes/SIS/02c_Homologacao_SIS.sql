@@ -112,7 +112,7 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Tipo LOGOMARCA aceita', N'
 
 -- 2) Habilitação
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO)
-SELECT N'Módulo SIS habilitado / CAD desabilitado', N'1/0',
+SELECT N'Módulos SIS e CAD habilitados', N'1/1',   -- v1.x (20/11/2026): CAD habilitado desde a 03a
        CONVERT(NVARCHAR(5), (SELECT m.HABILITADO FROM SIS.Modulo m WHERE m.CODIGO = 'SIS')) + N'/' + CONVERT(NVARCHAR(5), (SELECT m.HABILITADO FROM SIS.Modulo m WHERE m.CODIGO = 'CAD'));
 
 INSERT INTO #Menu EXEC SIS.SIS_Menu_Listar @IdUsuario = @IdAdmin;
