@@ -40,6 +40,10 @@
                         o Access mudou ou apagou o que foi corrigido).
     v1.3 (18/11/2026) - Caso_Correcao_Linha.LOTE: troca do lote da linha pela
                         tela (0 = sai do lote; NULL = mantém o do Access).
+    v1.4 (20/11/2026) - Etapa 03d (instalação no servidor): teste do formato
+                        antigo de Caso_Correcao/_Linha com IF aninhado; em banco
+                        novo o SELECT na tabela ainda inexistente dava erro 208.
+
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -71,12 +75,17 @@ IF COL_LENGTH(N'MIG.Caso', N'MOTIVO_ORIGINAL') IS NULL
 GO
 
 -- formato antigo (sem ID) e vazio: refaz (a auditoria precisa de chave numérica)
+-- (IF aninhado: o SELECT só é compilado quando a tabela existe; banco novo não dá erro)
 IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NOT NULL AND COL_LENGTH(N'MIG.Caso_Correcao', N'ID_CASO_CORRECAO') IS NULL
-   AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao)
-    DROP TABLE [MIG].[Caso_Correcao];
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao)
+        DROP TABLE [MIG].[Caso_Correcao];
+END;
 IF OBJECT_ID(N'[MIG].[Caso_Correcao_Linha]', N'U') IS NOT NULL AND COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'ID_CASO_CORRECAO_LINHA') IS NULL
-   AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha)
-    DROP TABLE [MIG].[Caso_Correcao_Linha];
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha)
+        DROP TABLE [MIG].[Caso_Correcao_Linha];
+END;
 GO
 
 IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NULL
