@@ -3,6 +3,7 @@
   Autor: Celso de Freitas / Refatorado: Claude
   v1.0 (20/11/2026) - Criacao: BACKUP com CHECKSUM + RESTORE VERIFYONLY,
                       guarda os ultimos N na pasta local e copia para a pasta da nuvem.
+  v1.1 (20/11/2026) - Nuvem guarda so 1 copia (espaco no Google Drive); local continua com 7.
   Uso: chamado pela tarefa agendada "SistemaCMJ - Backup do banco".
   No servidor da CMJ (3d): mudar os parametros (-Instancia, -Banco, pastas).
   Obs.: SQL Server Express nao aceita COMPRESSION; nao usar.
@@ -13,7 +14,7 @@ param(
     [string]$PastaLocal  = 'C:\Backup_SisCMJ',
     [string]$PastaNuvem  = 'C:\Recover SistemaCMJ\backup_db',
     [int]$ManterLocal    = 7,
-    [int]$ManterNuvem    = 3
+    [int]$ManterNuvem    = 1
 )
 $ErrorActionPreference = 'Stop'
 New-Item -ItemType Directory -Force -Path $PastaLocal | Out-Null
