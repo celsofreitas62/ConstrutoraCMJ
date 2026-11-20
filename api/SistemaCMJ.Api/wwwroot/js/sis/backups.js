@@ -5,8 +5,10 @@
    Criação   : 20/11/2026 (etapa 03d2)
    Descrição : Tela "Backups e restauração" (SIS_BACKUP). Topo: até onde dá
                para voltar e os últimos backups. Abas: lista dos backups;
-               Restaurar (só com a ação RESTAURAR): dia e hora ou backup
-               escolhido, motivo, a palavra RESTAURAR e a senha; pedidos de
+               Restaurar (só com a ação RESTAURAR): lista dos pontos de
+               restauração, do mais recente para o mais antigo (só os que dá
+               para restaurar: mesma versão, arquivos guardados; pedido do
+               Celso, 20/11/2026), motivo, a palavra RESTAURAR e a senha; pedidos de
                restauração com o resultado (cancelar enquanto aguarda).
                A tela só registra o pedido: quem restaura é a tarefa do
                servidor. Com pedido em aberto, a tela se atualiza sozinha.
@@ -20,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const CLASSE_SIT = { OK: 'situacao-ativo', ERRO: 'situacao-revisar', PENDENTE: 'situacao-pendente', EXECUTANDO: 'situacao-pendente', CANCELADO: 'situacao-inativo' };
   let dados = null;
   let relogio = null;
+  let ponto = null;   // linha escolhida na aba Restaurar
 
   $('aba-restaurar').hidden = !podeRestaurar;
 
@@ -44,9 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? Util.dataHora(s.DT_PODE_VOLTAR_DE) + (porVersao ? ' (atualização para a versão ' + s.VERSAO + ')' : '')
       : 'sem backup completo';
     $('sit-de').title = 'Não dá para voltar para antes da atualização do sistema para a versão atual: o banco ficaria numa versão diferente do programa.';
-    const ateHora = s.DT_PODE_VOLTAR_ATE_HORA && paraCampo(s.DT_PODE_VOLTAR_ATE_HORA) !== paraCampo(s.DT_PODE_VOLTAR_ATE)
-      ? ' (por dia e hora, até ' + Util.dataHora(s.DT_PODE_VOLTAR_ATE_HORA) + ')' : '';
-    $('sit-ate').textContent = s.DT_PODE_VOLTAR_ATE ? Util.dataHora(s.DT_PODE_VOLTAR_ATE) + ateHora : '';
+    $('sit-ate').textContent = s.DT_PODE_VOLTAR_ATE ? Util.dataHora(s.DT_PODE_VOLTAR_ATE) : '';
     $('sit-completo').textContent = Util.dataHora(s.DT_ULTIMO_COMPLETO) || 'nenhum';
     $('sit-log').textContent = Util.dataHora(s.DT_ULTIMO_LOG) || 'nenhum';
     $('sit-teste').textContent = Util.dataHora(s.DT_ULTIMO_TESTE) || 'nenhum';
@@ -65,11 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       aviso.hidden = true;
     }
 
-    const minimo = paraCampo(s.DT_PODE_VOLTAR_DE);
-    const maximo = paraCampo(s.DT_PODE_VOLTAR_ATE_HORA);
-    $('dt-ponto').min = minimo;
-    $('dt-ponto').max = maximo;
-    $('botao-restaurar').disabled = s.ID_RESTAURACAO_ABERTA > 0;
+    $('botao-restaurar').dataset.aberto = s.ID_RESTAURACAO_ABERTA > 0 ? '1' : '';
   }
 
   // ---- Backups -----------------------------------------------------------------
@@ -82,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (lista.length === 0) {
       const tr = Util.el('tr');
       const td = Util.el('td', 'vazio', 'Nenhum backup registrado ainda.');
-      td.colSpan = 8;
+      td.colSpan = 10;
       tr.append(td);
       corpo.append(tr);
     }
@@ -100,20 +97,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         sit,
         Util.el('td', null, b.TIPO === 'TESTE' ? '' : (b.ARQUIVO_EXISTE ? 'sim' : 'apagado pela limpeza')),
         Util.el('td', null, b.COPIA_NUVEM ? 'sim' : ''),
+        Util.el('td', null, b.VERSAO || ''),
+        Util.el('td', b.PODE_ESCOLHER ? null : 'suave', b.PODE_ESCOLHER ? 'disponível' : (b.TIPO === 'TESTE' ? '' : 'indisponível: ' + (b.MOTIVO_INDISPONIVEL || '').toLowerCase())),
         Util.el('td', 'suave', b.MENSAGEM || ''));
       corpo.append(tr);
     }
+    desenharPontos();
+  }
 
-    const select = $('id-backup');
-    const atual = select.value;
-    select.replaceChildren(Util.el('option', null, '(escolha)'));
-    select.firstChild.value = '';
-    for (const b of (dados.backups || []).filter((x) => x.PODE_ESCOLHER)) {
-      const op = Util.el('option', null, Util.dataHora(b.DT_FIM || b.DT_INICIO) + ' · ' + b.TIPO_NOME + ' · ' + b.ARQUIVO_NOME);
-      op.value = String(b.ID_BACKUP);
-      select.append(op);
+  // ---- Restaurar: lista de pontos -------------------------------------------------
+  function quandoVolta(b) { return b.TIPO === 'LOG' ? b.DT_PONTO || b.DT_FIM : b.DT_FIM || b.DT_INICIO; }
+  function desenharPontos() {
+    const corpo = $('pontos');
+    corpo.replaceChildren();
+    const lista = (dados.backups || []).filter((b) => b.PODE_ESCOLHER)
+      .sort((a, b) => String(quandoVolta(b)).localeCompare(String(quandoVolta(a))));
+    if (ponto && !lista.some((b) => b.ID_BACKUP === ponto.ID_BACKUP)) ponto = null;
+    if (lista.length === 0) {
+      const tr = Util.el('tr');
+      const td = Util.el('td', 'vazio', 'Nenhum ponto de restauração disponível.');
+      td.colSpan = 4;
+      tr.append(td);
+      corpo.append(tr);
     }
-    select.value = atual;
+    lista.forEach((b, i) => {
+      const tr = Util.el('tr', 'clicavel');
+      const radio = Util.el('input');
+      radio.type = 'radio';
+      radio.name = 'ponto';
+      radio.setAttribute('aria-label', 'Voltar para ' + Util.dataHora(quandoVolta(b)));
+      radio.checked = !!ponto && ponto.ID_BACKUP === b.ID_BACKUP;
+      const escolher = () => { ponto = b; radio.checked = true; marcar(); };
+      radio.addEventListener('change', escolher);
+      tr.addEventListener('click', escolher);
+      const celRadio = Util.el('td', 'celula-marca');
+      celRadio.append(radio);
+      const quando = Util.el('td', 'forte', Util.dataHora(quandoVolta(b)));
+      if (i === 0) quando.append(' ', Util.el('span', 'situacao situacao-ativo', 'mais recente'));
+      tr.dataset.id = b.ID_BACKUP;
+      tr.append(celRadio, quando, Util.el('td', null, b.TIPO_NOME), Util.el('td', null, b.VERSAO || ''));
+      corpo.append(tr);
+    });
+    marcar();
+  }
+  function marcar() {
+    for (const tr of $('pontos').querySelectorAll('tr')) tr.classList.toggle('selecionada', !!ponto && Number(tr.dataset.id) === ponto.ID_BACKUP);
+    $('resumo-pedido').textContent = ponto ? 'O banco volta para como estava em ' + Util.dataHora(quandoVolta(ponto)) + ' (' + ponto.TIPO_NOME.toLowerCase() + ').' : 'Escolha um ponto na lista.';
+    $('botao-restaurar').disabled = !ponto || $('botao-restaurar').dataset.aberto === '1';
   }
   $('filtro-apagados').addEventListener('change', desenharBackups);
   $('filtro-sem-log').addEventListener('change', desenharBackups);
@@ -163,39 +193,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     await carregar();
   }
 
-  // ---- Restaurar ---------------------------------------------------------------
-  function tipoPonto() { return document.querySelector('input[name="tipo-ponto"]:checked').value; }
-  function mostrarTipo() {
-    const porData = tipoPonto() === 'DATA_HORA';
-    $('campo-ponto').hidden = !porData;
-    $('campo-backup').hidden = porData;
-    resumir();
-  }
-  function resumir() {
-    let texto = '';
-    if (tipoPonto() === 'DATA_HORA' && $('dt-ponto').value) texto = 'O banco volta para ' + Util.dataHora($('dt-ponto').value) + '.';
-    if (tipoPonto() === 'BACKUP' && $('id-backup').value) texto = 'O banco volta para o backup ' + $('id-backup').selectedOptions[0].textContent + '.';
-    $('resumo-pedido').textContent = texto;
-  }
-  document.querySelectorAll('input[name="tipo-ponto"]').forEach((r) => r.addEventListener('change', mostrarTipo));
-  $('dt-ponto').addEventListener('input', resumir);
-  $('id-backup').addEventListener('change', resumir);
-
+  // ---- Restaurar: pedido -----------------------------------------------------------
   $('botao-restaurar').addEventListener('click', async () => {
-    const tipo = tipoPonto();
-    if (tipo === 'DATA_HORA' && !$('dt-ponto').value) { await Mensagens.alerta('Informe o dia e a hora para voltar.', 'ATENCAO', { foco: $('dt-ponto') }); return; }
-    if (tipo === 'BACKUP' && !$('id-backup').value) { await Mensagens.alerta('Escolha o backup para voltar.', 'ATENCAO', { foco: $('id-backup') }); return; }
+    if (!ponto) { await Mensagens.alerta('Escolha na lista o ponto para onde o banco volta.'); return; }
     if (!$('motivo').value.trim()) { await Mensagens.alerta('Informe o motivo da restauração.', 'ATENCAO', { foco: $('motivo') }); return; }
     if ($('confirmacao').value.trim().toUpperCase() !== 'RESTAURAR') { await Mensagens.alerta('Para confirmar, escreva a palavra RESTAURAR.', 'ATENCAO', { foco: $('confirmacao') }); return; }
     if (!$('senha').value) { await Mensagens.alerta('Digite a sua senha para confirmar.', 'ATENCAO', { foco: $('senha') }); return; }
-    const destino = tipo === 'DATA_HORA' ? Util.dataHora($('dt-ponto').value) : $('id-backup').selectedOptions[0].textContent;
+    const destino = Util.dataHora(quandoVolta(ponto));
     if (!(await Mensagens.confirmar('Restaurar o banco?',
-      'O banco volta para ' + destino + '. Tudo o que foi feito depois disso some do sistema. O sistema sai do ar por alguns minutos para todos. Esta ação não se desfaz pela tela (só com o backup de segurança).',
+      'O banco volta para como estava em ' + destino + '. Tudo o que foi feito depois disso some do sistema. O sistema sai do ar por alguns minutos para todos. Esta ação não se desfaz pela tela (só com o backup de segurança, que aparece na lista depois).',
       'Restaurar'))) return;
+    const porLog = ponto.TIPO_PONTO === 'DATA_HORA';
     const r = await Api.post('/api/sis/backups/restaurar', {
-      tipoPonto: tipo,
-      idBackup: tipo === 'BACKUP' ? Number($('id-backup').value) : null,
-      dtPonto: tipo === 'DATA_HORA' ? $('dt-ponto').value : null,
+      tipoPonto: ponto.TIPO_PONTO,
+      idBackup: porLog ? null : ponto.ID_BACKUP,
+      dtPonto: porLog ? String(ponto.DT_PONTO).substring(0, 19) : null,
       motivo: $('motivo').value.trim(),
       confirmacao: $('confirmacao').value.trim(),
       senha: $('senha').value
@@ -204,6 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!(await Mensagens.tratar(r))) return;
     $('confirmacao').value = '';
     $('motivo').value = '';
+    ponto = null;
     await Mensagens.concluido(r.mensagem || 'Pedido registrado.');
     await carregar();
     ativarAba($('aba-pedidos'));
@@ -217,12 +230,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     desenharSituacao(dados.situacao || {});
     desenharBackups();
     desenharPedidos();
-    resumir();
     clearTimeout(relogio);
     if ((dados.situacao || {}).ID_RESTAURACAO_ABERTA > 0) relogio = setTimeout(() => carregar().catch(() => {}), 20000);
   }
 
   $('botao-atualizar').addEventListener('click', () => carregar());
-  mostrarTipo();
   await carregar();
 });

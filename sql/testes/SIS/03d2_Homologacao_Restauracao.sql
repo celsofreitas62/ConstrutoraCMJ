@@ -90,10 +90,16 @@ INSERT @R SELECT 'dá para voltar até (fim do L8)', CONVERT(VARCHAR(19), DATEAD
 INSERT @R SELECT 'por dia e hora até (fim do L8)', CONVERT(VARCHAR(19), DATEADD(MINUTE, 781, @T0), 120), CONVERT(VARCHAR(19), ATE_HORA, 120) FROM @Sit;
 INSERT @R SELECT 'situação: pedido em aberto e pode restaurar', CAST(@Id AS VARCHAR(10)) + ' PENDENTE 1', CAST(ID_ABERTA AS VARCHAR(10)) + ' ' + SIT_ABERTA + ' ' + CAST(PODE AS VARCHAR(1)) FROM @Sit;
 DECLARE @L TABLE (ID_BACKUP BIGINT, TIPO VARCHAR(10), TIPO_NOME NVARCHAR(40), ARQUIVO NVARCHAR(400), ARQUIVO_NOME NVARCHAR(260), DT_INICIO DATETIME2(0), DT_FIM DATETIME2(0),
-                  TAMANHO_MB DECIMAL(12,1), SITUACAO VARCHAR(10), MENSAGEM NVARCHAR(2000), COPIA_NUVEM BIT, ARQUIVO_EXISTE BIT, PODE_ESCOLHER BIT, SERVIDOR NVARCHAR(128));
+                  TAMANHO_MB DECIMAL(12,1), SITUACAO VARCHAR(10), MENSAGEM NVARCHAR(2000), COPIA_NUVEM BIT, ARQUIVO_EXISTE BIT, VERSAO VARCHAR(20), PODE_ESCOLHER BIT,
+                  MOTIVO_INDISPONIVEL NVARCHAR(100), TIPO_PONTO VARCHAR(10), DT_PONTO DATETIME2(0), SERVIDOR NVARCHAR(128));
 INSERT @L EXEC SIS.SIS_Backup_Listar @IdUsuario = @Renata;
-INSERT @R SELECT 'lista: 11 backups, 3 podem ser escolhidos', '11 3', CAST(COUNT(*) AS VARCHAR(5)) + ' ' + CAST(SUM(CAST(PODE_ESCOLHER AS INT)) AS VARCHAR(5)) FROM @L;
+INSERT @R SELECT 'lista: 11 backups, 7 pontos de restauração', '11 7', CAST(COUNT(*) AS VARCHAR(5)) + ' ' + CAST(SUM(CAST(PODE_ESCOLHER AS INT)) AS VARCHAR(5)) FROM @L;
 INSERT @R SELECT 'lista: nome do arquivo sem a pasta', 'F1.bak', ARQUIVO_NOME FROM @L WHERE ARQUIVO = N'C:\t\F1.bak';
+INSERT @R SELECT 'lista: log apagado indisponível', 'Arquivo apagado pela limpeza', MOTIVO_INDISPONIVEL FROM @L WHERE ARQUIVO = N'C:\t\L2.trn';
+INSERT @R SELECT 'lista: log que depende do apagado', 'Depende de arquivo já apagado', MOTIVO_INDISPONIVEL FROM @L WHERE ARQUIVO = N'C:\t\L4.trn';
+INSERT @R SELECT 'lista: log = ponto no fim dele', 'DATA_HORA SIM', TIPO_PONTO + CASE WHEN DT_PONTO = DT_FIM THEN ' SIM' ELSE ' NAO' END FROM @L WHERE ARQUIVO = N'C:\t\L7.trn';
+INSERT @R SELECT 'lista: completo = backup escolhido', 'BACKUP', TIPO_PONTO FROM @L WHERE ARQUIVO = N'C:\t\F2.bak';
+INSERT @R SELECT 'lista: versão do backup', 'SIM', CASE WHEN MAX(VERSAO) = SIS.fn_SIS_Versao_Banco() THEN 'SIM' ELSE ISNULL(MAX(VERSAO), '(vazio)') END FROM @L WHERE ARQUIVO = N'C:\t\F1.bak';
 
 -- 5) captura pelo script: plano, um por vez, sem cancelar depois de começar
 INSERT @C EXEC SIS.SIS_Backup_Restauracao_Capturar;
@@ -153,7 +159,9 @@ INSERT @S EXEC SIS.SIS_Backup_Restauracao_Solicitar @IdUsuario = @Celso, @TipoPo
 INSERT @R SELECT 'ponto antes da atualização de versão: recusa', 'SIM', CASE WHEN MENSAGEM LIKE N'Não dá para voltar para antes de%versão%' THEN 'SIM' ELSE CAST(MENSAGEM AS VARCHAR(400)) END FROM @S; DELETE @S;
 DELETE @L;
 INSERT @L EXEC SIS.SIS_Backup_Listar @IdUsuario = @Renata;
-INSERT @R SELECT 'só o backup depois da versão pode ser escolhido', 'S1.bak', REPLACE(CAST(MAX(ARQUIVO) AS VARCHAR(400)), 'C:\t\', '') FROM @L WHERE PODE_ESCOLHER = 1;
+INSERT @R SELECT 'só pontos depois da versão: L7, L8 e S1', 'L7.trn,L8.trn,S1.bak',
+       STUFF((SELECT ',' + REPLACE(CAST(ARQUIVO AS VARCHAR(400)), 'C:\t\', '') FROM @L WHERE PODE_ESCOLHER = 1 ORDER BY ARQUIVO FOR XML PATH('')), 1, 1, '');
+INSERT @R SELECT 'completo de versão anterior: indisponível', 'SIM', CASE WHEN MOTIVO_INDISPONIVEL LIKE N'Versão%diferente da atual%' THEN 'SIM' ELSE CAST(MOTIVO_INDISPONIVEL AS VARCHAR(100)) END FROM @L WHERE ARQUIVO = N'C:\t\F2.bak';
 DELETE @Sit;
 INSERT @Sit EXEC SIS.SIS_Backup_Situacao_Obter @IdUsuario = @Renata;
 INSERT @R SELECT 'dá para voltar de = atualização de versão', CONVERT(VARCHAR(19), DATEADD(MINUTE, 720, @T0), 120), CONVERT(VARCHAR(19), DE, 120) FROM @Sit;

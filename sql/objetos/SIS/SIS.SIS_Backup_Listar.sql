@@ -9,12 +9,24 @@
                 antigo, com a indicação de que o arquivo ainda existe.
                 Mostra os dos últimos @Dias dias (padrão: parâmetro
                 BACKUP_DIAS_MANTER + 7) e qualquer um cujo arquivo ainda exista.
+                Ponto de restauração (pedido do Celso, 20/11/2026: a aba Restaurar
+                é uma lista, sem digitar dia e hora): backup COMPLETO ou de
+                SEGURANCA volta para o próprio backup (TIPO_PONTO BACKUP); backup
+                do LOG volta para o fim dele (TIPO_PONTO DATA_HORA, DT_PONTO =
+                DT_FIM), com o completo anterior e os logs até ele.
+                PODE_ESCOLHER = 1 só quando dá para restaurar; senão
+                MOTIVO_INDISPONIVEL diz por quê (versão diferente, arquivo
+                apagado, arquivo do plano apagado, com erro, teste).
+                VERSAO: versão do banco quando o backup foi feito.
                 Sem permissão: erro 50001 (a tela mostra a mensagem).
 
   Changelog:
     v1.0 (20/11/2026) - Criação (etapa 03d2, restauração pela tela).
     v1.1 (20/11/2026) - PODE_ESCOLHER só para backup feito depois da atualização
                         para a versão atual (fn_SIS_Backup_Limite_Versao).
+    v1.2 (20/11/2026) - Backups do log também são pontos de restauração (plano
+                        completo); colunas VERSAO, MOTIVO_INDISPONIVEL, TIPO_PONTO
+                        e DT_PONTO (pedido do Celso).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Backup_Listar @IdUsuario = 1;
@@ -60,11 +72,28 @@ BEGIN
                b.MENSAGEM,
                b.COPIA_NUVEM,
                b.ARQUIVO_EXISTE,
-               CAST(CASE WHEN b.TIPO IN ('COMPLETO', 'SEGURANCA') AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N''
-                              AND b.DT_FIM >= @DtLimite
-                         THEN 1 ELSE 0 END AS BIT) AS PODE_ESCOLHER,
+               CAST(ISNULL(v.VERSAO, '') AS VARCHAR(20)) AS VERSAO,
+               CAST(CASE WHEN m.MOTIVO = N'' THEN 1 ELSE 0 END AS BIT) AS PODE_ESCOLHER,
+               m.MOTIVO AS MOTIVO_INDISPONIVEL,
+               CAST(CASE b.TIPO WHEN 'LOG' THEN 'DATA_HORA' WHEN 'TESTE' THEN '' ELSE 'BACKUP' END AS VARCHAR(10)) AS TIPO_PONTO,
+               CASE WHEN b.TIPO = 'LOG' THEN b.DT_FIM END AS DT_PONTO,
                b.SERVIDOR
         FROM SIS.Backup_Execucao b WITH (NOLOCK)
+        OUTER APPLY (SELECT TOP (1) vb.VERSAO FROM SIS.Versao_Banco vb WITH (NOLOCK)
+                     WHERE vb.DT_INSTALACAO <= ISNULL(b.DT_FIM, b.DT_INICIO) ORDER BY vb.DT_INSTALACAO DESC, vb.ID_VERSAO_BANCO DESC) v
+        OUTER APPLY (SELECT COUNT(*) AS QTD, SUM(CASE WHEN p.ARQUIVO_EXISTE = 0 THEN 1 ELSE 0 END) AS SEM_ARQUIVO, MAX(CAST(p.ALCANCA_PONTO AS INT)) AS ALCANCA
+                     FROM SIS.fn_SIS_Backup_Plano(NULL, b.DT_FIM) p
+                     WHERE b.TIPO = 'LOG' AND b.SITUACAO = 'OK' AND b.ARQUIVO_EXISTE = 1) pl
+        CROSS APPLY (SELECT CAST(CASE
+                         WHEN b.TIPO = 'TESTE'                          THEN N'Teste: não é ponto de restauração'
+                         WHEN b.SITUACAO <> 'OK'                        THEN N'Backup com erro'
+                         WHEN b.ARQUIVO_EXISTE = 0 OR b.ARQUIVO = N''   THEN N'Arquivo apagado pela limpeza'
+                         WHEN b.DT_FIM IS NULL OR b.DT_FIM < @DtLimite  THEN N'Versão ' + ISNULL(v.VERSAO, N'anterior') + N' diferente da atual (' + SIS.fn_SIS_Versao_Banco() + N')'
+                         WHEN b.TIPO = 'LOG' AND (ISNULL(pl.QTD, 0) = 0 OR ISNULL(pl.ALCANCA, 0) = 0)
+                                                                        THEN N'Sem backup completo antes dele'
+                         WHEN b.TIPO = 'LOG' AND ISNULL(pl.SEM_ARQUIVO, 0) > 0
+                                                                        THEN N'Depende de arquivo já apagado'
+                         ELSE N'' END AS NVARCHAR(100)) AS MOTIVO) m
         WHERE b.DT_INICIO >= @Desde
            OR (b.ARQUIVO_EXISTE = 1 AND b.ARQUIVO <> N'' AND b.TIPO <> 'TESTE')
         ORDER BY b.DT_INICIO DESC, b.ID_BACKUP DESC;

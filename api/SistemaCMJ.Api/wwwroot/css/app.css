@@ -283,3 +283,5 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .tabela .celula-marca { width: 40px; text-align: center; }
 .celula-marca input, .marcar-coluna input { width: 18px; height: 18px; accent-color: var(--cor-principal); }
 .aviso-aberto { margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--atencao); }
+.lista-pontos { max-height: 340px; overflow-y: auto; border: 1px solid var(--borda); border-radius: var(--raio); }
+.lista-pontos tr.clicavel { cursor: pointer; }

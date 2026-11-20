@@ -67,6 +67,8 @@
                     <th scope="col">Situação</th>
                     <th scope="col">Arquivo existe?</th>
                     <th scope="col">Nuvem</th>
+                    <th scope="col">Versão</th>
+                    <th scope="col">Restaurar?</th>
                     <th scope="col">Mensagem</th>
                   </tr>
                 </thead>
@@ -80,21 +82,21 @@
               Restaurar volta o banco inteiro para o passado: tudo o que foi lançado depois do ponto escolhido some do sistema.
               Antes, o sistema faz um backup de segurança (para desfazer, se for engano) e fica fora do ar por alguns minutos para todos os usuários.
             </div>
-            <div class="marcacoes" role="radiogroup" aria-label="Para onde voltar">
-              <label data-dica="Volta para um dia e hora, usando o backup completo anterior e os backups de hora em hora. Perda máxima: o que foi feito depois do ponto." class="marcacao">
-                <input type="radio" name="tipo-ponto" value="DATA_HORA" checked> Voltar para um dia e hora
-              </label>
-              <label data-dica="Volta exatamente para um backup completo ou de segurança da lista." class="marcacao">
-                <input type="radio" name="tipo-ponto" value="BACKUP"> Voltar para um backup escolhido
-              </label>
+            <p class="nota">Escolha o ponto para onde o banco volta. O primeiro da lista é o mais recente. Só aparecem os pontos que dá para restaurar (mesma versão do sistema e arquivos ainda guardados).</p>
+            <div class="rolagem lista-pontos">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th scope="col"><span class="so-leitor">Escolher</span></th>
+                    <th scope="col">O banco volta para como estava em</th>
+                    <th scope="col">Backup</th>
+                    <th scope="col">Versão</th>
+                  </tr>
+                </thead>
+                <tbody id="pontos"></tbody>
+              </table>
             </div>
             <div class="grade">
-              <label data-dica="Dia e hora para onde o banco volta. Obrigatório. Precisa estar dentro do período de “Dá para voltar”." class="campo s-2" id="campo-ponto">Dia e hora para voltar *
-                <input type="datetime-local" id="dt-ponto" step="60">
-              </label>
-              <label data-dica="Backup completo ou de segurança para onde o banco volta. Obrigatório. Só aparecem os que ainda existem na pasta." class="campo s-2" id="campo-backup" hidden>Backup *
-                <select id="id-backup"></select>
-              </label>
               <label data-dica="Por que a restauração é necessária. Obrigatório. Fica registrado e vai no e-mail de aviso." class="campo s-4">Motivo *
                 <textarea id="motivo" rows="2" maxlength="400"></textarea>
               </label>
