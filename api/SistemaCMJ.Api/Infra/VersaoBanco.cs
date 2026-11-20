@@ -18,7 +18,7 @@ namespace SistemaCMJ.Api.Infra;
 
 public sealed class VersaoBanco(Banco banco, ILogger<VersaoBanco> logger)
 {
-    public const string VersaoExigida = "1.5";   // 1.5: backup do servidor (20/11/2026)
+    public const string VersaoExigida = "1.6";   // 1.6: restauração de backup pela tela (20/11/2026)
 
     private readonly SemaphoreSlim trava = new(1, 1);
     private DateTime conferidaEm = DateTime.MinValue;

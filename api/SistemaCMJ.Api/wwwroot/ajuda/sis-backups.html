@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Backups e restauração</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> acompanhar os backups automáticos do banco e, quando for preciso, pedir que o banco volte para um ponto do passado (restauração).</p>
+  <h2>Os backups</h2>
+  <ul>
+    <li><strong>Completo</strong>: todo dia à noite. É a base de qualquer restauração.</li>
+    <li><strong>De hora em hora (log)</strong>: guarda o que mudou desde o anterior. Com ele dá para voltar para um dia e hora, perdendo no máximo 1 hora.</li>
+    <li><strong>Teste de restauração</strong>: toda semana o servidor restaura o último backup numa cópia e confere se está bom.</li>
+    <li><strong>Segurança</strong>: feito logo antes de cada restauração, para desfazer se tiver sido engano.</li>
+    <li>Os backups mais antigos são apagados pela limpeza (dias guardados no parâmetro BACKUP_DIAS_MANTER). O topo mostra <strong>até onde dá para voltar</strong>.</li>
+  </ul>
+  <h2>Restaurar</h2>
+  <ul>
+    <li>Só quem tem a permissão <strong>Restaurar</strong> (administradores) vê a aba.</li>
+    <li>Escolha <strong>um dia e hora</strong> ou <strong>um backup</strong> da lista, escreva o <strong>motivo</strong>, a palavra <strong>RESTAURAR</strong> e a sua <strong>senha</strong>.</li>
+    <li>A tela só registra o pedido. Em até 1 minuto o servidor faz o backup de segurança, <strong>tira o sistema do ar para todos</strong> por alguns minutos, restaura e religa. Depois, entre de novo.</li>
+    <li>Enquanto o pedido está <strong>aguardando</strong>, dá para cancelar na aba <strong>Pedidos de restauração</strong>.</li>
+    <li>O administrador e quem pediu recebem e-mail com o pedido e com o resultado.</li>
+  </ul>
+  <h2>Cuidados</h2>
+  <ul>
+    <li>Tudo o que foi lançado depois do ponto escolhido <strong>some do sistema</strong>. Avise os outros usuários antes.</li>
+    <li>Restaurou por engano? Faça um pedido novo escolhendo o backup de <strong>segurança</strong> daquela restauração.</li>
+    <li>Um pedido por vez.</li>
+  </ul>
+</body>
+</html>

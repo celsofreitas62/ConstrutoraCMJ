@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Backups e restauração</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/sis/backups.js" defer></script>
+</head>
+<body data-tela="sis/backups.html" data-ajuda="sis-backups" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Sistema › Backups › Backups e restauração</div>
+          <h1>Backups e restauração</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button data-dica="Busca de novo a situação, os backups e os pedidos." type="button" class="botao" id="botao-atualizar">Atualizar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="aviso-faixa" id="aviso" role="status" hidden></div>
+
+      <div class="cartao painel-aba">
+        <div class="grade">
+          <div class="campo"><span class="rotulo-linha">Dá para voltar de</span><span id="sit-de" class="forte"></span></div>
+          <div class="campo"><span class="rotulo-linha">até</span><span id="sit-ate" class="forte"></span></div>
+          <div class="campo"><span class="rotulo-linha">Último backup completo</span><span id="sit-completo"></span></div>
+          <div class="campo"><span class="rotulo-linha">Último backup de hora em hora</span><span id="sit-log"></span></div>
+          <div class="campo"><span class="rotulo-linha">Último teste de restauração</span><span id="sit-teste"></span></div>
+          <div class="campo"><span class="rotulo-linha">Erros nos últimos 7 dias</span><span id="sit-erros"></span></div>
+        </div>
+      </div>
+
+      <div class="abas" role="tablist" aria-label="Partes da tela">
+        <button type="button" class="aba" role="tab" id="aba-backups" aria-controls="painel-backups" aria-selected="true">Backups</button>
+        <button type="button" class="aba" role="tab" id="aba-restaurar" aria-controls="painel-restaurar" aria-selected="false" hidden>Restaurar</button>
+        <button type="button" class="aba" role="tab" id="aba-pedidos" aria-controls="painel-pedidos" aria-selected="false">Pedidos de restauração</button>
+      </div>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <section class="painel-aba" role="tabpanel" id="painel-backups" aria-labelledby="aba-backups">
+            <div class="filtros">
+              <label data-dica="Mostra também os backups que já foram apagados pela limpeza (só o registro fica)." class="marcacao">
+                <input type="checkbox" id="filtro-apagados"> Mostrar os apagados
+              </label>
+              <label data-dica="Esconde os backups de hora em hora para ver só os completos, testes e de segurança." class="marcacao">
+                <input type="checkbox" id="filtro-sem-log"> Esconder os de hora em hora
+              </label>
+            </div>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead>
+                  <tr>
+                    <th scope="col">Início</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Arquivo</th>
+                    <th scope="col" class="numero">MB</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col">Arquivo existe?</th>
+                    <th scope="col">Nuvem</th>
+                    <th scope="col">Mensagem</th>
+                  </tr>
+                </thead>
+                <tbody id="backups"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-restaurar" aria-labelledby="aba-restaurar" hidden>
+            <div class="aviso-faixa" role="note">
+              Restaurar volta o banco inteiro para o passado: tudo o que foi lançado depois do ponto escolhido some do sistema.
+              Antes, o sistema faz um backup de segurança (para desfazer, se for engano) e fica fora do ar por alguns minutos para todos os usuários.
+            </div>
+            <div class="marcacoes" role="radiogroup" aria-label="Para onde voltar">
+              <label data-dica="Volta para um dia e hora, usando o backup completo anterior e os backups de hora em hora. Perda máxima: o que foi feito depois do ponto." class="marcacao">
+                <input type="radio" name="tipo-ponto" value="DATA_HORA" checked> Voltar para um dia e hora
+              </label>
+              <label data-dica="Volta exatamente para um backup completo ou de segurança da lista." class="marcacao">
+                <input type="radio" name="tipo-ponto" value="BACKUP"> Voltar para um backup escolhido
+              </label>
+            </div>
+            <div class="grade">
+              <label data-dica="Dia e hora para onde o banco volta. Obrigatório. Precisa estar dentro do período de “Dá para voltar”." class="campo s-2" id="campo-ponto">Dia e hora para voltar *
+                <input type="datetime-local" id="dt-ponto" step="60">
+              </label>
+              <label data-dica="Backup completo ou de segurança para onde o banco volta. Obrigatório. Só aparecem os que ainda existem na pasta." class="campo s-2" id="campo-backup" hidden>Backup *
+                <select id="id-backup"></select>
+              </label>
+              <label data-dica="Por que a restauração é necessária. Obrigatório. Fica registrado e vai no e-mail de aviso." class="campo s-4">Motivo *
+                <textarea id="motivo" rows="2" maxlength="400"></textarea>
+              </label>
+              <label data-dica="Escreva a palavra RESTAURAR para confirmar que entendeu o que vai acontecer. Obrigatório." class="campo s-2">Escreva RESTAURAR *
+                <input type="text" id="confirmacao" maxlength="20" autocomplete="off" spellcheck="false">
+              </label>
+              <label data-dica="A sua senha de entrada no sistema, para confirmar que é você. Obrigatório." class="campo s-2">Sua senha *
+                <input type="password" id="senha" maxlength="128" autocomplete="current-password">
+              </label>
+            </div>
+            <div class="barra-lista">
+              <span class="suave" id="resumo-pedido"></span>
+              <button data-dica="Registra o pedido. Em até 1 minuto o servidor faz o backup de segurança, tira o sistema do ar, restaura e religa. Pede confirmação antes." type="button" class="botao botao-perigo" id="botao-restaurar">Pedir restauração</button>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-pedidos" aria-labelledby="aba-pedidos" hidden>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead>
+                  <tr>
+                    <th scope="col">Nº</th>
+                    <th scope="col">Pedido em</th>
+                    <th scope="col">Por</th>
+                    <th scope="col">Voltar para</th>
+                    <th scope="col">Motivo</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col">Resultado</th>
+                    <th scope="col"><span class="so-leitor">Ações</span></th>
+                  </tr>
+                </thead>
+                <tbody id="pedidos"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

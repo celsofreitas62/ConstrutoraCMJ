@@ -131,6 +131,7 @@ PessoaEndpoints.Mapear(app);
 ComunicadoEndpoints.Mapear(app);
 ComunicadoEndpoints.MapearLogo(app);
 MigracaoEndpoints.Mapear(app);
+BackupEndpoints.Mapear(app);
 SaudeEndpoints.Mapear(app);
 InstalacaoEndpoints.Mapear(app);
 
