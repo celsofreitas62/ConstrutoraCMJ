@@ -50,6 +50,7 @@ Convenções: `[ ]` = marcar quando feito. **⚠️** = ponto em que um erro dá
 - [ ] Energia: **nunca suspender nem hibernar** (Configurações › Sistema › Energia); o disco não desliga. Ligar sozinho depois de falta de luz, se a placa permitir (BIOS).
 - [ ] Discos: SSD = Windows, SQL Server e banco; **HD de 1 TB = backups, na pasta `D:\SisCMJ_Backup`** (decidido pelo Celso em 20/11/2026). Backup em outro disco protege contra a falha do SSD. Conferir a letra do HD no servidor; se não for `D:`, ajustar no parâmetro `BACKUP_PASTA` (item 5).
 - [ ] Google Drive para computador já instalado e sincronizando de madrugada (informação da CMJ). Anotar a pasta que sincroniza: ____________ (ex.: `G:\Meu Drive\SisCMJ_Backup` ou uma pasta espelhada). Vai no parâmetro `BACKUP_PASTA_EXTERNA` (cópia **sem senha**, decisão de 20/11/2026).
+- [ ] **BitLocker**: o Windows 11 pode criptografar o C: (e discos novos) sozinho (achado no ensaio 3d-C). Conferir em Configurações › Privacidade e segurança › Criptografia do dispositivo (ou Gerenciamento de Disco: "BitLocker Criptografado"). Se estiver ligado: **guardar a chave de recuperação** (gerenciador de senhas e cópia impressa com a CMJ); sem ela, uma troca de placa ou de disco pode deixar o banco e os backups ilegíveis.
 - [ ] Antivírus: se houver um além do Defender, excluir a pasta do banco do SQL e a pasta de backups da varredura em tempo real (pedir ao técnico).
 
 ## 3. Instalar SQL Server, SSMS e .NET
@@ -57,6 +58,7 @@ Convenções: `[ ]` = marcar quando feito. **⚠️** = ponto em que um erro dá
 - [ ] **SQL Server 2025 Express** (download gratuito da Microsoft), instalação **Personalizada**:
   - só **Mecanismo de Banco de Dados** (Database Engine);
   - instância nomeada **`SQL2025`** (o instalador do SisCMJ usa `.\SQL2025`; outro nome = passar `-Instancia` no passo 6);
+  - ⚠️ o campo **ID da instância** não acompanha o nome sozinho (fica `SQLEXPRESS`): trocar também para **`SQL2025`** (pasta `MSSQL17.SQL2025`; achado no ensaio 3d-C, 21/11/2026);
   - collation **`Latin1_General_CI_AS`**;
   - autenticação: Windows (o SisCMJ não usa senha de SQL); modo misto é opcional;
   - administrador do SQL: o seu usuário do Windows;
