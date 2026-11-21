@@ -181,3 +181,5 @@
 - **20/11/2026** (03d2): roteiro de instalação escrito (`docs/Roteiro_Instalacao_Servidor.md` v1.0). Decisão do Celso: **backups do servidor da CMJ no HD de 1 TB, pasta `D:\SisCMJ_Backup`** (parâmetro `BACKUP_PASTA`, ajustado antes do instalador).
 
 - **20/11/2026**: **conversa 03d2 encerrada** (restauração pela tela pronta e ensaiada, banco e API 1.6, roteiro de instalação v1.0, respostas da CMJ registradas). Próxima: **"03e – Ensaio no notebook da Renata e instalação na CMJ"**.
+
+- **21/11/2026** (03e): leva 6 de pedidos futuros registrada (**P12 a P19**, texto original e sugestões de mercado em `docs/requisitos/Pedidos_Futuros.md`): cadastro de Pessoas passa a se chamar **Parceiros** (tipos, anexos, e-mails com principal, ficha em PDF/e-mail/A4, separar e-mails múltiplos na migração); saída PDF/e-mail/A4 em toda tela; boleto visível na linha do movimento; destinatários de e-mail com consulta aos parceiros; trava de lançamento ligado a boleto enviado ao banco; prevenção de erros de digitação; relatório diário da administração; central de e-mails automáticos. Nada desenvolvido agora.
