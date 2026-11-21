@@ -61,6 +61,7 @@ Convenções: `[ ]` = marcar quando feito. **⚠️** = ponto em que um erro dá
   - ⚠️ o campo **ID da instância** não acompanha o nome sozinho (fica `SQLEXPRESS`): trocar também para **`SQL2025`** (pasta `MSSQL17.SQL2025`; achado no ensaio 3d-C, 21/11/2026);
   - collation **`Latin1_General_CI_AS`**;
   - autenticação: Windows (o SisCMJ não usa senha de SQL); modo misto é opcional;
+  - SSMS novo: no primeiro uso, "Ignorar e adicionar contas mais tarde" (não precisa de conta Microsoft/GitHub); ao conectar em `.\SQL2025`, marcar **"Confiar no certificado do servidor"**;
   - administrador do SQL: o seu usuário do Windows;
   - serviço com início **automático**.
   - O SQL **não** precisa ser aberto na rede: o sistema roda no próprio servidor.
@@ -109,6 +110,7 @@ SELECT CHAVE, VALOR FROM SIS.Parametro WHERE CHAVE LIKE 'BACKUP%' OR CHAVE = 'EM
 
 ## 8. Primeiro acesso
 
+- [ ] ⚠️ Digitar sempre o endereço **com `https://`**: sem ele o navegador tenta `http` e mostra "não enviou dados" (ERR_EMPTY_RESPONSE), parecendo que o sistema caiu (achado no ensaio 3d-C). O atalho dos usuários (item 10) já vai com `https://`.
 - [ ] No servidor: **`https://localhost:5443/instalacao.html`**. Definir as senhas de **`celso`** (administrador geral, nível 2) e **`admin`** (administrador da CMJ, nível 1: Renata, por enquanto com este login). Só funciona enquanto os administradores não têm senha.
 - [ ] Entrar em `https://localhost:5443` como `celso` e conferir o menu.
 
