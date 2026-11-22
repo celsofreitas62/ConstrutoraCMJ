@@ -102,5 +102,7 @@ Cuidados: a pasta é sincronizada com o Google Drive. Não edite o projeto em do
 
 - **Subir**: dois cliques em `C:\SistemaCMJ\api\rodar.cmd`, deixar a janela aberta e abrir **https://localhost:5443** no navegador. Para parar, feche a janela.
 - **Compilar** (quando o Claude mudar algo em C#): dois cliques em `C:\SistemaCMJ\api\compilar.cmd` e avisar o Claude (ele lê o `compilar.log`). Mudança só em tela (HTML/CSS/JS) não precisa compilar: basta Ctrl+F5 no navegador.
-- **Primeira senha** de um usuário sem senha: no PowerShell, `Set-Location C:\SistemaCMJ\api\SistemaCMJ.Api` e `dotnet run -- senha-inicial <login>`.
+- **Primeira senha** de um usuário sem senha: desde a 04a, pela tela **Sistema › Segurança › Usuários** › ficha › **Reiniciar senha** (senha provisória padrão, vale 24 horas). O comando antigo continua: no PowerShell, `Set-Location C:\SistemaCMJ\api\SistemaCMJ.Api` e `dotnet run -- senha-inicial <login>`.
+- **Quando o Claude mudar algo em C# ou a versão**, ele pede para **fechar e abrir de novo o `rodar.cmd`** (o programa aberto continua o antigo até reiniciar).
+- **Testes automáticos das telas** (desde 22/11/2026, 04a): o Claude roda pelo executor (pedido `testar_telas.pedido`), com o `rodar.cmd` aberto. Abrem um Edge invisível, entram com o usuário de teste `claude.teste` (só no LOCAL), abrem cada tela e gravam um registro de teste. Resultado em `executor_sql\saida\testar_telas.txt`. O `publicar` não gera pacote se o último teste falhou ou ficou mais velho que o código.
 - O notebook precisa do **.NET 10 (Hosting Bundle)**, instalado em 16/11/2026, e do certificado confiável (`dotnet dev-certs https --trust`, uma vez só).

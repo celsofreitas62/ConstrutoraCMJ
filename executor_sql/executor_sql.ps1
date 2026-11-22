@@ -35,6 +35,11 @@
                       do CashBookCMJ_be.mdb e regrava legado\dados_brutos e
                       legado\extracao); resultado em saida\extrair_access.txt.
                       Comando fixo. Aprovado pelo Celso (03f, 22/11/2026).
+  v1.6 (22/11/2026) - Pedido de testes das telas: entrada\testar_telas.pedido roda
+                      testes\telas (Playwright + Edge invisivel: entra, abre cada tela,
+                      grava um registro de teste); resultado em saida\testar_telas.txt.
+                      Precisa do sistema rodando (api\rodar.cmd). Comando fixo.
+                      Testes antes de cada publicacao aprovados pelo Celso (03h/04a).
   Uso: iniciado pela tarefa "SistemaCMJ - Executor SQL" (instalar_executor.cmd).
 #>
 param(
@@ -268,6 +273,21 @@ function Publicar {
     return $Codigo
 }
 
+function Testar-Telas {
+    $ErrorActionPreference = 'Continue'   # dotnet escreve andamento no stderr: nao e erro
+    $Projeto = Join-Path (Split-Path $Raiz -Parent) 'testes\telas\TestesTelas.csproj'
+    $Ini = Get-Date
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $Saida = (& dotnet run --project $Projeto -c Release 2>&1 | ForEach-Object { "$_" }) -join "`r`n"
+    $Codigo = $LASTEXITCODE
+    if ($Saida -notmatch 'RESULTADO: ') { $Saida += "`r`nRESULTADO: ERRO (os testes nao rodaram ate o fim)" }
+    $Texto = 'SistemaCMJ - testes das telas (executor v1.6)' + "`r`n" + 'Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + 'Fim    : ' + (Get-Date).ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + ('=' * 70) + "`r`n" + $Saida + "`r`n" + ('=' * 70) + "`r`n" + 'CODIGO_SAIDA=' + $Codigo + "`r`n"
+    $Destino = Join-Path (Join-Path $Raiz 'saida') 'testar_telas.txt'
+    [System.IO.File]::WriteAllText($Destino + '.tmp', $Texto, $Utf8)
+    Move-Item -LiteralPath ($Destino + '.tmp') -Destination $Destino -Force
+    return $Codigo
+}
+
 function Extrair-Access {
     $ErrorActionPreference = 'Continue'
     $Script = Join-Path (Split-Path $Raiz -Parent) 'legado\ferramentas\Extrair_Access.ps1'
@@ -324,6 +344,14 @@ while ($true) {
             Gravar-Status 'extraindo o Access'
             $C = Extrair-Access
             $TextoStatus = 'ativo; ultima extracao do Access -> CODIGO ' + $C
+            Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
+        }
+        $Pedido = Join-Path $Entrada 'testar_telas.pedido'
+        if (Test-Path -LiteralPath $Pedido) {
+            Remove-Item -LiteralPath $Pedido -Force
+            Gravar-Status 'testando as telas'
+            $C = Testar-Telas
+            $TextoStatus = 'ativo; ultimo teste das telas -> ' + $(if ($C -eq 0) { 'OK' } else { 'COM FALHAS' })
             Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
         }
         # Sinal de vida a cada minuto (sem regravar a cada ciclo, para nao encher a sincronizacao do Drive)

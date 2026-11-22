@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v1.8)
+  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v1.9)
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : 22/11/2026 por sql/ferramentas/montar_master.py, juntando os
@@ -18,7 +18,7 @@
                 rl_sistemacmj_api (roteiro de instalacao; a senha nao fica em
                 arquivo).
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > conferir o banco > F5.
-  Objetos     : 210 arquivos.
+  Objetos     : 211 arquivos.
 *******************************************************************************/
 -- =============================================================================
 -- 1. CONFERENCIA DO BANCO
@@ -29,7 +29,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MASTER v1.8: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MASTER v1.9: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- =============================================================================
@@ -864,7 +864,8 @@ GO
                 RESULTADO: OK, SENHA_ERRADA, BLOQUEOU (errou e foi bloqueado
                 nesta tentativa), BLOQUEADO (já estava), INATIVO, SEM_SENHA,
                 INEXISTENTE, ESTACAO_BLOQUEADA (o computador errou demais
-                em pouco tempo e está em espera). LOGIN_INFORMADO guarda o que foi digitado
+                em pouco tempo e está em espera), PROVISORIA_VENCIDA (senha
+                provisória certa, mas passou de SENHA_PROVISORIA_HORAS). LOGIN_INFORMADO guarda o que foi digitado
                 (para ver tentativas com nomes que não existem).
                 Nunca é apagado.
 
@@ -872,6 +873,7 @@ GO
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (20/11/2026) - Etapa 03d: resultado ESTACAO_BLOQUEADA (limite de
                         tentativas por computador) e índice por IP e data.
+    v1.2 (22/11/2026) - Etapa 04a: resultado PROVISORIA_VENCIDA.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -890,7 +892,7 @@ BEGIN
         DT_TENTATIVA     DATETIME2(0)    NOT NULL CONSTRAINT DF_Login_Log_DT_TENTATIVA    DEFAULT (SYSDATETIME()),
         CONSTRAINT PK_Login_Log           PRIMARY KEY CLUSTERED (ID_LOGIN_LOG),
         CONSTRAINT FK_Login_Log_Usuario   FOREIGN KEY (ID_USUARIO) REFERENCES [SIS].[Usuario] (ID_USUARIO),
-        CONSTRAINT CK_Login_Log_RESULTADO CHECK (RESULTADO IN ('OK', 'SENHA_ERRADA', 'BLOQUEOU', 'BLOQUEADO', 'INATIVO', 'SEM_SENHA', 'INEXISTENTE', 'ESTACAO_BLOQUEADA'))
+        CONSTRAINT CK_Login_Log_RESULTADO CHECK (RESULTADO IN ('OK', 'SENHA_ERRADA', 'BLOQUEOU', 'BLOQUEADO', 'INATIVO', 'SEM_SENHA', 'INEXISTENTE', 'ESTACAO_BLOQUEADA', 'PROVISORIA_VENCIDA'))
     );
 END;
 GO
@@ -899,15 +901,15 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS]
     CREATE NONCLUSTERED INDEX IX_Login_Log_DT_TENTATIVA ON [SIS].[Login_Log] (DT_TENTATIVA) INCLUDE (ID_USUARIO, RESULTADO);
 GO
 
--- v1.1: novo resultado ESTACAO_BLOQUEADA (troca a restrição só se ainda não aceita)
+-- v1.1/v1.2: resultados ESTACAO_BLOQUEADA e PROVISORIA_VENCIDA (troca a restrição só se ainda não aceita)
 IF NOT EXISTS (SELECT 1 FROM sys.check_constraints c
                WHERE c.name = N'CK_Login_Log_RESULTADO' AND c.parent_object_id = OBJECT_ID(N'[SIS].[Login_Log]')
-                 AND c.definition LIKE N'%ESTACAO_BLOQUEADA%')
+                 AND c.definition LIKE N'%PROVISORIA_VENCIDA%')
 BEGIN
     IF EXISTS (SELECT 1 FROM sys.check_constraints c WHERE c.name = N'CK_Login_Log_RESULTADO' AND c.parent_object_id = OBJECT_ID(N'[SIS].[Login_Log]'))
         ALTER TABLE [SIS].[Login_Log] DROP CONSTRAINT CK_Login_Log_RESULTADO;
     ALTER TABLE [SIS].[Login_Log] ADD CONSTRAINT CK_Login_Log_RESULTADO
-        CHECK (RESULTADO IN ('OK', 'SENHA_ERRADA', 'BLOQUEOU', 'BLOQUEADO', 'INATIVO', 'SEM_SENHA', 'INEXISTENTE', 'ESTACAO_BLOQUEADA'));
+        CHECK (RESULTADO IN ('OK', 'SENHA_ERRADA', 'BLOQUEOU', 'BLOQUEADO', 'INATIVO', 'SEM_SENHA', 'INEXISTENTE', 'ESTACAO_BLOQUEADA', 'PROVISORIA_VENCIDA'));
 END;
 GO
 
@@ -5609,7 +5611,12 @@ GO
                     seguidos (qualquer usuário, inclusive inexistente) nos
                     últimos LOGIN_COMPUTADOR_MINUTOS: recusa sem olhar a
                     senha nem contar tentativa no usuário (ESTACAO_BLOQUEADA),
-                    até passar o tempo. Um login certo zera a contagem.
+                    até passar o tempo. Um login certo zera a contagem;
+                  - senha provisória (TROCAR_SENHA = 1) certa, mas dada há
+                    mais de SENHA_PROVISORIA_HORAS (0 = não vence): recusa
+                    (PROVISORIA_VENCIDA) e pede para o administrador reiniciar
+                    a senha. Não vale para o administrador geral (nível 2),
+                    para ele nunca ficar sem entrar.
                 Toda tentativa vai para SIS.Login_Log.
                 Recusa antes de gravar: COMMIT (nada foi alterado), para a
                 procedure funcionar também dentro de INSERT ... EXEC.
@@ -5619,6 +5626,7 @@ GO
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (20/11/2026) - Etapa 03d: limite de tentativas por computador.
+    v1.2 (22/11/2026) - Etapa 04a: senha provisória vence (SENHA_PROVISORIA_HORAS).
 
   Homologação (LOCAL): ver sql/testes/SIS/02b_Homologacao_SIS.sql.
 *******************************************************************************/
@@ -5654,6 +5662,9 @@ BEGIN
     DECLARE @LimiteIp     INT;
     DECLARE @MinutosIp    INT;
     DECLARE @ErrosIp      INT = 0;
+    DECLARE @DtSenha      DATETIME2(0);
+    DECLARE @NivelAdmin   TINYINT       = 0;
+    DECLARE @HorasProv    INT;
 
     BEGIN TRY
         SET @Login          = LOWER(LTRIM(RTRIM(ISNULL(@Login, N''))));
@@ -5667,6 +5678,7 @@ BEGIN
         IF @LimiteIp < 5 SET @LimiteIp = 5;
         SET @MinutosIp      = ISNULL(SIS.fn_SIS_Parametro_Inteiro('LOGIN_COMPUTADOR_MINUTOS'), 15);
         IF @MinutosIp < 1 SET @MinutosIp = 1;
+        SET @HorasProv      = ISNULL(SIS.fn_SIS_Parametro_Inteiro('SENHA_PROVISORIA_HORAS'), 24);
 
         IF @SenhaConferida = 1 AND DATALENGTH(ISNULL(@TokenHash, 0x)) <> 32
         BEGIN
@@ -5686,8 +5698,11 @@ BEGIN
                    @TemSenha    = CASE WHEN u.SENHA_HASH IS NULL THEN 0 ELSE 1 END,
                    @Tentativas  = u.TENTATIVAS_ERRADAS,
                    @Nome        = u.NOME,
-                   @TrocarSenha = u.TROCAR_SENHA
+                   @TrocarSenha = u.TROCAR_SENHA,
+                   @DtSenha     = u.DT_SENHA,
+                   @NivelAdmin  = p.NIVEL_ADMIN
             FROM SIS.Usuario u WITH (UPDLOCK, HOLDLOCK)
+            INNER JOIN SIS.Perfil p ON p.ID_PERFIL = u.ID_PERFIL
             WHERE u.LOGIN = @Login
               AND u.INTERNO = 0;
 
@@ -5746,6 +5761,13 @@ BEGIN
                                       THEN N'Senha incorreta. O usuário foi bloqueado após ' + CONVERT(NVARCHAR(10), @Limite) + N' tentativas. Procure o administrador do sistema.'
                                       ELSE N'Usuário ou senha inválidos. Restam ' + CONVERT(NVARCHAR(10), @Limite - @Tentativas) + N' tentativa(s) antes do bloqueio.'
                                  END;
+            END;
+
+            IF @Resultado = '' AND @TrocarSenha = 1 AND ISNULL(@NivelAdmin, 0) < 2 AND @HorasProv > 0
+               AND @DtSenha < DATEADD(HOUR, -@HorasProv, SYSDATETIME())
+            BEGIN
+                SET @Resultado = 'PROVISORIA_VENCIDA';
+                SET @Mensagem  = N'A sua senha provisória venceu (vale ' + CONVERT(NVARCHAR(10), @HorasProv) + N' horas). Peça ao administrador do sistema para reiniciar a sua senha.';
             END;
 
             IF @Resultado = ''
@@ -5980,6 +6002,8 @@ GO
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (15/11/2026) - Dois níveis de administrador: quem não é nível 2 não vê
                         usuários de nível 2; devolve PERFIL_NIVEL_ADMIN.
+    v1.2 (22/11/2026) - Etapa 04a (tela de Usuários): SENHA_PROVISORIA_VENCIDA e
+                        DT_SENHA.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Usuario_Listar @IdUsuario = 2;
@@ -6000,6 +6024,7 @@ BEGIN
     DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Usuario_Listar]';
     DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
     DECLARE @Nivel      TINYINT       = SIS.fn_SIS_Usuario_Nivel_Admin(@IdUsuario);
+    DECLARE @HorasProv  INT           = ISNULL(SIS.fn_SIS_Parametro_Inteiro('SENHA_PROVISORIA_HORAS'), 24);
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_USUARIO', 'VER') = 0
@@ -6020,6 +6045,9 @@ BEGIN
                u.BLOQUEADO,
                u.TROCAR_SENHA,
                CAST(CASE WHEN u.SENHA_HASH IS NULL THEN 0 ELSE 1 END AS BIT) AS TEM_SENHA,
+               CAST(CASE WHEN u.SENHA_HASH IS NOT NULL AND u.TROCAR_SENHA = 1 AND p.NIVEL_ADMIN < 2 AND @HorasProv > 0
+                          AND u.DT_SENHA < DATEADD(HOUR, -@HorasProv, SYSDATETIME()) THEN 1 ELSE 0 END AS BIT) AS SENHA_PROVISORIA_VENCIDA,
+               u.DT_SENHA,
                u.DT_ULTIMO_LOGIN,
                (SELECT COUNT(*) FROM SIS.Usuario_Permissao up WITH (NOLOCK) WHERE up.ID_USUARIO = u.ID_USUARIO) AS QTD_EXCECOES
         FROM SIS.Usuario u WITH (NOLOCK)
@@ -6062,6 +6090,8 @@ GO
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (15/11/2026) - Dois níveis de administrador: quem não é nível 2 não vê
                         usuário de nível 2 (só o próprio); PERFIL_NIVEL_ADMIN.
+    v1.2 (22/11/2026) - Etapa 04a (tela de Usuários): SENHA_PROVISORIA_VENCIDA e
+                        QTD_EXCECOES.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Usuario_Obter @IdUsuario = 2, @IdUsuarioConsulta = 2;
@@ -6081,6 +6111,7 @@ BEGIN
     DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Usuario_Obter]';
     DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
     DECLARE @Nivel      TINYINT       = SIS.fn_SIS_Usuario_Nivel_Admin(@IdUsuario);
+    DECLARE @HorasProv  INT           = ISNULL(SIS.fn_SIS_Parametro_Inteiro('SENHA_PROVISORIA_HORAS'), 24);
 
     BEGIN TRY
         IF ISNULL(@IdUsuario, 0) <> ISNULL(@IdUsuarioConsulta, -1)
@@ -6107,12 +6138,15 @@ BEGIN
                u.TENTATIVAS_ERRADAS,
                u.TROCAR_SENHA,
                CAST(CASE WHEN u.SENHA_HASH IS NULL THEN 0 ELSE 1 END AS BIT) AS TEM_SENHA,
+               CAST(CASE WHEN u.SENHA_HASH IS NOT NULL AND u.TROCAR_SENHA = 1 AND p.NIVEL_ADMIN < 2 AND @HorasProv > 0
+                          AND u.DT_SENHA < DATEADD(HOUR, -@HorasProv, SYSDATETIME()) THEN 1 ELSE 0 END AS BIT) AS SENHA_PROVISORIA_VENCIDA,
                u.DT_SENHA,
                u.DT_ULTIMO_LOGIN,
                u.DT_CRIACAO,
                u.USUARIO_CRIACAO,
                u.DT_ALTERACAO,
-               ISNULL(u.USUARIO_ALTERACAO, N'')                      AS USUARIO_ALTERACAO
+               ISNULL(u.USUARIO_ALTERACAO, N'')                      AS USUARIO_ALTERACAO,
+               (SELECT COUNT(*) FROM SIS.Usuario_Permissao up WITH (NOLOCK) WHERE up.ID_USUARIO = u.ID_USUARIO) AS QTD_EXCECOES
         FROM SIS.Usuario u WITH (NOLOCK)
         INNER JOIN SIS.Perfil p WITH (NOLOCK) ON p.ID_PERFIL = u.ID_PERFIL
         WHERE u.ID_USUARIO = @IdUsuarioConsulta;
@@ -15033,6 +15067,9 @@ GO
                         BACKUP_DIAS_ALERTA_TESTE).
     v1.8 (20/11/2026) - Etapa 03d2: BACKUP_RESTAURACAO_MOTIVO_MINIMO (restauração
                         pela tela).
+    v1.9 (22/11/2026) - Etapa 04a: SENHA_PROVISORIA_PADRAO e SENHA_PROVISORIA_HORAS
+                        (botão Reiniciar senha da tela de Usuários; decisão do
+                        Celso de 16/11/2026, PADRAO_TELAS regra 13).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -15118,7 +15155,11 @@ FROM (VALUES
         ('EMAIL_RODAPE_CNPJ', N'N', 'SN',
          N'Mostrar o CNPJ da empresa no rodapé dos e-mails enviados a clientes e terceiros (S/N).', 'SIS', 1),
         ('CIDADE_PADRAO', N'Poços de Caldas', 'TEXTO',
-         N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1)
+         N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1),
+        ('SENHA_PROVISORIA_PADRAO', N'@12345', 'TEXTO',
+         N'Senha provisória dada pelo botão Reiniciar senha da tela de Usuários. O usuário é obrigado a trocá-la no primeiro acesso.', 'SIS', 0),
+        ('SENHA_PROVISORIA_HORAS', N'24', 'INTEIRO',
+         N'Horas que a senha provisória vale. Passado esse tempo sem o usuário trocar, o login recusa e é preciso reiniciar a senha de novo. 0 = não vence. Não vale para o administrador geral.', 'SIS', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Parametro p WHERE p.CHAVE = v.CHAVE);
@@ -15999,6 +16040,69 @@ WHERE i.CODIGO = 'SIS_AJUDA_GERAL'
 GO
 GO
 
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/Carga_SIS_Perfil_Padrao.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : carga inicial dos perfis comuns de [SIS].[Perfil]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Perfis de fábrica para o administrador da empresa começar
+                (pendência 9 da seção 6 do CLAUDE.md; sugestão aprovada pelo
+                Celso em 22/11/2026, conversa 04a). Depois de criados, quem
+                manda é a tela Perfis e permissões: o administrador ajusta à
+                vontade.
+                  Financeiro: todas as ações nas telas de Cadastros,
+                      Financeiro, Bancos e Cobrança, menos REABRIR (mês
+                      fechado); só consulta em Imóveis, Vendas, Custos de obra
+                      e Painel.
+                  Consulta: só VER em todas as telas fora do módulo Sistema.
+                As permissões são dadas SÓ quando o perfil nasce (neste mesmo
+                lote). Perfil que já existe não é tocado: rodar o MASTER de novo
+                (atualização) nunca devolve uma permissão que o administrador
+                tirou. Telas novas de versões futuras entram desmarcadas: o
+                administrador marca na tela.
+                Telas exclusivas do administrador geral nunca entram.
+                Depende das cargas de SIS.Item e SIS.Item_Acao de todos os
+                módulos (vai depois delas).
+
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04a).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+DECLARE @Novos TABLE (ID_PERFIL INT NOT NULL, NOME NVARCHAR(60) NOT NULL);
+
+INSERT INTO SIS.Perfil (NOME, DESCRICAO, NIVEL_ADMIN, ATIVO)
+OUTPUT inserted.ID_PERFIL, inserted.NOME INTO @Novos (ID_PERFIL, NOME)
+SELECT v.NOME, v.DESCRICAO, 0, 1
+FROM (VALUES
+        (CAST(N'Financeiro' AS NVARCHAR(60)),
+         CAST(N'Contas a pagar e a receber, baixas, bancos e cobrança, com os cadastros. Não reabre mês fechado. Só consulta imóveis, vendas, obras e painel.' AS NVARCHAR(400))),
+        (N'Consulta',
+         N'Só consulta: vê as telas dos módulos liberados, sem incluir, alterar, excluir nem exportar.')
+     ) v (NOME, DESCRICAO)
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Perfil p WHERE p.NOME = v.NOME);
+
+INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO)
+SELECT n.ID_PERFIL, ia.ID_ITEM_ACAO
+FROM @Novos n
+CROSS JOIN SIS.Item_Acao ia
+INNER JOIN SIS.Item   i ON i.ID_ITEM   = ia.ID_ITEM AND i.TIPO = 'TELA' AND i.EXCLUSIVO_GERAL = 0
+INNER JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO
+INNER JOIN SIS.Acao   a ON a.ID_ACAO   = ia.ID_ACAO
+WHERE ia.ATIVO = 1
+  AND m.CODIGO <> 'SIS'
+  AND (   (n.NOME = N'Consulta'   AND a.CODIGO = 'VER')
+       OR (n.NOME = N'Financeiro' AND m.CODIGO IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO <> 'REABRIR')
+       OR (n.NOME = N'Financeiro' AND m.CODIGO NOT IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO = 'VER'))
+  AND NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao pp WHERE pp.ID_PERFIL = n.ID_PERFIL AND pp.ID_ITEM_ACAO = ia.ID_ITEM_ACAO);
+GO
+GO
+
 -- =============================================================================
 -- 9. (fim) FINALIZACAO DA INSTALACAO
 -- =============================================================================
@@ -16063,19 +16167,20 @@ GO
                       1.6 (20/11/2026) restauração de backup pela tela (SIS.Backup_Restauracao).
                       1.7 (22/11/2026) ajuda exclusiva do administrador geral (SIS_Ajuda_Geral_Obter, tela SIS_AJUDA_GERAL).
                       1.8 (22/11/2026) atualização em um clique (SIS.Atualizacao, SIS_Atualizacao_Registrar).
+                      1.9 (22/11/2026) telas de Usuários e Perfis (senha provisória que vence, perfis Financeiro e Consulta).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '1.8';
+DECLARE @Versao VARCHAR(20) = '1.9';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;
 GO
 GO
 
-PRINT N'MASTER v1.8 concluido sem erro.';
+PRINT N'MASTER v1.9 concluido sem erro.';
 GO
 
 SET NOEXEC OFF;

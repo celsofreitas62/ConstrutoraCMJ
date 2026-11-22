@@ -6,6 +6,10 @@
                       versao.txt (programa e banco) e NOTAS_DA_VERSAO.txt (secao da versao em
                       docs\NOTAS_DA_VERSAO.md; sem nota, nao publica); sqlcmd opcional em
                       ferramentas\ (se existir api\ferramentas\sqlcmd\sqlcmd.exe).
+  v1.2 (22/11/2026) - Fase 4 (04a): so publica se o ultimo teste das telas
+                      (executor_sql\saida\testar_telas.txt, pedido testar_telas.pedido) deu
+                      RESULTADO: OK e e mais novo que o codigo do programa (telas, Endpoints,
+                      Infra). Emergencia: -SemTestesTelas (fica escrito no resultado).
   Saida: C:\SisCMJ_Publicacao\SisCMJ_<versao>_<data>\  (FORA da pasta do Google Drive)
     programa\     executavel unico (telas e ajuda embutidas) + appsettings.json e .Production.json
     sql\          00_Criar_Banco, MASTER e MIGRACAO (rodar no SSMS, nessa ordem)
@@ -14,7 +18,7 @@
     LEIA-ME.txt   ordem da instalacao
   Uso: publicar.cmd (ou pelo executor, pedido publicar.pedido).
 #>
-param([string]$PastaSaida = 'C:\SisCMJ_Publicacao')
+param([string]$PastaSaida = 'C:\SisCMJ_Publicacao', [switch]$SemTestesTelas)
 $ErrorActionPreference = 'Stop'
 $Raiz = Split-Path $PSScriptRoot -Parent
 $Projeto = Join-Path $PSScriptRoot 'SistemaCMJ.Api\SistemaCMJ.Api.csproj'
@@ -24,6 +28,17 @@ $VersaoBanco = [regex]::Match((Get-Content -LiteralPath (Join-Path $Raiz 'sql\ob
 $TextoNotas = [System.IO.File]::ReadAllText((Join-Path $Raiz 'docs\NOTAS_DA_VERSAO.md'), [System.Text.Encoding]::UTF8).Replace("`r`n", "`n")
 $Achou = [regex]::Match($TextoNotas, '(?ms)^## ' + [regex]::Escape($VersaoBanco) + '\b.*?(?=^## |\z)')
 if (-not $Achou.Success) { Write-Output ('RESULTADO: ERRO - falta a nota da versao ' + $VersaoBanco + ' em docs\NOTAS_DA_VERSAO.md'); exit 1 }
+# v1.2: testes das telas antes de publicar
+$Testes = Join-Path $Raiz 'executor_sql\saida\testar_telas.txt'
+if ($SemTestesTelas) { Write-Output 'ATENCAO: publicando SEM conferir os testes das telas (-SemTestesTelas).' }
+else {
+    if (-not (Test-Path -LiteralPath $Testes)) { Write-Output 'RESULTADO: ERRO - os testes das telas nunca rodaram (executor: entrada\testar_telas.pedido, com o rodar.cmd aberto)'; exit 1 }
+    $UltimoTeste = Get-Item -LiteralPath $Testes
+    if (-not ([System.IO.File]::ReadAllText($Testes, [System.Text.Encoding]::UTF8) -match 'RESULTADO: OK')) { Write-Output 'RESULTADO: ERRO - o ultimo teste das telas teve falhas (executor_sql\saida\testar_telas.txt)'; exit 1 }
+    $Codigo = Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'SistemaCMJ.Api') -Recurse -File | Where-Object { $_.Name -ne 'desktop.ini' -and $_.Extension -in '.cs', '.html', '.js', '.css', '.json', '.csproj' -and $_.FullName -notmatch '\\(bin|obj)\\' } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($Codigo -and $Codigo.LastWriteTime -gt $UltimoTeste.LastWriteTime) { Write-Output ('RESULTADO: ERRO - o codigo mudou depois do ultimo teste das telas (' + $Codigo.Name + ' em ' + $Codigo.LastWriteTime.ToString('dd/MM HH:mm') + '): rode os testes de novo'); exit 1 }
+    Write-Output ('Testes das telas: OK em ' + $UltimoTeste.LastWriteTime.ToString('dd/MM/yyyy HH:mm'))
+}
 $Destino = Join-Path $PastaSaida ('SisCMJ_' + $Versao + '_' + (Get-Date -Format 'yyyyMMdd_HHmm'))
 Write-Output ('Programa ' + $Versao + ', banco ' + $VersaoBanco + ' -> ' + $Destino)
 

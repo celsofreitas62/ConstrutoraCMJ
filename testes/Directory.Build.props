@@ -1,0 +1,9 @@
+<Project>
+  <!--
+    SistemaCMJ - testes automaticos (fase 4, 04a, 22/11/2026).
+    bin/obj FORA da pasta sincronizada com o Google Drive (mesma ideia do api\Directory.Build.props).
+  -->
+  <PropertyGroup>
+    <ArtifactsPath>$(LOCALAPPDATA)\SistemaCMJ\artifacts_testes</ArtifactsPath>
+  </PropertyGroup>
+</Project>

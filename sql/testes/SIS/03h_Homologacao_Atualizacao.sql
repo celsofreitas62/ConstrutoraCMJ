@@ -10,7 +10,8 @@ DECLARE @o TABLE (SUCESSO BIT, MENSAGEM NVARCHAR(400), ID_GERADO INT);
 DECLARE @Agora DATETIME2(0) = SYSDATETIME(), @Id INT, @Antes INT;
 DECLARE @Notas NVARCHAR(MAX) = N'## 1.8' + NCHAR(13) + NCHAR(10) + N'- Novo: atualização em um clique.';
 
-INSERT @r SELECT N'versão do banco', N'1.8', SIS.fn_SIS_Versao_Banco();
+-- v1.1 (22/11/2026, 04a): versão 1.8 ou mais nova (o teste continua valendo nas versões seguintes)
+INSERT @r SELECT N'versão do banco 1.8 ou mais nova', N'S', CASE WHEN TRY_CONVERT(INT, PARSENAME(SIS.fn_SIS_Versao_Banco(), 2)) * 1000 + TRY_CONVERT(INT, PARSENAME(SIS.fn_SIS_Versao_Banco(), 1)) >= 1008 THEN N'S' ELSE N'N' END;
 INSERT @r SELECT N'papel da API sem permissão de registrar', N'DENY',
        ISNULL((SELECT TOP 1 p.state_desc FROM sys.database_permissions p WHERE p.major_id = OBJECT_ID(N'SIS.SIS_Atualizacao_Registrar')
                AND p.grantee_principal_id = DATABASE_PRINCIPAL_ID(N'rl_sistemacmj_api') AND p.permission_name = 'EXECUTE' ORDER BY p.state_desc), N'nenhuma');

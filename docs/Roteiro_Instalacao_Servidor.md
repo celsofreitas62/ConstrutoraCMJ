@@ -1,6 +1,6 @@
 ﻿# Roteiro de instalação do SisCMJ no servidor da CMJ
 
-Versão 1.2 (22/11/2026, conversa 03h: atualização em um clique, item 14). Versão 1.1 (22/11/2026, conversa 03e). Versão 1.0 de 20/11/2026 (03d2), escrita a partir do ensaio no notebook; v1.1 com os achados do ensaio num Windows limpo (máquina virtual, 3d-C). **Manter atualizado a cada mudança no instalador, no MASTER ou no modo de trabalhar.**
+Versão 1.3 (22/11/2026, conversa 04a: um usuário por pessoa pela tela de Usuários, item 8). Versão 1.2 (22/11/2026, conversa 03h: atualização em um clique, item 14). Versão 1.1 (22/11/2026, conversa 03e). Versão 1.0 de 20/11/2026 (03d2), escrita a partir do ensaio no notebook; v1.1 com os achados do ensaio num Windows limpo (máquina virtual, 3d-C). **Manter atualizado a cada mudança no instalador, no MASTER ou no modo de trabalhar.**
 
 Quem executa: **Celso**, como administrador do servidor. Tempo estimado: **2 a 3 horas** na primeira instalação (sem a migração do Access, que é a virada, fase 8).
 
@@ -121,8 +121,9 @@ SELECT CHAVE, VALOR FROM SIS.Parametro WHERE CHAVE LIKE 'BACKUP%' OR CHAVE = 'EM
 ## 8. Primeiro acesso
 
 - [ ] ⚠️ Digitar sempre o endereço **com `https://`**: sem ele o navegador tenta `http` e mostra "não enviou dados" (ERR_EMPTY_RESPONSE), parecendo que o sistema caiu (achado no ensaio 3d-C). O atalho dos usuários (item 10) já vai com `https://`.
-- [ ] No servidor: **`https://localhost:5443/instalacao.html`**. Definir as senhas de **`celso`** (administrador geral, nível 2) e **`admin`** (administrador da CMJ, nível 1: Renata, por enquanto com este login). Só funciona enquanto os administradores não têm senha.
+- [ ] No servidor: **`https://localhost:5443/instalacao.html`**. Definir as senhas de **`celso`** (administrador geral, nível 2) e **`admin`** (administrador da CMJ, nível 1). Só funciona enquanto os administradores não têm senha.
 - [ ] Entrar em `https://localhost:5443` como `celso` e conferir o menu.
+- [ ] **Um usuário por pessoa** (desde a 1.9): em **Sistema › Segurança › Usuários**, incluir **`renata`** (perfil Administrador) e quem mais for usar, cada um com o seu perfil (Financeiro, Consulta ou outro criado em Perfis e permissões). Cada usuário nasce com a senha provisória padrão (`@12345`, parâmetro `SENHA_PROVISORIA_PADRAO`), que vale **24 horas**: passar pessoalmente e pedir para entrar no mesmo dia. O `admin` fica guardado só para emergência (senha no gerenciador de senhas).
 
 ## 9. E-mail do sistema
 

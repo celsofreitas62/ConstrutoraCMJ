@@ -9,6 +9,7 @@ Como o trabalho é conduzido neste projeto. Mesmo modo de trabalhar que o Celso 
 3. **Script de produção**: sem `EXEC` de teste no final; as linhas de homologação/teste vão comentadas no cabeçalho (uma linha cada). Execução sempre pelo **SSMS: Arquivo → Abrir → selecionar o .sql → conferir o banco → F5**. Comando `sqlcmd` só se o Celso pedir (pedido feito para a atualização em um clique, 22/11/2026: o `atualizar.cmd` roda o MASTER pelo `sqlcmd`; ver PADRAO_SQL regra 37).
 4. `.sql` entregue: CRLF em todas as linhas; sem BOM se for ASCII puro; com BOM se tiver acento. Conferir antes de entregar.
 5. **Antes de assumir nome ou tipo de campo, ler o DDL real** (`sql/`) ou o levantamento do Access (`legado/`).
+5a. **Testes antes de publicar** (22/11/2026, 04a): testes SQL de homologação (`sql/testes/`) no LOCAL e no ensaio, e os **testes automáticos das telas** (`testes/telas`, pedido `testar_telas.pedido` do executor). O `publicar` só gera pacote com o último teste das telas OK e mais novo que o código.
 
 ## E-mail em teste
 

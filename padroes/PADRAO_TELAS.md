@@ -29,7 +29,7 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 
 ## 5. Usuários: reiniciar senha (pedido do Celso, 16/11/2026)
 
-13. A tela de Usuários tem o botão **Reiniciar senha**: volta a senha do usuário para a senha provisória padrão (`@12345`, definida pelo Celso) e obriga a criar uma nova senha no próximo login (`TROCAR_SENHA = 1`). Também desbloqueia o usuário e encerra as sessões abertas dele. Pede confirmação antes. Precisa da permissão `REDEFINIR_SENHA` (procedure `SIS_Usuario_Senha_Gravar`, já pronta desde a 02b). **A senha provisória vale só por um tempo** (decisão do Celso, opção (a), 16/11/2026): parâmetro `SENHA_PROVISORIA_HORAS` (padrão 24); passado esse tempo sem o usuário trocar, o login recusa e é preciso reiniciar de novo. O texto da senha padrão também fica em parâmetro (`SENHA_PROVISORIA_PADRAO` = `@12345`), sem nada fixo no código.
+13. A tela de Usuários tem o botão **Reiniciar senha**: volta a senha do usuário para a senha provisória padrão (`@12345`, definida pelo Celso) e obriga a criar uma nova senha no próximo login (`TROCAR_SENHA = 1`). Também desbloqueia o usuário e encerra as sessões abertas dele. Pede confirmação antes. Precisa da permissão `REDEFINIR_SENHA` (procedure `SIS_Usuario_Senha_Gravar`, já pronta desde a 02b). **A senha provisória vale só por um tempo** (decisão do Celso, opção (a), 16/11/2026): parâmetro `SENHA_PROVISORIA_HORAS` (padrão 24); passado esse tempo sem o usuário trocar, o login recusa e é preciso reiniciar de novo. O texto da senha padrão também fica em parâmetro (`SENHA_PROVISORIA_PADRAO` = `@12345`), sem nada fixo no código. **Feito na 04a (22/11/2026)**: telas `sis/usuarios.html` e `sis/usuario.html`; o prazo não vale para o administrador geral (nível 2), para ele nunca ficar sem entrar; usuário novo já nasce com a senha provisória.
 
 ## 6. Digitação rápida (aprovado pelo Celso, 16/11/2026)
 
@@ -39,3 +39,10 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 ## 7. Topo e menu fixos (pedido do Celso, 18/11/2026)
 
 16. No computador, o **topo e o menu lateral ficam parados**; só a área da tela rola. Quando o menu for maior que a janela, ele rola sozinho, sem mexer na tela. No celular, tudo rola junto. Fica no `app.css`, vale para todas as telas.
+
+## 8. Testes automáticos das telas (aprovado pelo Celso na 03h; feito na 04a, 22/11/2026)
+
+17. Toda tela nova entra sozinha nos testes automáticos (`testes/telas`, Playwright + Edge invisível): o teste abre cada tela do menu e confere que carrega, tem título (`h1`), não abre janela de erro ou recusa, não tem erro de JavaScript e nenhuma chamada da API responde 500. **Ficha** que não fica no menu (aberta pela lista) vai na lista `fichasSemMenu` do `testes/telas/config.json`.
+18. Cada tela que grava ganha, quando fizer sentido, um passo de **gravação de teste pelo caminho do usuário** (Gravar › "Gravar?" › Confirmar › "Concluído"), num registro de teste que não atrapalha (ex.: usuário `teste.automatico`, inativo).
+19. Os testes rodam pelo executor (`entrada\testar_telas.pedido`, com o `rodar.cmd` aberto) **antes de cada publicação**: o `publicar` recusa se o último resultado não for OK ou for mais velho que o código do programa.
+20. **Ficha com abas**: o endereço `ficha.html?id=N#permissoes` (ou outra aba) abre direto na aba; depois de gravar, a ficha volta na mesma aba (`Util.recarregar`).

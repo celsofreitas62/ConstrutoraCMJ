@@ -1,0 +1,8 @@
+{
+  "comentario": "Testes das telas: so no notebook, banco SISTEMACMJ_LOCAL. Usuario claude.teste criado por sql/local/04a_Usuario_Teste_Telas_LOCAL.sql (senha la, so LOCAL).",
+  "endereco": "https://localhost:5443",
+  "login": "claude.teste",
+  "senha": "ZpQftKCU%MF1JSyyuktTcP",
+  "fichasSemMenu": [ "cad/pessoa.html", "sis/usuario.html", "sis/perfil.html" ],
+  "loginGravacao": "teste.automatico"
+}

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    SistemaCMJ - testes automaticos das telas (fase 4, conversa 04a, 22/11/2026).
+    Abre as telas de verdade num Edge invisivel (Playwright, licenca Apache 2.0, Microsoft),
+    usando o Edge ja instalado no notebook (canal msedge: nao baixa navegador).
+    So desenvolvimento: NAO vai para a CMJ (nao entra no pacote do publicar).
+    bin/obj fora da pasta do Drive (testes\Directory.Build.props).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" Version="1.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="config.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
