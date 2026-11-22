@@ -194,7 +194,8 @@ O que já está decidido e entra no roteiro da virada:
    - ⚠️ **Se algo falhar** depois de parar o sistema: **volta sozinho** (restaura o backup de segurança, se o MASTER chegou a rodar; recoloca o programa anterior; religa e confere) e termina com **ATUALIZAÇÃO DESFEITA** e o motivo; o aviso vai também por e-mail (`EMAIL_ADMIN_ALERTA`). **ATUALIZAÇÃO COM ERRO** = nem a volta funcionou: o Celso resolve pelo SSMS com o backup de segurança e o `programa_anterior`.
    - Precisa do **`sqlcmd`** no servidor; sem ele, para antes de mexer em qualquer coisa e avisa (instalar o sqlcmd ou levar no pacote em `ferramentas\sqlcmd.exe`).
    - Registro: `instalacao\atualizacao_<data>.log` do pacote (cópia em `C:\ProgramData\SisCMJ\logs`) e a saída do MASTER em `instalacao\master_<data>.txt`.
-   - Ensaio da volta (só na VM): `atualizar.cmd -EnsaioFalha MASTER` ou `-EnsaioFalha SAUDE`.
+   - Pelo Terminal (PowerShell) como administrador: entrar na pasta do pacote (`cd C:\SisCMJ_Instalacao\SisCMJ_<versão>_<data>`) e rodar **`.\atualizar.cmd`** (o PowerShell exige o `.\` antes do nome).
+   - Ensaio da volta (só na VM): `.\atualizar.cmd -EnsaioFalha MASTER` ou `-EnsaioFalha SAUDE` (ensaiado em 22/11/2026: volta OK).
 4. Conferir a tela de backups. O backup de segurança pode ser apagado depois de alguns dias.
 5. ⚠️ Depois de cada atualização de versão, a restauração pela tela **só volta até o momento da atualização** (backups de versão anterior aparecem como indisponíveis). Voltar para antes: só com o Celso, restaurando pelo SSMS e rodando o MASTER de novo.
 6. **Emergência, sem o `atualizar.cmd`** (o jeito antigo): SSMS › MASTER novo no banco SISTEMACMJ (F5) e depois `instalacao\instalar_servico.cmd` do pacote novo como administrador.

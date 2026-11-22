@@ -27,6 +27,8 @@
   registra DESFEITA (ou ERRO, se nem a volta funcionou: chamar o Celso).
   Registro: atualizacao_<data>.log ao lado deste script e copia em %ProgramData%\SisCMJ\logs.
   Ensaio na VM: -EnsaioFalha MASTER ou SAUDE provoca a falha de proposito (testa a volta).
+  v1.1 (22/11/2026) - Ensaio na VM: versao do banco sem o historico (antes da 1.8) nao
+                      tentava mais registrar (o vazio do SQL, DBNull, contava como "existe").
   -Sim responde S as perguntas (so para ensaio). -Endereco: endereco dos usuarios, so
   quando nao houver instalacao.json.
 #>
@@ -81,7 +83,7 @@ function Esperar-Saude([int]$Segundos, [scriptblock]$Bom) {
 function Versao([string]$Texto) { try { return [version]($Texto.Split('+')[0].Trim()) } catch { return [version]'0.0' } }
 function Registrar([string]$Situacao, [string]$Mensagem) {
     try {
-        if (-not (Sql $Cfg.Banco "SELECT OBJECT_ID(N'SIS.SIS_Atualizacao_Registrar', N'P')")) { Write-Host 'Registro no banco: a versao do banco nao tem o historico (so no arquivo).'; return }
+        if (-not [string](Sql $Cfg.Banco "SELECT OBJECT_ID(N'SIS.SIS_Atualizacao_Registrar', N'P')")) { Write-Host 'Registro no banco: a versao do banco nao tem o historico (so no arquivo).'; return }
         $Fim = Get-Date
         $Fora = if ($Parou) { [int]($Fim - $Parou).TotalSeconds } else { 0 }
         $R = Sql $Cfg.Banco 'EXEC SIS.SIS_Atualizacao_Registrar @VersaoProgramaDe=@pd, @VersaoProgramaPara=@pp, @VersaoBancoDe=@bd, @VersaoBancoPara=@bp, @DtInicio=@i, @DtFim=@f, @SegundosFora=@s, @Situacao=@st, @Mensagem=@m, @Notas=@n, @Pacote=@pk' @{

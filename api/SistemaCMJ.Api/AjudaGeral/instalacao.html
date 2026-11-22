@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Instalação no servidor</title>
   <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/10_instalacao.md (NÃO EDITAR)">
-  <meta name="fonte-hash" content="2da7652c1d774fa8">
+  <meta name="fonte-hash" content="d497a5e132583c58">
 </head>
 <body>
 <p>Esta página é o <strong>roteiro de instalação</strong> (<code>docs/Roteiro_Instalacao_Servidor.md</code>) mostrado dentro do sistema. Ele é a fonte única: qualquer correção é feita no roteiro e a página é gerada de novo.</p>
@@ -263,7 +263,8 @@ SELECT CHAVE, VALOR FROM SIS.Parametro WHERE CHAVE LIKE 'BACKUP%' OR CHAVE = 'EM
 <li>⚠️ <strong>Se algo falhar</strong> depois de parar o sistema: <strong>volta sozinho</strong> (restaura o backup de segurança, se o MASTER chegou a rodar; recoloca o programa anterior; religa e confere) e termina com <strong>ATUALIZAÇÃO DESFEITA</strong> e o motivo; o aviso vai também por e-mail (<code>EMAIL_ADMIN_ALERTA</code>). <strong>ATUALIZAÇÃO COM ERRO</strong> = nem a volta funcionou: o Celso resolve pelo SSMS com o backup de segurança e o <code>programa_anterior</code>.</li>
 <li>Precisa do <strong><code>sqlcmd</code></strong> no servidor; sem ele, para antes de mexer em qualquer coisa e avisa (instalar o sqlcmd ou levar no pacote em <code>ferramentas\sqlcmd.exe</code>).</li>
 <li>Registro: <code>instalacao\atualizacao_&lt;data&gt;.log</code> do pacote (cópia em <code>C:\ProgramData\SisCMJ\logs</code>) e a saída do MASTER em <code>instalacao\master_&lt;data&gt;.txt</code>.</li>
-<li>Ensaio da volta (só na VM): <code>atualizar.cmd -EnsaioFalha MASTER</code> ou <code>-EnsaioFalha SAUDE</code>.</li>
+<li>Pelo Terminal (PowerShell) como administrador: entrar na pasta do pacote (<code>cd C:\SisCMJ_Instalacao\SisCMJ_&lt;versão&gt;_&lt;data&gt;</code>) e rodar <strong><code>.\atualizar.cmd</code></strong> (o PowerShell exige o <code>.\</code> antes do nome).</li>
+<li>Ensaio da volta (só na VM): <code>.\atualizar.cmd -EnsaioFalha MASTER</code> ou <code>-EnsaioFalha SAUDE</code> (ensaiado em 22/11/2026: volta OK).</li>
 </ul>
 </li>
 <li>Conferir a tela de backups. O backup de segurança pode ser apagado depois de alguns dias.</li>
