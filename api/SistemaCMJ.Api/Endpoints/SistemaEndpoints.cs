@@ -5,6 +5,7 @@
 //  Criação   : 16/11/2026 (fase 3b)
 //  Descrição : Menu do usuário, identidade visual (cores e logomarcas dos
 //              parâmetros) e listas de apoio usadas por várias telas.
+//              22/11/2026 (03g): o menu esconde as telas ainda não construídas.
 // =============================================================================
 using System.Text.RegularExpressions;
 using SistemaCMJ.Api.Infra;
@@ -90,14 +91,32 @@ public static partial class SistemaEndpoints
         }
     }
 
-    private static Task<IResult> Menu(HttpContext http, Banco banco, ILogger<Program> logger) =>
+    private static Task<IResult> Menu(HttpContext http, Banco banco, IWebHostEnvironment ambiente, ILogger<Program> logger) =>
         Resposta.Rodar(http, banco, logger, async () =>
         {
             var usuario = http.Usuario();
             var linhas = await banco.ExecutarAsync("SIS.SIS_Menu_Listar",
                 new Dictionary<string, object?> { ["IdUsuario"] = usuario.IdUsuario }, usuario, http.RequestAborted);
-            return Resposta.Ok(linhas);
+            return Resposta.Ok(SoTelasProntas(linhas, ambiente));
         });
+
+    /// <summary>
+    /// Tira do menu as telas cujo arquivo ainda não existe neste programa (cadastradas
+    /// no banco antes de serem construídas) e os menus e módulos que ficarem vazios. A tela
+    /// aparece sozinha quando for construída. Aprovado pelo Celso em 22/11/2026 (03g).
+    /// </summary>
+    private static List<Linha> SoTelasProntas(List<Linha> linhas, IWebHostEnvironment ambiente)
+    {
+        var prontas = linhas.Where(l => l.Texto("TIPO") != "TELA"
+            || (l.Texto("CAMINHO").Length > 0 && ambiente.WebRootFileProvider.GetFileInfo(l.Texto("CAMINHO").TrimStart('/')).Exists)).ToList();
+        while (true)
+        {
+            var pais = prontas.Select(l => l.Texto("CHAVE_PAI")).Where(c => c.Length > 0).ToHashSet();
+            var vazios = prontas.Where(l => l.Texto("TIPO") is "MENU" or "MODULO" && !pais.Contains(l.Texto("CHAVE"))).ToList();
+            if (vazios.Count == 0) return prontas;
+            prontas = prontas.Except(vazios).ToList();
+        }
+    }
 
     private static Task<IResult> Bancos(HttpContext http, Banco banco, ILogger<Program> logger) =>
         Resposta.Rodar(http, banco, logger, async () =>

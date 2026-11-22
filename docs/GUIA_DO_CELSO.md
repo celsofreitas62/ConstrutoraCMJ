@@ -34,6 +34,7 @@ Atualizado em 15/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dize
 | 03e | Ensaio na máquina virtual (3d-C, concluída em 22/11/2026) | 3d |
 | 03f | Migração: 3ª rodada com o Access novo (22/11/2026) | 3c |
 | 03g | Ajuda do administrador geral (concluída em 22/11/2026; banco 1.7) | 3d |
+| 03h | Atualização em um clique (`atualizar.cmd`) | 3d |
 | 04 | Telas dos cadastros e do financeiro | 4 |
 | 05 | Imóveis e vendas (espelho, contrato, parcelas, reajuste) | 5 |
 | 06 | Cobrança Sicredi | 6 |
