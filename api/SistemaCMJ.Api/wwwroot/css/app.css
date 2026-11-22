@@ -312,3 +312,5 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .ajuda-geral-sumario li { margin: 2px 0; break-inside: avoid; }
 .ajuda-geral-topo { margin-left: 10px; font-size: 12px; font-weight: 400; text-decoration: none; }
 .ajuda-geral-texto h2, .ajuda-geral-texto h3, .ajuda-geral-sumario { scroll-margin-top: 12px; }
+.ajuda-geral-texto code.copiavel { cursor: pointer; }
+.ajuda-geral-texto code.copiavel:hover, .ajuda-geral-texto code.copiavel:focus-visible { background: #FBEDE9; outline: 1px solid #E3B4A8; }

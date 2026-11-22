@@ -21,12 +21,13 @@
                       1.4 (20/11/2026) fn_SIS_Usuario_Id (licença gravada pela API);
                       1.5 (20/11/2026) backup do servidor (SIS.Backup, avisos de atraso).
                       1.6 (20/11/2026) restauração de backup pela tela (SIS.Backup_Restauracao).
+                      1.7 (22/11/2026) ajuda exclusiva do administrador geral (SIS_Ajuda_Geral_Obter, tela SIS_AJUDA_GERAL).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '1.6';
+DECLARE @Versao VARCHAR(20) = '1.7';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Parâmetros</title>
+  <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/50_parametros.md (NÃO EDITAR)">
+  <meta name="fonte-hash" content="3a2d7545b2a302cb">
+</head>
+<body>
+<h2>Como funcionam</h2>
+<ul>
+<li>Tudo o que muda de cliente para cliente, ou com o tempo, fica em <strong><code>SIS.Parametro</code></strong> (chave, valor, valor padrão, tipo, descrição, módulo). Nada de valor de negócio fixo no código (PADRAO_SQL, regra 33).</li>
+<li>As rotinas leem o parâmetro <strong>a cada execução</strong>: mudou o valor, vale na próxima vez, sem reiniciar.</li>
+<li><strong>Editável pelo administrador</strong> (<code>EDITAVEL_ADMIN</code>): os marcados "não" são técnicos, só mudam pelo Celso ou por carga.</li>
+<li>O MASTER <strong>só insere parâmetro que falta</strong>: nunca sobrescreve o que foi ajustado no cliente.</li>
+<li>A tela de Parâmetros (Sistema › Configuração) vem na fase 4. Até lá, pelo SSMS, no banco certo:</li>
+</ul>
+<pre><code class="language-sql">-- Trocar CHAVE e o valor; conferir com o SELECT.
+UPDATE SIS.Parametro SET VALOR = N'novo valor' WHERE CHAVE = 'CHAVE_DO_PARAMETRO';
+SELECT CHAVE, VALOR, VALOR_PADRAO FROM SIS.Parametro WHERE CHAVE = 'CHAVE_DO_PARAMETRO';
+</code></pre>
+<h2>Lista atual (lida do banco agora)</h2>
+<!-- dinamico: parametros -->
+</body>
+</html>

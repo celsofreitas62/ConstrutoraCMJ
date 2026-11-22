@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Backup e restauração (técnico)</title>
+  <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/60_backup.md (NÃO EDITAR)">
+  <meta name="fonte-hash" content="1a42e1cfad44e5af">
+</head>
+<body>
+<p>A tela <strong>Sistema › Backups › Backups e restauração</strong> é o lado do usuário (ajuda "?" dela). Esta página é o lado técnico.</p>
+<h2>Quem faz o quê</h2>
+<table>
+<thead>
+<tr>
+<th>Tarefa do Windows (como SYSTEM)</th>
+<th>Quando</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SisCMJ (SisCMJ) - Backup completo</code></td>
+<td>todo dia às 23h (<code>-HoraBackupCompleto</code> do instalador)</td>
+<td>põe o banco em recuperação FULL, BACKUP com CHECKSUM, RESTORE VERIFYONLY, cópia para a nuvem, limpeza</td>
+</tr>
+<tr>
+<td><code>... - Backup do log</code></td>
+<td>de hora em hora (:30)</td>
+<td>backup do log: perda máxima de 1 hora</td>
+</tr>
+<tr>
+<td><code>... - Teste de restauração</code></td>
+<td>domingos às 4h</td>
+<td>restaura o último completo e os logs num banco <code>_RESTORE_TESTE</code>, roda DBCC CHECKDB, conta as tabelas e apaga a cópia</td>
+</tr>
+<tr>
+<td><code>... - Restauração (pedidos)</code></td>
+<td>a cada minuto</td>
+<td>faz as restaurações pedidas pela tela</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Todas rodam o mesmo script, <code>instalacao\backup_servidor.ps1</code> (modos <code>COMPLETO</code>, <code>LOG</code>, <code>TESTE</code>, <code>RESTAURAR</code>), copiado pelo instalador para <code>C:\SisCMJ\scripts</code>. <strong>Nunca rodam duas ao mesmo tempo</strong> (trava única).</li>
+<li>Cada execução fica em <strong><code>SIS.Backup_Execucao</code></strong> e, passo a passo, em <strong><code>&lt;BACKUP_PASTA&gt;\backup.log</code></strong>. Erro manda e-mail para <code>EMAIL_ADMIN_ALERTA</code>.</li>
+<li>A API <strong>não consegue</strong> fazer backup nem restaurar: as rotinas do script têm DENY para o papel da API. A tela só registra o pedido.</li>
+<li><strong>Aviso de atraso</strong>: a rotina <code>BACKUP_CONFERIR</code> (de hora em hora) avisa por e-mail quando atrasam o completo, o log ou o teste (no máximo um aviso por dia). Desligada no banco de desenvolvimento.</li>
+</ul>
+<h2>Arquivos</h2>
+<table>
+<thead>
+<tr>
+<th>Arquivo</th>
+<th>O que é</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SISTEMACMJ_COMPLETO_&lt;data&gt;.bak</code></td>
+<td>backup completo (base de qualquer restauração)</td>
+</tr>
+<tr>
+<td><code>SISTEMACMJ_LOG_&lt;data&gt;.trn</code></td>
+<td>backup do log de hora em hora</td>
+</tr>
+<tr>
+<td><code>SISTEMACMJ_SEGURANCA_&lt;data&gt;.bak</code></td>
+<td>feito logo antes de cada restauração, para desfazer um engano</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Pasta: parâmetro <code>BACKUP_PASTA</code> (na CMJ, <code>D:\SisCMJ_Backup</code>, no HD de 1 TB). Limpeza: <code>BACKUP_DIAS_MANTER</code> dias. <strong>Nunca</strong> apaga o último completo nem os logs depois dele.</li>
+<li>Nuvem: <code>BACKUP_PASTA_EXTERNA</code> (pasta sincronizada com o Google Drive), guardando <code>BACKUP_NUVEM_MANTER</code> completos. Vai <strong>sem senha</strong> (o Express não cifra backup; decisão do Celso de 20/11/2026).</li>
+</ul>
+<h2>Restauração pela tela, por dentro</h2>
+<ol>
+<li>O pedido (<code>SIS.Backup_Restauracao</code>) passa de PENDENTE a EXECUTANDO. Antes de tirar o sistema do ar, o script confere os arquivos do plano (existem e passam no VERIFYONLY).</li>
+<li>Para o serviço SisCMJ → SINGLE_USER → backup de <strong>segurança</strong> (COPY_ONLY) e final do log.</li>
+<li>Restaura o completo e os logs até o ponto (STOPAT) → MULTI_USER.</li>
+<li>Registra de novo os backups que o banco restaurado não conhece (pelo <code>msdb</code>), faz um <strong>completo novo</strong> (base dos logs seguintes) e religa o serviço.</li>
+<li>Grava o resultado no banco restaurado e manda e-mail para o administrador e para quem pediu.</li>
+<li>Erro: tenta deixar o banco on-line; se não der, volta o backup de segurança; religa o serviço e grava ERRO.</li>
+</ol>
+<p>⚠️ <strong>Limite de versão</strong>: a tela não volta para antes da última atualização do banco (<code>SIS.fn_SIS_Backup_Limite_Versao</code>): o banco ficaria numa versão diferente do programa e o sistema pararia. Voltar para antes só pelo SSMS, com o Celso, rodando o MASTER de novo depois.</p>
+<h2>Restauração manual pelo SSMS (sem a tela)</h2>
+<p>Quando o serviço não sobe ou é preciso um ponto que a tela não oferece:</p>
+<ol>
+<li><code>Stop-Service SisCMJ</code> (PowerShell como administrador).</li>
+<li>SSMS › banco <strong>SISTEMACMJ</strong> › Tarefas › Restaurar › Banco de dados › Dispositivo: o <code>_COMPLETO_*.bak</code> e os <code>_LOG_*.trn</code> seguintes (opção de ponto no tempo, se quiser). Marcar "Fechar conexões existentes" e fazer antes o backup do final do log, se o SSMS oferecer.</li>
+<li>Conferir a versão (<code>SELECT SIS.fn_SIS_Versao_Banco()</code>). Se for mais velha que a do programa, rodar o MASTER do pacote instalado.</li>
+<li><code>Start-Service SisCMJ</code> e conferir <code>/api/saude</code> e a tela de backups.</li>
+</ol>
+<h2>Parâmetros do backup</h2>
+<p>Valores atuais na página <strong>Parâmetros</strong> (chaves <code>BACKUP_*</code> e <code>EMAIL_ADMIN_ALERTA</code>).</p>
+</body>
+</html>

@@ -13,6 +13,7 @@
                em cada seção e linhas de tabela que começam pelo número de
                uma seção (ex.: Visão geral do roteiro) levam direto a ela.
                Endereço #<página>/<seção> abre já na seção.
+               v1.2 (22/11/2026, 03g-B): clique num comando curto do texto copia.
    ========================================================================== */
 'use strict';
 
@@ -43,19 +44,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('lista').replaceChildren(...(itens.length ? itens : [Util.el('p', 'vazio', 'Nada encontrado.')]));
   }
 
+  async function copiar(texto) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      Mensagens.sucesso('Copiado: ' + (texto.length > 60 ? texto.substring(0, 57) + '…' : texto));
+    } catch {
+      await Mensagens.alerta('Não foi possível copiar. Selecione o texto e use Ctrl+C.');
+    }
+  }
+
   function botoesCopiar(raiz) {
+    // Comandos curtos no meio do texto: clique (ou Enter) copia (pedido do Celso, 22/11/2026).
+    for (const c of raiz.querySelectorAll('code')) {
+      if (c.closest('pre') || c.closest('a')) continue;
+      c.classList.add('copiavel');
+      c.tabIndex = 0;
+      c.setAttribute('role', 'button');
+      c.dataset.dica = 'Clique para copiar.';
+      c.addEventListener('click', () => copiar(c.textContent));
+      c.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); copiar(c.textContent); } });
+    }
     for (const pre of raiz.querySelectorAll('pre')) {
       const b = Util.el('button', 'botao botao-copiar', 'Copiar');
       b.type = 'button';
       b.dataset.dica = 'Copia o comando para colar no SSMS, no PowerShell ou no Prompt de Comando.';
-      b.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(pre.innerText.replace(/\n$/, ''));
-          Mensagens.sucesso('Copiado.');
-        } catch {
-          await Mensagens.alerta('Não foi possível copiar. Selecione o texto e use Ctrl+C.');
-        }
-      });
+      b.addEventListener('click', () => copiar(pre.innerText.replace(/\n$/, '')));
       const caixa = Util.el('div', 'bloco-comando');
       pre.replaceWith(caixa);
       caixa.append(b, pre);

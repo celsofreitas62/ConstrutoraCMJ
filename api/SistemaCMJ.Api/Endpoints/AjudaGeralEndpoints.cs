@@ -15,8 +15,13 @@
 //              Recusa, nome inválido e página inexistente recebem a mesma
 //              resposta ("Página não encontrada."), para não revelar o que existe.
 //              Desenvolvimento com telas soltas: lê a pasta do projeto.
+//              v1.1 (22/11/2026, 03g-B): partes dinâmicas. O marcador
+//              <!-- dinamico: parametros --> vira a tabela de SIS_Parametro_Listar
+//              e <!-- dinamico: comandos --> a de SIS_Comando_Listar, lidas na
+//              hora (nunca desatualizam). Todo valor sai codificado (HtmlEncode).
 // =============================================================================
 using System.Text.Json;
+using Microsoft.Data.SqlClient;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.FileProviders;
 using SistemaCMJ.Api.Infra;
@@ -90,7 +95,76 @@ public static partial class AjudaGeralEndpoints
                 return Resposta.Atencao(NaoEncontrada);
             var titulo = System.Net.WebUtility.HtmlDecode(Titulo().Match(texto).Groups[1].Value.Trim());
             var corpo = Corpo().Match(texto).Groups[1].Value.Trim();
+            corpo = await Dinamicos(corpo, http, banco);
             http.Response.Headers.CacheControl = "no-store";
             return Resposta.Ok(new { pagina = nome, titulo, html = corpo });
         });
+
+    private static string H(string? texto) => System.Net.WebUtility.HtmlEncode(texto ?? "");
+
+    private static string Tabela(IEnumerable<string> cabecalho, IEnumerable<IEnumerable<string>> linhas)
+    {
+        var sb = new System.Text.StringBuilder("<table><thead><tr>");
+        foreach (var c in cabecalho) sb.Append("<th>").Append(H(c)).Append("</th>");
+        sb.Append("</tr></thead><tbody>");
+        var n = 0;
+        foreach (var l in linhas)
+        {
+            n++;
+            sb.Append("<tr>");
+            foreach (var v in l) sb.Append("<td>").Append(v).Append("</td>");   // v já vem codificado
+            sb.Append("</tr>");
+        }
+        sb.Append("</tbody></table>");
+        return n == 0 ? "<p><em>Nenhum registro.</em></p>" : sb.ToString();
+    }
+
+    private static async Task<string> Dinamicos(string corpo, HttpContext http, Banco banco)
+    {
+        var usuario = http.Usuario();
+        var parametros = new Dictionary<string, object?> { ["IdUsuario"] = usuario.IdUsuario };
+
+        if (corpo.Contains("<!-- dinamico: parametros -->"))
+        {
+            string html;
+            try
+            {
+                var linhas = await banco.ExecutarAsync("SIS.SIS_Parametro_Listar", parametros, usuario, http.RequestAborted);
+                html = Tabela(["Módulo", "Chave", "Valor atual", "Padrão", "Descrição", "Admin altera?"],
+                    linhas.Select(l => new[]
+                    {
+                        H(l.Texto("MODULO_NOME")),
+                        "<code>" + H(l.Texto("CHAVE")) + "</code>",
+                        l.Texto("VALOR") == l.Texto("VALOR_PADRAO") ? H(l.Texto("VALOR")) : "<strong>" + H(l.Texto("VALOR")) + "</strong>",
+                        H(l.Texto("VALOR_PADRAO")),
+                        H(l.Texto("DESCRICAO")),
+                        l.Bool("EDITAVEL_ADMIN") ? "sim" : "não"
+                    }));
+                html = "<p>" + linhas.Count + " parâmetros. Valor em <strong>negrito</strong> = diferente do padrão.</p>" + html;
+            }
+            catch (SqlException erro) when (erro.Number == 50001) { html = "<p><em>" + H(erro.Message) + "</em></p>"; }
+            corpo = corpo.Replace("<!-- dinamico: parametros -->", html);
+        }
+
+        if (corpo.Contains("<!-- dinamico: comandos -->"))
+        {
+            string html;
+            try
+            {
+                var linhas = await banco.ExecutarAsync("SIS.SIS_Comando_Listar", parametros, usuario, http.RequestAborted);
+                html = Tabela(["Grupo", "Código", "Botão", "O que faz", "Cuidado"],
+                    linhas.Select(l => new[]
+                    {
+                        H(l.Texto("GRUPO_NOME")),
+                        "<code>" + H(l.Texto("CODIGO")) + "</code>",
+                        H(l.Texto("NOME")),
+                        H(l.Texto("DESCRICAO")) + (l.Bool("ACEITA_PARAMETRO") && l.Texto("PARAMETRO_DESCRICAO").Length > 0 ? " <em>Pede: " + H(l.Texto("PARAMETRO_DESCRICAO")) + "</em>" : ""),
+                        l.Bool("PERIGOSO") ? "⚠️ pede a senha de novo e confirmação" : ""
+                    }));
+            }
+            catch (SqlException erro) when (erro.Number == 50001) { html = "<p><em>" + H(erro.Message) + "</em></p>"; }
+            corpo = corpo.Replace("<!-- dinamico: comandos -->", html);
+        }
+        return corpo;
+    }
 }

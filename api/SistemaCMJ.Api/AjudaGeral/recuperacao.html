@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Recuperação</title>
+  <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/90_recuperacao.md (NÃO EDITAR)">
+  <meta name="fonte-hash" content="ff901730431c98a9">
+</head>
+<body>
+<p>Esta página é o documento <code>docs/RECUPERACAO.md</code> mostrado dentro do sistema (fonte única).</p>
+<p>Versão 1.0 (22/11/2026, conversa 03g). Previsto no plano de continuidade de 20/11/2026 (CLAUDE.md, seção 7, fase 3d). <strong>Manter atualizado</strong> quando mudar onde as coisas ficam guardadas. Aparece também na ajuda do administrador geral (página Recuperação).</p>
+<p>Regra: este documento diz <strong>onde</strong> cada coisa está, nunca a senha ou a chave em si.</p>
+<h2>1. O que existe e onde está guardado</h2>
+<table>
+<thead>
+<tr>
+<th>O quê</th>
+<th>Onde fica</th>
+<th>Cópia de segurança</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Código, documentos, padrões, scripts</td>
+<td><code>C:\SistemaCMJ</code> no notebook</td>
+<td>Google Drive (pasta sincronizada) e GitHub privado <code>celsofreitas62/ConstrutoraCMJ</code></td>
+</tr>
+<tr>
+<td>Banco de desenvolvimento <code>SISTEMACMJ_LOCAL</code> (inclui as correções da Renata na migração)</td>
+<td>SQL Server <code>.\SQL2025</code> do notebook</td>
+<td>backup diário às 19h: 7 cópias em <code>C:\Backup_SisCMJ</code> e as últimas em <code>C:\Recover SistemaCMJ\backup_db</code> (sincronizada com o Drive)</td>
+</tr>
+<tr>
+<td>Banco da CMJ <code>SISTEMACMJ</code></td>
+<td>servidor da CMJ</td>
+<td>backups em <code>D:\SisCMJ_Backup</code> (HD do servidor) e o último completo na pasta do Drive (<code>BACKUP_PASTA_EXTERNA</code>)</td>
+</tr>
+<tr>
+<td>Chave privada da licença</td>
+<td><code>%USERPROFILE%\SisCMJ_Chave\chave_privada_siscmj.pem</code> no notebook</td>
+<td>Google Drive do Celso</td>
+</tr>
+<tr>
+<td>Licenças emitidas</td>
+<td><code>%USERPROFILE%\SisCMJ_Chave\licencas\</code></td>
+<td>Google Drive do Celso (junto com a chave)</td>
+</tr>
+<tr>
+<td>Configuração do servidor (conexão, e-mail)</td>
+<td><code>C:\ProgramData\SisCMJ\appsettings.Servidor.json</code> no servidor</td>
+<td>nenhuma de propósito: se perder, o instalador cria de novo e o e-mail é preenchido de novo (roteiro, item 9)</td>
+</tr>
+<tr>
+<td>Pacotes de instalação</td>
+<td><code>C:\SisCMJ_Publicacao\</code> no notebook (fora do Drive)</td>
+<td>gerados de novo a qualquer momento pelo <code>api\publicar.cmd</code></td>
+</tr>
+<tr>
+<td>Máquina virtual de ensaio</td>
+<td>Hyper-V do notebook (<code>SisCMJ-Servidor-Ensaio</code>)</td>
+<td>nenhuma: <code>instalacao\ensaio\criar_vm_hyperv.cmd</code> cria outra</td>
+</tr>
+</tbody>
+</table>
+<h2>2. Senhas e chaves (gerenciador de senhas do Celso)</h2>
+<p>Guardar no gerenciador de senhas, <strong>nunca em arquivo na pasta do Drive nem no Git</strong>:</p>
+<ul>
+<li>conta do GitHub e os <strong>códigos de recuperação</strong> da verificação em duas etapas;</li>
+<li><strong>senha da chave privada da licença</strong>;</li>
+<li><strong>chave de recuperação do BitLocker</strong> do servidor da CMJ (regra de ouro 3 do roteiro: junto com a da licença; cópia impressa com a CMJ);</li>
+<li>administrador do Windows do servidor da CMJ;</li>
+<li>senha de app do Gmail da CMJ (<code>construtora.m.judice@gmail.com</code>, app "SisCMJ"): só vai no arquivo de configuração do servidor;</li>
+<li>senha de app do Gmail do Celso usada pelo notebook (<code>Smtp__Interna__Senha</code>, boletim semanal);</li>
+<li>senhas dos administradores do SisCMJ (<code>celso</code> e <code>admin</code>).</li>
+</ul>
+<h2>3. Perdi o notebook (ou o disco dele)</h2>
+<ol>
+<li>Instalar no computador novo: <strong>SQL Server 2025 Express</strong> com a instância <strong><code>SQL2025</code></strong> (cuidado com o ID da instância, roteiro item 3), <strong>SSMS</strong>, <strong>.NET 10 SDK</strong>, <strong>Git</strong> e o <strong>Google Drive para computador</strong>.</li>
+<li>Recuperar a pasta do projeto: pelo Drive (sincronizar <code>C:\SistemaCMJ</code>) ou <code>git clone</code> do GitHub para <code>C:\SistemaCMJ</code>.</li>
+<li>Recuperar o banco de desenvolvimento: SSMS › Restaurar banco › o <code>.bak</code> mais novo de <code>C:\Recover SistemaCMJ\backup_db</code> (do Drive) › nome <strong><code>SISTEMACMJ_LOCAL</code></strong>.</li>
+<li>Copiar a pasta da chave da licença do Drive para <code>%USERPROFILE%\SisCMJ_Chave</code>. Conferir com <code>api\gerar_licenca.cmd</code> › opção 4 numa licença emitida.</li>
+<li>Certificado do navegador: <code>dotnet dev-certs https --trust</code> (uma vez). Licença de desenvolvimento: o código do computador muda, então gerar uma nova (gerador, opção 2, instalar neste notebook).</li>
+<li>Reinstalar as tarefas do notebook, como administrador: <code>backup\instalar_backup.cmd</code> (backup diário do LOCAL) e <code>executor_sql\instalar_executor.cmd</code> (executor do Claude).</li>
+<li>Subir com <code>api\rodar.cmd</code> e conferir <code>https://localhost:5443/api/saude</code>.</li>
+</ol>
+<h2>4. Perdi o servidor da CMJ</h2>
+<ol>
+<li>Máquina nova (ou a mesma, formatada): seguir o <strong>roteiro de instalação</strong> do item 2 ao 6, com o pacote da versão que estava em uso.</li>
+<li><strong>Antes do instalador</strong>, restaurar o banco em vez de criá-lo vazio: SSMS › Restaurar banco › o último <code>_COMPLETO_*.bak</code> (da pasta de backup, se o HD sobreviveu, ou da pasta do Drive) e os <code>_LOG_*.trn</code> seguintes, com o nome <strong><code>SISTEMACMJ</code></strong>. Conferir a versão: <code>SELECT SIS.fn_SIS_Versao_Banco()</code>. Se for mais velha que a do pacote, rodar o MASTER do pacote por cima.</li>
+<li>Rodar o instalador (item 6 do roteiro).</li>
+<li><strong>Licença nova</strong>: o código do servidor muda (roteiro item 7; página Licença).</li>
+<li>E-mail (item 9), computadores dos usuários com o <strong>certificado novo</strong> (item 10) e conferências finais (item 11).</li>
+<li>O que foi lançado depois do último backup que sobrou é perdido: com o HD de backup, no máximo 1 hora; só com o Drive, desde o último completo (23h do dia anterior).</li>
+</ol>
+<h2>5. Perdi a chave privada da licença (e a cópia do Drive)</h2>
+<p>As licenças já instaladas continuam valendo, mas não dá para gerar licença nova. Para voltar a gerar: criar um par de chaves novo (gerador, opção 1, depois de tirar a pasta antiga do lugar), o Claude compila o programa com a chave pública nova, <strong>gerar e instalar licença nova em todo cliente</strong> e publicar a versão nova.</p>
+<h2>6. O GitHub sumiu ou o histórico estragou</h2>
+<p>O Drive tem a pasta inteira, inclusive o <code>.git</code>. Criar um repositório privado novo, apontar o <code>origin</code> para ele e enviar (<code>enviar_github.cmd</code>). Nunca apagar histórico nem forçar envio sem o Celso pedir.</p>
+</body>
+</html>

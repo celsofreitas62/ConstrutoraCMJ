@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Configuração do servidor</title>
+  <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/70_configuracao.md (NÃO EDITAR)">
+  <meta name="fonte-hash" content="621a8477c0652c97">
+</head>
+<body>
+<h2>Pastas no servidor</h2>
+<table>
+<thead>
+<tr>
+<th>Pasta</th>
+<th>O que tem</th>
+<th>Quem mexe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>C:\SisCMJ\programa</code></td>
+<td>o programa (telas e ajuda embutidas no executável)</td>
+<td>só o instalador; <strong>só leitura</strong> para o serviço</td>
+</tr>
+<tr>
+<td><code>C:\SisCMJ\scripts</code></td>
+<td><code>backup_servidor.ps1</code>, usado pelas tarefas de backup</td>
+<td>só o instalador</td>
+</tr>
+<tr>
+<td><code>C:\ProgramData\SisCMJ</code></td>
+<td><code>appsettings.Servidor.json</code>, <code>licenca.lic</code> e <code>logs\</code></td>
+<td>só administradores e o serviço</td>
+</tr>
+<tr>
+<td><code>C:\SistemaCMJ_Arquivos</code></td>
+<td><code>Anexos</code>, <code>Identidade</code> (logomarcas), <code>Remessa</code>, <code>Retorno</code>, <code>OFX</code>, <code>Atualizacoes</code></td>
+<td>o serviço grava</td>
+</tr>
+<tr>
+<td><code>D:\SisCMJ_Backup</code></td>
+<td>backups (parâmetro <code>BACKUP_PASTA</code>)</td>
+<td>as tarefas de backup</td>
+</tr>
+<tr>
+<td><code>instalacao\</code> do pacote</td>
+<td><code>codigo_servidor.txt</code>, <code>SisCMJ_certificado.cer</code>, <code>preparar_computador_usuario.cmd</code>, <code>instalacao_&lt;data&gt;.log</code></td>
+<td>guardar</td>
+</tr>
+</tbody>
+</table>
+<h2>Arquivo de configuração (<code>C:\ProgramData\SisCMJ\appsettings.Servidor.json</code>)</h2>
+<p>Criado pelo instalador <strong>só na primeira vez</strong> (depois ele mantém o que está lá). Abrir com o Bloco de Notas como administrador. Depois de mudar: <code>Restart-Service SisCMJ</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Seção</th>
+<th>Para quê</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ConnectionStrings:SistemaCMJ</code></td>
+<td>conexão com o banco pela conta do serviço, <strong>sem senha</strong> (<code>Integrated Security</code>)</td>
+</tr>
+<tr>
+<td><code>Kestrel:Endpoints:Https:Url</code></td>
+<td>porta do sistema (padrão <code>https://*:5443</code>)</td>
+</tr>
+<tr>
+<td><code>Identidade:PastaReserva</code></td>
+<td>pasta das logomarcas (<code>C:\SistemaCMJ_Arquivos\Identidade</code>)</td>
+</tr>
+<tr>
+<td><code>Smtp:Interna</code></td>
+<td>conta que envia os e-mails (hoje o Gmail da CMJ): <code>Servidor</code>, <code>Porta</code>, <code>Usuario</code>, <code>Remetente</code>, <code>Senha</code>, <code>NomeRemetente</code></td>
+</tr>
+<tr>
+<td><code>Smtp:Externa</code></td>
+<td>conta para clientes e fornecedores; <strong>vazia = usa a Interna</strong></td>
+</tr>
+<tr>
+<td><code>Agendador:Ligado</code></td>
+<td>rotinas automáticas (e-mails, avisos); <code>false</code> só em ensaio</td>
+</tr>
+<tr>
+<td><code>Registro:Pasta</code>, <code>Registro:DiasManter</code></td>
+<td>registro da API em arquivo (padrão <code>C:\ProgramData\SisCMJ\logs</code>, 30 dias)</td>
+</tr>
+<tr>
+<td><code>Licenca:Arquivo</code></td>
+<td>outro caminho para a licença (padrão <code>C:\ProgramData\SisCMJ\licenca.lic</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>⚠️ Este arquivo tem a senha de app do e-mail: <strong>nunca copiar para o projeto, o Drive ou o Git.</strong></p>
+<h2>Serviço do Windows</h2>
+<ul>
+<li>Nome <strong>SisCMJ</strong> (<code>-NomeServico</code> do instalador), conta virtual <strong><code>NT SERVICE\SisCMJ</code></strong>, sem senha, com acesso ao banco pelo papel <code>rl_sistemacmj_api</code> (só executa as procedures).</li>
+<li>Início <strong>automático atrasado</strong>; reinicia sozinho se cair.</li>
+<li>Parar, iniciar e ver: <code>services.msc</code> ou <code>Stop-Service SisCMJ</code>, <code>Start-Service SisCMJ</code>, <code>Get-Service SisCMJ</code> (PowerShell como administrador).</li>
+</ul>
+<h2>Certificado HTTPS</h2>
+<ul>
+<li>Autoassinado, <strong>5 anos</strong>, no repositório do Windows (Computador local › Pessoal), com o nome do servidor, os IPs e os <code>-NomesExtras</code>. Os computadores dos usuários confiam nele pelo <code>SisCMJ_certificado.cer</code>.</li>
+<li><strong>Renovar, ou trocar o nome ou o IP do servidor</strong>: rodar o instalador de novo. Se ele avisar <strong>"certificado NOVO"</strong>, rodar o <code>preparar_computador_usuario.cmd</code> em todos os computadores.</li>
+</ul>
+<h2>Firewall</h2>
+<ul>
+<li>Uma regra só, para a porta do sistema e só para as redes de <code>-RedesPermitidas</code> (padrão: rede local; acrescentar a rede da VPN quando existir). A rede do servidor tem de estar como <strong>Privada</strong>.</li>
+<li>O SQL Server <strong>não</strong> é aberto na rede.</li>
+</ul>
+<h2>9. E-mail do sistema</h2>
+<p>Decisão de 20/11/2026: até a CMJ ter o e-mail do domínio próprio, <strong>tudo sai pelo Gmail <code>construtora.m.judice@gmail.com</code></strong> (conta Interna). O Hotmail não é usado para envio (a Microsoft exige OAuth2).</p>
+<ul>
+<li>☐ Abrir <strong><code>C:\ProgramData\SisCMJ\appsettings.Servidor.json</code></strong> (Bloco de Notas como administrador) e preencher a seção <code>Smtp</code> › <code>Interna</code>:<ul>
+<li><code>Servidor</code>: <code>smtp.gmail.com</code> · <code>Porta</code>: <code>587</code></li>
+<li><code>Usuario</code> e <code>Remetente</code>: <code>construtora.m.judice@gmail.com</code></li>
+<li><code>Senha</code>: a <strong>senha de app</strong> do Gmail (16 letras, sem espaços)</li>
+<li><code>NomeRemetente</code> (opcional): <code>Construtora CMJ</code></li>
+<li><code>Externa</code>: deixar vazia. Quando o e-mail do domínio existir, preencher a <code>Externa</code> (servidor, porta, usuário, remetente, senha) e ele passa a ser usado para clientes e fornecedores sem mexer no programa.</li>
+</ul>
+</li>
+<li>☐ <code>Restart-Service SisCMJ</code> (PowerShell como administrador) ou reiniciar o serviço em <code>services.msc</code>.</li>
+<li>☐ Testar: comunicado de teste ou um aviso (item 11). Se a saída na porta 587 estiver bloqueada, falar com o técnico.</li>
+</ul>
+</body>
+</html>

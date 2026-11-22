@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Comandos e executor</title>
+  <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/75_comandos.md (NÃO EDITAR)">
+  <meta name="fonte-hash" content="9858d030b38f1c1e">
+</head>
+<body>
+<h2>Comandos de instalação e manutenção (pedidos 2 e 4 de 16/11/2026)</h2>
+<ul>
+<li>Cada comando do roteiro vira um botão da tela <strong>Sistema › Configuração › Instalação e manutenção</strong> (só nível 2). A tela grava o pedido numa fila (<code>SIS.Comando_Fila</code>) e o serviço executa uma <strong>lista fixa</strong> de comandos, com a saída registrada. Nada do que vem da tela vira comando livre.</li>
+<li>Situação hoje: a lista e a fila estão no banco; <strong>o lado do serviço e a tela ainda não foram feitos</strong> (depois da virada, versões 1.x). Comando sem tratamento no serviço termina em ERRO "comando não disponível nesta versão". Até lá, tudo pelo roteiro (páginas Instalação e Atualização).</li>
+</ul>
+<h3>Lista cadastrada (lida do banco agora)</h3>
+<!-- dinamico: comandos -->
+
+<h2>Executor do Claude (só no notebook do Celso)</h2>
+<p>Programa que deixa o Claude rodar scripts e tarefas fixas no notebook <strong>sem o SSMS e sem o PowerShell</strong>. Fica em <code>C:\SistemaCMJ\executor_sql\</code>, rodando pela tarefa "SistemaCMJ - Executor SQL" (<code>instalar_executor.cmd</code>, como administrador; <code>parar_executor.cmd</code> para). <strong>Nunca aponta para a produção.</strong></p>
+<table>
+<thead>
+<tr>
+<th>O Claude grava em <code>entrada\</code></th>
+<th>O executor faz</th>
+<th>Resultado em <code>saida\</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;nº&gt;_&lt;nome&gt;.sql</code></td>
+<td>roda no <code>SISTEMACMJ_LOCAL</code> (ou no <code>SISTEMACMJ</code> de ensaio do notebook, com a linha <code>-- EXECUTOR: BANCO=SISTEMACMJ</code>); recusa <code>USE</code> de outro banco, <code>DROP/RESTORE DATABASE</code>, <code>xp_cmdshell</code>, <code>sp_configure</code>, <code>SHUTDOWN</code></td>
+<td><code>&lt;nº&gt;_&lt;nome&gt;.txt</code> (o script vai para <code>processados\</code>)</td>
+</tr>
+<tr>
+<td><code>compilar.pedido</code></td>
+<td>compila a API numa pasta separada, sem mexer no sistema que está rodando</td>
+<td><code>compilar.txt</code></td>
+</tr>
+<tr>
+<td><code>publicar.pedido</code></td>
+<td><code>api\publicar.ps1</code>: pacote de instalação em <code>C:\SisCMJ_Publicacao</code></td>
+<td><code>publicar.txt</code></td>
+</tr>
+<tr>
+<td><code>enviar_github.pedido</code></td>
+<td><code>git push origin main</code></td>
+<td><code>enviar_github.txt</code></td>
+</tr>
+<tr>
+<td><code>extrair_access.pedido</code></td>
+<td>extração do Access (<code>Extrair_Access.ps1 -ExportarDados</code>, cerca de 20 min)</td>
+<td><code>extrair_access.txt</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>executor_sql\STATUS.txt</code> mostra se ele está ativo e o último pedido.</li>
+<li>Os pedidos são <strong>fixos</strong>: o executor não roda nada que venha dentro do arquivo de pedido.</li>
+</ul>
+</body>
+</html>

@@ -30,6 +30,10 @@ Atualizado em 15/11/2026. Guia de bolso: o que fazer, em que ordem, e o que dize
 | 03b | API e primeira tela (concluída em 16/11/2026) | 3b |
 | 03c | Financeiro e ensaio da migração do movimento (FIN, boletim semanal e arquivo morto prontos em 17/11/2026) | 3c |
 | 03c2 | Migração: cadastros e transformação do movimento | 3c |
+| 03d / 03d2 | Ensaio da instalação: executor, licença, backup e restauração pela tela, roteiro (concluídas em 20/11/2026) | 3d |
+| 03e | Ensaio na máquina virtual (3d-C, concluída em 22/11/2026) | 3d |
+| 03f | Migração: 3ª rodada com o Access novo (22/11/2026) | 3c |
+| 03g | Ajuda do administrador geral (concluída em 22/11/2026; banco 1.7) | 3d |
 | 04 | Telas dos cadastros e do financeiro | 4 |
 | 05 | Imóveis e vendas (espelho, contrato, parcelas, reajuste) | 5 |
 | 06 | Cobrança Sicredi | 6 |
