@@ -93,6 +93,16 @@ const Util = {
   /** "2026-03-14T00:00:00" -> "2026-03-14" (campo type=date) */
   dataIso(valor) { return valor ? String(valor).substring(0, 10) : ''; },
   parametro(nome) { return new URLSearchParams(location.search).get(nome); },
+  /** Abre o endereço recarregando a página mesmo quando só muda o "#" (ex.: ficha?id=1#permissoes). */
+  recarregar(destino) {
+    const alvo = new URL(destino, location.href);
+    if (alvo.pathname === location.pathname && alvo.search === location.search) {
+      history.replaceState(null, '', alvo.href);
+      location.reload();
+    } else {
+      location.replace(alvo.href);
+    }
+  },
   atrasar(fn, ms = 300) {
     let t;
     return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };

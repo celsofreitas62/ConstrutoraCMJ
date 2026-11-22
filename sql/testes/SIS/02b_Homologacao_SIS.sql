@@ -18,6 +18,7 @@
     v1.2 (16/11/2026) - Contagens de itens, ações e menus restritas aos
                         itens da 02b (etapas seguintes acrescentam telas).
     v1.3 (16/11/2026) - Contagem de ações restrita às 14 da 02b (a 02d acrescenta EXECUTAR).
+    v1.4 (22/11/2026) - Etapa 04a: colunas novas do SIS_Usuario_Listar (SENHA_PROVISORIA_VENCIDA, DT_SENHA).
     v1.1 (15/11/2026) - Dois níveis de administrador: celso (geral) x admin
                         (CMJ); testes de visibilidade e de telas exclusivas;
                         exceções de usuário testadas no Log de erros.
@@ -58,7 +59,8 @@ DROP TABLE IF EXISTS #ListaUsu;
 DROP TABLE IF EXISTS #ListaPerfil;
 
 CREATE TABLE #ListaUsu    (ID_USUARIO INT, LOGIN NVARCHAR(40), NOME NVARCHAR(100), EMAIL NVARCHAR(200), ID_PERFIL INT, PERFIL_NOME NVARCHAR(60),
-                           PERFIL_NIVEL_ADMIN TINYINT, ATIVO BIT, BLOQUEADO BIT, TROCAR_SENHA BIT, TEM_SENHA BIT, DT_ULTIMO_LOGIN DATETIME2(0), QTD_EXCECOES INT);
+                           PERFIL_NIVEL_ADMIN TINYINT, ATIVO BIT, BLOQUEADO BIT, TROCAR_SENHA BIT, TEM_SENHA BIT, SENHA_PROVISORIA_VENCIDA BIT, DT_SENHA DATETIME2(0),
+                           DT_ULTIMO_LOGIN DATETIME2(0), QTD_EXCECOES INT);
 CREATE TABLE #ListaPerfil (ID_PERFIL INT, NOME NVARCHAR(60), DESCRICAO NVARCHAR(400), NIVEL_ADMIN TINYINT, ATIVO BIT, QTD_USUARIOS_ATIVOS INT, QTD_PERMISSOES INT);
 CREATE TABLE #Teste     (ID INT IDENTITY(1,1), TESTE NVARCHAR(200), ESPERADO NVARCHAR(400), OBTIDO NVARCHAR(400));
 CREATE TABLE #Ret       (SUCESSO BIT, MENSAGEM NVARCHAR(400), ID INT);

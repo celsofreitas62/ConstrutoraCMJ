@@ -16,7 +16,12 @@
                     seguidos (qualquer usuário, inclusive inexistente) nos
                     últimos LOGIN_COMPUTADOR_MINUTOS: recusa sem olhar a
                     senha nem contar tentativa no usuário (ESTACAO_BLOQUEADA),
-                    até passar o tempo. Um login certo zera a contagem.
+                    até passar o tempo. Um login certo zera a contagem;
+                  - senha provisória (TROCAR_SENHA = 1) certa, mas dada há
+                    mais de SENHA_PROVISORIA_HORAS (0 = não vence): recusa
+                    (PROVISORIA_VENCIDA) e pede para o administrador reiniciar
+                    a senha. Não vale para o administrador geral (nível 2),
+                    para ele nunca ficar sem entrar.
                 Toda tentativa vai para SIS.Login_Log.
                 Recusa antes de gravar: COMMIT (nada foi alterado), para a
                 procedure funcionar também dentro de INSERT ... EXEC.
@@ -26,6 +31,7 @@
   Changelog:
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (20/11/2026) - Etapa 03d: limite de tentativas por computador.
+    v1.2 (22/11/2026) - Etapa 04a: senha provisória vence (SENHA_PROVISORIA_HORAS).
 
   Homologação (LOCAL): ver sql/testes/SIS/02b_Homologacao_SIS.sql.
 *******************************************************************************/
@@ -61,6 +67,9 @@ BEGIN
     DECLARE @LimiteIp     INT;
     DECLARE @MinutosIp    INT;
     DECLARE @ErrosIp      INT = 0;
+    DECLARE @DtSenha      DATETIME2(0);
+    DECLARE @NivelAdmin   TINYINT       = 0;
+    DECLARE @HorasProv    INT;
 
     BEGIN TRY
         SET @Login          = LOWER(LTRIM(RTRIM(ISNULL(@Login, N''))));
@@ -74,6 +83,7 @@ BEGIN
         IF @LimiteIp < 5 SET @LimiteIp = 5;
         SET @MinutosIp      = ISNULL(SIS.fn_SIS_Parametro_Inteiro('LOGIN_COMPUTADOR_MINUTOS'), 15);
         IF @MinutosIp < 1 SET @MinutosIp = 1;
+        SET @HorasProv      = ISNULL(SIS.fn_SIS_Parametro_Inteiro('SENHA_PROVISORIA_HORAS'), 24);
 
         IF @SenhaConferida = 1 AND DATALENGTH(ISNULL(@TokenHash, 0x)) <> 32
         BEGIN
@@ -93,8 +103,11 @@ BEGIN
                    @TemSenha    = CASE WHEN u.SENHA_HASH IS NULL THEN 0 ELSE 1 END,
                    @Tentativas  = u.TENTATIVAS_ERRADAS,
                    @Nome        = u.NOME,
-                   @TrocarSenha = u.TROCAR_SENHA
+                   @TrocarSenha = u.TROCAR_SENHA,
+                   @DtSenha     = u.DT_SENHA,
+                   @NivelAdmin  = p.NIVEL_ADMIN
             FROM SIS.Usuario u WITH (UPDLOCK, HOLDLOCK)
+            INNER JOIN SIS.Perfil p ON p.ID_PERFIL = u.ID_PERFIL
             WHERE u.LOGIN = @Login
               AND u.INTERNO = 0;
 
@@ -153,6 +166,13 @@ BEGIN
                                       THEN N'Senha incorreta. O usuário foi bloqueado após ' + CONVERT(NVARCHAR(10), @Limite) + N' tentativas. Procure o administrador do sistema.'
                                       ELSE N'Usuário ou senha inválidos. Restam ' + CONVERT(NVARCHAR(10), @Limite - @Tentativas) + N' tentativa(s) antes do bloqueio.'
                                  END;
+            END;
+
+            IF @Resultado = '' AND @TrocarSenha = 1 AND ISNULL(@NivelAdmin, 0) < 2 AND @HorasProv > 0
+               AND @DtSenha < DATEADD(HOUR, -@HorasProv, SYSDATETIME())
+            BEGIN
+                SET @Resultado = 'PROVISORIA_VENCIDA';
+                SET @Mensagem  = N'A sua senha provisória venceu (vale ' + CONVERT(NVARCHAR(10), @HorasProv) + N' horas). Peça ao administrador do sistema para reiniciar a sua senha.';
             END;
 
             IF @Resultado = ''

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Ficha do usuário</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> incluir ou alterar um usuário, dar a senha provisória, desbloquear e ajustar permissões só dele.</p>
+  <h2>Aba Dados</h2>
+  <ul>
+    <li><strong>Login</strong> (obrigatório): o que a pessoa digita para entrar. Letras minúsculas, números, ponto, hífen ou sublinhado, sem espaço e sem acento. Ex.: <em>renata</em>, <em>joao.silva</em>. Não pode repetir.</li>
+    <li><strong>Nome</strong> (obrigatório): nome completo. Aparece no topo da tela e no histórico.</li>
+    <li><strong>E-mail</strong>: para os avisos do sistema. Opcional.</li>
+    <li><strong>Perfil</strong> (obrigatório): define o que a pessoa pode fazer em cada tela. Os perfis são cuidados em Sistema › Segurança › Perfis e permissões.</li>
+    <li><strong>Ativo</strong>: desmarque para desativar. O usuário não entra mais e as sessões abertas dele são encerradas. Você não pode desativar o seu próprio usuário.</li>
+  </ul>
+  <h2>Senha</h2>
+  <ul>
+    <li>O sistema nunca mostra nem guarda a senha de ninguém: guarda só uma "impressão digital" dela, impossível de reverter.</li>
+    <li>Usuário novo nasce com a <strong>senha provisória padrão</strong>. Passe a senha para a pessoa pessoalmente (nunca por e-mail). No primeiro acesso ela é obrigada a criar a senha dela.</li>
+    <li>A senha provisória vale por um prazo (padrão: 24 horas). Passado o prazo sem a pessoa entrar, o login recusa: use <strong>Reiniciar senha</strong> de novo.</li>
+    <li><strong>Reiniciar senha</strong>: para quem esqueceu a senha. Volta para a provisória padrão, desbloqueia e encerra as sessões abertas. Pede confirmação.</li>
+    <li><strong>Desbloquear</strong>: para quem errou a senha várias vezes e foi bloqueado, mas lembra a senha. A senha continua a mesma.</li>
+    <li>Para trocar a <strong>sua</strong> senha, use "Trocar senha" no topo da tela.</li>
+  </ul>
+  <h2>Aba Permissões individuais</h2>
+  <ul>
+    <li>O normal é o perfil decidir tudo. Use esta aba só para exceções: dar a uma pessoa algo que o perfil não dá, ou tirar algo que o perfil dá.</li>
+    <li>Marcado = o usuário pode. <strong>+</strong> verde: dado só a ele. <strong>−</strong> vermelho: tirado só dele. Voltar a marcação para como está no perfil desfaz a exceção.</li>
+    <li>Usuário administrador tem tudo: não há exceções a marcar.</li>
+    <li>As mudanças desta aba são gravadas junto com o botão <strong>Gravar</strong>.</li>
+  </ul>
+  <h2>Aba Histórico</h2>
+  <ul>
+    <li>Quem mudou o quê e quando neste usuário. Ninguém altera o histórico. A senha nunca aparece: só a data e a hora em que foi definida.</li>
+  </ul>
+  <h2>Atalhos</h2>
+  <ul>
+    <li><strong>Ctrl+S</strong> grava (com a mesma confirmação do botão); <strong>Esc</strong> volta para a lista; <strong>Enter</strong> não grava.</li>
+  </ul>
+</body>
+</html>

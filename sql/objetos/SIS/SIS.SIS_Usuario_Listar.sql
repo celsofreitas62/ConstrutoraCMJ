@@ -14,6 +14,8 @@
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (15/11/2026) - Dois níveis de administrador: quem não é nível 2 não vê
                         usuários de nível 2; devolve PERFIL_NIVEL_ADMIN.
+    v1.2 (22/11/2026) - Etapa 04a (tela de Usuários): SENHA_PROVISORIA_VENCIDA e
+                        DT_SENHA.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Usuario_Listar @IdUsuario = 2;
@@ -34,6 +36,7 @@ BEGIN
     DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Usuario_Listar]';
     DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
     DECLARE @Nivel      TINYINT       = SIS.fn_SIS_Usuario_Nivel_Admin(@IdUsuario);
+    DECLARE @HorasProv  INT           = ISNULL(SIS.fn_SIS_Parametro_Inteiro('SENHA_PROVISORIA_HORAS'), 24);
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_USUARIO', 'VER') = 0
@@ -54,6 +57,9 @@ BEGIN
                u.BLOQUEADO,
                u.TROCAR_SENHA,
                CAST(CASE WHEN u.SENHA_HASH IS NULL THEN 0 ELSE 1 END AS BIT) AS TEM_SENHA,
+               CAST(CASE WHEN u.SENHA_HASH IS NOT NULL AND u.TROCAR_SENHA = 1 AND p.NIVEL_ADMIN < 2 AND @HorasProv > 0
+                          AND u.DT_SENHA < DATEADD(HOUR, -@HorasProv, SYSDATETIME()) THEN 1 ELSE 0 END AS BIT) AS SENHA_PROVISORIA_VENCIDA,
+               u.DT_SENHA,
                u.DT_ULTIMO_LOGIN,
                (SELECT COUNT(*) FROM SIS.Usuario_Permissao up WITH (NOLOCK) WHERE up.ID_USUARIO = u.ID_USUARIO) AS QTD_EXCECOES
         FROM SIS.Usuario u WITH (NOLOCK)

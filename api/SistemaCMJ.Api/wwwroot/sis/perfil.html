@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Ficha do perfil</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/sis/permissoes.js" defer></script>
+  <script src="/js/sis/situacao-senha.js" defer></script>
+  <script src="/js/sis/perfil.js" defer></script>
+</head>
+<body data-tela="sis/perfil.html" data-menu="sis/perfis.html" data-ajuda="sis-perfil" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <a href="/sis/perfis.html" id="link-voltar">‹ Voltar para a lista de Perfis</a>
+          <h1 id="titulo">Novo perfil</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button data-dica="Volta para a lista sem gravar (avisa se houver alteração). Atalho: Esc." type="button" class="botao" id="botao-cancelar">Cancelar</button>
+        <button data-dica="Grava os dados e as permissões de uma vez. Pede confirmação antes. Atalho: Ctrl+S." type="submit" form="ficha" class="botao botao-principal" id="botao-gravar" hidden>Gravar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="abas" role="tablist" aria-label="Partes da ficha">
+        <button type="button" class="aba" role="tab" id="aba-dados" aria-controls="painel-dados" aria-selected="true">Dados</button>
+        <button type="button" class="aba" role="tab" id="aba-permissoes" aria-controls="painel-permissoes" aria-selected="false" hidden>Permissões</button>
+        <button type="button" class="aba" role="tab" id="aba-usuarios" aria-controls="painel-usuarios" aria-selected="false" hidden>Usuários</button>
+        <button type="button" class="aba" role="tab" id="aba-historico" aria-controls="painel-historico" aria-selected="false" hidden>Histórico</button>
+      </div>
+
+      <div class="area-lista">
+        <form class="cartao" id="ficha" novalidate>
+          <section class="painel-aba" role="tabpanel" id="painel-dados" aria-labelledby="aba-dados">
+            <div class="grade">
+              <label data-dica="Nome do perfil. Obrigatório e único. Ex.: Financeiro, Vendas, Consulta." data-obrigatorio class="campo s-2">Nome *
+                <input id="nome" maxlength="60" autocomplete="off">
+              </label>
+              <div class="campo s-2">
+                <span class="rotulo-linha">Situação</span>
+                <label data-dica="Desmarque para desativar o perfil. Só dá para desativar um perfil sem usuários ativos. Perfis de administrador não podem ser desativados." class="marcacao"><input type="checkbox" id="ativo" checked> Ativo (pode ser dado a usuários)</label>
+              </div>
+              <label data-dica="Para que serve o perfil, em poucas palavras. Opcional. Aparece na ficha do usuário quando o perfil é escolhido." class="campo s-4">Para que serve
+                <textarea id="descricao" rows="2" maxlength="400"></textarea>
+              </label>
+            </div>
+            <div class="nota" id="nota-novo" hidden>Depois de gravar o perfil novo, a aba <strong>Permissões</strong> aparece para você marcar o que ele pode fazer em cada tela.</div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-permissoes" aria-labelledby="aba-permissoes" hidden>
+            <span class="suave">Marque o que os usuários deste perfil podem fazer em cada tela. Vale para todos os usuários do perfil, menos as exceções individuais de cada um. É gravado junto com o botão Gravar.</span>
+            <div id="grade-permissoes"></div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-usuarios" aria-labelledby="aba-usuarios" hidden>
+            <span class="suave">Usuários que estão neste perfil. Para mudar o perfil de alguém, abra a ficha do usuário.</span>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead><tr><th scope="col">Login</th><th scope="col">Nome</th><th scope="col">Exceções individuais</th><th scope="col">Senha</th><th scope="col">Situação</th></tr></thead>
+                <tbody id="linhas-usuarios"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-historico" aria-labelledby="aba-historico" hidden>
+            <span class="suave">Quem mudou o quê e quando neste perfil. Somente consulta: ninguém altera o histórico. As permissões marcadas e desmarcadas aparecem na tela de Auditoria.</span>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead><tr><th scope="col">Data e hora</th><th scope="col">Usuário</th><th scope="col">Operação</th><th scope="col">Campo</th><th scope="col">Antes</th><th scope="col">Depois</th></tr></thead>
+                <tbody id="linhas-historico"></tbody>
+              </table>
+            </div>
+          </section>
+        </form>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+
+      <div class="rodape-ficha" id="rodape"></div>
+    </main>
+  </div>
+</body>
+</html>

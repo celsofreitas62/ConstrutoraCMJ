@@ -32,6 +32,9 @@
                         BACKUP_DIAS_ALERTA_TESTE).
     v1.8 (20/11/2026) - Etapa 03d2: BACKUP_RESTAURACAO_MOTIVO_MINIMO (restauração
                         pela tela).
+    v1.9 (22/11/2026) - Etapa 04a: SENHA_PROVISORIA_PADRAO e SENHA_PROVISORIA_HORAS
+                        (botão Reiniciar senha da tela de Usuários; decisão do
+                        Celso de 16/11/2026, PADRAO_TELAS regra 13).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -117,7 +120,11 @@ FROM (VALUES
         ('EMAIL_RODAPE_CNPJ', N'N', 'SN',
          N'Mostrar o CNPJ da empresa no rodapé dos e-mails enviados a clientes e terceiros (S/N).', 'SIS', 1),
         ('CIDADE_PADRAO', N'Poços de Caldas', 'TEXTO',
-         N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1)
+         N'Cidade sugerida nos cadastros e nos documentos.', 'CAD', 1),
+        ('SENHA_PROVISORIA_PADRAO', N'@12345', 'TEXTO',
+         N'Senha provisória dada pelo botão Reiniciar senha da tela de Usuários. O usuário é obrigado a trocá-la no primeiro acesso.', 'SIS', 0),
+        ('SENHA_PROVISORIA_HORAS', N'24', 'INTEIRO',
+         N'Horas que a senha provisória vale. Passado esse tempo sem o usuário trocar, o login recusa e é preciso reiniciar a senha de novo. 0 = não vence. Não vale para o administrador geral.', 'SIS', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Parametro p WHERE p.CHAVE = v.CHAVE);
