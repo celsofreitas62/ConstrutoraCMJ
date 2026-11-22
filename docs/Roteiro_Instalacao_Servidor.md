@@ -1,10 +1,16 @@
 # Roteiro de instalação do SisCMJ no servidor da CMJ
 
-Versão 1.0 (20/11/2026, conversa 03d2). Escrito a partir do ensaio no notebook (serviço `SisCMJ_Ensaio`, porta 5445). **Manter atualizado a cada mudança no instalador, no MASTER ou no modo de trabalhar.**
+Versão 1.1 (22/11/2026, conversa 03e). Versão 1.0 de 20/11/2026 (03d2), escrita a partir do ensaio no notebook; v1.1 com os achados do ensaio num Windows limpo (máquina virtual, 3d-C). **Manter atualizado a cada mudança no instalador, no MASTER ou no modo de trabalhar.**
 
 Quem executa: **Celso**, como administrador do servidor. Tempo estimado: **2 a 3 horas** na primeira instalação (sem a migração do Access, que é a virada, fase 8).
 
 Convenções: `[ ]` = marcar quando feito. **⚠️** = ponto em que um erro dá trabalho para desfazer.
+
+## Regras de ouro (pedido do Celso, 22/11/2026)
+
+1. **Ensaiar toda versão nova na máquina virtual antes de levar à CMJ.** Leva uns 10 minutos com os scripts prontos (como fazer: item 14).
+2. **Pedir IP fixo e rede Privada ao técnico como pré-requisito**, antes de marcar o dia da instalação (item 1). Sem isso, os usuários podem não conseguir entrar no sistema.
+3. **Guardar a chave do BitLocker do servidor junto com a chave da licença.** As duas são as "chaves de casa" do sistema: sem a do BitLocker, uma troca de placa ou de disco pode deixar o banco e os backups ilegíveis; sem a da licença, não se gera licença nova. Lugar: gerenciador de senhas do Celso + cópia no Google Drive dele (como a chave da licença) e uma cópia impressa guardada pela CMJ (item 2).
 
 ---
 
@@ -37,6 +43,7 @@ Convenções: `[ ]` = marcar quando feito. **⚠️** = ponto em que um erro dá
 - [ ] **Pendências da CMJ resolvidas ou aceitas** (CLAUDE.md, seção 6):
   - questionário do técnico (`CashBookCMJ/Preparacao_Servidor_TI_CMJ.docx`): IP fixo, rede, firewall do roteador, VPN, sincronização do Google Drive;
   - **Gmail `construtora.m.judice@gmail.com` com verificação em duas etapas ligada** e uma **senha de app** criada para o SisCMJ (sem isso o Gmail não aceita envio por programa);
+  - **pré-requisito para marcar o dia (regra de ouro 2)**: o técnico confirmou o **IP fixo** do servidor e que a rede dele fica como **Privada**; e respondeu se o **nome do servidor é achado** pelos outros computadores (senão, instalar com `-EnderecoUsuarios <IP fixo>`, item 6);
   - nobreak (responsabilidade da CMJ);
   - CNPJ da CMJ para a licença: **25.686.528/0001-97** (Construtora Marcílio Judice Ltda.).
 - [ ] Forma de levar o pacote ao servidor: pasta do Google Drive ou cópia pela rede/acesso remoto (pen drive não é usado).
@@ -52,7 +59,7 @@ Convenções: `[ ]` = marcar quando feito. **⚠️** = ponto em que um erro dá
 - [ ] Energia: **nunca suspender nem hibernar** (Configurações › Sistema › Energia); o disco não desliga. Ligar sozinho depois de falta de luz, se a placa permitir (BIOS).
 - [ ] Discos: SSD = Windows, SQL Server e banco; **HD de 1 TB = backups, na pasta `D:\SisCMJ_Backup`** (decidido pelo Celso em 20/11/2026). Backup em outro disco protege contra a falha do SSD. Conferir a letra do HD no servidor; se não for `D:`, ajustar no parâmetro `BACKUP_PASTA` (item 5).
 - [ ] Google Drive para computador já instalado e sincronizando de madrugada (informação da CMJ). Anotar a pasta que sincroniza: ____________ (ex.: `G:\Meu Drive\SisCMJ_Backup` ou uma pasta espelhada). Vai no parâmetro `BACKUP_PASTA_EXTERNA` (cópia **sem senha**, decisão de 20/11/2026).
-- [ ] **BitLocker**: o Windows 11 pode criptografar o C: (e discos novos) sozinho (achado no ensaio 3d-C). Conferir em Configurações › Privacidade e segurança › Criptografia do dispositivo (ou Gerenciamento de Disco: "BitLocker Criptografado"). Se estiver ligado: **guardar a chave de recuperação** (gerenciador de senhas e cópia impressa com a CMJ); sem ela, uma troca de placa ou de disco pode deixar o banco e os backups ilegíveis.
+- [ ] **BitLocker**: o Windows 11 pode criptografar o C: (e discos novos) sozinho (achado no ensaio 3d-C). Conferir em Configurações › Privacidade e segurança › Criptografia do dispositivo (ou Gerenciamento de Disco: "BitLocker Criptografado"). Se estiver ligado: **guardar a chave de recuperação junto com a chave da licença** (regra de ouro 3: gerenciador de senhas e Google Drive do Celso, e cópia impressa com a CMJ); sem ela, uma troca de placa ou de disco pode deixar o banco e os backups ilegíveis.
 - [ ] Antivírus: se houver um além do Defender, excluir a pasta do banco do SQL e a pasta de backups da varredura em tempo real (pedir ao técnico).
 
 ## 3. Instalar SQL Server, SSMS e .NET
@@ -166,7 +173,13 @@ O que já está decidido e entra no roteiro da virada:
 
 ## 14. Atualização (versão nova)
 
-1. No notebook: `api\publicar.cmd`, ensaio no notebook.
+1. No notebook: `api\publicar.cmd` (ou pedir ao Claude).
+1a. **Ensaio na máquina virtual (regra de ouro 1)**: a VM `SisCMJ-Servidor-Ensaio` fica no Hyper-V do notebook, desligada. Scripts em `instalacao\ensaio\`, todos como administrador:
+   - `ligar_vm_hyperv.cmd` (não apertar tecla no boot; entrar como `AdminCMJ`);
+   - `copiar_pacote_vm.cmd` (leva o pacote mais novo para `C:\SisCMJ_Instalacao\` dentro da VM);
+   - na VM: SSMS › MASTER novo (F5) e `instalar_servico.cmd` do pacote novo (Terminal como administrador);
+   - conferir `https://localhost:5443/api/saude` na VM e uma tela que mudou; se a versão mexe em backup, um ensaio de restauração pela tela;
+   - só depois levar à CMJ. Se a VM sumir ou a avaliação do Windows (90 dias) vencer: `criar_vm_hyperv.cmd` cria outra, e o roteiro deste documento instala de novo.
 2. Avisar os usuários (o sistema fica fora do ar 1 a 2 minutos).
 3. No servidor: SSMS › **MASTER novo** no banco SISTEMACMJ (F5). Depois, **`instalar_servico.cmd` do pacote novo** como administrador (atualiza o programa e as tarefas; não perde configuração, licença nem dados).
 4. Conferir `/api/saude` e a tela de backups.
