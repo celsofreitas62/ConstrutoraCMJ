@@ -46,7 +46,9 @@ Convenções: `[ ]` = marcar quando feito. **⚠️** = ponto em que um erro dá
 - [ ] Windows atualizado (Windows Update até não ter mais nada) e reiniciado.
 - [ ] Entrar com um usuário **administrador**.
 - [ ] **Nome do computador** definitivo (ex.: `SERVIDOR-CMJ`). ⚠️ Trocar o nome depois exige refazer o certificado (instalador de novo) e o atalho dos usuários.
-- [ ] **IP fixo** (no Windows ou reserva no roteador, com o técnico). Anotar: IP ____________.
+- [ ] **IP fixo** (no Windows ou reserva no roteador, com o técnico). Anotar: IP ____________. Fazer **antes** do instalador (item 6): o certificado grava os IPs do servidor.
+- [ ] **Rede como Privada** (Configurações › Rede e Internet › a conexão › Tipo de perfil de rede › **Rede privada**). O Windows marca rede nova como **Pública**, e aí o firewall não deixa os usuários entrarem (achado no ensaio 3d-C; o instalador v1.6 para com aviso se encontrar rede Pública).
+- [ ] **O nome do servidor é achado na rede?** De outro computador da CMJ, abrir o Prompt de Comando e rodar `ping <nome do servidor>`. Se responder, os usuários usam o nome. Se der "não pôde encontrar o host" (comum em rede pequena; aconteceu no ensaio), usar o **IP fixo** no item 6 (`-EnderecoUsuarios <IP fixo>`) ou pedir ao técnico para cadastrar o nome no roteador/DNS. Anotar a escolha: ____________.
 - [ ] Energia: **nunca suspender nem hibernar** (Configurações › Sistema › Energia); o disco não desliga. Ligar sozinho depois de falta de luz, se a placa permitir (BIOS).
 - [ ] Discos: SSD = Windows, SQL Server e banco; **HD de 1 TB = backups, na pasta `D:\SisCMJ_Backup`** (decidido pelo Celso em 20/11/2026). Backup em outro disco protege contra a falha do SSD. Conferir a letra do HD no servidor; se não for `D:`, ajustar no parâmetro `BACKUP_PASTA` (item 5).
 - [ ] Google Drive para computador já instalado e sincronizando de madrugada (informação da CMJ). Anotar a pasta que sincroniza: ____________ (ex.: `G:\Meu Drive\SisCMJ_Backup` ou uma pasta espelhada). Vai no parâmetro `BACKUP_PASTA_EXTERNA` (cópia **sem senha**, decisão de 20/11/2026).
@@ -97,7 +99,8 @@ SELECT CHAVE, VALOR FROM SIS.Parametro WHERE CHAVE LIKE 'BACKUP%' OR CHAVE = 'EM
   - `-Instancia .\SQL2025` · `-Banco SISTEMACMJ` · `-Porta 5443` · `-NomeServico SisCMJ`
   - `-HoraBackupCompleto 23:00` (antes da sincronização do Drive de madrugada)
   - `-RedesPermitidas LocalSubnet` (mais a rede da VPN, quando existir: item 12)
-  - `-NomesExtras` nomes/IPs extras no certificado (ex.: o IP fixo), separados por vírgula
+  - `-EnderecoUsuarios <nome ou IP fixo>`: o endereço que vai no atalho dos usuários e no certificado (padrão: o nome do servidor). Usar o **IP fixo** se o nome não for achado na rede (item 2). Exemplo: `instalar_servico.cmd -EnderecoUsuarios 192.168.0.10` numa janela de comando como administrador.
+  - `-NomesExtras` nomes/IPs extras no certificado (ex.: o endereço pela VPN), separados por vírgula
 - [ ] O instalador faz, em 10 passos: conferências; programa em `C:\SisCMJ\programa`; serviço **SisCMJ** (início automático atrasado, reinicia se cair); permissões; configuração em `C:\ProgramData\SisCMJ\appsettings.Servidor.json`; acesso do serviço ao banco sem senha; **certificado HTTPS** (5 anos); **firewall** só na porta 5443 e na rede local; inicia e confere `/api/saude`; **backup** (tarefas do Windows como SYSTEM: completo diário, log de hora em hora, teste de restauração aos domingos 4h, pedidos de restauração da tela a cada minuto) e roda **um backup completo e um teste na hora**.
 - [ ] Conferir no fim: "Backup completo (agora): OK" e "Teste de restauracao (agora): OK". Erro: ver `<pasta de backup>\backup.log`.
 - [ ] Guardar o que o instalador deixou na pasta `instalacao\`: `codigo_servidor.txt` (item 7), `SisCMJ_certificado.cer` e `preparar_computador_usuario.cmd` (item 10), `instalacao_<data>.log`.
@@ -130,7 +133,7 @@ Decisão de 20/11/2026: até a CMJ ter o e-mail do domínio próprio, **tudo sai
 ## 10. Computadores dos usuários
 
 - [ ] Copiar `SisCMJ_certificado.cer` e `preparar_computador_usuario.cmd` para cada computador (Renata e demais).
-- [ ] Botão direito no `.cmd` › **Executar como administrador** (uma vez): instala o certificado e cria o atalho **SisCMJ** na área de trabalho (`https://<nome do servidor>:5443/`).
+- [ ] Botão direito no `.cmd` › **Executar como administrador** (uma vez): instala o certificado (tirando o antigo, se houver) e cria o atalho **SisCMJ** na área de trabalho (`https://<endereço dos usuários>:5443/`). Se o instalador avisar **"certificado NOVO"** numa atualização, rodar o `.cmd` de novo em todos os computadores.
 - [ ] Abrir o atalho, entrar e conferir: sem aviso de "conexão não segura".
 
 ## 11. Conferências finais

@@ -10,6 +10,14 @@
                       tarefas como SYSTEM; roda o 1o completo e o 1o teste na hora.
   v1.5 (20/11/2026) - Etapa 03d2: tarefa "Restauracao (pedidos)", a cada minuto, que faz as
                       restauracoes pedidas pela tela Sistema > Backups (para e religa o servico).
+  v1.6 (22/11/2026) - Ensaio 3d-C (VM limpa), achados:
+                      a) para com mensagem clara se a rede estiver como Publica (o firewall
+                         so libera a porta nos perfis Dominio e Privado);
+                      b) -EnderecoUsuarios: nome ou IP fixo que os usuarios usam (atalho e
+                         certificado), para redes que nao acham o servidor pelo nome;
+                      c) certificado com os IPs como "endereco IP" (o Chrome nao aceita IP
+                         gravado como nome) e refeito se faltar algum nome/IP pedido;
+                      d) acentos da resposta de /api/saude certos na janela (UTF-8).
   Faz, nesta ordem (pode rodar de novo: atualiza sem perder nada):
     1) confere administrador e o .NET 10 (ASP.NET Core Runtime / Hosting Bundle);
     2) para o servico (se ja existe) e copia o programa para -PastaPrograma;
@@ -37,9 +45,13 @@ param(
     [int]$Porta             = 5443,
     [string[]]$RedesPermitidas = @('LocalSubnet'),
     [string[]]$NomesExtras  = @(),
-    [string]$HoraBackupCompleto = '23:00'
+    [string]$HoraBackupCompleto = '23:00',
+    [string]$EnderecoUsuarios = ''
 )
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$EnderecoUsuarios = $EnderecoUsuarios.Trim()
+if (-not $EnderecoUsuarios) { $EnderecoUsuarios = $env:COMPUTERNAME }
 # Pelo .cmd (-File), listas chegam como um texto so: separa nas virgulas
 $RedesPermitidas = @($RedesPermitidas | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 $NomesExtras = @($NomesExtras | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
@@ -74,6 +86,14 @@ try {
     $Versao = [string](Sql $Banco "SELECT SIS.fn_SIS_Versao_Banco()")
     Write-Host ('Banco ' + $Instancia + '/' + $Banco + ': versao ' + $(if ($Versao) { $Versao } else { '(sem versao: rode o MASTER antes)' }))
     if (-not $Versao) { throw 'Rode antes o SISTEMACMJ_00_Criar_Banco.sql e o SISTEMACMJ_MASTER_Instalacao.sql no SSMS.' }
+    # Rede Publica: o firewall (passo 8) so libera a porta nos perfis Dominio e Privado
+    $Publicas = @(Get-NetConnectionProfile -ErrorAction SilentlyContinue | Where-Object { $_.NetworkCategory -eq 'Public' })
+    if ($Publicas.Count -gt 0) {
+        throw ('A rede "' + (($Publicas | ForEach-Object { $_.InterfaceAlias + ' (' + $_.Name + ')' }) -join ', ') + '" esta como PUBLICA: os computadores dos usuarios nao vao conseguir entrar. ' +
+               'Mude para Privada (Configuracoes > Rede e Internet > a conexao > Tipo de perfil de rede > Rede privada) e rode de novo.')
+    }
+    Write-Host ('Rede: ' + ((Get-NetConnectionProfile | ForEach-Object { $_.InterfaceAlias + ' = ' + $_.NetworkCategory }) -join ', '))
+    Write-Host ('Endereco dos usuarios: https://' + $EnderecoUsuarios + ':' + $Porta + '/')
 
     Passo '2/10 Programa'
     if ($Existe) { Stop-Service -Name $NomeServico -Force; (Get-Service $NomeServico).WaitForStatus('Stopped', (New-TimeSpan -Seconds 60)) }
@@ -127,14 +147,33 @@ try {
     Write-Host ($Conta + ' no papel rl_sistemacmj_api do banco ' + $Banco)
 
     Passo '7/10 Certificado HTTPS'
+    # Nomes (DNS) e IPs (IP Address) do certificado: o Chrome so aceita IP gravado como IP
+    $Todos = @($env:COMPUTERNAME, 'localhost') + $NomesExtras + @($EnderecoUsuarios)
+    $Todos += (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -ExpandProperty IPAddress)
+    $Todos = @($Todos | Where-Object { $_ } | Select-Object -Unique)
+    $Ip = [System.Net.IPAddress]$null
+    $Ips = @($Todos | Where-Object { [System.Net.IPAddress]::TryParse($_, [ref]$Ip) })
+    $Dns = @($Todos | Where-Object { $Ips -notcontains $_ })
+    $Exigidos = @($NomesExtras + @($EnderecoUsuarios) | Where-Object { $_ })
     $Cert = Get-ChildItem Cert:\LocalMachine\My | Where-Object { $_.Subject -eq 'CN=SisCMJ' -and $_.NotAfter -gt (Get-Date).AddDays(30) } | Sort-Object NotAfter -Descending | Select-Object -First 1
+    if ($Cert) {
+        $San = [string](($Cert.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.17' }) | ForEach-Object { $_.Format($false) })
+        $Faltam = @($Exigidos | Where-Object { $San -notmatch ('(=|\s)' + [regex]::Escape($_) + '(,|$)') })
+        $SoNome = @($Ips | Where-Object { $Exigidos -contains $_ } | Where-Object { $San -notmatch ('IP[^=]*=' + [regex]::Escape($_)) })
+        if ($Faltam.Count -gt 0 -or $SoNome.Count -gt 0) {
+            Write-Host ('Certificado atual nao serve para: ' + (@($Faltam + $SoNome | Select-Object -Unique) -join ', ') + ' (sera refeito)')
+            $Cert = $null
+        }
+    }
     if (-not $Cert) {
-        $Nomes = @($env:COMPUTERNAME, 'localhost') + $NomesExtras
-        $Nomes += (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -ExpandProperty IPAddress)
-        $Cert = New-SelfSignedCertificate -Subject 'CN=SisCMJ' -DnsName ($Nomes | Select-Object -Unique) -CertStoreLocation Cert:\LocalMachine\My `
+        $Partes = @($Dns | ForEach-Object { 'DNS=' + $_ }) + @($Ips | ForEach-Object { 'IPAddress=' + $_ })
+        $Cert = New-SelfSignedCertificate -Subject 'CN=SisCMJ' -TextExtension @('2.5.29.17={text}' + ($Partes -join '&')) -CertStoreLocation Cert:\LocalMachine\My `
                     -NotAfter (Get-Date).AddYears(5) -KeyAlgorithm RSA -KeyLength 2048 -KeyExportPolicy NonExportable -FriendlyName 'SisCMJ'
-        Write-Host ('Criado, valido ate ' + $Cert.NotAfter.ToString('dd/MM/yyyy') + ', nomes: ' + (($Nomes | Select-Object -Unique) -join ', '))
-    } else { Write-Host ('Ja existe, valido ate ' + $Cert.NotAfter.ToString('dd/MM/yyyy')) }
+        Write-Host ('Criado, valido ate ' + $Cert.NotAfter.ToString('dd/MM/yyyy') + '; nomes: ' + ($Dns -join ', ') + '; IPs: ' + ($Ips -join ', '))
+        # tira os antigos (do servidor e da lista de confiaveis deste servidor)
+        Get-ChildItem Cert:\LocalMachine\My, Cert:\LocalMachine\Root | Where-Object { $_.Subject -eq 'CN=SisCMJ' -and $_.Thumbprint -ne $Cert.Thumbprint } | Remove-Item -ErrorAction SilentlyContinue
+        $CertNovo = $true
+    } else { Write-Host ('Ja existe, valido ate ' + $Cert.NotAfter.ToString('dd/MM/yyyy')); $CertNovo = $false }
     $Chave = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Cert)
     $ArqChave = Join-Path $env:ProgramData ('Microsoft\Crypto\Keys\' + $Chave.Key.UniqueName)
     & icacls $ArqChave /grant ($Conta + ':R') | Out-Null
@@ -142,6 +181,7 @@ try {
     Export-Certificate -Cert $Cert -FilePath $Cer -Force | Out-Null
     Import-Certificate -FilePath $Cer -CertStoreLocation Cert:\LocalMachine\Root | Out-Null
     Write-Host ('Copia publica para os usuarios: ' + $Cer)
+    if ($CertNovo -and $Existe) { Write-Host 'ATENCAO: certificado NOVO. Rode de novo o preparar_computador_usuario.cmd em cada computador de usuario.' -ForegroundColor Yellow }
 
     Passo '8/10 Firewall'
     Get-NetFirewallRule -DisplayName ('SisCMJ*') -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like ('SisCMJ (' + $NomeServico + ')*') } | Remove-NetFirewallRule
@@ -198,8 +238,8 @@ try {
     }
 
     # Arquivo para os computadores dos usuarios: certificado + atalho, com o endereco deste servidor
-    $Endereco = 'https://' + $env:COMPUTERNAME + ':' + $Porta + '/'
-    $Usuario = "@echo off`r`nrem SisCMJ - prepara um computador de usuario (rodar como administrador, uma vez)`r`ncd /d `"%~dp0`"`r`ncertutil -addstore -f Root SisCMJ_certificado.cer`r`npowershell -NoProfile -Command `"`$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('CommonDesktopDirectory')+'\SisCMJ.lnk'); `$s.TargetPath='" + $Endereco + "'; `$s.Save()`"`r`necho Pronto: abra o atalho SisCMJ na area de trabalho.`r`npause`r`n"
+    $Endereco = 'https://' + $EnderecoUsuarios + ':' + $Porta + '/'
+    $Usuario = "@echo off`r`nrem SisCMJ - prepara um computador de usuario (rodar como administrador, uma vez)`r`ncd /d `"%~dp0`"`r`npowershell -NoProfile -Command `"Get-ChildItem Cert:\LocalMachine\Root | Where-Object { `$_.Subject -eq 'CN=SisCMJ' } | Remove-Item`"`r`ncertutil -addstore -f Root SisCMJ_certificado.cer`r`npowershell -NoProfile -Command `"`$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('CommonDesktopDirectory')+'\SisCMJ.lnk'); `$s.TargetPath='" + $Endereco + "'; `$s.Save()`"`r`necho Pronto: abra o atalho SisCMJ na area de trabalho.`r`npause`r`n"
     [System.IO.File]::WriteAllText((Join-Path $PSScriptRoot 'preparar_computador_usuario.cmd'), $Usuario, (New-Object System.Text.ASCIIEncoding))
 
     Write-Host ''
