@@ -2,6 +2,10 @@
   SisCMJ - gera o pacote de instalacao para levar ao servidor
   Autor: Celso de Freitas / Refatorado: Claude
   v1.0 (20/11/2026) - Criacao (etapa 03d).
+  v1.1 (22/11/2026) - Etapa 03h: atualizar.cmd na raiz do pacote (atualizacao em um clique),
+                      versao.txt (programa e banco) e NOTAS_DA_VERSAO.txt (secao da versao em
+                      docs\NOTAS_DA_VERSAO.md; sem nota, nao publica); sqlcmd opcional em
+                      ferramentas\ (se existir api\ferramentas\sqlcmd\sqlcmd.exe).
   Saida: C:\SisCMJ_Publicacao\SisCMJ_<versao>_<data>\  (FORA da pasta do Google Drive)
     programa\     executavel unico (telas e ajuda embutidas) + appsettings.json e .Production.json
     sql\          00_Criar_Banco, MASTER e MIGRACAO (rodar no SSMS, nessa ordem)
@@ -16,6 +20,10 @@ $Raiz = Split-Path $PSScriptRoot -Parent
 $Projeto = Join-Path $PSScriptRoot 'SistemaCMJ.Api\SistemaCMJ.Api.csproj'
 $Versao = ([xml](Get-Content -LiteralPath $Projeto -Raw)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
 $VersaoBanco = [regex]::Match((Get-Content -LiteralPath (Join-Path $Raiz 'sql\objetos\SIS\Carga_SIS_Versao.sql') -Raw), "@Versao\s+VARCHAR\(20\)\s*=\s*'([0-9.]+)'").Groups[1].Value
+# Nota da versao (obrigatoria): secao '## <versao do banco>' de docs\NOTAS_DA_VERSAO.md
+$TextoNotas = [System.IO.File]::ReadAllText((Join-Path $Raiz 'docs\NOTAS_DA_VERSAO.md'), [System.Text.Encoding]::UTF8).Replace("`r`n", "`n")
+$Achou = [regex]::Match($TextoNotas, '(?ms)^## ' + [regex]::Escape($VersaoBanco) + '\b.*?(?=^## |\z)')
+if (-not $Achou.Success) { Write-Output ('RESULTADO: ERRO - falta a nota da versao ' + $VersaoBanco + ' em docs\NOTAS_DA_VERSAO.md'); exit 1 }
 $Destino = Join-Path $PastaSaida ('SisCMJ_' + $Versao + '_' + (Get-Date -Format 'yyyyMMdd_HHmm'))
 Write-Output ('Programa ' + $Versao + ', banco ' + $VersaoBanco + ' -> ' + $Destino)
 
@@ -28,7 +36,12 @@ if ($Codigo -ne 0) { Write-Output 'RESULTADO: ERRO na publicacao'; exit 1 }
 
 New-Item -ItemType Directory -Force -Path (Join-Path $Destino 'sql'), (Join-Path $Destino 'instalacao'), (Join-Path $Destino 'identidade') | Out-Null
 Copy-Item (Join-Path $Raiz 'sql\MASTER\SISTEMACMJ_00_Criar_Banco.sql'), (Join-Path $Raiz 'sql\MASTER\SISTEMACMJ_MASTER_Instalacao.sql'), (Join-Path $Raiz 'sql\MASTER\SISTEMACMJ_MIGRACAO_Instalacao.sql') -Destination (Join-Path $Destino 'sql')
-Get-ChildItem -LiteralPath (Join-Path $Raiz 'instalacao') -File | Where-Object { $_.Extension -in '.ps1', '.cmd' } | Copy-Item -Destination (Join-Path $Destino 'instalacao')
+Get-ChildItem -LiteralPath (Join-Path $Raiz 'instalacao') -File | Where-Object { $_.Extension -in '.ps1', '.cmd' -and $_.Name -ne 'atualizar.cmd' } | Copy-Item -Destination (Join-Path $Destino 'instalacao')
+Copy-Item -LiteralPath (Join-Path $Raiz 'instalacao\atualizar.cmd') -Destination $Destino
+$SqlcmdProprio = Join-Path $PSScriptRoot 'ferramentas\sqlcmd\sqlcmd.exe'
+if (Test-Path -LiteralPath $SqlcmdProprio) { New-Item -ItemType Directory -Force -Path (Join-Path $Destino 'ferramentas') | Out-Null; Copy-Item -LiteralPath $SqlcmdProprio -Destination (Join-Path $Destino 'ferramentas') }
+[System.IO.File]::WriteAllText((Join-Path $Destino 'versao.txt'), ('PROGRAMA=' + $Versao + "`r`nBANCO=" + $VersaoBanco + "`r`nGERADO=" + (Get-Date -Format 'yyyy-MM-dd HH:mm') + "`r`n"), (New-Object System.Text.ASCIIEncoding))
+[System.IO.File]::WriteAllText((Join-Path $Destino 'NOTAS_DA_VERSAO.txt'), $Achou.Value.Trim().Replace("`n", "`r`n") + "`r`n", (New-Object System.Text.UTF8Encoding($true)))
 Get-ChildItem -LiteralPath (Join-Path $Raiz 'docs\identidade') -File | Where-Object { $_.Extension -in '.png', '.jpg' } | Copy-Item -Destination (Join-Path $Destino 'identidade')
 
 $Leia = @"
@@ -43,7 +56,10 @@ ORDEM DA INSTALACAO NO SERVIDOR (roteiro completo: docs\Roteiro_Instalacao_Servi
  6. Neste servidor: https://localhost:5443/instalacao.html -> senhas dos administradores (so na 1a vez).
  7. Computadores dos usuarios: SisCMJ_certificado.cer + preparar_computador_usuario.cmd (gerados pelo passo 5).
 
-ATUALIZACAO (versao nova): passo 3 (MASTER novo) e passo 5 (instalar_servico.cmd de novo). Nada se perde.
+ATUALIZACAO (versao nova, servidor ja instalado): atualizar.cmd (raiz do pacote) -> botao direito ->
+Executar como administrador. Ele confere as versoes, faz backup de seguranca, roda o MASTER e o
+instalador, confere o sistema e volta sozinho se algo falhar. O que mudou: NOTAS_DA_VERSAO.txt.
+Sem o atualizar.cmd (emergencia): passo 3 (MASTER novo no SSMS) e passo 5 (instalar_servico.cmd).
 "@
 [System.IO.File]::WriteAllText((Join-Path $Destino 'LEIA-ME.txt'), $Leia.Replace("`n", "`r`n").Replace("`r`r", "`r"), (New-Object System.Text.UTF8Encoding($true)))
 

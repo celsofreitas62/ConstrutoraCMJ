@@ -18,6 +18,11 @@
                       c) certificado com os IPs como "endereco IP" (o Chrome nao aceita IP
                          gravado como nome) e refeito se faltar algum nome/IP pedido;
                       d) acentos da resposta de /api/saude certos na janela (UTF-8).
+  v1.7 (22/11/2026) - Etapa 03h (atualizacao em um clique):
+                      a) grava os parametros usados em %ProgramData%\SisCMJ\instalacao.json,
+                         para o atualizar.cmd repetir os mesmos (endereco dos usuarios etc.);
+                      b) -SemBackupAgora: nao roda o backup completo e o teste na hora
+                         (o atualizar.cmd faz o backup dele e segura a trava do backup).
   Faz, nesta ordem (pode rodar de novo: atualiza sem perder nada):
     1) confere administrador e o .NET 10 (ASP.NET Core Runtime / Hosting Bundle);
     2) para o servico (se ja existe) e copia o programa para -PastaPrograma;
@@ -46,7 +51,8 @@ param(
     [string[]]$RedesPermitidas = @('LocalSubnet'),
     [string[]]$NomesExtras  = @(),
     [string]$HoraBackupCompleto = '23:00',
-    [string]$EnderecoUsuarios = ''
+    [string]$EnderecoUsuarios = '',
+    [switch]$SemBackupAgora
 )
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -229,7 +235,7 @@ try {
         Register-ScheduledTask -TaskName ($Prefixo + $Nome) -Action $Acao -Trigger $Tarefas[$Nome][1] -Principal $Quem -Settings $Config -Force | Out-Null
     }
     Write-Host ('Tarefas: completo todo dia as ' + $HoraBackupCompleto + ', log de hora em hora, teste de restauracao aos domingos 04:00, pedidos de restauracao da tela a cada minuto. Pasta: ' + $PastaBackup)
-    foreach ($Nome in @('Backup completo', 'Teste de restauracao')) {
+    foreach ($Nome in $(if ($SemBackupAgora) { @() } else { @('Backup completo', 'Teste de restauracao') })) {
         Start-ScheduledTask -TaskName ($Prefixo + $Nome)
         Start-Sleep -Seconds 3
         for ($i = 0; $i -lt 120 -and (Get-ScheduledTask -TaskName ($Prefixo + $Nome)).State -eq 'Running'; $i++) { Start-Sleep -Seconds 2 }
@@ -241,6 +247,15 @@ try {
     $Endereco = 'https://' + $EnderecoUsuarios + ':' + $Porta + '/'
     $Usuario = "@echo off`r`nrem SisCMJ - prepara um computador de usuario (rodar como administrador, uma vez)`r`ncd /d `"%~dp0`"`r`npowershell -NoProfile -Command `"Get-ChildItem Cert:\LocalMachine\Root | Where-Object { `$_.Subject -eq 'CN=SisCMJ' } | Remove-Item`"`r`ncertutil -addstore -f Root SisCMJ_certificado.cer`r`npowershell -NoProfile -Command `"`$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('CommonDesktopDirectory')+'\SisCMJ.lnk'); `$s.TargetPath='" + $Endereco + "'; `$s.Save()`"`r`necho Pronto: abra o atalho SisCMJ na area de trabalho.`r`npause`r`n"
     [System.IO.File]::WriteAllText((Join-Path $PSScriptRoot 'preparar_computador_usuario.cmd'), $Usuario, (New-Object System.Text.ASCIIEncoding))
+
+    # Parametros desta instalacao, para o atualizar.cmd repetir os mesmos (sem senha nenhuma)
+    $Usados = [ordered]@{
+        'NomeServico' = $NomeServico; 'PastaPrograma' = $PastaPrograma; 'PastaArquivos' = $PastaArquivos; 'Instancia' = $Instancia; 'Banco' = $Banco
+        'Porta' = $Porta; 'RedesPermitidas' = ($RedesPermitidas -join ','); 'NomesExtras' = ($NomesExtras -join ','); 'HoraBackupCompleto' = $HoraBackupCompleto
+        'EnderecoUsuarios' = $EnderecoUsuarios; 'GravadoEm' = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+    }
+    [System.IO.File]::WriteAllText((Join-Path $PastaConfig 'instalacao.json'), ($Usados | ConvertTo-Json), (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host ('Parametros desta instalacao guardados em ' + (Join-Path $PastaConfig 'instalacao.json') + ' (usados pelo atualizar.cmd).')
 
     Write-Host ''
     Write-Host 'PRONTO.' -ForegroundColor Green

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Atualização de versão</title>
   <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/40_atualizacao.md (NÃO EDITAR)">
-  <meta name="fonte-hash" content="345dae6decf172e9">
+  <meta name="fonte-hash" content="275f2e056916cbc8">
 </head>
 <body>
 <h2>A regra das versões</h2>
@@ -18,21 +18,37 @@
 <ol>
 <li>Banco (MASTER) → 2. programa (instalador) → 3. conferir. Nunca o programa antes do banco.</li>
 </ol>
+<p>O <code>atualizar.cmd</code> do pacote segue essa ordem sozinho, com backup de segurança antes e volta automática se falhar. O que mudou em cada versão: <code>docs/NOTAS_DA_VERSAO.md</code> (vai para o pacote como <code>NOTAS_DA_VERSAO.txt</code> e fica no banco em <code>SIS.Atualizacao</code>).</p>
 <h2>14. Atualização (versão nova)</h2>
+<p><strong>Atualização em um clique</strong> (desde a versão 1.8, conversa 03h): o pacote traz o <code>atualizar.cmd</code> na raiz, que faz tudo sozinho e volta para a versão anterior se algo falhar.</p>
 <ol>
-<li>No notebook: <code>api\publicar.cmd</code> (ou pedir ao Claude).
+<li>No notebook: escrever a nota da versão em <code>docs/NOTAS_DA_VERSAO.md</code> (seção <code>## &lt;versão do banco&gt;</code>; o publicar recusa sem ela) e rodar <code>api\publicar.cmd</code> (ou pedir ao Claude).
 1a. <strong>Ensaio na máquina virtual (regra de ouro 1)</strong>: a VM <code>SisCMJ-Servidor-Ensaio</code> fica no Hyper-V do notebook, desligada. Scripts em <code>instalacao\ensaio\</code>, todos como administrador:<ul>
 <li><code>ligar_vm_hyperv.cmd</code> (não apertar tecla no boot; entrar como <code>AdminCMJ</code>);</li>
 <li><code>copiar_pacote_vm.cmd</code> (leva o pacote mais novo para <code>C:\SisCMJ_Instalacao\</code> dentro da VM);</li>
-<li>na VM: SSMS › MASTER novo (F5) e <code>instalar_servico.cmd</code> do pacote novo (Terminal como administrador);</li>
-<li>conferir <code>https://localhost:5443/api/saude</code> na VM e uma tela que mudou; se a versão mexe em backup, um ensaio de restauração pela tela;</li>
+<li>na VM: <strong><code>atualizar.cmd</code> do pacote novo</strong> (botão direito › Executar como administrador) e conferir que terminou com <strong>ATUALIZAÇÃO CONCLUÍDA</strong>;</li>
+<li>conferir uma tela que mudou; se a versão mexe em backup, um ensaio de restauração pela tela;</li>
 <li>só depois levar à CMJ. Se a VM sumir ou a avaliação do Windows (90 dias) vencer: <code>criar_vm_hyperv.cmd</code> cria outra, e o roteiro deste documento instala de novo.</li>
 </ul>
 </li>
-<li>Avisar os usuários (o sistema fica fora do ar 1 a 2 minutos).</li>
-<li>No servidor: SSMS › <strong>MASTER novo</strong> no banco SISTEMACMJ (F5). Depois, <strong><code>instalar_servico.cmd</code> do pacote novo</strong> como administrador (atualiza o programa e as tarefas; não perde configuração, licença nem dados).</li>
-<li>Conferir <code>/api/saude</code> e a tela de backups.</li>
+<li>Avisar os usuários (o sistema fica fora do ar de 1 a 3 minutos). O <code>atualizar.cmd</code> mostra quem está usando o sistema antes de começar.</li>
+<li>No servidor: copiar o pacote e rodar o <strong><code>atualizar.cmd</code></strong> (botão direito › Executar como administrador). Ele faz, nesta ordem:<ul>
+<li>confere as versões: <strong>pacote mais velho que o instalado = recusa</strong> (nunca volta versão); mesma versão = pergunta se reinstala; mostra a nota da versão e pede <strong>S</strong> para continuar;</li>
+<li>segura a trava do backup (nenhum backup ou restauração roda no meio);</li>
+<li>para o sistema, faz um <strong>backup de segurança</strong> conferido (<code>&lt;pasta do backup&gt;\Atualizacao\SISTEMACMJ_ANTES_&lt;versão&gt;_&lt;data&gt;.bak</code>; não mexe nas cópias diárias) e guarda o programa atual em <code>C:\SisCMJ\programa_anterior</code>;</li>
+<li>roda o <strong>MASTER pelo <code>sqlcmd</code></strong> (exceção aprovada à regra 37 do PADRAO_SQL) e confere a versão do banco;</li>
+<li>roda o <strong>instalador do pacote com os mesmos parâmetros da instalação</strong> (<code>C:\ProgramData\SisCMJ\instalacao.json</code>, gravado pelo instalador v1.7; numa instalação mais antiga ele pergunta uma vez o endereço dos usuários);</li>
+<li>confere <code>/api/saude</code> (situação ok e as versões novas, até 1 minuto);</li>
+<li>registra no banco (<code>SIS.Atualizacao</code>: versões, tempo fora do ar, resultado e a nota da versão) e faz um backup completo da versão nova.</li>
+<li>⚠️ <strong>Se algo falhar</strong> depois de parar o sistema: <strong>volta sozinho</strong> (restaura o backup de segurança, se o MASTER chegou a rodar; recoloca o programa anterior; religa e confere) e termina com <strong>ATUALIZAÇÃO DESFEITA</strong> e o motivo; o aviso vai também por e-mail (<code>EMAIL_ADMIN_ALERTA</code>). <strong>ATUALIZAÇÃO COM ERRO</strong> = nem a volta funcionou: o Celso resolve pelo SSMS com o backup de segurança e o <code>programa_anterior</code>.</li>
+<li>Precisa do <strong><code>sqlcmd</code></strong> no servidor; sem ele, para antes de mexer em qualquer coisa e avisa (instalar o sqlcmd ou levar no pacote em <code>ferramentas\sqlcmd.exe</code>).</li>
+<li>Registro: <code>instalacao\atualizacao_&lt;data&gt;.log</code> do pacote (cópia em <code>C:\ProgramData\SisCMJ\logs</code>) e a saída do MASTER em <code>instalacao\master_&lt;data&gt;.txt</code>.</li>
+<li>Ensaio da volta (só na VM): <code>atualizar.cmd -EnsaioFalha MASTER</code> ou <code>-EnsaioFalha SAUDE</code>.</li>
+</ul>
+</li>
+<li>Conferir a tela de backups. O backup de segurança pode ser apagado depois de alguns dias.</li>
 <li>⚠️ Depois de cada atualização de versão, a restauração pela tela <strong>só volta até o momento da atualização</strong> (backups de versão anterior aparecem como indisponíveis). Voltar para antes: só com o Celso, restaurando pelo SSMS e rodando o MASTER de novo.</li>
+<li><strong>Emergência, sem o <code>atualizar.cmd</code></strong> (o jeito antigo): SSMS › MASTER novo no banco SISTEMACMJ (F5) e depois <code>instalacao\instalar_servico.cmd</code> do pacote novo como administrador.</li>
 </ol>
 </body>
 </html>

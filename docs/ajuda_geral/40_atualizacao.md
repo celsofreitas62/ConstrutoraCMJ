@@ -1,4 +1,4 @@
-<!-- pagina: atualizacao | titulo: Atualização de versão | resumo: Como levar uma versão nova à CMJ: pacote, ensaio na VM, MASTER, instalador e o limite da restauração. | palavras: atualizar versao nova master publicar pacote instalador vm ensaio banco desatualizado 1.7 -->
+﻿<!-- pagina: atualizacao | titulo: Atualização de versão | resumo: Como levar uma versão nova à CMJ: pacote, ensaio na VM, MASTER, instalador e o limite da restauração. | palavras: atualizar versao nova master publicar pacote instalador vm ensaio banco desatualizado atualizar.cmd um clique volta automatica sqlcmd notas da versao 1.8 -->
 
 ## A regra das versões
 
@@ -10,5 +10,7 @@
 ## Ordem certa (PADRAO_SQL, regra 57)
 
 1. Banco (MASTER) → 2. programa (instalador) → 3. conferir. Nunca o programa antes do banco.
+
+O `atualizar.cmd` do pacote segue essa ordem sozinho, com backup de segurança antes e volta automática se falhar. O que mudou em cada versão: `docs/NOTAS_DA_VERSAO.md` (vai para o pacote como `NOTAS_DA_VERSAO.txt` e fica no banco em `SIS.Atualizacao`).
 
 <!-- incluir: ../Roteiro_Instalacao_Servidor.md # 14. -->

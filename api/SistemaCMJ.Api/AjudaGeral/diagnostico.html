@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Diagnóstico</title>
   <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/80_diagnostico.md (NÃO EDITAR)">
-  <meta name="fonte-hash" content="6b7f62c91cc84302">
+  <meta name="fonte-hash" content="44dadc73f456781b">
 </head>
 <body>
 <h2>Endereço de saúde</h2>
@@ -73,6 +73,10 @@ SELECT TOP 20 * FROM SIS.Log_Passo WHERE ROTINA = N'[SIS].[SIS_Ajuda_Geral_Obter
 <tr>
 <td><code>instalacao\instalacao_&lt;data&gt;.log</code></td>
 <td>tudo o que o instalador fez</td>
+</tr>
+<tr>
+<td><code>instalacao\atualizacao_&lt;data&gt;.log</code> e <code>master_&lt;data&gt;.txt</code></td>
+<td>cada atualização em um clique (e a saída do MASTER); histórico no banco: <code>SELECT * FROM SIS.Atualizacao ORDER BY ID_ATUALIZACAO DESC</code></td>
 </tr>
 <tr>
 <td><code>C:\ProgramData\SisCMJ\logs\</code></td>

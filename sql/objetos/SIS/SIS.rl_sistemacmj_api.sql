@@ -10,7 +10,8 @@
                 Proteções a mais:
                   - DENY de INSERT/UPDATE/DELETE em SIS.Auditoria (além da
                     trigger de proteção);
-                  - DENY de EXECUTE no gerador de triggers (só instalação).
+                  - DENY de EXECUTE no gerador de triggers (só instalação);
+                  - DENY de EXECUTE no registro de atualização (só o atualizar.cmd).
                 O login e o usuário do banco (ex.: sistemacmj_api) são
                 criados na instalação do servidor (instalador / MASTER), que
                 também coloca o usuário neste papel: a senha nunca fica em
@@ -19,6 +20,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02d).
+    v1.1 (22/11/2026) - DENY em SIS_Atualizacao_Registrar (etapa 03h).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -39,4 +41,6 @@ GO
 
 DENY INSERT, UPDATE, DELETE ON [SIS].[Auditoria] TO [rl_sistemacmj_api];
 DENY EXECUTE ON [SIS].[SIS_Auditoria_Trigger_Gerar] TO [rl_sistemacmj_api];
+IF OBJECT_ID(N'[SIS].[SIS_Atualizacao_Registrar]', N'P') IS NOT NULL
+    DENY EXECUTE ON [SIS].[SIS_Atualizacao_Registrar] TO [rl_sistemacmj_api];
 GO

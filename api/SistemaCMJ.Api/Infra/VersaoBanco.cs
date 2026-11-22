@@ -18,7 +18,7 @@ namespace SistemaCMJ.Api.Infra;
 
 public sealed class VersaoBanco(Banco banco, ILogger<VersaoBanco> logger)
 {
-    public const string VersaoExigida = "1.7";   // 1.7: ajuda exclusiva do administrador geral (22/11/2026, 03g)
+    public const string VersaoExigida = "1.8";   // 1.8: atualização em um clique (22/11/2026, 03h)
 
     private readonly SemaphoreSlim trava = new(1, 1);
     private DateTime conferidaEm = DateTime.MinValue;

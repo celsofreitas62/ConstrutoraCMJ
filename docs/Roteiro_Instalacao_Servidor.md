@@ -1,6 +1,6 @@
-# Roteiro de instalação do SisCMJ no servidor da CMJ
+﻿# Roteiro de instalação do SisCMJ no servidor da CMJ
 
-Versão 1.1 (22/11/2026, conversa 03e). Versão 1.0 de 20/11/2026 (03d2), escrita a partir do ensaio no notebook; v1.1 com os achados do ensaio num Windows limpo (máquina virtual, 3d-C). **Manter atualizado a cada mudança no instalador, no MASTER ou no modo de trabalhar.**
+Versão 1.2 (22/11/2026, conversa 03h: atualização em um clique, item 14). Versão 1.1 (22/11/2026, conversa 03e). Versão 1.0 de 20/11/2026 (03d2), escrita a partir do ensaio no notebook; v1.1 com os achados do ensaio num Windows limpo (máquina virtual, 3d-C). **Manter atualizado a cada mudança no instalador, no MASTER ou no modo de trabalhar.**
 
 Quem executa: **Celso**, como administrador do servidor. Tempo estimado: **2 a 3 horas** na primeira instalação (sem a migração do Access, que é a virada, fase 8).
 
@@ -173,23 +173,38 @@ O que já está decidido e entra no roteiro da virada:
 
 ## 14. Atualização (versão nova)
 
-1. No notebook: `api\publicar.cmd` (ou pedir ao Claude).
+**Atualização em um clique** (desde a versão 1.8, conversa 03h): o pacote traz o `atualizar.cmd` na raiz, que faz tudo sozinho e volta para a versão anterior se algo falhar.
+
+1. No notebook: escrever a nota da versão em `docs/NOTAS_DA_VERSAO.md` (seção `## <versão do banco>`; o publicar recusa sem ela) e rodar `api\publicar.cmd` (ou pedir ao Claude).
 1a. **Ensaio na máquina virtual (regra de ouro 1)**: a VM `SisCMJ-Servidor-Ensaio` fica no Hyper-V do notebook, desligada. Scripts em `instalacao\ensaio\`, todos como administrador:
    - `ligar_vm_hyperv.cmd` (não apertar tecla no boot; entrar como `AdminCMJ`);
    - `copiar_pacote_vm.cmd` (leva o pacote mais novo para `C:\SisCMJ_Instalacao\` dentro da VM);
-   - na VM: SSMS › MASTER novo (F5) e `instalar_servico.cmd` do pacote novo (Terminal como administrador);
-   - conferir `https://localhost:5443/api/saude` na VM e uma tela que mudou; se a versão mexe em backup, um ensaio de restauração pela tela;
+   - na VM: **`atualizar.cmd` do pacote novo** (botão direito › Executar como administrador) e conferir que terminou com **ATUALIZAÇÃO CONCLUÍDA**;
+   - conferir uma tela que mudou; se a versão mexe em backup, um ensaio de restauração pela tela;
    - só depois levar à CMJ. Se a VM sumir ou a avaliação do Windows (90 dias) vencer: `criar_vm_hyperv.cmd` cria outra, e o roteiro deste documento instala de novo.
-2. Avisar os usuários (o sistema fica fora do ar 1 a 2 minutos).
-3. No servidor: SSMS › **MASTER novo** no banco SISTEMACMJ (F5). Depois, **`instalar_servico.cmd` do pacote novo** como administrador (atualiza o programa e as tarefas; não perde configuração, licença nem dados).
-4. Conferir `/api/saude` e a tela de backups.
+2. Avisar os usuários (o sistema fica fora do ar de 1 a 3 minutos). O `atualizar.cmd` mostra quem está usando o sistema antes de começar.
+3. No servidor: copiar o pacote e rodar o **`atualizar.cmd`** (botão direito › Executar como administrador). Ele faz, nesta ordem:
+   - confere as versões: **pacote mais velho que o instalado = recusa** (nunca volta versão); mesma versão = pergunta se reinstala; mostra a nota da versão e pede **S** para continuar;
+   - segura a trava do backup (nenhum backup ou restauração roda no meio);
+   - para o sistema, faz um **backup de segurança** conferido (`<pasta do backup>\Atualizacao\SISTEMACMJ_ANTES_<versão>_<data>.bak`; não mexe nas cópias diárias) e guarda o programa atual em `C:\SisCMJ\programa_anterior`;
+   - roda o **MASTER pelo `sqlcmd`** (exceção aprovada à regra 37 do PADRAO_SQL) e confere a versão do banco;
+   - roda o **instalador do pacote com os mesmos parâmetros da instalação** (`C:\ProgramData\SisCMJ\instalacao.json`, gravado pelo instalador v1.7; numa instalação mais antiga ele pergunta uma vez o endereço dos usuários);
+   - confere `/api/saude` (situação ok e as versões novas, até 1 minuto);
+   - registra no banco (`SIS.Atualizacao`: versões, tempo fora do ar, resultado e a nota da versão) e faz um backup completo da versão nova.
+   - ⚠️ **Se algo falhar** depois de parar o sistema: **volta sozinho** (restaura o backup de segurança, se o MASTER chegou a rodar; recoloca o programa anterior; religa e confere) e termina com **ATUALIZAÇÃO DESFEITA** e o motivo; o aviso vai também por e-mail (`EMAIL_ADMIN_ALERTA`). **ATUALIZAÇÃO COM ERRO** = nem a volta funcionou: o Celso resolve pelo SSMS com o backup de segurança e o `programa_anterior`.
+   - Precisa do **`sqlcmd`** no servidor; sem ele, para antes de mexer em qualquer coisa e avisa (instalar o sqlcmd ou levar no pacote em `ferramentas\sqlcmd.exe`).
+   - Registro: `instalacao\atualizacao_<data>.log` do pacote (cópia em `C:\ProgramData\SisCMJ\logs`) e a saída do MASTER em `instalacao\master_<data>.txt`.
+   - Ensaio da volta (só na VM): `atualizar.cmd -EnsaioFalha MASTER` ou `-EnsaioFalha SAUDE`.
+4. Conferir a tela de backups. O backup de segurança pode ser apagado depois de alguns dias.
 5. ⚠️ Depois de cada atualização de versão, a restauração pela tela **só volta até o momento da atualização** (backups de versão anterior aparecem como indisponíveis). Voltar para antes: só com o Celso, restaurando pelo SSMS e rodando o MASTER de novo.
+6. **Emergência, sem o `atualizar.cmd`** (o jeito antigo): SSMS › MASTER novo no banco SISTEMACMJ (F5) e depois `instalacao\instalar_servico.cmd` do pacote novo como administrador.
 
 ## 15. Se algo der errado
 
 | Onde olhar | O quê |
 |---|---|
 | `instalacao\instalacao_<data>.log` | tudo o que o instalador fez |
+| `instalacao\atualizacao_<data>.log` e `master_<data>.txt` | cada atualização em um clique (e a saída do MASTER); histórico no banco: `SELECT * FROM SIS.Atualizacao ORDER BY ID_ATUALIZACAO DESC` |
 | `C:\ProgramData\SisCMJ\logs\` | registro da API (erros, avisos, pedidos de restauração) |
 | `<pasta de backup>\backup.log` | cada backup, teste e restauração, passo a passo |
 | SSMS: `SELECT TOP 50 * FROM SIS.Log_Erro ORDER BY ID_LOG_ERRO DESC` | erros dentro do banco (a tela Log de erros vem na fase 4) |
