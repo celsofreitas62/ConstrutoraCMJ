@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Ajuda do administrador geral</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/sis/ajuda-geral.js" defer></script>
+</head>
+<body data-tela="sis/ajuda-geral.html" data-ajuda="sis-ajuda-geral" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Sistema › Configuração › Ajuda do administrador geral</div>
+          <h1>Ajuda do administrador geral</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="area-lista">
+        <aside class="cartao ajuda-geral-indice">
+          <label class="campo" for="busca">Procurar
+            <input type="search" id="busca" maxlength="100" autocomplete="off" placeholder="Ex.: licença, certificado, saúde"
+                   data-dica="Procura nos títulos e no texto de todas as páginas. Não precisa de acento. Opcional.">
+          </label>
+          <nav id="lista" class="ajuda-geral-lista" aria-label="Páginas da ajuda"></nav>
+        </aside>
+        <article class="cartao ajuda-geral-pagina" id="pagina" aria-live="polite">
+          <p class="suave">Escolha uma página à esquerda.</p>
+        </article>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

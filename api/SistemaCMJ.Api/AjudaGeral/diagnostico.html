@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Diagnóstico</title>
+  <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/80_diagnostico.md (NÃO EDITAR)">
+  <meta name="fonte-hash" content="bfdbefb5a2f1603a">
+</head>
+<body>
+<h2>Endereço de saúde</h2>
+<p>Abrir <strong><code>https://localhost:5443/api/saude</code></strong> no servidor (ou com o endereço dos usuários, de outro computador). Não precisa de login.</p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>O que diz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>situacao</code></td>
+<td><strong><code>ok</code></strong>; <code>banco_fora</code> (o banco não respondeu); <code>banco_desatualizado</code> (banco e programa em versões diferentes); <code>licenca_invalida</code></td>
+</tr>
+<tr>
+<td><code>versao</code></td>
+<td>versão do programa</td>
+</tr>
+<tr>
+<td><code>versaoBanco</code> / <code>versaoBancoExigida</code></td>
+<td>versão gravada no banco e a que o programa precisa (têm de ser iguais)</td>
+</tr>
+<tr>
+<td><code>licenca</code></td>
+<td><code>ok</code> ou o motivo da recusa</td>
+</tr>
+<tr>
+<td><code>codigoServidor</code></td>
+<td>código deste servidor, para gerar a licença</td>
+</tr>
+<tr>
+<td><code>banco</code>, <code>tempoBancoMs</code></td>
+<td>se o banco respondeu e em quanto tempo</td>
+</tr>
+</tbody>
+</table>
+<p>A resposta vem com o código <strong>200</strong> quando está tudo bem e <strong>503</strong> quando não está (serve para monitoramento automático).</p>
+<h2>O que fazer em cada situação</h2>
+<ul>
+<li><strong><code>banco_fora</code></strong>: conferir o serviço do SQL Server (<code>services.msc</code> › <strong>SQL Server (SQL2025)</strong>) e o espaço em disco; depois o registro da API.</li>
+<li><strong><code>banco_desatualizado</code></strong>: o programa foi atualizado sem o MASTER (ou o contrário). Rodar o <strong>MASTER da mesma versão</strong> no banco <code>SISTEMACMJ</code> (roteiro, item 14). Enquanto isso, só <code>/api/saude</code> responde e as telas mostram o aviso.</li>
+<li><strong><code>licenca_invalida</code></strong>: ver a página <strong>Licença</strong>.</li>
+<li><strong>Não abre nada</strong> (nem <code>/api/saude</code>): serviço <strong>SisCMJ</strong> parado (<code>services.msc</code>), endereço sem <code>https://</code> (dá "não enviou dados") ou firewall/rede Pública (roteiro, item 2).</li>
+<li><strong>Erro numa tela</strong> ("O erro foi registrado para análise"): o texto técnico está em <code>SIS.Log_Erro</code> (abaixo). O usuário nunca vê o detalhe.</li>
+</ul>
+<h2>Registros</h2>
+<ul>
+<li><strong>API</strong>: um arquivo por dia em <code>C:\ProgramData\SisCMJ\logs\</code> (guardados 30 dias; parâmetros <code>Registro:Pasta</code> e <code>Registro:DiasManter</code> da configuração do servidor).</li>
+<li><strong>Banco</strong>: <code>SIS.Log_Erro</code> (erros) e <code>SIS.Log_Passo</code> (passo a passo das rotinas e as consultas a esta ajuda).</li>
+</ul>
+<pre><code class="language-sql">SELECT TOP 50 * FROM SIS.Log_Erro ORDER BY ID_LOG_ERRO DESC;
+SELECT TOP 50 * FROM SIS.Log_Passo ORDER BY ID_LOG_PASSO DESC;
+SELECT TOP 20 * FROM SIS.Log_Passo WHERE ROTINA = N'[SIS].[SIS_Ajuda_Geral_Obter]' ORDER BY ID_LOG_PASSO DESC;  -- quem abriu esta ajuda
+</code></pre>
+<h2>15. Se algo der errado</h2>
+<table>
+<thead>
+<tr>
+<th>Onde olhar</th>
+<th>O quê</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>instalacao\instalacao_&lt;data&gt;.log</code></td>
+<td>tudo o que o instalador fez</td>
+</tr>
+<tr>
+<td><code>C:\ProgramData\SisCMJ\logs\</code></td>
+<td>registro da API (erros, avisos, pedidos de restauração)</td>
+</tr>
+<tr>
+<td><code>&lt;pasta de backup&gt;\backup.log</code></td>
+<td>cada backup, teste e restauração, passo a passo</td>
+</tr>
+<tr>
+<td>SSMS: <code>SELECT TOP 50 * FROM SIS.Log_Erro ORDER BY ID_LOG_ERRO DESC</code></td>
+<td>erros dentro do banco (a tela Log de erros vem na fase 4)</td>
+</tr>
+<tr>
+<td><code>services.msc</code></td>
+<td>serviço <strong>SisCMJ</strong> (iniciar/parar)</td>
+</tr>
+<tr>
+<td>Agendador de Tarefas › tarefas <code>SisCMJ (SisCMJ) - ...</code></td>
+<td>backup completo, log, teste, restauração (pedidos)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Desinstalar (programa, serviço, firewall, tarefas; <strong>não</strong> apaga o banco nem os backups): <code>instalacao\desinstalar_servico.cmd</code> como administrador.</li>
+<li>Restaurar sem a tela (servidor sem o serviço): SSMS › restaurar o último <code>_COMPLETO_*.bak</code> e os <code>_LOG_*.trn</code> seguintes da pasta de backup.</li>
+</ul>
+</body>
+</html>

@@ -29,7 +29,9 @@
 //                  no desenvolvimento ficam soltas em wwwroot;
 //                - primeiro acesso da instalação, só no próprio servidor
 //                  (Endpoints/InstalacaoEndpoints.cs, /instalacao.html);
-//                - licença conferida (Infra/LicencaServico.cs).
+//                - licença conferida (Infra/LicencaServico.cs);
+//                - ajuda exclusiva do administrador geral, só pela API
+//                  (Endpoints/AjudaGeralEndpoints.cs; 22/11/2026, etapa 03g).
 // =============================================================================
 using SistemaCMJ.Api.Endpoints;
 using SistemaCMJ.Api.Ferramentas;
@@ -134,6 +136,7 @@ MigracaoEndpoints.Mapear(app);
 BackupEndpoints.Mapear(app);
 SaudeEndpoints.Mapear(app);
 InstalacaoEndpoints.Mapear(app);
+AjudaGeralEndpoints.Mapear(app, telasEmbutidas);
 
 // Rota /api que não existe: resposta padrão (não cai na página).
 app.MapFallback("/api/{**resto}", () => Results.NotFound());

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Licença</title>
+  <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/30_licenca.md (NÃO EDITAR)">
+  <meta name="fonte-hash" content="f1eb0b3d3586d520">
+</head>
+<body>
+<h2>Como funciona</h2>
+<ul>
+<li>A licença é o arquivo <strong><code>licenca.lic</code></strong>, assinado com a <strong>chave privada</strong> do Celso (ECDSA). O programa tem embutida só a <strong>chave pública</strong>: confere a assinatura, mas não consegue gerar licença.</li>
+<li>A licença leva: razão social, <strong>CNPJ</strong> (um só), nome fantasia, <strong>código do servidor</strong>, <strong>módulos liberados</strong>, data de emissão e observação. <strong>Não tem data de validade</strong> (decisão de 20/11/2026).</li>
+<li>Ela fica <strong>presa ao servidor</strong>: o código do servidor sai do próprio computador. Copiada para outra máquina, não vale.</li>
+<li>O sistema confere a licença <strong>ao subir, a cada login e a cada minuto</strong>. Trocar o arquivo basta: vale em até 1 minuto, sem reiniciar.</li>
+<li><strong>Licença inválida ou ausente</strong>: só respondem <code>/api/saude</code>, a logomarca do login e o primeiro acesso. As telas mostram o motivo e o <strong>código deste servidor</strong>, e as rotinas automáticas não rodam.</li>
+<li><strong>Módulos</strong>: aparece para uso só o que está <strong>na licença e habilitado</strong> (chave <code>HABILITADO</code> do módulo e da tela, que só o nível 2 liga). O módulo <code>SIS</code> vai sempre.</li>
+</ul>
+<h2>Onde fica cada coisa</h2>
+<table>
+<thead>
+<tr>
+<th>O quê</th>
+<th>Onde</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gerador (só no notebook do Celso)</td>
+<td><code>api\gerar_licenca.cmd</code></td>
+</tr>
+<tr>
+<td>Chave privada (cifrada com senha)</td>
+<td><code>%USERPROFILE%\SisCMJ_Chave\chave_privada_siscmj.pem</code>, com cópia no Google Drive do Celso</td>
+</tr>
+<tr>
+<td>Senha da chave privada</td>
+<td>gerenciador de senhas do Celso, <strong>fora</strong> do Google Drive</td>
+</tr>
+<tr>
+<td>Licenças geradas</td>
+<td><code>%USERPROFILE%\SisCMJ_Chave\licencas\&lt;CNPJ&gt;_&lt;servidor&gt;_&lt;data&gt;.lic</code></td>
+</tr>
+<tr>
+<td>Licença no servidor</td>
+<td><code>C:\ProgramData\SisCMJ\licenca.lic</code></td>
+</tr>
+<tr>
+<td>Licença de desenvolvimento (notebook)</td>
+<td><code>api\licenca\licenca.lic</code></td>
+</tr>
+</tbody>
+</table>
+<p>⚠️ <strong>Nunca levar o gerador nem a chave privada para o servidor.</strong> Sem a chave privada e a senha não se gera licença nova (regra de ouro 3 do roteiro: guardar junto com a chave do BitLocker).</p>
+<h2>O gerador (<code>api\gerar_licenca.cmd</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Opção</th>
+<th>Para quê</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1) Criar o par de chaves</td>
+<td>Só uma vez na vida. Já existindo chave, o gerador recusa: criar outra invalidaria todas as licenças emitidas.</td>
+</tr>
+<tr>
+<td>2) Gerar uma licença</td>
+<td>Pede a senha da chave, razão social, CNPJ, nome fantasia, <strong>código do servidor</strong>, módulos (Enter = todos) e observação. Confere a assinatura antes de gravar.</td>
+</tr>
+<tr>
+<td>3) Código deste computador</td>
+<td>Mostra o código do notebook (para a licença de desenvolvimento).</td>
+</tr>
+<tr>
+<td>4) Conferir um arquivo de licença</td>
+<td>Diz se o arquivo é válido e mostra os dados dele (CNPJ, servidor, módulos, emissão).</td>
+</tr>
+</tbody>
+</table>
+<h2>Situações comuns</h2>
+<ul>
+<li><strong>Instalação nova</strong>: o instalador grava o código em <code>instalacao\codigo_servidor.txt</code>; gerar a licença com ele (passo 7 abaixo).</li>
+<li><strong>Troca de servidor, de placa-mãe ou Windows reinstalado</strong>: o código muda. Abrir o sistema no servidor novo (a tela bloqueada mostra o código) ou ler <code>/api/saude</code> (campo <code>codigoServidor</code>), gerar uma licença nova com esse código e copiar para <code>C:\ProgramData\SisCMJ\licenca.lic</code>.</li>
+<li><strong>Liberar ou tirar um módulo</strong>: gerar uma licença nova com a lista de módulos e trocar o arquivo. Depois, habilitar o módulo e as telas (nível 2).</li>
+<li><strong>Conferir o que está instalado</strong>: <code>/api/saude</code> mostra <code>licenca</code> (ok ou o motivo) e <code>codigoServidor</code>; a opção 4 do gerador lê um arquivo <code>.lic</code>.</li>
+</ul>
+<h2>7. Licença</h2>
+<ul>
+<li>☐ Copiar o <strong>código do servidor</strong> de <code>codigo_servidor.txt</code>.</li>
+<li>☐ No notebook: <code>api\gerar_licenca.cmd</code> › opção <strong>2) Gerar uma licença</strong> › senha da chave privada › código do servidor, <strong>CNPJ 25.686.528/0001-97</strong>, razão social <strong>Construtora Marcílio Judice Ltda.</strong>, módulos liberados (sem validade). ⚠️ Nunca levar o gerador nem a chave privada para o servidor.</li>
+<li>☐ Copiar o arquivo gerado para o servidor como <strong><code>C:\ProgramData\SisCMJ\licenca.lic</code></strong>. Vale em até 1 minuto, sem reiniciar. Sem licença, o sistema abre bloqueado mostrando o código do servidor.</li>
+</ul>
+</body>
+</html>

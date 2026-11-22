@@ -18,7 +18,7 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 
 ## 3. Ajuda
 
-9. Toda tela tem o botão "?" (CLAUDE.md seção 3 item 9). Páginas de ajuda exclusivas do administrador geral (instalação, licença, parâmetros, comandos) só são entregues pela API ao nível 2.
+9. Toda tela tem o botão "?" (CLAUDE.md seção 3 item 9). Páginas de ajuda exclusivas do administrador geral (instalação, licença, parâmetros, comandos) só são entregues pela API ao nível 2 (22/11/2026, 03g): ficam em `AjudaGeral` (fora de `wwwroot`, embutidas, sem endereço direto), saem só por `/api/ajuda-geral/<página>`, e a tela exclusiva aponta o "?" para elas com `data-ajuda="geral:<página>"`. São geradas de `docs/ajuda_geral/` (fonte única, nunca editar o HTML gerado; `api/ferramentas/montar_ajuda.py`). A ajuda comum (`wwwroot/ajuda`) continua sem login (decisão do Celso, 22/11/2026) e por isso **nunca** leva informação de administração.
 
 ## 4. Dica ao passar o mouse (pedido do Celso, 16/11/2026)
 

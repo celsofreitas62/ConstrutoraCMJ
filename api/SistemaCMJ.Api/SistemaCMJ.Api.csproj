@@ -8,7 +8,8 @@
     Microsoft.Extensions.Hosting.WindowsServices (MIT, Microsoft; serviço do Windows; 20/11/2026),
     Microsoft.Extensions.FileProviders.Embedded (MIT, Microsoft; telas embutidas no executável; 20/11/2026).
     wwwroot vai como recurso embutido (manifesto) e NÃO é copiado na publicação:
-    no servidor não existe pasta de telas para trocar.
+    no servidor não existe pasta de telas para trocar. AjudaGeral (ajuda do
+    administrador geral, 03g) também vai só embutida e sai só pela API.
     Version: versão do programa (aparece em /api/saude e no registro).
   -->
   <PropertyGroup>
@@ -32,6 +33,10 @@
 
   <ItemGroup>
     <EmbeddedResource Include="wwwroot\**" Exclude="wwwroot\**\desktop.ini" />
+    <!-- Ajuda do administrador geral (03g): só embutida; nunca vai solta para a publicação. -->
+    <Content Remove="AjudaGeral\**" />
+    <None Remove="AjudaGeral\**" />
+    <EmbeddedResource Include="AjudaGeral\**" Exclude="AjudaGeral\**\desktop.ini" />
     <Content Update="wwwroot\**" CopyToPublishDirectory="Never" />
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
   </ItemGroup>

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Instalação no servidor</title>
+  <meta name="gerado-por" content="api/ferramentas/montar_ajuda.py a partir de docs/ajuda_geral/10_instalacao.md (NÃO EDITAR)">
+  <meta name="fonte-hash" content="e4044eaeac2f49cf">
+</head>
+<body>
+<p>Esta página é o <strong>roteiro de instalação</strong> (<code>docs/Roteiro_Instalacao_Servidor.md</code>) mostrado dentro do sistema. Ele é a fonte única: qualquer correção é feita no roteiro e a página é gerada de novo.</p>
+<p>Versão 1.1 (22/11/2026, conversa 03e). Versão 1.0 de 20/11/2026 (03d2), escrita a partir do ensaio no notebook; v1.1 com os achados do ensaio num Windows limpo (máquina virtual, 3d-C). <strong>Manter atualizado a cada mudança no instalador, no MASTER ou no modo de trabalhar.</strong></p>
+<p>Quem executa: <strong>Celso</strong>, como administrador do servidor. Tempo estimado: <strong>2 a 3 horas</strong> na primeira instalação (sem a migração do Access, que é a virada, fase 8).</p>
+<p>Convenções: <code>[ ]</code> = marcar quando feito. <strong>⚠️</strong> = ponto em que um erro dá trabalho para desfazer.</p>
+<h2>Regras de ouro (pedido do Celso, 22/11/2026)</h2>
+<ol>
+<li><strong>Ensaiar toda versão nova na máquina virtual antes de levar à CMJ.</strong> Leva uns 10 minutos com os scripts prontos (como fazer: item 14).</li>
+<li><strong>Pedir IP fixo e rede Privada ao técnico como pré-requisito</strong>, antes de marcar o dia da instalação (item 1). Sem isso, os usuários podem não conseguir entrar no sistema.</li>
+<li><strong>Guardar a chave do BitLocker do servidor junto com a chave da licença.</strong> As duas são as "chaves de casa" do sistema: sem a do BitLocker, uma troca de placa ou de disco pode deixar o banco e os backups ilegíveis; sem a da licença, não se gera licença nova. Lugar: gerenciador de senhas do Celso + cópia no Google Drive dele (como a chave da licença) e uma cópia impressa guardada pela CMJ (item 2).</li>
+</ol>
+<hr>
+<h2>0. Visão geral</h2>
+<table>
+<thead>
+<tr>
+<th>Etapa</th>
+<th>Onde</th>
+<th>O quê</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>notebook do Celso</td>
+<td>gerar o pacote, separar senhas, conferir pendências da CMJ</td>
+</tr>
+<tr>
+<td>2</td>
+<td>servidor</td>
+<td>preparar o Windows (nome, IP fixo, energia, discos)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>servidor</td>
+<td>instalar SQL Server 2025 Express, SSMS e .NET 10</td>
+</tr>
+<tr>
+<td>4</td>
+<td>servidor</td>
+<td>copiar o pacote</td>
+</tr>
+<tr>
+<td>5</td>
+<td>servidor (SSMS)</td>
+<td>criar o banco, rodar o MASTER, ajustar parâmetros</td>
+</tr>
+<tr>
+<td>6</td>
+<td>servidor</td>
+<td>instalar o serviço (instalador como administrador)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>notebook → servidor</td>
+<td>licença</td>
+</tr>
+<tr>
+<td>8</td>
+<td>servidor</td>
+<td>primeiro acesso (senhas dos administradores)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>servidor</td>
+<td>e-mail do sistema</td>
+</tr>
+<tr>
+<td>10</td>
+<td>computadores dos usuários</td>
+<td>certificado e atalho</td>
+</tr>
+<tr>
+<td>11</td>
+<td>servidor e um computador de usuário</td>
+<td>conferências finais (inclui um ensaio de restauração)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>com o técnico</td>
+<td>acesso de fora (VPN)</td>
+</tr>
+<tr>
+<td>13</td>
+<td>fase 8</td>
+<td>migração do Access e virada</td>
+</tr>
+<tr>
+<td>14</td>
+<td>sempre que houver versão nova</td>
+<td>atualização</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>1. Antes de ir (no notebook)</h2>
+<ul>
+<li>☐ <strong>Pacote atualizado</strong>: <code>api\publicar.cmd</code> (ou pedir ao Claude). Sai em <code>C:\SisCMJ_Publicacao\SisCMJ_&lt;versão&gt;_&lt;data&gt;\</code> com <code>programa\</code>, <code>sql\</code> (00_Criar_Banco, MASTER, MIGRACAO), <code>instalacao\</code>, <code>identidade\</code> e <code>LEIA-ME.txt</code>. Conferir no <code>LEIA-ME.txt</code> a versão do programa e do banco.</li>
+<li>☐ Ensaio do mesmo pacote no notebook (<code>instalacao\ensaio\ensaio_instalar_notebook.cmd</code>, como administrador) sem erro.</li>
+<li>☐ <strong>Senhas à mão</strong> (gerenciador de senhas, nunca em arquivo na pasta do Drive): administrador do Windows do servidor; senha da chave privada da licença; senha de app do Gmail da CMJ (item 9); as senhas que você vai definir para <code>celso</code> e <code>admin</code> no primeiro acesso.</li>
+<li>☐ <strong>Pendências da CMJ resolvidas ou aceitas</strong> (CLAUDE.md, seção 6):<ul>
+<li>questionário do técnico (<code>CashBookCMJ/Preparacao_Servidor_TI_CMJ.docx</code>): IP fixo, rede, firewall do roteador, VPN, sincronização do Google Drive;</li>
+<li><strong>Gmail <code>construtora.m.judice@gmail.com</code> com verificação em duas etapas ligada</strong> e uma <strong>senha de app</strong> criada para o SisCMJ (sem isso o Gmail não aceita envio por programa);</li>
+<li><strong>pré-requisito para marcar o dia (regra de ouro 2)</strong>: o técnico confirmou o <strong>IP fixo</strong> do servidor e que a rede dele fica como <strong>Privada</strong>; e respondeu se o <strong>nome do servidor é achado</strong> pelos outros computadores (senão, instalar com <code>-EnderecoUsuarios &lt;IP fixo&gt;</code>, item 6);</li>
+<li>nobreak (responsabilidade da CMJ);</li>
+<li>CNPJ da CMJ para a licença: <strong>25.686.528/0001-97</strong> (Construtora Marcílio Judice Ltda.).</li>
+</ul>
+</li>
+<li>☐ Forma de levar o pacote ao servidor: pasta do Google Drive ou cópia pela rede/acesso remoto (pen drive não é usado).</li>
+</ul>
+<h2>2. Preparar o servidor (Windows 11 Pro; Ryzen 5, 16 GB, SSD 240 GB + HD 1 TB)</h2>
+<ul>
+<li>☐ Windows atualizado (Windows Update até não ter mais nada) e reiniciado.</li>
+<li>☐ Entrar com um usuário <strong>administrador</strong>.</li>
+<li>☐ <strong>Nome do computador</strong> definitivo (ex.: <code>SERVIDOR-CMJ</code>). ⚠️ Trocar o nome depois exige refazer o certificado (instalador de novo) e o atalho dos usuários.</li>
+<li>☐ <strong>IP fixo</strong> (no Windows ou reserva no roteador, com o técnico). Anotar: IP <strong><em>_</em></strong>_____. Fazer <strong>antes</strong> do instalador (item 6): o certificado grava os IPs do servidor.</li>
+<li>☐ <strong>Rede como Privada</strong> (Configurações › Rede e Internet › a conexão › Tipo de perfil de rede › <strong>Rede privada</strong>). O Windows marca rede nova como <strong>Pública</strong>, e aí o firewall não deixa os usuários entrarem (achado no ensaio 3d-C; o instalador v1.6 para com aviso se encontrar rede Pública).</li>
+<li>☐ <strong>O nome do servidor é achado na rede?</strong> De outro computador da CMJ, abrir o Prompt de Comando e rodar <code>ping &lt;nome do servidor&gt;</code>. Se responder, os usuários usam o nome. Se der "não pôde encontrar o host" (comum em rede pequena; aconteceu no ensaio), usar o <strong>IP fixo</strong> no item 6 (<code>-EnderecoUsuarios &lt;IP fixo&gt;</code>) ou pedir ao técnico para cadastrar o nome no roteador/DNS. Anotar a escolha: <strong><em>_</em></strong>_____.</li>
+<li>☐ Energia: <strong>nunca suspender nem hibernar</strong> (Configurações › Sistema › Energia); o disco não desliga. Ligar sozinho depois de falta de luz, se a placa permitir (BIOS).</li>
+<li>☐ Discos: SSD = Windows, SQL Server e banco; <strong>HD de 1 TB = backups, na pasta <code>D:\SisCMJ_Backup</code></strong> (decidido pelo Celso em 20/11/2026). Backup em outro disco protege contra a falha do SSD. Conferir a letra do HD no servidor; se não for <code>D:</code>, ajustar no parâmetro <code>BACKUP_PASTA</code> (item 5).</li>
+<li>☐ Google Drive para computador já instalado e sincronizando de madrugada (informação da CMJ). Anotar a pasta que sincroniza: <strong><em>_</em></strong>_____ (ex.: <code>G:\Meu Drive\SisCMJ_Backup</code> ou uma pasta espelhada). Vai no parâmetro <code>BACKUP_PASTA_EXTERNA</code> (cópia <strong>sem senha</strong>, decisão de 20/11/2026).</li>
+<li>☐ <strong>BitLocker</strong>: o Windows 11 pode criptografar o C: (e discos novos) sozinho (achado no ensaio 3d-C). Conferir em Configurações › Privacidade e segurança › Criptografia do dispositivo (ou Gerenciamento de Disco: "BitLocker Criptografado"). Se estiver ligado: <strong>guardar a chave de recuperação junto com a chave da licença</strong> (regra de ouro 3: gerenciador de senhas e Google Drive do Celso, e cópia impressa com a CMJ); sem ela, uma troca de placa ou de disco pode deixar o banco e os backups ilegíveis.</li>
+<li>☐ Antivírus: se houver um além do Defender, excluir a pasta do banco do SQL e a pasta de backups da varredura em tempo real (pedir ao técnico).</li>
+</ul>
+<h2>3. Instalar SQL Server, SSMS e .NET</h2>
+<ul>
+<li>☐ <strong>SQL Server 2025 Express</strong> (download gratuito da Microsoft), instalação <strong>Personalizada</strong>:<ul>
+<li>só <strong>Mecanismo de Banco de Dados</strong> (Database Engine);</li>
+<li>instância nomeada <strong><code>SQL2025</code></strong> (o instalador do SisCMJ usa <code>.\SQL2025</code>; outro nome = passar <code>-Instancia</code> no passo 6);</li>
+<li>⚠️ o campo <strong>ID da instância</strong> não acompanha o nome sozinho (fica <code>SQLEXPRESS</code>): trocar também para <strong><code>SQL2025</code></strong> (pasta <code>MSSQL17.SQL2025</code>; achado no ensaio 3d-C, 21/11/2026);</li>
+<li>collation <strong><code>Latin1_General_CI_AS</code></strong>;</li>
+<li>autenticação: Windows (o SisCMJ não usa senha de SQL); modo misto é opcional;</li>
+<li>SSMS novo: no primeiro uso, "Ignorar e adicionar contas mais tarde" (não precisa de conta Microsoft/GitHub); ao conectar em <code>.\SQL2025</code>, marcar <strong>"Confiar no certificado do servidor"</strong>;</li>
+<li>administrador do SQL: o seu usuário do Windows;</li>
+<li>serviço com início <strong>automático</strong>.</li>
+<li>O SQL <strong>não</strong> precisa ser aberto na rede: o sistema roda no próprio servidor.</li>
+</ul>
+</li>
+<li>☐ <strong>SSMS</strong> (versão atual).</li>
+<li>☐ <strong>.NET 10: ASP.NET Core Runtime – Hosting Bundle</strong> (download da Microsoft). O instalador confere e para se faltar.</li>
+<li>☐ Reiniciar o servidor.</li>
+</ul>
+<h2>4. Copiar o pacote</h2>
+<ul>
+<li>☐ Copiar a pasta <code>SisCMJ_&lt;versão&gt;_&lt;data&gt;</code> inteira para o servidor, <strong>fora</strong> da pasta do Google Drive (ex.: <code>C:\SisCMJ_Instalacao\SisCMJ_&lt;versão&gt;_&lt;data&gt;</code>).</li>
+</ul>
+<h2>5. Banco de dados (SSMS)</h2>
+<ul>
+<li>☐ Abrir o SSMS e conectar em <code>.\SQL2025</code>.</li>
+<li>☐ Arquivo › Abrir › <code>sql\SISTEMACMJ_00_Criar_Banco.sql</code> › <strong>F5</strong>. Cria o banco <code>SISTEMACMJ</code>.</li>
+<li>☐ Selecionar o banco <strong>SISTEMACMJ</strong> na barra do SSMS; Arquivo › Abrir › <code>sql\SISTEMACMJ_MASTER_Instalacao.sql</code> › conferir o banco › <strong>F5</strong>. No fim aparece "Versão do banco registrada: x.y". Roda de novo sem erro (idempotente).</li>
+<li>☐ <strong>Não</strong> rodar o <code>SISTEMACMJ_MIGRACAO_Instalacao.sql</code> agora: só na virada (item 13).</li>
+<li>☐ <strong>Parâmetros que precisam estar certos antes do instalador</strong> (a tela de Parâmetros ainda não existe; por enquanto pelo SSMS, no banco SISTEMACMJ):</li>
+</ul>
+<pre><code class="language-sql">-- Ajustar os valores entre aspas e rodar (F5). Conferir com o SELECT do fim.
+UPDATE SIS.Parametro SET VALOR = N'D:\SisCMJ_Backup'                  WHERE CHAVE = 'BACKUP_PASTA';          -- HD de 1 TB
+UPDATE SIS.Parametro SET VALOR = N'&lt;pasta sincronizada com o Drive&gt;'  WHERE CHAVE = 'BACKUP_PASTA_EXTERNA';  -- vazio = não copia
+UPDATE SIS.Parametro SET VALOR = N'celsofreitas62@gmail.com'          WHERE CHAVE = 'EMAIL_ADMIN_ALERTA';    -- avisos de backup e restauração
+SELECT CHAVE, VALOR FROM SIS.Parametro WHERE CHAVE LIKE 'BACKUP%' OR CHAVE = 'EMAIL_ADMIN_ALERTA' ORDER BY CHAVE;
+</code></pre>
+<pre><code>Outros parâmetros de backup (padrões): 7 dias guardados na pasta, 1 completo na nuvem, avisos de atraso (26 h completo, 3 h log, 8 dias teste), motivo da restauração com 10 letras.
+</code></pre>
+<h2>6. Instalar o serviço</h2>
+<ul>
+<li>☐ Em <code>instalacao\</code>, botão direito em <strong><code>instalar_servico.cmd</code></strong> › <strong>Executar como administrador</strong>. Parâmetros, se precisar mudar o padrão (escrever depois do nome, numa janela de comando como administrador):<ul>
+<li><code>-Instancia .\SQL2025</code> · <code>-Banco SISTEMACMJ</code> · <code>-Porta 5443</code> · <code>-NomeServico SisCMJ</code></li>
+<li><code>-HoraBackupCompleto 23:00</code> (antes da sincronização do Drive de madrugada)</li>
+<li><code>-RedesPermitidas LocalSubnet</code> (mais a rede da VPN, quando existir: item 12)</li>
+<li><code>-EnderecoUsuarios &lt;nome ou IP fixo&gt;</code>: o endereço que vai no atalho dos usuários e no certificado (padrão: o nome do servidor). Usar o <strong>IP fixo</strong> se o nome não for achado na rede (item 2). Exemplo: <code>instalar_servico.cmd -EnderecoUsuarios 192.168.0.10</code> numa janela de comando como administrador.</li>
+<li><code>-NomesExtras</code> nomes/IPs extras no certificado (ex.: o endereço pela VPN), separados por vírgula</li>
+</ul>
+</li>
+<li>☐ O instalador faz, em 10 passos: conferências; programa em <code>C:\SisCMJ\programa</code>; serviço <strong>SisCMJ</strong> (início automático atrasado, reinicia se cair); permissões; configuração em <code>C:\ProgramData\SisCMJ\appsettings.Servidor.json</code>; acesso do serviço ao banco sem senha; <strong>certificado HTTPS</strong> (5 anos); <strong>firewall</strong> só na porta 5443 e na rede local; inicia e confere <code>/api/saude</code>; <strong>backup</strong> (tarefas do Windows como SYSTEM: completo diário, log de hora em hora, teste de restauração aos domingos 4h, pedidos de restauração da tela a cada minuto) e roda <strong>um backup completo e um teste na hora</strong>.</li>
+<li>☐ Conferir no fim: "Backup completo (agora): OK" e "Teste de restauracao (agora): OK". Erro: ver <code>&lt;pasta de backup&gt;\backup.log</code>.</li>
+<li>☐ Guardar o que o instalador deixou na pasta <code>instalacao\</code>: <code>codigo_servidor.txt</code> (item 7), <code>SisCMJ_certificado.cer</code> e <code>preparar_computador_usuario.cmd</code> (item 10), <code>instalacao_&lt;data&gt;.log</code>.</li>
+</ul>
+<h2>7. Licença</h2>
+<ul>
+<li>☐ Copiar o <strong>código do servidor</strong> de <code>codigo_servidor.txt</code>.</li>
+<li>☐ No notebook: <code>api\gerar_licenca.cmd</code> › opção <strong>2) Gerar uma licença</strong> › senha da chave privada › código do servidor, <strong>CNPJ 25.686.528/0001-97</strong>, razão social <strong>Construtora Marcílio Judice Ltda.</strong>, módulos liberados (sem validade). ⚠️ Nunca levar o gerador nem a chave privada para o servidor.</li>
+<li>☐ Copiar o arquivo gerado para o servidor como <strong><code>C:\ProgramData\SisCMJ\licenca.lic</code></strong>. Vale em até 1 minuto, sem reiniciar. Sem licença, o sistema abre bloqueado mostrando o código do servidor.</li>
+</ul>
+<h2>8. Primeiro acesso</h2>
+<ul>
+<li>☐ ⚠️ Digitar sempre o endereço <strong>com <code>https://</code></strong>: sem ele o navegador tenta <code>http</code> e mostra "não enviou dados" (ERR_EMPTY_RESPONSE), parecendo que o sistema caiu (achado no ensaio 3d-C). O atalho dos usuários (item 10) já vai com <code>https://</code>.</li>
+<li>☐ No servidor: <strong><code>https://localhost:5443/instalacao.html</code></strong>. Definir as senhas de <strong><code>celso</code></strong> (administrador geral, nível 2) e <strong><code>admin</code></strong> (administrador da CMJ, nível 1: Renata, por enquanto com este login). Só funciona enquanto os administradores não têm senha.</li>
+<li>☐ Entrar em <code>https://localhost:5443</code> como <code>celso</code> e conferir o menu.</li>
+</ul>
+<h2>9. E-mail do sistema</h2>
+<p>Decisão de 20/11/2026: até a CMJ ter o e-mail do domínio próprio, <strong>tudo sai pelo Gmail <code>construtora.m.judice@gmail.com</code></strong> (conta Interna). O Hotmail não é usado para envio (a Microsoft exige OAuth2).</p>
+<ul>
+<li>☐ Abrir <strong><code>C:\ProgramData\SisCMJ\appsettings.Servidor.json</code></strong> (Bloco de Notas como administrador) e preencher a seção <code>Smtp</code> › <code>Interna</code>:<ul>
+<li><code>Servidor</code>: <code>smtp.gmail.com</code> · <code>Porta</code>: <code>587</code></li>
+<li><code>Usuario</code> e <code>Remetente</code>: <code>construtora.m.judice@gmail.com</code></li>
+<li><code>Senha</code>: a <strong>senha de app</strong> do Gmail (16 letras, sem espaços)</li>
+<li><code>NomeRemetente</code> (opcional): <code>Construtora CMJ</code></li>
+<li><code>Externa</code>: deixar vazia. Quando o e-mail do domínio existir, preencher a <code>Externa</code> (servidor, porta, usuário, remetente, senha) e ele passa a ser usado para clientes e fornecedores sem mexer no programa.</li>
+</ul>
+</li>
+<li>☐ <code>Restart-Service SisCMJ</code> (PowerShell como administrador) ou reiniciar o serviço em <code>services.msc</code>.</li>
+<li>☐ Testar: comunicado de teste ou um aviso (item 11). Se a saída na porta 587 estiver bloqueada, falar com o técnico.</li>
+</ul>
+<h2>10. Computadores dos usuários</h2>
+<ul>
+<li>☐ Copiar <code>SisCMJ_certificado.cer</code> e <code>preparar_computador_usuario.cmd</code> para cada computador (Renata e demais).</li>
+<li>☐ Botão direito no <code>.cmd</code> › <strong>Executar como administrador</strong> (uma vez): instala o certificado (tirando o antigo, se houver) e cria o atalho <strong>SisCMJ</strong> na área de trabalho (<code>https://&lt;endereço dos usuários&gt;:5443/</code>). Se o instalador avisar <strong>"certificado NOVO"</strong> numa atualização, rodar o <code>.cmd</code> de novo em todos os computadores.</li>
+<li>☐ Abrir o atalho, entrar e conferir: sem aviso de "conexão não segura".</li>
+</ul>
+<h2>11. Conferências finais</h2>
+<ul>
+<li>☐ <code>https://localhost:5443/api/saude</code> mostra <code>"situacao": "ok"</code> (banco no ar, versão do programa e do banco iguais, licença válida).</li>
+<li>☐ Em um computador de usuário, o sistema abre pelo atalho (firewall e certificado OK).</li>
+<li>☐ <strong>Sistema › Backups › Backups e restauração</strong>: backup completo e teste OK; depois da próxima hora e meia aparece o primeiro <strong>backup de hora em hora</strong>.</li>
+<li>☐ <strong>Ensaio de restauração no servidor</strong> (agora, com o banco ainda vazio, sem risco): aba Restaurar › escolher o ponto mais recente › motivo, RESTAURAR, senha. Em até 2 minutos o pedido fica <strong>Concluída</strong> e chega o e-mail de resultado. Confere a tarefa, o serviço (para e volta) e o e-mail de uma vez.</li>
+<li>☐ No dia seguinte: o arquivo <code>.bak</code> das 23h está na pasta do Drive (<code>BACKUP_PASTA_EXTERNA</code>) e sincronizado na nuvem.</li>
+<li>☐ Registrar no diário (<code>docs/DIARIO_DECISOES.md</code>): data, versão, nome e IP do servidor, pastas, o que fugiu do roteiro.</li>
+</ul>
+<h2>12. Acesso de fora (VPN)</h2>
+<p>Decidido em 19/11/2026 (P08): <strong>VPN</strong> para a Renata (home office) e, depois da virada, para os proprietários (celular: módulo pago à parte). Depende das respostas do técnico (WireGuard no roteador ou no servidor). Quando estiver pronto:</p>
+<ul>
+<li>☐ Rodar o instalador de novo com <code>-RedesPermitidas LocalSubnet,&lt;rede da VPN&gt;</code> (ex.: <code>10.8.0.0/24</code>) e, se o endereço pela VPN for outro, <code>-NomesExtras</code>.</li>
+<li>☐ Testar do notebook da Renata, fora da rede da CMJ.</li>
+</ul>
+<h2>13. Migração do Access e virada (fase 8, roteiro detalhado a escrever)</h2>
+<p>O que já está decidido e entra no roteiro da virada:</p>
+<ol>
+<li>Cópia <strong>atualizada</strong> do Access (<code>CashBookCMJ_be.mdb</code>) do dia.</li>
+<li>SSMS: <code>sql\SISTEMACMJ_MIGRACAO_Instalacao.sql</code> no banco SISTEMACMJ (schema MIG; fica só até terminar os casos).</li>
+<li>No notebook, tela <strong>Casos da migração</strong> › <strong>Baixar correções</strong> (<code>correcoes.sql</code>): rodar no servidor <strong>depois</strong> da migração instalada e <strong>antes</strong> de migrar.</li>
+<li>Extração do Access, carga, transformação e <strong>conferência dos totais com a Renata</strong> (corte em 01/01/2022; antes disso, arquivo morto).</li>
+<li><strong>Saldo inicial de cada conta = extrato do dia da virada</strong>; movimento anterior nunca altera saldo.</li>
+<li>Uso em paralelo com o Access pelo tempo combinado; treinamento.</li>
+<li>Depois da virada: a Renata resolve os casos restantes; <strong>"Migrar casos resolvidos"</strong> (administrador geral).</li>
+</ol>
+<h2>14. Atualização (versão nova)</h2>
+<ol>
+<li>No notebook: <code>api\publicar.cmd</code> (ou pedir ao Claude).
+1a. <strong>Ensaio na máquina virtual (regra de ouro 1)</strong>: a VM <code>SisCMJ-Servidor-Ensaio</code> fica no Hyper-V do notebook, desligada. Scripts em <code>instalacao\ensaio\</code>, todos como administrador:<ul>
+<li><code>ligar_vm_hyperv.cmd</code> (não apertar tecla no boot; entrar como <code>AdminCMJ</code>);</li>
+<li><code>copiar_pacote_vm.cmd</code> (leva o pacote mais novo para <code>C:\SisCMJ_Instalacao\</code> dentro da VM);</li>
+<li>na VM: SSMS › MASTER novo (F5) e <code>instalar_servico.cmd</code> do pacote novo (Terminal como administrador);</li>
+<li>conferir <code>https://localhost:5443/api/saude</code> na VM e uma tela que mudou; se a versão mexe em backup, um ensaio de restauração pela tela;</li>
+<li>só depois levar à CMJ. Se a VM sumir ou a avaliação do Windows (90 dias) vencer: <code>criar_vm_hyperv.cmd</code> cria outra, e o roteiro deste documento instala de novo.</li>
+</ul>
+</li>
+<li>Avisar os usuários (o sistema fica fora do ar 1 a 2 minutos).</li>
+<li>No servidor: SSMS › <strong>MASTER novo</strong> no banco SISTEMACMJ (F5). Depois, <strong><code>instalar_servico.cmd</code> do pacote novo</strong> como administrador (atualiza o programa e as tarefas; não perde configuração, licença nem dados).</li>
+<li>Conferir <code>/api/saude</code> e a tela de backups.</li>
+<li>⚠️ Depois de cada atualização de versão, a restauração pela tela <strong>só volta até o momento da atualização</strong> (backups de versão anterior aparecem como indisponíveis). Voltar para antes: só com o Celso, restaurando pelo SSMS e rodando o MASTER de novo.</li>
+</ol>
+<h2>15. Se algo der errado</h2>
+<table>
+<thead>
+<tr>
+<th>Onde olhar</th>
+<th>O quê</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>instalacao\instalacao_&lt;data&gt;.log</code></td>
+<td>tudo o que o instalador fez</td>
+</tr>
+<tr>
+<td><code>C:\ProgramData\SisCMJ\logs\</code></td>
+<td>registro da API (erros, avisos, pedidos de restauração)</td>
+</tr>
+<tr>
+<td><code>&lt;pasta de backup&gt;\backup.log</code></td>
+<td>cada backup, teste e restauração, passo a passo</td>
+</tr>
+<tr>
+<td>SSMS: <code>SELECT TOP 50 * FROM SIS.Log_Erro ORDER BY ID_LOG_ERRO DESC</code></td>
+<td>erros dentro do banco (a tela Log de erros vem na fase 4)</td>
+</tr>
+<tr>
+<td><code>services.msc</code></td>
+<td>serviço <strong>SisCMJ</strong> (iniciar/parar)</td>
+</tr>
+<tr>
+<td>Agendador de Tarefas › tarefas <code>SisCMJ (SisCMJ) - ...</code></td>
+<td>backup completo, log, teste, restauração (pedidos)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Desinstalar (programa, serviço, firewall, tarefas; <strong>não</strong> apaga o banco nem os backups): <code>instalacao\desinstalar_servico.cmd</code> como administrador.</li>
+<li>Restaurar sem a tela (servidor sem o serviço): SSMS › restaurar o último <code>_COMPLETO_*.bak</code> e os <code>_LOG_*.trn</code> seguintes da pasta de backup.</li>
+</ul>
+</body>
+</html>

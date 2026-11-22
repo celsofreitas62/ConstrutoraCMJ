@@ -285,3 +285,25 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .aviso-aberto { margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--atencao); }
 .lista-pontos { max-height: 340px; overflow-y: auto; border: 1px solid var(--borda); border-radius: var(--raio); }
 .lista-pontos tr.clicavel { cursor: pointer; }
+
+/* ---------- Ajuda do administrador geral (03g) ---------- */
+.ajuda-geral-indice { flex: 0 1 300px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.ajuda-geral-lista { display: flex; flex-direction: column; gap: 4px; }
+.ajuda-geral-item { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: var(--raio); color: inherit; text-decoration: none; font-size: 13px; line-height: 1.4; }
+.ajuda-geral-item:hover { background: #FAFAF9; }
+.ajuda-geral-item.ativo { background: #FBEDE9; }
+.ajuda-geral-item.ativo strong { color: var(--cor-principal-escura); }
+.ajuda-geral-pagina { flex: 999 1 480px; min-width: 0; padding: 20px 24px; line-height: 1.55; }
+.ajuda-geral-titulo { margin: 0 0 8px; }
+.ajuda-geral-texto h2 { font-size: 17px; margin: 22px 0 8px; }
+.ajuda-geral-texto h3 { font-size: 15px; margin: 16px 0 6px; }
+.ajuda-geral-texto ul, .ajuda-geral-texto ol { padding-left: 22px; }
+.ajuda-geral-texto li { margin: 3px 0; }
+.ajuda-geral-texto code { font-size: 12.5px; background: #F4F4F2; padding: 1px 4px; border-radius: 4px; }
+.ajuda-geral-texto hr { border: 0; border-top: 1px solid var(--borda); margin: 20px 0; }
+.ajuda-geral-texto .tabela { margin: 6px 0 10px; font-size: 13px; }
+.ajuda-geral-texto .tabela td { vertical-align: top; }
+.bloco-comando { position: relative; margin: 8px 0; }
+.bloco-comando pre { margin: 0; padding: 12px 14px; padding-right: 90px; background: #F4F4F2; border: 1px solid var(--borda); border-radius: var(--raio); overflow-x: auto; }
+.bloco-comando pre code { background: transparent; padding: 0; }
+.botao-copiar { position: absolute; top: 6px; right: 6px; min-height: 30px; padding: 0 10px; font-size: 12px; }

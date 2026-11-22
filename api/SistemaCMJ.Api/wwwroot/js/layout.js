@@ -10,6 +10,8 @@
                  data-tela   = tela de origem (auditoria/log), ex.: cad/pessoas.html
                  data-menu   = item do menu a destacar (padrão: data-tela)
                  data-ajuda  = arquivo de ajuda em /ajuda (sem .html)
+                               ou geral:<página> = ajuda exclusiva do administrador
+                               geral, pela API (/api/ajuda-geral; 22/11/2026, 03g)
                Layout.iniciar() devolve { sessao, acoes } -- acoes = ações
                permitidas na tela (Set: VER, INCLUIR, ALTERAR, EXCLUIR...),
                para esconder os botões (a procedure confere de novo).
@@ -173,9 +175,18 @@ const Layout = (() => {
       if (!carregada) {
         painel.replaceChildren(Util.el('p', 'suave', 'Carregando a ajuda…'));
         try {
-          const resp = await fetch('/ajuda/' + arquivo + '.html', { credentials: 'same-origin' });
-          if (!resp.ok) throw new Error();
-          const doc = new DOMParser().parseFromString(await resp.text(), 'text/html');
+          let doc;
+          if (arquivo.startsWith('geral:')) {
+            // Tela exclusiva do administrador geral: a ajuda vem só pela API (03g).
+            const r = await Api.get('/api/ajuda-geral/' + encodeURIComponent(arquivo.substring(6)));
+            if (!r.sucesso) throw new Error();
+            doc = new DOMParser().parseFromString('<title></title><body>' + r.dados.html + '</body>', 'text/html');
+            doc.title = r.dados.titulo;
+          } else {
+            const resp = await fetch('/ajuda/' + arquivo + '.html', { credentials: 'same-origin' });
+            if (!resp.ok) throw new Error();
+            doc = new DOMParser().parseFromString(await resp.text(), 'text/html');
+          }
           const topo = Util.el('div', 'ajuda-topo');
           topo.append(Util.el('strong', null, doc.title || 'Ajuda'));
           const x = Util.el('button', 'botao-icone', '×');
