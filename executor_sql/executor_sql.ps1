@@ -30,6 +30,11 @@
   v1.4 (20/11/2026) - Pedido de publicacao: entrada\publicar.pedido roda api\publicar.ps1
                       (gera o pacote de instalacao em C:\SisCMJ_Publicacao, fora do
                       Drive); resultado em saida\publicar.txt. Comando fixo.
+  v1.5 (22/11/2026) - Pedido de extracao do Access: entrada\extrair_access.pedido roda
+                      legado\ferramentas\Extrair_Access.ps1 -ExportarDados (le copias
+                      do CashBookCMJ_be.mdb e regrava legado\dados_brutos e
+                      legado\extracao); resultado em saida\extrair_access.txt.
+                      Comando fixo. Aprovado pelo Celso (03f, 22/11/2026).
   Uso: iniciado pela tarefa "SistemaCMJ - Executor SQL" (instalar_executor.cmd).
 #>
 param(
@@ -263,6 +268,20 @@ function Publicar {
     return $Codigo
 }
 
+function Extrair-Access {
+    $ErrorActionPreference = 'Continue'
+    $Script = Join-Path (Split-Path $Raiz -Parent) 'legado\ferramentas\Extrair_Access.ps1'
+    $Ini = Get-Date
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $Saida = (& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Script -ExportarDados 2>&1 | ForEach-Object { "$_" }) -join "`r`n"
+    $Codigo = $LASTEXITCODE
+    $Texto = 'SistemaCMJ - extracao do Access (executor v1.5)' + "`r`n" + 'Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + 'Fim    : ' + (Get-Date).ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + ('=' * 70) + "`r`n" + $Saida + "`r`n" + ('=' * 70) + "`r`n" + 'CODIGO_SAIDA=' + $Codigo + "`r`n"
+    $Destino = Join-Path (Join-Path $Raiz 'saida') 'extrair_access.txt'
+    [System.IO.File]::WriteAllText($Destino + '.tmp', $Texto, $Utf8)
+    Move-Item -LiteralPath ($Destino + '.tmp') -Destination $Destino -Force
+    return $Codigo
+}
+
 Gravar-Status 'ativo (iniciado)'
 $UltimoStatus = Get-Date
 $TextoStatus = 'ativo'
@@ -297,6 +316,14 @@ while ($true) {
             Gravar-Status 'publicando'
             $C = Publicar
             $TextoStatus = 'ativo; ultima publicacao -> ' + $(if ($C -eq 0) { 'OK' } else { 'COM ERROS' })
+            Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
+        }
+        $Pedido = Join-Path $Entrada 'extrair_access.pedido'
+        if (Test-Path -LiteralPath $Pedido) {
+            Remove-Item -LiteralPath $Pedido -Force
+            Gravar-Status 'extraindo o Access'
+            $C = Extrair-Access
+            $TextoStatus = 'ativo; ultima extracao do Access -> CODIGO ' + $C
             Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
         }
         # Sinal de vida a cada minuto (sem regravar a cada ciclo, para nao encher a sincronizacao do Drive)

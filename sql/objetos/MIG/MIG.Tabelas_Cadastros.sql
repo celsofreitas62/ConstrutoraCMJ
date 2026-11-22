@@ -28,6 +28,11 @@
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c2).
+    v1.1 (22/11/2026) - 03f (respostas da CMJ ao 3º documento):
+                        Classif_Centro.CODIGO_CONTA_PADRAO (conta padrão do
+                        centro decidida pela CMJ, no lugar da do Access) e
+                        Classif_Centro_Extra.ATIVO (NULL = regra automática;
+                        0/1 = decisão da CMJ, ex.: imóvel vendido).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -63,6 +68,7 @@ IF OBJECT_ID(N'[MIG].[Classif_Centro]', N'U') IS NULL
         TIPO                   VARCHAR(15)    NOT NULL CONSTRAINT DF_Classif_Centro_TIPO   DEFAULT (''),
         CODIGO_MASTER_EMPRESA  INT            NULL,          -- dona do centro; NULL = regra (empresa do EmpMaster ou a principal)
         PARCEIRO_CLIENTE       INT            NULL,          -- cliente da obra por administração (código do Parceiros)
+        CODIGO_CONTA_PADRAO    INT            NULL,          -- conta padrão (código do F Contas Financeiras); NULL = a do Access
         OBSERVACAO             NVARCHAR(400)  NOT NULL CONSTRAINT DF_Classif_Centro_OBS    DEFAULT (N''),
         CONSTRAINT CK_Classif_Centro_DESTINO CHECK (DESTINO IN ('CENTRO', 'NAO_MIGRA')),
         CONSTRAINT CK_Classif_Centro_TIPO    CHECK (TIPO IN ('', 'OBRA', 'ADMINISTRATIVO', 'IMOVEL_PROPRIO', 'PARTICULAR'))
@@ -77,9 +83,18 @@ IF OBJECT_ID(N'[MIG].[Classif_Centro_Extra]', N'U') IS NULL
         TIPO                   VARCHAR(15)    NOT NULL,
         CODIGO_MASTER_EMPRESA  INT            NOT NULL,
         CONTABIL               BIT            NOT NULL CONSTRAINT DF_Classif_Centro_Extra_CONTABIL DEFAULT (1),
+        ATIVO                  BIT            NULL,          -- NULL = regra (ativo se usado); 0/1 = decisão da CMJ
         OBSERVACAO             NVARCHAR(400)  NOT NULL CONSTRAINT DF_Classif_Centro_Extra_OBS      DEFAULT (N''),
         CONSTRAINT CK_Classif_Centro_Extra_TIPO CHECK (TIPO IN ('OBRA', 'ADMINISTRATIVO', 'IMOVEL_PROPRIO', 'PARTICULAR'))
     );
+GO
+
+-- v1.1 (03f): colunas novas em tabela já existente
+IF COL_LENGTH(N'MIG.Classif_Centro', N'CODIGO_CONTA_PADRAO') IS NULL
+    ALTER TABLE [MIG].[Classif_Centro] ADD CODIGO_CONTA_PADRAO INT NULL;
+GO
+IF COL_LENGTH(N'MIG.Classif_Centro_Extra', N'ATIVO') IS NULL
+    ALTER TABLE [MIG].[Classif_Centro_Extra] ADD ATIVO BIT NULL;
 GO
 
 IF OBJECT_ID(N'[MIG].[Classif_Conta]', N'U') IS NULL

@@ -1,8 +1,8 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MIGRACAO_Instalacao.sql   (MIGRACAO v1.1)
+  Arquivo     : SISTEMACMJ_MIGRACAO_Instalacao.sql   (MIGRACAO v1.2)
   Autor       : Celso de Freitas
   Refatorado  : Claude
-  Gerado em   : 20/11/2026 por sql/ferramentas/montar_migracao.py, juntando
+  Gerado em   : 22/11/2026 por sql/ferramentas/montar_migracao.py, juntando
                 os arquivos de sql/objetos/MIG dos pacotes homologados (03c_mig,
                 03c2 e 03c2b). NAO EDITAR: corrigir o arquivo do objeto e gerar de
                 novo.
@@ -27,7 +27,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MIGRACAO v1.1: inicio em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MIGRACAO v1.2: inicio em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- -----------------------------------------------------------------------------
@@ -805,6 +805,11 @@ GO
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c2).
+    v1.1 (22/11/2026) - 03f (respostas da CMJ ao 3º documento):
+                        Classif_Centro.CODIGO_CONTA_PADRAO (conta padrão do
+                        centro decidida pela CMJ, no lugar da do Access) e
+                        Classif_Centro_Extra.ATIVO (NULL = regra automática;
+                        0/1 = decisão da CMJ, ex.: imóvel vendido).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -840,6 +845,7 @@ IF OBJECT_ID(N'[MIG].[Classif_Centro]', N'U') IS NULL
         TIPO                   VARCHAR(15)    NOT NULL CONSTRAINT DF_Classif_Centro_TIPO   DEFAULT (''),
         CODIGO_MASTER_EMPRESA  INT            NULL,          -- dona do centro; NULL = regra (empresa do EmpMaster ou a principal)
         PARCEIRO_CLIENTE       INT            NULL,          -- cliente da obra por administração (código do Parceiros)
+        CODIGO_CONTA_PADRAO    INT            NULL,          -- conta padrão (código do F Contas Financeiras); NULL = a do Access
         OBSERVACAO             NVARCHAR(400)  NOT NULL CONSTRAINT DF_Classif_Centro_OBS    DEFAULT (N''),
         CONSTRAINT CK_Classif_Centro_DESTINO CHECK (DESTINO IN ('CENTRO', 'NAO_MIGRA')),
         CONSTRAINT CK_Classif_Centro_TIPO    CHECK (TIPO IN ('', 'OBRA', 'ADMINISTRATIVO', 'IMOVEL_PROPRIO', 'PARTICULAR'))
@@ -854,9 +860,18 @@ IF OBJECT_ID(N'[MIG].[Classif_Centro_Extra]', N'U') IS NULL
         TIPO                   VARCHAR(15)    NOT NULL,
         CODIGO_MASTER_EMPRESA  INT            NOT NULL,
         CONTABIL               BIT            NOT NULL CONSTRAINT DF_Classif_Centro_Extra_CONTABIL DEFAULT (1),
+        ATIVO                  BIT            NULL,          -- NULL = regra (ativo se usado); 0/1 = decisão da CMJ
         OBSERVACAO             NVARCHAR(400)  NOT NULL CONSTRAINT DF_Classif_Centro_Extra_OBS      DEFAULT (N''),
         CONSTRAINT CK_Classif_Centro_Extra_TIPO CHECK (TIPO IN ('OBRA', 'ADMINISTRATIVO', 'IMOVEL_PROPRIO', 'PARTICULAR'))
     );
+GO
+
+-- v1.1 (03f): colunas novas em tabela já existente
+IF COL_LENGTH(N'MIG.Classif_Centro', N'CODIGO_CONTA_PADRAO') IS NULL
+    ALTER TABLE [MIG].[Classif_Centro] ADD CODIGO_CONTA_PADRAO INT NULL;
+GO
+IF COL_LENGTH(N'MIG.Classif_Centro_Extra', N'ATIVO') IS NULL
+    ALTER TABLE [MIG].[Classif_Centro_Extra] ADD ATIVO BIT NULL;
 GO
 
 IF OBJECT_ID(N'[MIG].[Classif_Conta]', N'U') IS NULL
@@ -1010,6 +1025,11 @@ GO
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c2).
+    v1.1 (22/11/2026) - 03f: conta padrão do centro pode vir da classificação
+                        (Classif_Centro.CODIGO_CONTA_PADRAO, decisão da CMJ) no
+                        lugar da do Access; centro extra com ATIVO decidido na
+                        classificação (ex.: imóvel vendido) prevalece sobre a
+                        regra automática.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Cadastros_Processar;
@@ -1300,7 +1320,7 @@ BEGIN
                COALESCE(c.CODIGO_MASTER_EMPRESA, CASE WHEN ce.DESTINO = 'EMPRESA' THEN ce.CODIGO_MASTER END, @MasterPrinc) AS MASTER_EMPRESA,
                CAST(CASE WHEN v.Contabil = N'True' THEN 1 ELSE 0 END AS BIT) AS CONTABIL,
                CAST(CASE WHEN EXISTS (SELECT 1 FROM #UsoCentro u WHERE u.COD = TRY_CONVERT(INT, v.CodigoVinculada)) THEN 1 ELSE 0 END AS BIT) AS ATIVO,
-               TRY_CONVERT(INT, v.FinanceiraPadrao) AS CONTA_ACCESS,
+               COALESCE(c.CODIGO_CONTA_PADRAO, TRY_CONVERT(INT, v.FinanceiraPadrao)) AS CONTA_ACCESS,
                c.PARCEIRO_CLIENTE,
                ISNULL(TRY_CONVERT(DECIMAL(9,4), v.PercentualAdm), 0) AS PERCENTUAL_ADM,
                CAST(CASE WHEN c.CODIGO_VINCULADA IS NULL OR c.TIPO = '' THEN 1 ELSE 0 END AS BIT) AS AUTOMATICA,
@@ -1343,7 +1363,8 @@ BEGIN
         ;WITH X AS
         (
             SELECT x.CODIGO, x.DESCRICAO, x.TIPO, x.CONTABIL, ISNULL(e.ID_EMPRESA, @IdPrincipal) AS ID_EMPRESA,
-                   CAST(CASE WHEN EXISTS (SELECT 1 FROM MIG.DePara_Plano_Excecao p INNER JOIN #UsoPlano u ON u.COD = p.PLANO3_ACCESS
+                   CAST(CASE WHEN x.ATIVO IS NOT NULL THEN x.ATIVO
+                             WHEN EXISTS (SELECT 1 FROM MIG.DePara_Plano_Excecao p INNER JOIN #UsoPlano u ON u.COD = p.PLANO3_ACCESS
                                           WHERE p.CENTRO_CODIGO = x.CODIGO) THEN 1 ELSE 0 END AS BIT) AS ATIVO
             FROM MIG.Classif_Centro_Extra x
             LEFT JOIN CAD.Empresa e ON e.CODIGO_ACCESS = x.CODIGO_MASTER_EMPRESA
@@ -1801,6 +1822,13 @@ GO
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c2).
+    v1.1 (22/11/2026) - 03f: respostas da CMJ ao 3º documento
+                        (docs/requisitos/Migracao_Cadastros.md, seção 6):
+                        CNPJ e razão social das 4 SPEs; conta padrão da Holding
+                        = Sicredi Holding; Casa Danielle e Casa 66 passam para a
+                        Holding; La Sante Sala 110, Allegro 52 e Giuseppina 12
+                        inativos (vendidos), Sala 113 ativa até a CMJ confirmar;
+                        grupos 11 a 14 entram no custo de obra.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1821,11 +1849,11 @@ USING (VALUES
     ( 4, 'NAO_MIGRA',   0, 'OUTRA',       N'', N'', '', '', '', N'sistema'),
     ( 5, 'NAO_MIGRA',   0, 'OUTRA',       N'', N'', '', '', '', N'sistema'),
     ( 6, 'EMPRESA',     1, 'CONSTRUTORA', N'Construtora Marcilio Judice Sociedade Empresária Ltda', N'Construtora Marcilio Judice', '25686528000197', '', '', N''),
-    (21, 'EMPRESA',     0, 'SPE',         N'Ilha das Galès Inc. Construtora SPE Ltda',  N'Ilha das Galès',          '', '', 'RET', N'CNPJ a informar pela CMJ'),
-    (22, 'EMPRESA',     0, 'SPE',         N'Edifício Comercial La Sante SPE',           N'La Sante',                '', '', 'RET', N'razão social completa e CNPJ a informar pela CMJ'),
-    (23, 'EMPRESA',     0, 'SPE',         N'Judice e Daher Inc. e Constr. SPE Ltda',    N'Villagio Allegro',        '', '', 'RET', N'CNPJ a informar pela CMJ'),
+    (21, 'EMPRESA',     0, 'SPE',         N'Ilha das Gales Incorporadora SPE Ltda',     N'Ilha das Galès',          '18757133000172', '', 'RET', N'CNPJ e razão social: CMJ, 20/11/2026'),
+    (22, 'EMPRESA',     0, 'SPE',         N'Edifício Comercial La Sante SPE',           N'La Sante',                '21126427000100', '', 'RET', N'CNPJ e razão social: CMJ, 20/11/2026'),
+    (23, 'EMPRESA',     0, 'SPE',         N'Judice e Daher Incorporadora e Construtora SPE Ltda', N'Villagio Allegro', '23465751000189', '', 'RET', N'CNPJ e razão social: CMJ, 20/11/2026'),
     (25, 'EMPRESA',     0, 'HOLDING',     N'Judice e Filhos Administração de Bens Ltda', N'Holding Judice e Filhos', '27546995000147', '', '', N''),
-    (28, 'EMPRESA',     0, 'SPE',         N'MJ Incorporadora SPE Ltda',                 N'Res. Square',             '', '', 'RET', N'razão social completa e CNPJ a informar pela CMJ'),
+    (28, 'EMPRESA',     0, 'SPE',         N'MJ Incorporadora SPE Ltda',                 N'Res. Square',             '34939234000110', '', 'RET', N'CNPJ e razão social: CMJ, 20/11/2026'),
     (31, 'EMPRESA',     0, 'SPE',         N'Marcilio Judice Incorporadora SPE Ltda',    N'Maui',                    '36451082000138', '', 'RET', N''),
     (32, 'EMPRESA',     0, 'SPE',         N'Orion Incorporadora SPE Ltda',              N'Orion',                   '52095394000102', '', '', N'ainda sem RET'),
     (34, 'EMPRESA',     0, 'SPE',         N'Opera Residences',                          N'Opera',                   '56304064000130', '56304064000211', 'RET', N'razão social completa a confirmar; /0002-11 = CNPJ do RET (notas de compra e DDA)'),
@@ -1865,45 +1893,45 @@ GO
 -- -----------------------------------------------------------------------------
 MERGE MIG.Classif_Centro AS d
 USING (VALUES
-    ( 1, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, N'N/A: caixinha e contrapartida do Access (cada lançamento recebe o centro pela regra do seu tipo)'),
-    ( 2, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, N'Escolha a Empresa (sistema)'),
-    ( 3, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, N'sistema'),
-    ( 4, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, N'sistema'),
-    ( 5, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, N'sistema'),
-    (70, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, N'TESTE'),
-    ( 6, 'CENTRO',    'CMJ',          N'Construtora - administrativo',                     'ADMINISTRATIVO', NULL, NULL, N''),
-    ( 9, 'CENTRO',    'PART-FAMILIA', N'Despesas particulares da família',                 'PARTICULAR',     6,    NULL, N'"Marco Aurelio" no Access (CMJ, 17/11/2026)'),
-    (46, 'CENTRO',    '58',           N'58 - Ilha das Galès',                              'OBRA',           NULL, NULL, N''),
-    (49, 'CENTRO',    '59',           N'59 - Edifício La Sante',                           'OBRA',           NULL, NULL, N''),
-    (54, 'CENTRO',    '59-ANTES-SPE', N'La Sante - antes da SPE (conta 01321-7)',          'OBRA',           6,    NULL, N'controle da obra La Sante até sair a documentação da SPE (CMJ, 17/11/2026)'),
-    (57, 'CENTRO',    '61',           N'61 - Villagio Allegro',                            'OBRA',           NULL, NULL, N''),
-    (60, 'CENTRO',    'JD-CAROLINA',  N'Jd. Carolina - obra particular dos proprietários', 'PARTICULAR',     6,    NULL, N'CMJ, 17/11/2026'),
-    (62, 'CENTRO',    'HOLDING',      N'Holding - administrativo',                         'ADMINISTRATIVO', NULL, NULL, N''),
-    (65, 'CENTRO',    '62',           N'62 - Res. Square',                                 'OBRA',           NULL, NULL, N''),
-    (69, 'CENTRO',    '65',           N'65 - Res. Indiara (CADAP)',                        'OBRA',           6,    1029, N'obra por administração; cliente CADAP (CMJ, 17/11/2026)'),
-    (72, 'CENTRO',    '63',           N'63 - Maui',                                        'OBRA',           NULL, NULL, N''),
-    (73, 'CENTRO',    '66',           N'66 - Res. Paladium (CADAP)',                       'OBRA',           6,    1195, N'obra por administração; cliente CADAP (CMJ, 17/11/2026)'),
-    (75, 'CENTRO',    '67',           N'67 - Orion',                                       'OBRA',           NULL, NULL, N''),
-    (76, 'CENTRO',    'DELLAROLI',    N'Ronaldo Dellaroli - estudo de viabilidade',        'ADMINISTRATIVO', 6,    NULL, N'obra não executada (CMJ, 17/11/2026)'),
-    (77, 'CENTRO',    '68',           N'68 - Opera Residences',                            'OBRA',           NULL, NULL, N''),
-    (43, 'CENTRO',    '55',           N'55 - Residencial Attualità',                       'OBRA',           6,    NULL, N'obra a preço de custo (associação); 1 lançamento desde o corte'),
-    (78, 'CENTRO',    '69',           N'69 - Music',                                       'OBRA',           NULL, NULL, N''),
+    ( 1, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, NULL, N'N/A: caixinha e contrapartida do Access (cada lançamento recebe o centro pela regra do seu tipo)'),
+    ( 2, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, NULL, N'Escolha a Empresa (sistema)'),
+    ( 3, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, NULL, N'sistema'),
+    ( 4, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, NULL, N'sistema'),
+    ( 5, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, NULL, N'sistema'),
+    (70, 'NAO_MIGRA', '',             N'',                                                 '',               NULL, NULL, NULL, N'TESTE'),
+    ( 6, 'CENTRO',    'CMJ',          N'Construtora - administrativo',                     'ADMINISTRATIVO', NULL, NULL, NULL, N''),
+    ( 9, 'CENTRO',    'PART-FAMILIA', N'Despesas particulares da família',                 'PARTICULAR',     6,    NULL, NULL, N'"Marco Aurelio" no Access (CMJ, 17/11/2026)'),
+    (46, 'CENTRO',    '58',           N'58 - Ilha das Galès',                              'OBRA',           NULL, NULL, NULL, N''),
+    (49, 'CENTRO',    '59',           N'59 - Edifício La Sante',                           'OBRA',           NULL, NULL, NULL, N''),
+    (54, 'CENTRO',    '59-ANTES-SPE', N'La Sante - antes da SPE (conta 01321-7)',          'OBRA',           6,    NULL, NULL, N'controle da obra La Sante até sair a documentação da SPE (CMJ, 17/11/2026)'),
+    (57, 'CENTRO',    '61',           N'61 - Villagio Allegro',                            'OBRA',           NULL, NULL, NULL, N''),
+    (60, 'CENTRO',    'JD-CAROLINA',  N'Jd. Carolina - obra particular dos proprietários', 'PARTICULAR',     6,    NULL, NULL, N'CMJ, 17/11/2026'),
+    (62, 'CENTRO',    'HOLDING',      N'Holding - administrativo',                         'ADMINISTRATIVO', NULL, NULL, 28  , N'conta padrão Sicredi Holding 0217/28656-3 (CMJ, 20/11/2026)'),
+    (65, 'CENTRO',    '62',           N'62 - Res. Square',                                 'OBRA',           NULL, NULL, NULL, N''),
+    (69, 'CENTRO',    '65',           N'65 - Res. Indiara (CADAP)',                        'OBRA',           6,    1029, NULL, N'obra por administração; cliente CADAP (CMJ, 17/11/2026)'),
+    (72, 'CENTRO',    '63',           N'63 - Maui',                                        'OBRA',           NULL, NULL, NULL, N''),
+    (73, 'CENTRO',    '66',           N'66 - Res. Paladium (CADAP)',                       'OBRA',           6,    1195, NULL, N'obra por administração; cliente CADAP (CMJ, 17/11/2026)'),
+    (75, 'CENTRO',    '67',           N'67 - Orion',                                       'OBRA',           NULL, NULL, NULL, N''),
+    (76, 'CENTRO',    'DELLAROLI',    N'Ronaldo Dellaroli - estudo de viabilidade',        'ADMINISTRATIVO', 6,    NULL, NULL, N'obra não executada (CMJ, 17/11/2026)'),
+    (77, 'CENTRO',    '68',           N'68 - Opera Residences',                            'OBRA',           NULL, NULL, NULL, N''),
+    (43, 'CENTRO',    '55',           N'55 - Residencial Attualità',                       'OBRA',           6,    NULL, NULL, N'obra a preço de custo (associação); 1 lançamento desde o corte'),
+    (78, 'CENTRO',    '69',           N'69 - Music',                                       'OBRA',           NULL, NULL, NULL, N''),
     -- obras antigas por administração: só o cliente (o resto pela regra automática)
-    (14, 'CENTRO',    '',             N'',                                                 '',               NULL, 880,  N'cliente Climepe'),
-    (15, 'CENTRO',    '',             N'',                                                 '',               NULL, 880,  N'cliente Climepe'),
-    (16, 'CENTRO',    '',             N'',                                                 '',               NULL, 623,  N'cliente Adm. de Bens Claudia'),
-    (22, 'CENTRO',    '',             N'',                                                 '',               NULL, 40,   N'cliente DMAE'),
-    (52, 'CENTRO',    '',             N'',                                                 '',               NULL, 633,  N'cliente DMAE - ETA V'),
-    (30, 'CENTRO',    '',             N'',                                                 '',               NULL, 607,  N'cliente Cond. Res. Justino Ribeiro'),
-    (35, 'CENTRO',    '',             N'',                                                 '',               NULL, 190,  N'cliente Carneiro Casa & Construção'),
-    (50, 'CENTRO',    '',             N'',                                                 '',               NULL, 586,  N'cliente Carneiro Casa & Construção - Loja Nova'),
-    (55, 'CENTRO',    '',             N'',                                                 '',               NULL, 902,  N'cliente Hotel Granato')
-) AS s (CODIGO_VINCULADA, DESTINO, CODIGO, DESCRICAO, TIPO, CODIGO_MASTER_EMPRESA, PARCEIRO_CLIENTE, OBSERVACAO)
+    (14, 'CENTRO',    '',             N'',                                                 '',               NULL, 880, NULL, N'cliente Climepe'),
+    (15, 'CENTRO',    '',             N'',                                                 '',               NULL, 880, NULL, N'cliente Climepe'),
+    (16, 'CENTRO',    '',             N'',                                                 '',               NULL, 623, NULL, N'cliente Adm. de Bens Claudia'),
+    (22, 'CENTRO',    '',             N'',                                                 '',               NULL, 40, NULL, N'cliente DMAE'),
+    (52, 'CENTRO',    '',             N'',                                                 '',               NULL, 633, NULL, N'cliente DMAE - ETA V'),
+    (30, 'CENTRO',    '',             N'',                                                 '',               NULL, 607, NULL, N'cliente Cond. Res. Justino Ribeiro'),
+    (35, 'CENTRO',    '',             N'',                                                 '',               NULL, 190, NULL, N'cliente Carneiro Casa & Construção'),
+    (50, 'CENTRO',    '',             N'',                                                 '',               NULL, 586, NULL, N'cliente Carneiro Casa & Construção - Loja Nova'),
+    (55, 'CENTRO',    '',             N'',                                                 '',               NULL, 902, NULL, N'cliente Hotel Granato')
+) AS s (CODIGO_VINCULADA, DESTINO, CODIGO, DESCRICAO, TIPO, CODIGO_MASTER_EMPRESA, PARCEIRO_CLIENTE, CODIGO_CONTA_PADRAO, OBSERVACAO)
 ON d.CODIGO_VINCULADA = s.CODIGO_VINCULADA
 WHEN MATCHED THEN UPDATE SET d.DESTINO = s.DESTINO, d.CODIGO = s.CODIGO, d.DESCRICAO = s.DESCRICAO, d.TIPO = s.TIPO,
-     d.CODIGO_MASTER_EMPRESA = s.CODIGO_MASTER_EMPRESA, d.PARCEIRO_CLIENTE = s.PARCEIRO_CLIENTE, d.OBSERVACAO = s.OBSERVACAO
-WHEN NOT MATCHED THEN INSERT (CODIGO_VINCULADA, DESTINO, CODIGO, DESCRICAO, TIPO, CODIGO_MASTER_EMPRESA, PARCEIRO_CLIENTE, OBSERVACAO)
-     VALUES (s.CODIGO_VINCULADA, s.DESTINO, s.CODIGO, s.DESCRICAO, s.TIPO, s.CODIGO_MASTER_EMPRESA, s.PARCEIRO_CLIENTE, s.OBSERVACAO);
+     d.CODIGO_MASTER_EMPRESA = s.CODIGO_MASTER_EMPRESA, d.PARCEIRO_CLIENTE = s.PARCEIRO_CLIENTE, d.CODIGO_CONTA_PADRAO = s.CODIGO_CONTA_PADRAO, d.OBSERVACAO = s.OBSERVACAO
+WHEN NOT MATCHED THEN INSERT (CODIGO_VINCULADA, DESTINO, CODIGO, DESCRICAO, TIPO, CODIGO_MASTER_EMPRESA, PARCEIRO_CLIENTE, CODIGO_CONTA_PADRAO, OBSERVACAO)
+     VALUES (s.CODIGO_VINCULADA, s.DESTINO, s.CODIGO, s.DESCRICAO, s.TIPO, s.CODIGO_MASTER_EMPRESA, s.PARCEIRO_CLIENTE, s.CODIGO_CONTA_PADRAO, s.OBSERVACAO);
 GO
 
 -- -----------------------------------------------------------------------------
@@ -1913,20 +1941,20 @@ GO
 -- -----------------------------------------------------------------------------
 MERGE MIG.Classif_Centro_Extra AS d
 USING (VALUES
-    ('IMO-LS-110',   N'La Sante - Sala 110 e vaga 9',           'IMOVEL_PROPRIO', 25, N'contas antigas 460 e 670 (aluguel)'),
-    ('IMO-LS-112',   N'La Sante - Sala 112 e vaga 10',          'IMOVEL_PROPRIO', 25, N'conta antiga 461'),
-    ('IMO-LS-113',   N'La Sante - Sala 113 e vaga 40',          'IMOVEL_PROPRIO', 25, N'conta antiga 462'),
-    ('IMO-LS-VAGAS', N'La Sante - Vagas de estacionamento',     'IMOVEL_PROPRIO', 25, N'conta antiga 463'),
-    ('IMO-ALG-13',   N'Allegro - Apto. 13',                     'IMOVEL_PROPRIO', 25, N'contas antigas 506 e 692 (aluguel)'),
-    ('IMO-ALG-52',   N'Allegro - Apto. 52',                     'IMOVEL_PROPRIO', 25, N'conta antiga 507'),
-    ('IMO-GIU-12',   N'Giuseppina - Apto. 12',                  'IMOVEL_PROPRIO',  6, N'conta antiga 669 (aluguel)'),
-    ('PART-CASA-DAN',N'Casa Danielle',                          'PARTICULAR',      6, N'conta antiga 381'),
-    ('PART-CASA-66', N'Casa 66 - Marco Bosque Araucárias',      'PARTICULAR',      6, N'conta antiga 465')
-) AS s (CODIGO, DESCRICAO, TIPO, CODIGO_MASTER_EMPRESA, OBSERVACAO)
+    ('IMO-LS-110',   N'La Sante - Sala 110 e vaga 9',           'IMOVEL_PROPRIO', 25, 0   , N'contas antigas 460 e 670 (aluguel); vendida (CMJ, 20/11/2026)'),
+    ('IMO-LS-112',   N'La Sante - Sala 112 e vaga 10',          'IMOVEL_PROPRIO', 25, NULL, N'conta antiga 461; alugada pela Construtora (CMJ, 20/11/2026)'),
+    ('IMO-LS-113',   N'La Sante - Sala 113 e vaga 40',          'IMOVEL_PROPRIO', 25, 1   , N'conta antiga 462; talvez vendida: ativa até a CMJ confirmar (20/11/2026)'),
+    ('IMO-LS-VAGAS', N'La Sante - Vagas de estacionamento',     'IMOVEL_PROPRIO', 25, NULL, N'conta antiga 463'),
+    ('IMO-ALG-13',   N'Allegro - Apto. 13',                     'IMOVEL_PROPRIO', 25, NULL, N'contas antigas 506 e 692 (aluguel)'),
+    ('IMO-ALG-52',   N'Allegro - Apto. 52',                     'IMOVEL_PROPRIO', 25, 0   , N'conta antiga 507; vendido (CMJ, 20/11/2026)'),
+    ('IMO-GIU-12',   N'Giuseppina - Apto. 12',                  'IMOVEL_PROPRIO',  6, 0   , N'conta antiga 669 (aluguel); vendido (CMJ, 20/11/2026)'),
+    ('PART-CASA-DAN',N'Casa Danielle',                          'PARTICULAR', 25, NULL, N'conta antiga 381; dona: Holding (CMJ, 20/11/2026)'),
+    ('PART-CASA-66', N'Casa 66 - Marco Bosque Araucárias',      'PARTICULAR', 25, NULL, N'conta antiga 465; dona: Holding (CMJ, 20/11/2026)')
+) AS s (CODIGO, DESCRICAO, TIPO, CODIGO_MASTER_EMPRESA, ATIVO, OBSERVACAO)
 ON d.CODIGO = s.CODIGO
-WHEN MATCHED THEN UPDATE SET d.DESCRICAO = s.DESCRICAO, d.TIPO = s.TIPO, d.CODIGO_MASTER_EMPRESA = s.CODIGO_MASTER_EMPRESA, d.OBSERVACAO = s.OBSERVACAO
-WHEN NOT MATCHED THEN INSERT (CODIGO, DESCRICAO, TIPO, CODIGO_MASTER_EMPRESA, OBSERVACAO)
-     VALUES (s.CODIGO, s.DESCRICAO, s.TIPO, s.CODIGO_MASTER_EMPRESA, s.OBSERVACAO);
+WHEN MATCHED THEN UPDATE SET d.DESCRICAO = s.DESCRICAO, d.TIPO = s.TIPO, d.CODIGO_MASTER_EMPRESA = s.CODIGO_MASTER_EMPRESA, d.ATIVO = s.ATIVO, d.OBSERVACAO = s.OBSERVACAO
+WHEN NOT MATCHED THEN INSERT (CODIGO, DESCRICAO, TIPO, CODIGO_MASTER_EMPRESA, ATIVO, OBSERVACAO)
+     VALUES (s.CODIGO, s.DESCRICAO, s.TIPO, s.CODIGO_MASTER_EMPRESA, s.ATIVO, s.OBSERVACAO);
 GO
 
 -- -----------------------------------------------------------------------------
@@ -1990,10 +2018,10 @@ USING (VALUES
     ( 8, N'Vedação e massa',                       'DESPESA',         1, 1, NULL),
     ( 9, N'Acabamentos',                           'DESPESA',         1, 1, NULL),
     (10, N'Projetos',                              'DESPESA',         1, 1, NULL),
-    (11, N'Despesas de vendas',                    'DESPESA',         0, 1, NULL),
-    (12, N'Impostos e taxas municipais',           'DESPESA',         0, 1, NULL),
-    (13, N'Impostos e taxas estaduais',            'DESPESA',         0, 1, NULL),
-    (14, N'Impostos e taxas federais',             'DESPESA',         0, 1, NULL),
+    (11, N'Despesas de vendas',                    'DESPESA',         1, 1, NULL),
+    (12, N'Impostos e taxas municipais',           'DESPESA',         1, 1, NULL),
+    (13, N'Impostos e taxas estaduais',            'DESPESA',         1, 1, NULL),
+    (14, N'Impostos e taxas federais',             'DESPESA',         1, 1, NULL),
     (15, N'Cartórios',                             'DESPESA',         1, 1, NULL),
     (16, N'Canteiro de obras',                     'DESPESA',         1, 1, NULL),
     (17, N'Reembolsos e acertos',                  'DESPESA',         0, 1, NULL),
@@ -4088,7 +4116,7 @@ IF DATABASE_PRINCIPAL_ID(N'rl_sistemacmj_api') IS NOT NULL
     GRANT EXECUTE ON SCHEMA::[MIG] TO [rl_sistemacmj_api];
 GO
 
-PRINT N'MIGRACAO v1.1 concluida sem erro.';
+PRINT N'MIGRACAO v1.2 concluida sem erro.';
 GO
 
 SET NOEXEC OFF;

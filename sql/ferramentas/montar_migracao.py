@@ -9,10 +9,13 @@
 #                     que a leem, roda a preparacao (com as tabelas do Access vazias
 #                     so cria a estrutura; em reinstalacao refaz a partir do Access).
 # v1.1 (20/11/2026) - GRANT EXECUTE no schema MIG para o papel da API.
+# v1.2 (22/11/2026) - 03f: classificacao com as respostas da CMJ ao 3o documento
+#                     (MIG.Tabelas_Cadastros v1.1, MIG_Cadastros_Processar v1.1,
+#                     Carga_MIG_Classificacao v1.1).
 # Uso: python3 sql/ferramentas/montar_migracao.py   (SISTEMACMJ_SQL = pasta sql)
 import os, datetime
 BASE = os.environ.get('SISTEMACMJ_SQL', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-VERSAO = '1.1'
+VERSAO = '1.2'
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)

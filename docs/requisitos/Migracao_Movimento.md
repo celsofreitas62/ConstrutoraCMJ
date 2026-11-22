@@ -172,3 +172,24 @@ Menu **Sistema › Migração › Casos da migração** (`sis/migracao-casos.htm
 2. **Antes da virada**: resolver só os casos **com valor em aberto** (parcela ou conta ainda não paga), senão faltaria cobrança ou pagamento no sistema novo. Filtro "Valor em aberto" na tela e aviso na lista (`MIG_Caso_Listar` v1.3, coluna EM_ABERTO).
 3. **Depois da virada**: os demais casos a Renata resolve com calma no servidor. A tela continua habilitada e ganha **"Migrar casos resolvidos"** (só o administrador geral): inclui só os documentos resolvidos, sem refazer a migração, sempre como histórico. **Entra no roteiro da instalação e da virada (fases 3d e 8).**
 4. Arquivo morto (até 2021) não é afetado pelas correções, salvo documento mandado para lá pela tela.
+
+## 16. Terceira rodada com o Access de 20/11/2026 (conversa 03f, 22/11/2026)
+
+Extração nova pelo executor (pedido `extrair_access.pedido`), respostas do 3º documento aplicadas (`Migracao_Cadastros.md`, seções 6 e 7) e a sequência completa no LOCAL: carga, preparação (corte 01/01/2022), arquivo morto, cadastros (2 passadas, repetível), transformação e conferência. Rodada repetida do zero com o mesmo resultado, linha por linha.
+
+| | 2ª rodada (Access de 14/11) | 3ª rodada (Access de 20/11) |
+|---|---:|---:|
+| Linhas do `F Movimento Contas` | 101.612 | 102.372 |
+| Títulos: diferença Access × sistema, todos os anos | 0,00 | 0,00 |
+| Casos pendentes na tela | 141 | 139 |
+| Casos com valor em aberto | 2 | 2 (os mesmos) |
+
+- **Correções da Renata preservadas**: 123 documentos mandados para o arquivo morto, 46 ignorados, 1 com lote trocado, 12 linhas corrigidas; nenhum aviso "Revisar". O arquivo morto tem 170.886 linhas: as 170.490 até 2021 mais as 396 dos documentos mandados para lá pela tela.
+- **Saíram da lista** 2 casos: o lote 277730 (é o "lote 27730 do Vanderlei" das notas anteriores; corrigido no Access, agora fecha) e a venda 13514 (Chaves, Loja 3 Orion), que passou a entrar como conta a receber em aberto.
+- **Achados para a CMJ** (documento `CashBookCMJ/Conferencia_Migracao_CMJ_03f.docx`):
+  1. ao corrigir o lote 277730, o pagamento de R$ 8.331,00 do Vanderlei de 04/10/2024 ficou **duas vezes** no Access (nº 277727, antigo, e nº 310158, novo);
+  2. a venda 13514 tem a data do movimento em **30/04/2057** (vencimento 30/04/2027): na conferência por ano aparece o ano 2057;
+  3. saída de R$ 85.000,00 da Holding (19/11/2026, não confirmada) entra como paga e não compensada (regra aprovada), por isso a diferença de 85.000 na conferência do Sicredi Holding;
+  4. Sala 113 ainda sem confirmação;
+  5. os 2 casos com valor em aberto (nº 308074 e 308076, recebimentos parciais da Opera sem banco) continuam pendentes e precisam ser resolvidos antes da virada.
+- **Ajuste no LOCAL**: o `MIG_Movimento_Preparar` v1.2 (índice ORIGEM+NUM, de 19/11) só estava no MASTER de migração, não no LOCAL; aplicado e a rodada refeita. As triggers de auditoria das correções são geradas e diferem só no texto gerado.

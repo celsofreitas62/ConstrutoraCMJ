@@ -28,6 +28,11 @@
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c2).
+    v1.1 (22/11/2026) - 03f: conta padrão do centro pode vir da classificação
+                        (Classif_Centro.CODIGO_CONTA_PADRAO, decisão da CMJ) no
+                        lugar da do Access; centro extra com ATIVO decidido na
+                        classificação (ex.: imóvel vendido) prevalece sobre a
+                        regra automática.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Cadastros_Processar;
@@ -318,7 +323,7 @@ BEGIN
                COALESCE(c.CODIGO_MASTER_EMPRESA, CASE WHEN ce.DESTINO = 'EMPRESA' THEN ce.CODIGO_MASTER END, @MasterPrinc) AS MASTER_EMPRESA,
                CAST(CASE WHEN v.Contabil = N'True' THEN 1 ELSE 0 END AS BIT) AS CONTABIL,
                CAST(CASE WHEN EXISTS (SELECT 1 FROM #UsoCentro u WHERE u.COD = TRY_CONVERT(INT, v.CodigoVinculada)) THEN 1 ELSE 0 END AS BIT) AS ATIVO,
-               TRY_CONVERT(INT, v.FinanceiraPadrao) AS CONTA_ACCESS,
+               COALESCE(c.CODIGO_CONTA_PADRAO, TRY_CONVERT(INT, v.FinanceiraPadrao)) AS CONTA_ACCESS,
                c.PARCEIRO_CLIENTE,
                ISNULL(TRY_CONVERT(DECIMAL(9,4), v.PercentualAdm), 0) AS PERCENTUAL_ADM,
                CAST(CASE WHEN c.CODIGO_VINCULADA IS NULL OR c.TIPO = '' THEN 1 ELSE 0 END AS BIT) AS AUTOMATICA,
@@ -361,7 +366,8 @@ BEGIN
         ;WITH X AS
         (
             SELECT x.CODIGO, x.DESCRICAO, x.TIPO, x.CONTABIL, ISNULL(e.ID_EMPRESA, @IdPrincipal) AS ID_EMPRESA,
-                   CAST(CASE WHEN EXISTS (SELECT 1 FROM MIG.DePara_Plano_Excecao p INNER JOIN #UsoPlano u ON u.COD = p.PLANO3_ACCESS
+                   CAST(CASE WHEN x.ATIVO IS NOT NULL THEN x.ATIVO
+                             WHEN EXISTS (SELECT 1 FROM MIG.DePara_Plano_Excecao p INNER JOIN #UsoPlano u ON u.COD = p.PLANO3_ACCESS
                                           WHERE p.CENTRO_CODIGO = x.CODIGO) THEN 1 ELSE 0 END AS BIT) AS ATIVO
             FROM MIG.Classif_Centro_Extra x
             LEFT JOIN CAD.Empresa e ON e.CODIGO_ACCESS = x.CODIGO_MASTER_EMPRESA

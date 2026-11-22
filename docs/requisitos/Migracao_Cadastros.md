@@ -62,7 +62,7 @@ De-para do plano: 166 contas do plano novo, 412 do plano antigo (histórico), 34
 
 ## 6. Respostas da CMJ ao 3º documento (recebidas em 20/11/2026)
 
-Arquivo respondido: `CashBookCMJ/Conferencia_Cadastros_CMJ_03c2_parte3_RESPONDIDO.docx` (o original de 17/11 ficou ao lado). **Ainda não aplicado** no banco: entra na próxima rodada da migração, com tudo confirmado pelo Celso em 20/11/2026.
+Arquivo respondido: `CashBookCMJ/Conferencia_Cadastros_CMJ_03c2_parte3_RESPONDIDO.docx` (o original de 17/11 ficou ao lado). **Aplicado em 22/11/2026 (conversa 03f)** na classificação (`Carga_MIG_Classificacao.sql` v1.1), conferido na 3ª rodada (seção 7).
 
 1. **Custo de obra por grupo**: correto, exceto **11 (vendas), 12, 13 e 14 (impostos municipais, estaduais e federais)**, marcados "Correção" sobre o "Não" proposto. Esses quatro grupos **entram no custo da obra** (confirmado pelo Celso em 20/11/2026).
 2. **Contas que mudaram de lugar**: todas corretas. Desoneração (CPRB) fica em 03.1.03 INSS, **sem conta própria** ("Correto (não)").
@@ -80,3 +80,14 @@ Arquivo respondido: `CashBookCMJ/Conferencia_Cadastros_CMJ_03c2_parte3_RESPONDID
    - MJ Incorporadora SPE Ltda (Square): 34.939.234/0001-10
    - Edifício Comercial La Sante SPE: 21.126.427/0001-00
 7. **Pessoas incompletas**: sem DDD padrão automático; a Renata vai **regularizar os cadastros no SisCMJ** (telefones e dados para boleto), com **trava para não emitir boleto para cadastro irregular** (pedido P10 em `Pedidos_Futuros.md`).
+
+## 7. Terceira rodada com o Access de 20/11/2026 (conversa 03f, 22/11/2026)
+
+**Extração nova** do `CashBookCMJ_be.mdb` de 20/11 pelo executor (pedido fixo `extrair_access.pedido`, executor v1.5; cerca de 20 minutos, 23 tabelas, 0 erros). `F Movimento Contas`: 102.372 linhas (antes 101.612); `ArquivoMorto` e `Parceiros` sem mudança.
+
+**O que mudou no código** (pacote `03c2_mig_LOCAL` regerado; MIGRACAO v1.2):
+- `MIG.Tabelas_Cadastros` v1.1: `Classif_Centro.CODIGO_CONTA_PADRAO` (conta padrão decidida pela CMJ, no lugar da do Access) e `Classif_Centro_Extra.ATIVO` (vazio = regra automática; 0/1 = decisão da CMJ).
+- `MIG_Cadastros_Processar` v1.1: usa as duas colunas.
+- `Carga_MIG_Classificacao` v1.1: as respostas da seção 6.
+
+**Conferência** (LOCAL): 2ª passada dos cadastros sem nenhuma alteração (repetível). CNPJ e razão social das 4 SPEs gravados; centro e empresa Holding com a conta padrão Sicredi Holding; Casa Danielle e Casa 66 na Holding; Sala 110, Allegro 52 e Giuseppina 12 inativos; Sala 113 ativa; grupos 11 a 14 no custo de obra. Na conferência dos cadastros só sobra o esperado ("N/A", caixinha/contrapartida). Testes 03c2 20/0, 03a 68/0 e 03c2c (tela de casos) 61/0. MIGRACAO v1.2 ensaiada por cima no banco de ensaio `SISTEMACMJ`: sem erro, mesmas colunas e procedures do LOCAL.
