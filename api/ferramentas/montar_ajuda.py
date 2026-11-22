@@ -6,6 +6,7 @@
 #                      (fonte única: trechos de outros documentos entram por
 #                      <!-- incluir: ... -->). Saída: api/SistemaCMJ.Api/AjudaGeral/
 #                      (<página>.html e indice.json), embutida no executável.
+#  v1.1 (22/11/2026) - Linha recuada fora de lista não vira bloco de código.
 #  Uso       : python3 api/ferramentas/montar_ajuda.py            (gera)
 #              python3 api/ferramentas/montar_ajuda.py --conferir (só confere;
 #              sai com código 1 se alguma página estiver desatualizada)
@@ -75,12 +76,19 @@ def para_html(md):
     #  - lista recuada com 2 ou 3 espaços: dobra o recuo (ele pede 4 para aninhar);
     #  - lista logo depois de um parágrafo: põe a linha em branco que ele exige.
     item = re.compile(r'^\s*(?:[-*]|\d+[a-z]?\.) ')
-    saida, anterior, em_codigo = [], '', False
+    #  - linha recuada fora de lista (ex.: depois de um bloco de código): tira o
+    #    recuo, senão vira bloco de código (achado do Celso, 22/11/2026).
+    saida, anterior, em_codigo, em_lista = [], '', False, False
     for l in md.split('\n'):
-        if l.lstrip().startswith('```'): em_codigo = not em_codigo
-        if not em_codigo or l.lstrip().startswith('```'):
+        cerca = l.lstrip().startswith('```')
+        if cerca: em_codigo = not em_codigo
+        if cerca and not l.startswith(' '): em_lista = False
+        if not em_codigo or cerca:
             recuo = len(l) - len(l.lstrip(' '))
-            if 0 < recuo < 8 and l.strip(): l = ' ' * (recuo * 2) + l.lstrip(' ')
+            if item.match(l): em_lista = True
+            elif l.strip() and recuo == 0 and not cerca: em_lista = False
+            if 0 < recuo < 8 and l.strip():
+                l = (' ' * (recuo * 2) if em_lista else '') + l.lstrip(' ')
             if item.match(l) and anterior.strip() and not item.match(anterior) and not anterior.startswith(' ') and not anterior.startswith('|'):
                 saida.append('')
         saida.append(l)

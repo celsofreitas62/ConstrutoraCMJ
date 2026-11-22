@@ -303,7 +303,7 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .ajuda-geral-texto hr { border: 0; border-top: 1px solid var(--borda); margin: 20px 0; }
 .ajuda-geral-texto .tabela { margin: 6px 0 10px; font-size: 13px; }
 .ajuda-geral-texto .tabela td { vertical-align: top; }
-.bloco-comando { position: relative; margin: 8px 0; }
-.bloco-comando pre { margin: 0; padding: 12px 14px; padding-right: 90px; background: #F4F4F2; border: 1px solid var(--borda); border-radius: var(--raio); overflow-x: auto; }
+.bloco-comando { margin: 8px 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.bloco-comando pre { width: 100%; box-sizing: border-box; margin: 0; padding: 12px 14px; background: #F4F4F2; border: 1px solid var(--borda); border-radius: var(--raio); overflow-x: auto; }
 .bloco-comando pre code { background: transparent; padding: 0; }
-.botao-copiar { position: absolute; top: 6px; right: 6px; min-height: 30px; padding: 0 10px; font-size: 12px; }
+.botao-copiar { min-height: 30px; padding: 0 10px; font-size: 12px; }

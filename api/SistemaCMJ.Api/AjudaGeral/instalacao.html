@@ -166,8 +166,7 @@ UPDATE SIS.Parametro SET VALOR = N'&lt;pasta sincronizada com o Drive&gt;'  WHER
 UPDATE SIS.Parametro SET VALOR = N'celsofreitas62@gmail.com'          WHERE CHAVE = 'EMAIL_ADMIN_ALERTA';    -- avisos de backup e restauração
 SELECT CHAVE, VALOR FROM SIS.Parametro WHERE CHAVE LIKE 'BACKUP%' OR CHAVE = 'EMAIL_ADMIN_ALERTA' ORDER BY CHAVE;
 </code></pre>
-<pre><code>Outros parâmetros de backup (padrões): 7 dias guardados na pasta, 1 completo na nuvem, avisos de atraso (26 h completo, 3 h log, 8 dias teste), motivo da restauração com 10 letras.
-</code></pre>
+<p>Outros parâmetros de backup (padrões): 7 dias guardados na pasta, 1 completo na nuvem, avisos de atraso (26 h completo, 3 h log, 8 dias teste), motivo da restauração com 10 letras.</p>
 <h2>6. Instalar o serviço</h2>
 <ul>
 <li>☐ Em <code>instalacao\</code>, botão direito em <strong><code>instalar_servico.cmd</code></strong> › <strong>Executar como administrador</strong>. Parâmetros, se precisar mudar o padrão (escrever depois do nome, numa janela de comando como administrador):<ul>
