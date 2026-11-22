@@ -39,10 +39,39 @@ Situação: **ANOTADO** (só registrado) → **PROPOSTO** (proposta feita, aguar
 | P17 | 21/11/2026 | **Evitar ao máximo erros de digitação na movimentação** (datas, valores fora do normal etc.). | `FIN`, telas do financeiro (fase 4) e baixas (fase 6) | ANOTADO | Sugestões (tudo parâmetro, cada regra como **aviso** ou **bloqueio**): limite de data no passado e no futuro (em dias); vencimento antes da emissão; mês fechado; **valor fora do padrão** comparado com a média do mesmo parceiro e conta (ex.: acima de 3 vezes); **possível duplicidade** (mesmo parceiro, valor, vencimento e documento); calendário e máscara nos campos; conta e centro de custo padrão vindos do parceiro. Quando o usuário confirma um aviso, a confirmação fica na auditoria. |
 | P18 | 21/11/2026 | **Relatório da administração por e-mail**: a administradora (ou quem estiver marcado no cadastro de usuários) recebe tudo o que foi feito no dia: inclusões, alterações e exclusões, novos cadastros, compras, vendas, extratos oficiais da integração banco/sistema, contas a receber e a pagar em atraso e a vencer no próximo dia útil. A administradora configura quem recebe, a periodicidade e o horário. | Depois do financeiro e da cobrança (fase 6 em diante); usa `SIS.Auditoria`, comunicados, rotinas e P01 | ANOTADO | Sugestão: resumo com números no corpo do e-mail e o detalhe em PDF anexo; cada seção liga/desliga; respeitar as permissões de quem recebe (sem a permissão de ver totais, P04, não recebe valores); opção "não enviar se não houve movimento". |
 | P19 | 21/11/2026 | **Tela de controle dos e-mails automáticos**: ativo/desativado, frequência, horário de envio e grupo de usuários que recebem. | Ampliar a tela Comunicados (menu Sistema › E-mails) e as rotinas já existentes; junto com P18 | ANOTADO | Base já pronta: `SIS.Grupo_Email`, fila e log de e-mails, rotinas agendadas. Sugestão: uma **central de e-mails automáticos** listando todos (boletim, P18, agenda P07, avisos de boleto), com último e próximo envio, falhas, botões "Prévia" e "Enviar agora" e o histórico de cada envio. |
+| P20 | 22/11/2026 | **Recuperar 1 registro ou um conjunto de registros** sem restaurar o banco inteiro. Aprovados os itens 1 e 2 da sugestão: (1) **desfazer pela auditoria**, na aba "Histórico" de cada tela: voltar o registro para como estava numa data/hora, recuperar registro excluído, desfazer tudo o que um lote fez; (2) **lixeira** (exclusão lógica): o excluído fica marcado e pode ser recuperado na hora; uma rotina apaga de vez depois de N dias (parâmetro). | Fase 4, junto com as telas de manutenção (base `SIS`) | APROVADO (itens 1 e 2) | O desfazer grava uma alteração nova, com motivo obrigatório e auditoria. Não desfaz o que estiver ligado a boleto enviado ao banco (P16) nem a mês fechado. Os registros ligados entre si (venda, parcelas, baixas) vão juntos, ou a operação é recusada. Permissões próprias para recuperar e para esvaziar a lixeira. **Item 3 anotado, sem aprovação (opcional):** recuperar registros de um backup num banco temporário (`SisCMJ_Recupera`), com tela de comparação, só para o administrador geral, em casos raros. A restauração do banco inteiro fica para desastre. |
+| P21 | 22/11/2026 | **Permutas**, em três casos: (a) **material × imóvel**: o cliente (ex.: Cerâmica Santa Marta, apartamento da obra Maui) paga o imóvel com material entregue por outras empresas (Marcella Maaz Proite: tijolos; Ecoquímica: tintas), aplicado em outras obras (Orion, Opera, depois Music) até acabar o saldo; (b) **comissão × imóvel**: o corretor ou a imobiliária parceira recebe a comissão em imóvel; pode haver mais de um corretor, cada um com o seu valor no contrato; (c) **permuta com pagamento de parcelas**: o fornecedor paga as parcelas durante a obra e, quando entrega o material (ex.: esquadrias e vidros), a NF abate a parcela do mês e o saldo vai para a parcela das chaves, ou o total da NF entra no mês, conforme a negociação. Hoje (Access): vários lançamentos manuais (NF na obra que recebe e quitação sem pagamento; recebimento no cliente, na obra que vendeu). A CMJ quer um controle que **não fique confuso**: saber o que foi pago em dinheiro e o que foi permuta, e o **saldo de permuta** a abater do imóvel. A comissão é **custo** da obra, a permuta é **receita** da obra, mas sem dinheiro no banco. | `VENDA` (fase 5) + `FIN` + Compras (6.1) + exportação contábil (fase 7) | ANOTADO | Ver "Proposta inicial do P21" abaixo. A base já está prevista: conta do tipo `PERMUTA` em `BANCO.Conta` e forma de baixa `PERMUTA` em `FIN`. **Confirmar com o contador da CMJ** o tratamento contábil e fiscal (permuta é tratada como compra e venda; valor de cada lado; NF emitida por terceiro em nome da obra). |
 
 ## Detalhes que o resumo da tabela não mostra (leva 1)
 
 - P03: na tela de abertura, um **botão de preferências** (ou tela de preferências do sistema, para todos os usuários). No calendário anual, os quadros são os **meses** dentro do ano; no bimestral, os grupos de dois meses; e assim por diante, cada quadro com D/C/Saldo. Setas: exemplo do Celso, trimestre Nov/Dez/Jan → próximo → Fev/Mar/Abr. Formato de cada dia: "D - 1.000,00", embaixo alinhado "C - 2.500,00", embaixo "S - 1.500,00". O Voltar desce e sobe nível por nível: lançamento → lista → quadro (bimestral ou o que estava escolhido). A projeção usa os valores da tabela de ocorrências **naquele momento**.
+
+
+## Proposta inicial do P21 (permutas), a detalhar na fase 5
+
+1. **Contrato de permuta** ligado à venda do imóvel: o permutante (parceiro), a obra e a unidade vendidas, o **valor total da permuta** e o que entra nela (material, comissão, parcelas em dinheiro), a forma de abater (parcela do mês, chaves, total no mês) e os corretores com o valor de cada um (caso b).
+2. **Conta corrente da permuta** (o "saldo de permuta"): o crédito do permutante cresce a cada NF de material entregue, a cada comissão convertida e a cada parcela paga; ele é abatido do valor do imóvel. O extrato mostra cada movimento e o saldo, e pode ser enviado em PDF, por e-mail ou impresso em A4 (P13). Usa a mesma ideia do **crédito do cliente** do P09.
+3. **Uma operação só, em vez de vários lançamentos manuais.** Exemplo do caso (a): o usuário lança a NF da Marcella na obra Orion e marca "permuta do contrato X (Cerâmica Santa Marta)". O sistema gera, num mesmo **lote**:
+   - o **custo** na obra que recebeu o material (Orion), com o fornecedor que emitiu a NF;
+   - a quitação desse custo pela conta `PERMUTA` (sem dinheiro);
+   - a **receita** na obra que vendeu o imóvel (Maui), no contrato do permutante, também quitada pela conta `PERMUTA`;
+   - o abatimento no saldo da permuta.
+
+   A obra de cada lado é obrigatória, e o sistema avisa quando o saldo acabar.
+4. **Caso (b), comissão:** cada corretor tem a sua comissão a pagar (custo da obra). Na permuta, ela é quitada pela conta `PERMUTA` contra a parcela do imóvel que ele recebe, sem dinheiro. Sem permuta, a comissão é paga normalmente. Os relatórios separam **comissão paga em dinheiro** e **comissão em permuta**. Para corretor pessoa física, confirmar as retenções.
+5. **Caso (c), material contra parcelas:** as parcelas pagas em dinheiro são baixa normal. A NF de entrega gera o custo quitado por permuta e abate a parcela do mês. O saldo vai para as chaves, ou o total entra no mês, conforme o contrato.
+6. **Relatórios:**
+   - receita da obra separada em **"em dinheiro" × "em permuta"**;
+   - fluxo de caixa só com o dinheiro real (a conta `PERMUTA` fica fora do saldo bancário);
+   - saldo de todas as permutas em aberto;
+   - extrato de cada permutante.
+7. **Migração:** levar o saldo atual da permuta da Cerâmica Santa Marta, apurado no Access e conferido pela Renata, como saldo inicial.
+
+Perguntas para a CMJ, para a hora da proposta (documento para a Renata):
+- quais permutas estão em aberto hoje e com que saldo;
+- como as NFs de terceiros são emitidas (em nome de qual empresa ou SPE);
+- se há correção do saldo da permuta;
+- como fica a permuta de comissão quando há mais de um corretor.
 
 ## Textos originais
 
@@ -142,3 +171,25 @@ Situação: **ANOTADO** (só registrado) → **PROPOSTO** (proposta feita, aguar
 > 6. evitar ao máximo erros de digitação dos usuários na movimentação como datas valores fora do normal etc
 > 7. a administradora do sistema ou campo no usuários para indicar recebe diariamente por e-mail todo o que foi feito de movimento no dia alteração inclusão exclusão novos cadastros compras vendas extratos oficiais da integração banco/sistema contas a receber e pagar em atraso e a vencer no próximo dia útil enfim um relatório para administração e gerenciamento das movimentações no SisCMJ a administradora pode configurar quem recebe o e-mail e a Periodicidade e o horário de envio 
 > 8. se possível uma tela de controle dos e-mails automático para gerenciar seus envios tipo ativo/desativado, frequência, horário de envio, grupo de usuários que recebem
+
+### Leva 7 (22/11/2026), conversa 03e
+
+Pergunta do Celso:
+
+> restaurar 1 registro ou um conjunto de registros está opção é viável no restore/backup?
+
+Resposta do Celso à sugestão (itens 1 auditoria, 2 lixeira, 3 banco temporário):
+
+> sim pode registrar vamos fazer item 1 e 2 conforme sua sugestão
+
+### Leva 8 (22/11/2026), conversa 03e: permutas
+
+> * Permuta material x imovel. Temos um caso de permuta em andamento, da obra Maui que ja foi entregue. A empresa Ceramica Santa Marta (cliente) permutou tijolos e tintas para aquisição do apartamento. Como o apartamento ficou pronto mas o valor da permuta nao foi quitado, esses materiais esta sendo aplicados nas obras Orion, Opera e sera no Music caso ainda tenha saldo. A Ceramica Santa Marta atualmente esta fornecendo os tijolos pela empresa Marcella Maaz Proite e as tintas a empresa fornecedora é Ecoquimica. No sistema atual faço vários lançamentos por exemplo:
+>
+> Lanço na obra a NF do material adquirido (Marcella ou Ecoquimica),  e faço a quitação porque não haverá pagamento (é permuta com outra obra), e lanço na Ceramica Santa Marta (cliente) recebimento do valor da NF como controle de recebimentos. Sempre se atentando, nos lançamentos, qual obra adquiriu o material pois estou lançando no custo da mesma, e o recebimento é na obra que vendeu o apartamento na permuta.
+>
+> * Permuta comissão venda x imóvel. Neste caso é negociado imóveis por comissão.  As vezes é mais de um vendedor, porque temos uma parceria com a imobiliária. No contrato de venda é mencionado o valor da comissão para cada corretor. Lanço no sistema atual como a pagar as comissões,  e a imobiliária parceira, caso tenha fechado a permuta, tenho que lançar como pago e como recebido. Preciso que esse controle nao fique confuso, tenho que saber o valor pago em casos que nao haja a permuta, e tenho que saber o saldo de permuta/ comissão para abater com o valor do imóvel em questão. Em resumo, o pagamento de comissão faz parte do custo da obra, e a permuta faz parte da receita da obra, mas temos que saber que nao entrou esse dinheiro no banco.
+>
+> * Permuta com pagamento de parcelas. Durante o andamento da obra, o fornecedor paga as parcelas acordadas no contrato,  e quando chegar a hora de fornecer o material (ex. Esquadrias e vidros) eles fazem a NF de 
+>
+> * entrega, o lançamento é normal e com quitação, e abatemos a parcela do mês em questão como receita. O saldo da NF  abatemos do valor da parcela das chaves, ou, dependendo da negociação no ato da venda pode-se lançar no mês o total da NF como receita.
