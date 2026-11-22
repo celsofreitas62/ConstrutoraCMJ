@@ -1,9 +1,9 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v1.9)
+  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v2.0)
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : 22/11/2026 por sql/ferramentas/montar_master.py, juntando os
-                arquivos de sql/objetos aprovados (pacotes 02a a 03g), sem o schema
+                arquivos de sql/objetos aprovados (pacotes 02a a 04b), sem o schema
                 MIG (regra 60). NAO EDITAR ESTE ARQUIVO: corrigir o arquivo do
                 objeto e gerar o MASTER de novo.
   Descricao   : Instala (ou atualiza) TODO o banco do SisCMJ no servidor do
@@ -18,7 +18,7 @@
                 rl_sistemacmj_api (roteiro de instalacao; a senha nao fica em
                 arquivo).
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > conferir o banco > F5.
-  Objetos     : 211 arquivos.
+  Objetos     : 235 arquivos.
 *******************************************************************************/
 -- =============================================================================
 -- 1. CONFERENCIA DO BANCO
@@ -29,7 +29,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MASTER v1.9: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MASTER v2.0: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- =============================================================================
@@ -945,6 +945,8 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (22/11/2026) - Etapa 04b (P20): índice por TRANSACAO (desfazer uma
+                        operação inteira pelo histórico).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -984,6 +986,9 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Auditoria]') AND i.name = N'IX_Auditoria_ID_LOTE')
     CREATE NONCLUSTERED INDEX IX_Auditoria_ID_LOTE ON [SIS].[Auditoria] (ID_LOTE) WHERE ID_LOTE IS NOT NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Auditoria]') AND i.name = N'IX_Auditoria_TRANSACAO')
+    CREATE NONCLUSTERED INDEX IX_Auditoria_TRANSACAO ON [SIS].[Auditoria] (TRANSACAO, ID_AUDITORIA) WHERE TRANSACAO IS NOT NULL;
 GO
 GO
 
@@ -1693,6 +1698,8 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - CNPJ_COMPRAS (CNPJ para notas de compra e DDA), etapa 03c2.
+    v1.2 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
+                        (lixeira: preenchidas = registro na lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1750,6 +1757,13 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UQ_Empresa_CNPJ' AND object_id = OBJECT_ID(N'[CAD].[Empresa]'))
     CREATE UNIQUE NONCLUSTERED INDEX UQ_Empresa_CNPJ ON [CAD].[Empresa] (CNPJ) WHERE CNPJ <> '';
 GO
+
+IF COL_LENGTH(N'CAD.Empresa', N'DT_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Empresa] ADD DT_EXCLUSAO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'CAD.Empresa', N'USUARIO_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Empresa] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
 GO
 
 -- -----------------------------------------------------------------------------
@@ -1768,6 +1782,8 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
+                        (lixeira: preenchidas = registro na lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1808,6 +1824,13 @@ BEGIN
         CONSTRAINT CK_Conta_SALDO_INICIAL CHECK (SALDO_INICIAL = 0 OR DT_SALDO_INICIAL IS NOT NULL)
     );
 END;
+GO
+
+IF COL_LENGTH(N'BANCO.Conta', N'DT_EXCLUSAO') IS NULL
+    ALTER TABLE [BANCO].[Conta] ADD DT_EXCLUSAO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'BANCO.Conta', N'USUARIO_EXCLUSAO') IS NULL
+    ALTER TABLE [BANCO].[Conta] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
 GO
 GO
 
@@ -1853,6 +1876,8 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
+                        (lixeira: preenchidas = registro na lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1884,6 +1909,13 @@ BEGIN
     );
 END;
 GO
+
+IF COL_LENGTH(N'CAD.Centro_Custo', N'DT_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Centro_Custo] ADD DT_EXCLUSAO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'CAD.Centro_Custo', N'USUARIO_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Centro_Custo] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
 GO
 
 -- -----------------------------------------------------------------------------
@@ -1903,6 +1935,8 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
+                        (lixeira: preenchidas = registro na lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1960,6 +1994,13 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Pessoa_NOME' AND obje
 GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Pessoa_CPF_CNPJ' AND object_id = OBJECT_ID(N'[CAD].[Pessoa]'))
     CREATE NONCLUSTERED INDEX IX_Pessoa_CPF_CNPJ ON [CAD].[Pessoa] (CPF_CNPJ) WHERE CPF_CNPJ <> '';
+GO
+
+IF COL_LENGTH(N'CAD.Pessoa', N'DT_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD DT_EXCLUSAO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'CAD.Pessoa', N'USUARIO_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
 GO
 GO
 
@@ -2129,6 +2170,8 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
+                        (lixeira: preenchidas = registro na lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -2159,6 +2202,13 @@ BEGIN
     );
 END;
 GO
+
+IF COL_LENGTH(N'CAD.Plano_Grupo', N'DT_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Plano_Grupo] ADD DT_EXCLUSAO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'CAD.Plano_Grupo', N'USUARIO_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Plano_Grupo] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
 GO
 
 -- -----------------------------------------------------------------------------
@@ -2174,6 +2224,8 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
+                        (lixeira: preenchidas = registro na lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -2203,6 +2255,13 @@ BEGIN
     );
 END;
 GO
+
+IF COL_LENGTH(N'CAD.Plano_Subgrupo', N'DT_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Plano_Subgrupo] ADD DT_EXCLUSAO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'CAD.Plano_Subgrupo', N'USUARIO_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Plano_Subgrupo] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
 GO
 
 -- -----------------------------------------------------------------------------
@@ -2221,6 +2280,8 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
+                        (lixeira: preenchidas = registro na lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -2250,6 +2311,13 @@ BEGIN
         CONSTRAINT CK_Plano_Conta_DESCRICAO CHECK (DESCRICAO <> N'')
     );
 END;
+GO
+
+IF COL_LENGTH(N'CAD.Plano_Conta', N'DT_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Plano_Conta] ADD DT_EXCLUSAO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'CAD.Plano_Conta', N'USUARIO_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Plano_Conta] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
 GO
 GO
 
@@ -3190,6 +3258,204 @@ IF OBJECT_ID(N'[SIS].[Atualizacao]', N'U') IS NULL
         CONSTRAINT PK_Atualizacao          PRIMARY KEY CLUSTERED (ID_ATUALIZACAO),
         CONSTRAINT CK_Atualizacao_SITUACAO CHECK (SITUACAO IN ('CONCLUIDA', 'DESFEITA', 'ERRO'))
     );
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.Tabela_Config.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[Tabela_Config]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Configuração, por tabela, do desfazer pelo histórico e da
+                lixeira (P20, docs/requisitos/Lixeira_Desfazer.md). Nada fixo
+                no código: cada tabela diz o que pode e o que não pode.
+                  PERMITE_DESFAZER   voltar campos pelo histórico
+                  PERMITE_LIXEIRA    botão Excluir manda para a lixeira (a
+                                     tabela precisa ter ATIVO, DT_EXCLUSAO e
+                                     USUARIO_EXCLUSAO)
+                  DIAS_GUARDA        prazo próprio da lixeira (NULL = vale o
+                                     parâmetro LIXEIRA_DIAS_GUARDA); única
+                                     coluna que a CMJ muda (tela da Lixeira)
+                  CAMPOS_BLOQUEADOS  campos que nunca são desfeitos (saldos,
+                                     calculados, senha), separados por vírgula
+                  CAMPOS_UNICOS      conferidos na recuperação contra os
+                                     registros vivos (ex.: CPF_CNPJ)
+                  TABELAS_FILHAS     registros que "vão junto":
+                                     SCHEMA.Tabela.COLUNA_FK, separados por
+                                     vírgula (voltar a uma data e apagar de vez)
+                  DESFAZER_INCLUSAO  o que fazer ao desfazer uma inclusão:
+                                     LIXEIRA, DESATIVAR (ATIVO = 0), APAGAR
+                                     (só tabelas de ligação, ex.: permissões)
+                                     ou RECUSAR
+                  DESFAZER_EXCLUSAO  o que fazer ao desfazer uma exclusão
+                                     definitiva: REINSERIR (só tabelas de
+                                     ligação: volta com a foto da auditoria,
+                                     com ID novo) ou RECUSAR
+                  DESCRICAO_SQL      expressão com as colunas da tabela que
+                                     descreve o registro na lixeira e na prévia
+                                     (só pela carga da instalação, nunca pela
+                                     tela)
+                  COLUNA_EMPRESA +
+                  COLUNA_DATA_MES    trava de mês fechado (FIN.Mes_Fechado)
+                  PROC_VALIDAR       procedure própria de trava (ex.: boleto no
+                                     banco, P16): recebe @Tabela, @IdRegistro,
+                                     @Operacao e devolve @Mensagem OUTPUT
+                                     (vazia = pode)
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b, P20).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[SIS].[Tabela_Config]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [SIS].[Tabela_Config]
+    (
+        ID_TABELA_CONFIG   INT            IDENTITY(1,1) NOT NULL,
+        TABELA             NVARCHAR(256)  NOT NULL,
+        PERMITE_DESFAZER   BIT            NOT NULL CONSTRAINT DF_Tabela_Config_PERMITE_DESFAZER  DEFAULT (1),
+        PERMITE_LIXEIRA    BIT            NOT NULL CONSTRAINT DF_Tabela_Config_PERMITE_LIXEIRA   DEFAULT (0),
+        DIAS_GUARDA        INT            NULL,
+        CAMPOS_BLOQUEADOS  NVARCHAR(1000) NOT NULL CONSTRAINT DF_Tabela_Config_CAMPOS_BLOQUEADOS DEFAULT (N''),
+        CAMPOS_UNICOS      NVARCHAR(400)  NOT NULL CONSTRAINT DF_Tabela_Config_CAMPOS_UNICOS     DEFAULT (N''),
+        TABELAS_FILHAS     NVARCHAR(1000) NOT NULL CONSTRAINT DF_Tabela_Config_TABELAS_FILHAS    DEFAULT (N''),
+        DESFAZER_INCLUSAO  VARCHAR(10)    NOT NULL CONSTRAINT DF_Tabela_Config_DESFAZER_INCLUSAO DEFAULT ('RECUSAR'),
+        DESFAZER_EXCLUSAO  VARCHAR(10)    NOT NULL CONSTRAINT DF_Tabela_Config_DESFAZER_EXCLUSAO DEFAULT ('RECUSAR'),
+        DESCRICAO_SQL      NVARCHAR(1000) NOT NULL CONSTRAINT DF_Tabela_Config_DESCRICAO_SQL     DEFAULT (N''),
+        COLUNA_EMPRESA     NVARCHAR(128)  NOT NULL CONSTRAINT DF_Tabela_Config_COLUNA_EMPRESA    DEFAULT (N''),
+        COLUNA_DATA_MES    NVARCHAR(128)  NOT NULL CONSTRAINT DF_Tabela_Config_COLUNA_DATA_MES   DEFAULT (N''),
+        PROC_VALIDAR       NVARCHAR(256)  NOT NULL CONSTRAINT DF_Tabela_Config_PROC_VALIDAR      DEFAULT (N''),
+        ATIVO              BIT            NOT NULL CONSTRAINT DF_Tabela_Config_ATIVO             DEFAULT (1),
+        DT_CRIACAO         DATETIME2(0)   NOT NULL CONSTRAINT DF_Tabela_Config_DT_CRIACAO        DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO    NVARCHAR(100)  NOT NULL CONSTRAINT DF_Tabela_Config_USUARIO_CRIACAO   DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
+        DT_ALTERACAO       DATETIME2(0)   NULL,
+        USUARIO_ALTERACAO  NVARCHAR(100)  NULL,
+        CONSTRAINT PK_Tabela_Config                   PRIMARY KEY CLUSTERED (ID_TABELA_CONFIG),
+        CONSTRAINT UQ_Tabela_Config_TABELA            UNIQUE (TABELA),
+        CONSTRAINT CK_Tabela_Config_DESFAZER_INCLUSAO CHECK (DESFAZER_INCLUSAO IN ('LIXEIRA', 'DESATIVAR', 'APAGAR', 'RECUSAR')),
+        CONSTRAINT CK_Tabela_Config_DESFAZER_EXCLUSAO CHECK (DESFAZER_EXCLUSAO IN ('REINSERIR', 'RECUSAR')),
+        CONSTRAINT CK_Tabela_Config_DIAS_GUARDA       CHECK (DIAS_GUARDA IS NULL OR DIAS_GUARDA BETWEEN 1 AND 3650)
+    );
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.Lixeira.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[Lixeira]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Registros mandados para a lixeira pelo botão Excluir das telas
+                (P20). O registro continua na tabela dele, desativado e com
+                DT_EXCLUSAO preenchida; esta tabela guarda de onde veio (tela),
+                quem excluiu, o motivo, como estava o ATIVO antes e até quando
+                fica guardado (DT_APAGAR).
+                SITUACAO: LIXEIRA (pode recuperar), RECUPERADO (voltou) ou
+                APAGADO (apagado de vez pela rotina diária ou pelo botão
+                Esvaziar agora; a cópia completa fica em SIS.Auditoria).
+                DT_AVISO: quando saiu o e-mail avisando que vai ser apagado.
+                Nunca é apagada: é o histórico da lixeira.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b, P20).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[SIS].[Lixeira]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [SIS].[Lixeira]
+    (
+        ID_LIXEIRA           BIGINT         IDENTITY(1,1) NOT NULL,
+        TABELA               NVARCHAR(256)  NOT NULL,
+        ID_REGISTRO          BIGINT         NOT NULL,
+        ITEM_CODIGO          VARCHAR(40)    NOT NULL,
+        DESCRICAO            NVARCHAR(400)  NOT NULL CONSTRAINT DF_Lixeira_DESCRICAO       DEFAULT (N''),
+        MOTIVO               NVARCHAR(400)  NOT NULL CONSTRAINT DF_Lixeira_MOTIVO          DEFAULT (N''),
+        ATIVO_ANTES          BIT            NOT NULL CONSTRAINT DF_Lixeira_ATIVO_ANTES     DEFAULT (1),
+        DT_EXCLUSAO          DATETIME2(0)   NOT NULL CONSTRAINT DF_Lixeira_DT_EXCLUSAO     DEFAULT (SYSDATETIME()),
+        USUARIO_EXCLUSAO     NVARCHAR(100)  NOT NULL CONSTRAINT DF_Lixeira_USUARIO_EXCLUSAO DEFAULT (N''),
+        ID_USUARIO_EXCLUSAO  INT            NULL,
+        DT_APAGAR            DATE           NOT NULL,
+        SITUACAO             VARCHAR(12)    NOT NULL CONSTRAINT DF_Lixeira_SITUACAO        DEFAULT ('LIXEIRA'),
+        DT_SITUACAO          DATETIME2(0)   NULL,
+        USUARIO_SITUACAO     NVARCHAR(100)  NOT NULL CONSTRAINT DF_Lixeira_USUARIO_SITUACAO DEFAULT (N''),
+        MOTIVO_SITUACAO      NVARCHAR(400)  NOT NULL CONSTRAINT DF_Lixeira_MOTIVO_SITUACAO DEFAULT (N''),
+        DT_AVISO             DATETIME2(0)   NULL,
+        DT_CRIACAO           DATETIME2(0)   NOT NULL CONSTRAINT DF_Lixeira_DT_CRIACAO      DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO      NVARCHAR(100)  NOT NULL CONSTRAINT DF_Lixeira_USUARIO_CRIACAO DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
+        DT_ALTERACAO         DATETIME2(0)   NULL,
+        USUARIO_ALTERACAO    NVARCHAR(100)  NULL,
+        CONSTRAINT PK_Lixeira          PRIMARY KEY CLUSTERED (ID_LIXEIRA),
+        CONSTRAINT CK_Lixeira_SITUACAO CHECK (SITUACAO IN ('LIXEIRA', 'RECUPERADO', 'APAGADO'))
+    );
+END;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Lixeira]') AND i.name = N'UQ_Lixeira_TABELA_REGISTRO')
+    CREATE UNIQUE NONCLUSTERED INDEX UQ_Lixeira_TABELA_REGISTRO ON [SIS].[Lixeira] (TABELA, ID_REGISTRO) WHERE SITUACAO = 'LIXEIRA';
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Lixeira]') AND i.name = N'IX_Lixeira_SITUACAO_DT_APAGAR')
+    CREATE NONCLUSTERED INDEX IX_Lixeira_SITUACAO_DT_APAGAR ON [SIS].[Lixeira] (SITUACAO, DT_APAGAR) INCLUDE (TABELA, ID_REGISTRO, ITEM_CODIGO);
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.Desfazer.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[Desfazer]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Registro de cada desfazer feito pelo histórico (P20): o que foi
+                pedido, por quem, com que motivo (obrigatório) e o que mudou.
+                TIPO: REGISTRO (voltar um registro, com os filhos que vão
+                junto, para como estava depois de uma operação ou numa
+                data/hora), OPERACAO (desfazer uma operação = uma transação) ou
+                LOTE (desfazer tudo o que um lote fez).
+                TRANSACAO: a transação do próprio desfazer, que liga este
+                registro às linhas novas da SIS.Auditoria.
+                Nunca é alterada nem apagada.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b, P20).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[SIS].[Desfazer]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [SIS].[Desfazer]
+    (
+        ID_DESFAZER     BIGINT         IDENTITY(1,1) NOT NULL,
+        TIPO            VARCHAR(10)    NOT NULL,
+        ITEM_CODIGO     VARCHAR(40)    NOT NULL CONSTRAINT DF_Desfazer_ITEM_CODIGO   DEFAULT (''),
+        TABELA          NVARCHAR(256)  NOT NULL CONSTRAINT DF_Desfazer_TABELA        DEFAULT (N''),
+        ID_REGISTRO     BIGINT         NULL,
+        ID_AUDITORIA    BIGINT         NULL,
+        DT_ALVO         DATETIME2(0)   NULL,
+        TRANSACAO_ALVO  BIGINT         NULL,
+        ID_LOTE_ALVO    BIGINT         NULL,
+        MOTIVO          NVARCHAR(400)  NOT NULL,
+        QTD_REGISTROS   INT            NOT NULL CONSTRAINT DF_Desfazer_QTD_REGISTROS DEFAULT (0),
+        QTD_CAMPOS      INT            NOT NULL CONSTRAINT DF_Desfazer_QTD_CAMPOS    DEFAULT (0),
+        QTD_LIXEIRA     INT            NOT NULL CONSTRAINT DF_Desfazer_QTD_LIXEIRA   DEFAULT (0),
+        TRANSACAO       BIGINT         NULL,
+        ID_USUARIO      INT            NULL,
+        USUARIO         NVARCHAR(100)  NOT NULL CONSTRAINT DF_Desfazer_USUARIO       DEFAULT (N''),
+        DT_CRIACAO      DATETIME2(0)   NOT NULL CONSTRAINT DF_Desfazer_DT_CRIACAO    DEFAULT (SYSDATETIME()),
+        CONSTRAINT PK_Desfazer      PRIMARY KEY CLUSTERED (ID_DESFAZER),
+        CONSTRAINT CK_Desfazer_TIPO CHECK (TIPO IN ('REGISTRO', 'OPERACAO', 'LOTE'))
+    );
+END;
 GO
 GO
 
@@ -4548,6 +4814,204 @@ AS
 BEGIN
     RETURN ISNULL((SELECT MIN(v.DT_INSTALACAO) FROM SIS.Versao_Banco v WHERE v.VERSAO = SIS.fn_SIS_Versao_Banco()),
                   CAST('1900-01-01' AS DATETIME2(0)));
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Tabela_PK.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Tabela_PK]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Nome da coluna da chave primária de uma tabela ('SCHEMA.Tabela').
+                Devolve '' se a tabela não existir ou se a chave tiver mais de
+                uma coluna. Usada pelo desfazer e pela lixeira (P20).
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- SELECT SIS.fn_SIS_Tabela_PK(N'CAD.Pessoa');  -- ID_PESSOA
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Tabela_PK] (@Tabela NVARCHAR(256))
+RETURNS NVARCHAR(128)
+AS
+BEGIN
+    DECLARE @ObjId INT = OBJECT_ID(LTRIM(RTRIM(ISNULL(@Tabela, N''))), N'U');
+    DECLARE @Pk NVARCHAR(128), @Qtd INT;
+
+    IF @ObjId IS NULL RETURN N'';
+
+    SELECT @Pk = MAX(c.name), @Qtd = COUNT(*)
+    FROM sys.indexes ix
+    INNER JOIN sys.index_columns ic ON ic.object_id = ix.object_id AND ic.index_id = ix.index_id
+    INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+    WHERE ix.object_id = @ObjId AND ix.is_primary_key = 1;
+
+    IF ISNULL(@Qtd, 0) <> 1 RETURN N'';
+    RETURN ISNULL(@Pk, N'');
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Coluna_Tipo.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Coluna_Tipo]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Tipo completo de uma coluna, pronto para CONVERT (ex.:
+                NVARCHAR(200), DECIMAL(18,2), DATETIME2(0)). Devolve '' se a
+                coluna não existir. Usada pelo desfazer (P20) para devolver ao
+                campo o valor guardado em texto na SIS.Auditoria.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- SELECT SIS.fn_SIS_Coluna_Tipo(N'CAD.Pessoa', N'NOME');
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Coluna_Tipo] (@Tabela NVARCHAR(256), @Coluna NVARCHAR(128))
+RETURNS NVARCHAR(128)
+AS
+BEGIN
+    DECLARE @Tipo NVARCHAR(128);
+
+    SELECT @Tipo = UPPER(t.name)
+                 + CASE WHEN t.name IN ('varchar', 'char', 'varbinary', 'binary')
+                             THEN N'(' + CASE WHEN c.max_length = -1 THEN N'MAX' ELSE CAST(c.max_length AS NVARCHAR(10)) END + N')'
+                        WHEN t.name IN ('nvarchar', 'nchar')
+                             THEN N'(' + CASE WHEN c.max_length = -1 THEN N'MAX' ELSE CAST(c.max_length / 2 AS NVARCHAR(10)) END + N')'
+                        WHEN t.name IN ('decimal', 'numeric')
+                             THEN N'(' + CAST(c.precision AS NVARCHAR(5)) + N',' + CAST(c.scale AS NVARCHAR(5)) + N')'
+                        WHEN t.name IN ('datetime2', 'time', 'datetimeoffset')
+                             THEN N'(' + CAST(c.scale AS NVARCHAR(5)) + N')'
+                        ELSE N'' END
+    FROM sys.columns c
+    INNER JOIN sys.types t ON t.system_type_id = c.system_type_id AND t.user_type_id = c.system_type_id
+    WHERE c.object_id = OBJECT_ID(LTRIM(RTRIM(ISNULL(@Tabela, N''))), N'U')
+      AND c.name = @Coluna;
+
+    RETURN ISNULL(@Tipo, N'');
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Item_Da_Tabela.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Item_Da_Tabela]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Código da tela (SIS.Item) que mostra a tabela informada
+                (coluna TABELAS_DA_TELA); a primeira, se houver mais de uma.
+                Devolve '' se nenhuma tela mostrar a tabela. Usada pela lixeira
+                e pelo desfazer (P20) para achar a tela, o módulo e a
+                permissão de um registro.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- SELECT SIS.fn_SIS_Item_Da_Tabela(N'CAD.Plano_Grupo');  -- CAD_PLANO_CONTA
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Item_Da_Tabela] (@Tabela NVARCHAR(256))
+RETURNS VARCHAR(40)
+AS
+BEGIN
+    DECLARE @Item VARCHAR(40);
+
+    SELECT TOP 1 @Item = i.CODIGO
+    FROM SIS.Item i
+    CROSS APPLY STRING_SPLIT(i.TABELAS_DA_TELA, ',') s
+    WHERE i.TIPO = 'TELA'
+      AND i.ATIVO = 1
+      AND LTRIM(RTRIM(s.value)) = LTRIM(RTRIM(ISNULL(@Tabela, N'')))
+    ORDER BY i.ID_ITEM;
+
+    RETURN ISNULL(@Item, '');
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Na_Lixeira.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Na_Lixeira]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : 1 se o registro está na lixeira (P20), 0 se não está. Usada
+                pelas procedures das telas para recusar alterar, desativar ou
+                escolher um registro que está na lixeira.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- SELECT SIS.fn_SIS_Na_Lixeira(N'CAD.Pessoa', 1);
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Na_Lixeira] (@Tabela NVARCHAR(256), @IdRegistro BIGINT)
+RETURNS BIT
+AS
+BEGIN
+    IF @IdRegistro IS NULL OR ISNULL(@Tabela, N'') = N'' RETURN 0;
+
+    IF EXISTS (SELECT 1 FROM SIS.Lixeira l
+               WHERE l.TABELA = @Tabela AND l.ID_REGISTRO = @IdRegistro AND l.SITUACAO = 'LIXEIRA')
+        RETURN 1;
+
+    RETURN 0;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.fn_SIS_Lixeira_Dias.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[fn_SIS_Lixeira_Dias]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Prazo da lixeira, em dias, para a tabela informada: o prazo
+                próprio da tela (SIS.Tabela_Config.DIAS_GUARDA) ou, sem ele, o
+                parâmetro LIXEIRA_DIAS_GUARDA. Nunca menos de 1 dia.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- SELECT SIS.fn_SIS_Lixeira_Dias(N'CAD.Pessoa');  -- 90
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [SIS].[fn_SIS_Lixeira_Dias] (@Tabela NVARCHAR(256))
+RETURNS INT
+AS
+BEGIN
+    DECLARE @Dias INT;
+
+    SELECT @Dias = c.DIAS_GUARDA FROM SIS.Tabela_Config c WHERE c.TABELA = @Tabela;
+    SET @Dias = ISNULL(@Dias, SIS.fn_SIS_Parametro_Inteiro('LIXEIRA_DIAS_GUARDA'));
+
+    RETURN CASE WHEN ISNULL(@Dias, 0) < 1 THEN 1 ELSE @Dias END;
 END;
 GO
 GO
@@ -10815,6 +11279,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC BANCO.BANCO_Conta_Listar @IdUsuario = 2;
@@ -10852,6 +11317,7 @@ BEGIN
         LEFT  JOIN BANCO.Banco b WITH (NOLOCK) ON b.ID_BANCO = c.ID_BANCO
         WHERE (@IdEmpresa IS NULL OR c.ID_EMPRESA = @IdEmpresa)
           AND (ISNULL(@SomenteAtivos, 0) = 0 OR c.ATIVO = 1)
+          AND c.DT_EXCLUSAO IS NULL
         ORDER BY e.RAZAO_SOCIAL, c.ORDEM, c.DESCRICAO;
     END TRY
     BEGIN CATCH
@@ -10883,6 +11349,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC BANCO.BANCO_Conta_Gravar @IdUsuario = 2, @IdEmpresa = 1, @Descricao = N'Caixa Construtora', @Tipo = 'CAIXA';
@@ -10937,6 +11404,8 @@ BEGIN
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CONTA', CASE WHEN @IdConta IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar contas bancárias.';
+        IF @Recusa = N'' AND @IdConta IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'BANCO.Conta', @IdConta) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
         IF @Recusa = N'' AND @IdConta IS NOT NULL AND NOT EXISTS (SELECT 1 FROM BANCO.Conta c WHERE c.ID_CONTA = @IdConta)
             SET @Recusa = N'Conta não encontrada.';
         IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Empresa e WHERE e.ID_EMPRESA = @IdEmpresa AND e.ATIVO = 1)
@@ -11006,10 +11475,13 @@ GO
   Criação     : 16/11/2026
   Descrição   : Desativa (ou reativa, @Reativar = 1) uma conta. Nada é apagado.
                 Não desativa a conta que é padrão de empresa ou centro de custo ativo
-                (troque a conta padrão antes). Permissão: EXCLUIR em BANCO_CONTA.
+                (troque a conta padrão antes). Permissão: DESATIVAR em BANCO_CONTA.
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): permissão DESATIVAR (o botão Excluir
+                        passa a mandar para a lixeira) e recusa se o registro
+                        estiver na lixeira.
 
   Homologação (LOCAL):
     -- EXEC BANCO.BANCO_Conta_Excluir @IdUsuario = 2, @IdConta = 1;
@@ -11036,8 +11508,10 @@ BEGIN
     BEGIN TRY
         SET @Reativar = ISNULL(@Reativar, 0);
 
-        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CONTA', 'EXCLUIR') = 0
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CONTA', 'DESATIVAR') = 0
             SET @Recusa = N'Você não tem permissão para desativar ou reativar contas bancárias.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(N'BANCO.Conta', @IdConta) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes (Sistema › Lixeira).';
 
         IF @Recusa = N''
         BEGIN
@@ -11100,6 +11574,7 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - Colunas CNPJ_COMPRAS e CNPJ_COMPRAS_FORMATADO, etapa 03c2.
+    v1.2 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Listar @IdUsuario = 2;
@@ -11136,6 +11611,7 @@ BEGIN
         FROM CAD.Empresa e WITH (NOLOCK)
         LEFT JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = e.ID_CONTA_BANCARIA_PADRAO
         WHERE (ISNULL(@SomenteAtivos, 0) = 0 OR e.ATIVO = 1)
+          AND e.DT_EXCLUSAO IS NULL
         ORDER BY e.RAZAO_SOCIAL;
     END TRY
     BEGIN CATCH
@@ -11171,6 +11647,7 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - @CnpjCompras (CNPJ para notas de compra e DDA), etapa 03c2.
+    v1.2 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Gravar @IdUsuario = 2, @RazaoSocial = N'Construtora Teste Ltda', @Cnpj = '11.222.333/0001-81', @Tipo = 'CONSTRUTORA';
@@ -11231,6 +11708,8 @@ BEGIN
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', CASE WHEN @IdEmpresa IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar empresas.';
+        IF @Recusa = N'' AND @IdEmpresa IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Empresa', @IdEmpresa) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
         IF @Recusa = N'' AND @IdEmpresa IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Empresa e WHERE e.ID_EMPRESA = @IdEmpresa)
             SET @Recusa = N'Empresa não encontrada.';
         IF @Recusa = N'' AND @RazaoSocial = N''
@@ -11308,10 +11787,13 @@ GO
   Criação     : 16/11/2026
   Descrição   : Desativa (ou reativa, @Reativar = 1) uma empresa. Nada é apagado.
                 Não desativa empresa com conta ou centro de custo ativo (desative-os
-                antes). Permissão: EXCLUIR em CAD_EMPRESA.
+                antes). Permissão: DESATIVAR em CAD_EMPRESA.
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): permissão DESATIVAR (o botão Excluir
+                        passa a mandar para a lixeira) e recusa se o registro
+                        estiver na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Excluir @IdUsuario = 2, @IdEmpresa = 1;
@@ -11338,8 +11820,10 @@ BEGIN
     BEGIN TRY
         SET @Reativar = ISNULL(@Reativar, 0);
 
-        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'EXCLUIR') = 0
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'DESATIVAR') = 0
             SET @Recusa = N'Você não tem permissão para desativar ou reativar empresas.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(N'CAD.Empresa', @IdEmpresa) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes (Sistema › Lixeira).';
 
         IF @Recusa = N''
         BEGIN
@@ -11401,6 +11885,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Centro_Custo_Listar @IdUsuario = 2;
@@ -11438,6 +11923,7 @@ BEGIN
         LEFT  JOIN BANCO.Conta ce WITH (NOLOCK) ON ce.ID_CONTA = e.ID_CONTA_BANCARIA_PADRAO
         WHERE (@IdEmpresa IS NULL OR cc.ID_EMPRESA = @IdEmpresa)
           AND (ISNULL(@SomenteAtivos, 0) = 0 OR cc.ATIVO = 1)
+          AND cc.DT_EXCLUSAO IS NULL
         ORDER BY cc.CODIGO;
     END TRY
     BEGIN CATCH
@@ -11468,6 +11954,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Centro_Custo_Gravar @IdUsuario = 2, @IdEmpresa = 1, @Codigo = 'ESC', @Descricao = N'Escritório', @Tipo = 'ADMINISTRATIVO';
@@ -11503,6 +11990,8 @@ BEGIN
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', CASE WHEN @IdCentroCusto IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar centros de custo.';
+        IF @Recusa = N'' AND @IdCentroCusto IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Centro_Custo', @IdCentroCusto) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
         IF @Recusa = N'' AND @IdCentroCusto IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Centro_Custo cc WHERE cc.ID_CENTRO_CUSTO = @IdCentroCusto)
             SET @Recusa = N'Centro de custo não encontrado.';
         IF @Recusa = N'' AND (@Codigo = '' OR REPLACE(REPLACE(@Codigo, '_', ''), '-', '') LIKE '%[^A-Z0-9]%' COLLATE Latin1_General_BIN2)
@@ -11565,10 +12054,13 @@ GO
   Criação     : 16/11/2026
   Descrição   : Desativa (ou reativa, @Reativar = 1) um centro de custo. Nada é
                 apagado. Reativar exige a empresa ativa.
-                Permissão: EXCLUIR em CAD_CENTRO_CUSTO.
+                Permissão: DESATIVAR em CAD_CENTRO_CUSTO.
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): permissão DESATIVAR (o botão Excluir
+                        passa a mandar para a lixeira) e recusa se o registro
+                        estiver na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Centro_Custo_Excluir @IdUsuario = 2, @IdCentroCusto = 1;
@@ -11595,8 +12087,10 @@ BEGIN
     BEGIN TRY
         SET @Reativar = ISNULL(@Reativar, 0);
 
-        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', 'EXCLUIR') = 0
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', 'DESATIVAR') = 0
             SET @Recusa = N'Você não tem permissão para desativar ou reativar centros de custo.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(N'CAD.Centro_Custo', @IdCentroCusto) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes (Sistema › Lixeira).';
 
         IF @Recusa = N''
         BEGIN
@@ -11660,6 +12154,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Pessoa_Listar @IdUsuario = 2, @Busca = N'silva';
@@ -11713,6 +12208,7 @@ BEGIN
                p.ATIVO, p.DT_ALTERACAO, ISNULL(p.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
         FROM CAD.Pessoa p WITH (NOLOCK)
         WHERE (ISNULL(@SomenteAtivos, 1) = 0 OR p.ATIVO = 1)
+          AND p.DT_EXCLUSAO IS NULL
           AND (   @Papel = ''
                OR (@Papel = 'CLIENTE' AND p.CLIENTE = 1) OR (@Papel = 'FORNECEDOR' AND p.FORNECEDOR = 1)
                OR (@Papel = 'FUNCIONARIO' AND p.FUNCIONARIO = 1) OR (@Papel = 'CORRETOR' AND p.CORRETOR = 1))
@@ -11753,6 +12249,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): coluna NA_LIXEIRA (registro na lixeira: a ficha abre só para consulta).
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Pessoa_Obter @IdUsuario = 2, @IdPessoa = 1;
@@ -11786,6 +12283,7 @@ BEGIN
                p.CEP, p.LOGRADOURO, p.NUMERO, p.COMPLEMENTO, p.BAIRRO, p.CIDADE, p.UF,
                p.CLIENTE, p.FORNECEDOR, p.FUNCIONARIO, p.CORRETOR, p.OBSERVACAO, p.ATIVO, p.CODIGO_ACCESS,
                p.DT_CRIACAO, p.USUARIO_CRIACAO, p.DT_ALTERACAO, ISNULL(p.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO,
+               CAST(CASE WHEN p.DT_EXCLUSAO IS NULL THEN 0 ELSE 1 END AS BIT) AS NA_LIXEIRA,
                CASE WHEN p.CPF_CNPJ = '' THEN 0
                     ELSE (SELECT COUNT(*) FROM CAD.Pessoa o WITH (NOLOCK) WHERE o.CPF_CNPJ = p.CPF_CNPJ AND o.ID_PESSOA <> p.ID_PESSOA) END AS DOCUMENTO_REPETIDO,
                ISNULL((SELECT pc.ID_PESSOA_CONTATO AS id, pc.TIPO AS tipo, pc.VALOR AS valor, pc.NOME_CONTATO AS nome,
@@ -11853,6 +12351,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Pessoa_Gravar @IdUsuario = 2, @TipoPessoa = 'F', @Nome = N'Maria Teste', @CpfCnpj = '529.982.247-25', @Cliente = 1;
@@ -11939,6 +12438,8 @@ BEGIN
         -- Pessoa
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', CASE WHEN @IdPessoa IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar pessoas.';
+        IF @Recusa = N'' AND @IdPessoa IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Pessoa', @IdPessoa) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
         IF @Recusa = N'' AND @IdPessoa IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Pessoa p WHERE p.ID_PESSOA = @IdPessoa)
             SET @Recusa = N'Pessoa não encontrada.';
         IF @Recusa = N'' AND @TipoPessoa NOT IN ('F', 'J')
@@ -12012,7 +12513,7 @@ BEGIN
             FROM @Vinc v
             WHERE v.TIPO NOT IN ('CONJUGE', 'SOCIO', 'REPRESENTANTE', 'PROCURADOR')
                OR v.ID_VINCULADA = ISNULL(@IdPessoa, 0)
-               OR NOT EXISTS (SELECT 1 FROM CAD.Pessoa p WHERE p.ID_PESSOA = v.ID_VINCULADA)
+               OR NOT EXISTS (SELECT 1 FROM CAD.Pessoa p WHERE p.ID_PESSOA = v.ID_VINCULADA AND p.DT_EXCLUSAO IS NULL)
             ORDER BY v.LINHA;
 
             IF @Recusa = N'' AND EXISTS (SELECT 1 FROM @Vinc v GROUP BY v.ID_VINCULADA, v.TIPO HAVING COUNT(*) > 1)
@@ -12222,10 +12723,13 @@ GO
   Criação     : 16/11/2026
   Descrição   : Desativa (ou reativa, @Reativar = 1) uma pessoa. Nada é apagado: a
                 pessoa some das listas de escolha, mas continua nos lançamentos e no
-                histórico. Permissão: EXCLUIR em CAD_PESSOA.
+                histórico. Permissão: DESATIVAR em CAD_PESSOA.
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): permissão DESATIVAR (o botão Excluir
+                        passa a mandar para a lixeira) e recusa se o registro
+                        estiver na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Pessoa_Excluir @IdUsuario = 2, @IdPessoa = 1;
@@ -12252,8 +12756,10 @@ BEGIN
     BEGIN TRY
         SET @Reativar = ISNULL(@Reativar, 0);
 
-        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'EXCLUIR') = 0
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'DESATIVAR') = 0
             SET @Recusa = N'Você não tem permissão para desativar ou reativar pessoas.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(N'CAD.Pessoa', @IdPessoa) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes (Sistema › Lixeira).';
 
         IF @Recusa = N''
         BEGIN
@@ -12312,6 +12818,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Plano_Conta_Listar @IdUsuario = 2;
@@ -12346,6 +12853,7 @@ BEGIN
                    CONVERT(VARCHAR(12), RIGHT('00' + CONVERT(VARCHAR(3), g.NUMERO), 2) + '.00.000') AS ORDEM_ARVORE,
                    g.DT_ALTERACAO, ISNULL(g.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
             FROM CAD.Plano_Grupo g WITH (NOLOCK)
+            WHERE g.DT_EXCLUSAO IS NULL
             UNION ALL
             SELECT CAST(2 AS TINYINT), s.ID_PLANO_SUBGRUPO, s.ID_PLANO_GRUPO, s.NUMERO,
                    CONVERT(VARCHAR(12), RIGHT('0' + CONVERT(VARCHAR(3), g.NUMERO), 2) + '.' + CONVERT(VARCHAR(3), s.NUMERO)),
@@ -12355,6 +12863,7 @@ BEGIN
                    s.DT_ALTERACAO, ISNULL(s.USUARIO_ALTERACAO, N'')
             FROM CAD.Plano_Subgrupo s WITH (NOLOCK)
             INNER JOIN CAD.Plano_Grupo g WITH (NOLOCK) ON g.ID_PLANO_GRUPO = s.ID_PLANO_GRUPO
+            WHERE s.DT_EXCLUSAO IS NULL
             UNION ALL
             SELECT CAST(3 AS TINYINT), v.ID_PLANO_CONTA, v.ID_PLANO_SUBGRUPO, v.NUMERO_CONTA, v.CODIGO,
                    v.DESCRICAO, v.TIPO, v.CUSTO_OBRA, v.CONTABIL, v.CONTA_CONTABIL_REF,
@@ -12362,6 +12871,7 @@ BEGIN
                    c.DT_ALTERACAO, ISNULL(c.USUARIO_ALTERACAO, N'')
             FROM CAD.vw_CAD_Plano_Conta v WITH (NOLOCK)
             INNER JOIN CAD.Plano_Conta c WITH (NOLOCK) ON c.ID_PLANO_CONTA = v.ID_PLANO_CONTA
+            WHERE c.DT_EXCLUSAO IS NULL
         ) x
         WHERE (ISNULL(@SomenteAtivos, 0) = 0 OR x.ATIVO_EFETIVO = 1)
         ORDER BY x.ORDEM_ARVORE;
@@ -12394,6 +12904,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -12424,6 +12935,8 @@ BEGIN
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', CASE WHEN @IdPlanoGrupo IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar o plano de contas.';
+        IF @Recusa = N'' AND @IdPlanoGrupo IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Plano_Grupo', @IdPlanoGrupo) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
         IF @Recusa = N'' AND @IdPlanoGrupo IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Grupo x WHERE x.ID_PLANO_GRUPO = @IdPlanoGrupo)
             SET @Recusa = N'Registro do plano de contas não encontrado.';
         IF @Recusa = N'' AND @Descricao = N''
@@ -12505,6 +13018,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -12533,11 +13047,13 @@ BEGIN
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', CASE WHEN @IdPlanoSubgrupo IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar o plano de contas.';
+        IF @Recusa = N'' AND @IdPlanoSubgrupo IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Plano_Subgrupo', @IdPlanoSubgrupo) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
         IF @Recusa = N'' AND @IdPlanoSubgrupo IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo x WHERE x.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo)
             SET @Recusa = N'Registro do plano de contas não encontrado.';
         IF @Recusa = N'' AND @Descricao = N''
             SET @Recusa = N'Informe a descrição.';
-        IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Grupo g WHERE g.ID_PLANO_GRUPO = @IdPlanoGrupo)
+        IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Grupo g WHERE g.ID_PLANO_GRUPO = @IdPlanoGrupo AND g.DT_EXCLUSAO IS NULL)
             SET @Recusa = N'Escolha o grupo do subgrupo.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo s WHERE s.ID_PLANO_GRUPO = @IdPlanoGrupo AND s.DESCRICAO = @Descricao
                                      AND s.ID_PLANO_SUBGRUPO <> ISNULL(@IdPlanoSubgrupo, 0))
@@ -12615,6 +13131,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -12645,11 +13162,13 @@ BEGIN
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', CASE WHEN @IdPlanoConta IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar o plano de contas.';
+        IF @Recusa = N'' AND @IdPlanoConta IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Plano_Conta', @IdPlanoConta) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
         IF @Recusa = N'' AND @IdPlanoConta IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Conta x WHERE x.ID_PLANO_CONTA = @IdPlanoConta)
             SET @Recusa = N'Registro do plano de contas não encontrado.';
         IF @Recusa = N'' AND @Descricao = N''
             SET @Recusa = N'Informe a descrição.';
-        IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo s WHERE s.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo)
+        IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo s WHERE s.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND s.DT_EXCLUSAO IS NULL)
             SET @Recusa = N'Escolha o subgrupo da conta.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Conta c WHERE c.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND c.DESCRICAO = @Descricao
                                      AND c.ID_PLANO_CONTA <> ISNULL(@IdPlanoConta, 0))
@@ -12722,10 +13241,13 @@ GO
   Descrição   : Desativa (ou reativa, @Reativar = 1) um grupo (@Nivel 1), subgrupo (2)
                 ou conta (3) do plano. Nada é apagado: desativar o grupo ou o subgrupo
                 esconde tudo abaixo dele das listas de escolha (ATIVO_EFETIVO), sem
-                mexer nos filhos. Permissão: EXCLUIR em CAD_PLANO_CONTA.
+                mexer nos filhos. Permissão: DESATIVAR em CAD_PLANO_CONTA.
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): permissão DESATIVAR (o botão Excluir
+                        passa a mandar para a lixeira) e recusa se o registro
+                        estiver na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Plano_Excluir @IdUsuario = 2, @Nivel = 3, @Id = 1;
@@ -12753,8 +13275,10 @@ BEGIN
     BEGIN TRY
         SET @Reativar = ISNULL(@Reativar, 0);
 
-        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', 'EXCLUIR') = 0
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', 'DESATIVAR') = 0
             SET @Recusa = N'Você não tem permissão para desativar ou reativar o plano de contas.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(CASE @Nivel WHEN 1 THEN N'CAD.Plano_Grupo' WHEN 2 THEN N'CAD.Plano_Subgrupo' ELSE N'CAD.Plano_Conta' END, @Id) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes (Sistema › Lixeira).';
         IF @Recusa = N'' AND ISNULL(@Nivel, 0) NOT IN (1, 2, 3)
             SET @Recusa = N'Nível inválido (1 grupo, 2 subgrupo, 3 conta).';
 
@@ -14822,6 +15346,2004 @@ END;
 GO
 GO
 
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Tabela_Trava_Conferir.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Tabela_Trava_Conferir]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Travas configuradas em SIS.Tabela_Config para mexer num
+                registro pela lixeira ou pelo desfazer (P20):
+                  1) mês fechado: com COLUNA_EMPRESA e COLUNA_DATA_MES
+                     preenchidas, recusa se o mês da data do registro (ou da
+                     data nova, @DataNova) estiver fechado em FIN.Mes_Fechado;
+                  2) PROC_VALIDAR: chama a procedure própria da tabela
+                     (@Tabela, @IdRegistro, @Operacao, @Mensagem OUTPUT).
+                @Mensagem vazia = pode. Uso interno (chamada pelas procedures
+                da lixeira e do desfazer); a API não chama (DENY).
+                @Operacao: LIXEIRA, RECUPERAR, APAGAR ou DESFAZER.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Tabela_Trava_Conferir]
+    @Tabela      NVARCHAR(256),
+    @IdRegistro  BIGINT,
+    @Operacao    VARCHAR(20),
+    @DataNova    DATE = NULL,
+    @Mensagem    NVARCHAR(400) OUTPUT
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ColEmpresa NVARCHAR(128), @ColData NVARCHAR(128), @Proc NVARCHAR(256);
+    DECLARE @ObjId INT = OBJECT_ID(@Tabela, N'U');
+    DECLARE @Pk NVARCHAR(128) = SIS.fn_SIS_Tabela_PK(@Tabela);
+    DECLARE @Sql NVARCHAR(MAX), @IdEmpresa INT, @Data DATE, @Mes DATE, @Msg NVARCHAR(400);
+
+    SET @Mensagem = N'';
+
+    SELECT @ColEmpresa = c.COLUNA_EMPRESA, @ColData = c.COLUNA_DATA_MES, @Proc = c.PROC_VALIDAR
+    FROM SIS.Tabela_Config c
+    WHERE c.TABELA = @Tabela AND c.ATIVO = 1;
+
+    IF @ObjId IS NULL OR @Pk = N'' RETURN;
+
+    -- 1) Mês fechado
+    IF ISNULL(@ColEmpresa, N'') <> N'' AND ISNULL(@ColData, N'') <> N''
+    BEGIN
+        SET @Sql = N'SELECT @e = TRY_CONVERT(INT, t.' + QUOTENAME(@ColEmpresa) + N'), @d = TRY_CONVERT(DATE, t.' + QUOTENAME(@ColData) + N')'
+                 + N' FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId)) + N' t'
+                 + N' WHERE t.' + QUOTENAME(@Pk) + N' = @Id;';
+        EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @e INT OUTPUT, @d DATE OUTPUT', @Id = @IdRegistro, @e = @IdEmpresa OUTPUT, @d = @Data OUTPUT;
+
+        SELECT TOP 1 @Mes = m.MES
+        FROM FIN.Mes_Fechado m
+        WHERE m.ID_EMPRESA = @IdEmpresa
+          AND m.FECHADO = 1
+          AND (   (@Data IS NOT NULL     AND m.MES = DATEFROMPARTS(YEAR(@Data), MONTH(@Data), 1))
+               OR (@DataNova IS NOT NULL AND m.MES = DATEFROMPARTS(YEAR(@DataNova), MONTH(@DataNova), 1)))
+        ORDER BY m.MES;
+
+        IF @Mes IS NOT NULL
+        BEGIN
+            SET @Mensagem = N'O mês ' + RIGHT(N'0' + CAST(MONTH(@Mes) AS NVARCHAR(2)), 2) + N'/' + CAST(YEAR(@Mes) AS NVARCHAR(4))
+                          + N' está fechado para esta empresa. Reabra o mês antes.';
+            RETURN;
+        END;
+    END;
+
+    -- 2) Trava própria da tabela
+    IF ISNULL(@Proc, N'') <> N'' AND OBJECT_ID(@Proc, N'P') IS NOT NULL
+    BEGIN
+        SET @Sql = N'EXEC ' + QUOTENAME(OBJECT_SCHEMA_NAME(OBJECT_ID(@Proc, N'P'))) + N'.' + QUOTENAME(OBJECT_NAME(OBJECT_ID(@Proc, N'P')))
+                 + N' @Tabela = @Tabela, @IdRegistro = @IdRegistro, @Operacao = @Operacao, @Mensagem = @Msg OUTPUT;';
+        EXEC sys.sp_executesql @Sql, N'@Tabela NVARCHAR(256), @IdRegistro BIGINT, @Operacao VARCHAR(20), @Msg NVARCHAR(400) OUTPUT',
+             @Tabela = @Tabela, @IdRegistro = @IdRegistro, @Operacao = @Operacao, @Msg = @Msg OUTPUT;
+        SET @Mensagem = ISNULL(@Msg, N'');
+    END;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Referencias.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Referencias]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Conta onde um registro é usado, para saber se pode ir para a
+                lixeira e se pode ser apagado de vez (P20). Lê as chaves
+                estrangeiras do próprio banco (nada fixo no código):
+                  - linhas de outras tabelas que apontam para o registro,
+                    menos as tabelas filhas que "vão junto"
+                    (SIS.Tabela_Config.TABELAS_FILHAS);
+                  - linhas que apontam para as filhas deste registro;
+                  - anexos ativos (SIS.Anexo) do registro.
+                @Qtd = total de usos; @Onde = nome da tela (ou tabela) do
+                primeiro uso encontrado. Uso interno (DENY para a API).
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- DECLARE @q INT, @o NVARCHAR(400);
+    -- EXEC SIS.SIS_Lixeira_Referencias @Tabela = N'CAD.Empresa', @IdRegistro = 1, @Qtd = @q OUTPUT, @Onde = @o OUTPUT; SELECT @q, @o;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Referencias]
+    @Tabela      NVARCHAR(256),
+    @IdRegistro  BIGINT,
+    @Qtd         INT           OUTPUT,
+    @Onde        NVARCHAR(400) OUTPUT
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ObjId INT = OBJECT_ID(@Tabela, N'U');
+    DECLARE @Filhas TABLE (TABELA NVARCHAR(256) NOT NULL, COLUNA NVARCHAR(128) NOT NULL, OBJ INT NULL, PK NVARCHAR(128) NULL);
+    DECLARE @Refs   TABLE (ORDEM INT IDENTITY(1,1) NOT NULL, COMANDO NVARCHAR(MAX) NOT NULL, TABELA NVARCHAR(256) NOT NULL);
+    DECLARE @i INT = 1, @Total INT, @n BIGINT, @Cmd NVARCHAR(MAX), @TabRef NVARCHAR(256);
+
+    SET @Qtd = 0;
+    SET @Onde = N'';
+    IF @ObjId IS NULL OR @IdRegistro IS NULL RETURN;
+
+    INSERT INTO @Filhas (TABELA, COLUNA)
+    SELECT LEFT(x.v, LEN(x.v) - CHARINDEX(N'.', REVERSE(x.v))), RIGHT(x.v, CHARINDEX(N'.', REVERSE(x.v)) - 1)
+    FROM SIS.Tabela_Config c
+    CROSS APPLY (SELECT LTRIM(RTRIM(s.value)) AS v FROM STRING_SPLIT(c.TABELAS_FILHAS, N',') s) x
+    WHERE c.TABELA = @Tabela
+      AND x.v LIKE N'%_._%._%';
+
+    UPDATE f SET f.OBJ = OBJECT_ID(f.TABELA, N'U'), f.PK = SIS.fn_SIS_Tabela_PK(f.TABELA) FROM @Filhas f;
+    DELETE FROM @Filhas WHERE OBJ IS NULL OR ISNULL(PK, N'') = N'';
+
+    -- Quem aponta direto para o registro (menos as filhas que vão junto)
+    INSERT INTO @Refs (COMANDO, TABELA)
+    SELECT N'SELECT @n = COUNT_BIG(*) FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(fk.parent_object_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id))
+         + N' WITH (NOLOCK) WHERE ' + QUOTENAME(pc.name) + N' = @Id;',
+           OBJECT_SCHEMA_NAME(fk.parent_object_id) + N'.' + OBJECT_NAME(fk.parent_object_id)
+    FROM sys.foreign_keys fk
+    INNER JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id = fk.object_id
+    INNER JOIN sys.columns pc ON pc.object_id = fkc.parent_object_id AND pc.column_id = fkc.parent_column_id
+    WHERE fk.referenced_object_id = @ObjId
+      AND (SELECT COUNT(*) FROM sys.foreign_key_columns x WHERE x.constraint_object_id = fk.object_id) = 1
+      AND NOT EXISTS (SELECT 1 FROM @Filhas f WHERE f.OBJ = fk.parent_object_id AND f.COLUNA = pc.name)
+    ORDER BY fk.name;
+
+    -- Quem aponta para as filhas deste registro
+    INSERT INTO @Refs (COMANDO, TABELA)
+    SELECT N'SELECT @n = COUNT_BIG(*) FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(fk.parent_object_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id))
+         + N' r WITH (NOLOCK) WHERE r.' + QUOTENAME(pc.name) + N' IN (SELECT f.' + QUOTENAME(f.PK)
+         + N' FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(f.OBJ)) + N'.' + QUOTENAME(OBJECT_NAME(f.OBJ)) + N' f WITH (NOLOCK) WHERE f.' + QUOTENAME(f.COLUNA) + N' = @Id);',
+           OBJECT_SCHEMA_NAME(fk.parent_object_id) + N'.' + OBJECT_NAME(fk.parent_object_id)
+    FROM @Filhas f
+    INNER JOIN sys.foreign_keys fk ON fk.referenced_object_id = f.OBJ
+    INNER JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id = fk.object_id
+    INNER JOIN sys.columns pc ON pc.object_id = fkc.parent_object_id AND pc.column_id = fkc.parent_column_id
+    WHERE (SELECT COUNT(*) FROM sys.foreign_key_columns x WHERE x.constraint_object_id = fk.object_id) = 1
+      AND fk.parent_object_id <> @ObjId
+    ORDER BY fk.name;
+
+    SELECT @Total = COUNT(*) FROM @Refs;
+    WHILE @i <= @Total
+    BEGIN
+        SELECT @Cmd = r.COMANDO, @TabRef = r.TABELA FROM @Refs r WHERE r.ORDEM = @i;
+        SET @n = 0;
+        EXEC sys.sp_executesql @Cmd, N'@Id BIGINT, @n BIGINT OUTPUT', @Id = @IdRegistro, @n = @n OUTPUT;
+        IF ISNULL(@n, 0) > 0
+        BEGIN
+            IF @Onde = N''
+                SET @Onde = ISNULL((SELECT TOP 1 i.NOME FROM SIS.Item i WHERE i.CODIGO = SIS.fn_SIS_Item_Da_Tabela(@TabRef)), @TabRef);
+            SET @Qtd = @Qtd + CAST(@n AS INT);
+        END;
+        SET @i = @i + 1;
+    END;
+
+    -- Anexos ativos do registro
+    SELECT @n = COUNT_BIG(*)
+    FROM SIS.Anexo a WITH (NOLOCK)
+    WHERE a.TABELA_REFERENCIA = @Tabela AND a.ID_REFERENCIA = @IdRegistro AND a.SITUACAO = 'ATIVO';
+    IF ISNULL(@n, 0) > 0
+    BEGIN
+        IF @Onde = N'' SET @Onde = N'anexos';
+        SET @Qtd = @Qtd + CAST(@n AS INT);
+    END;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Marcar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Marcar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Manda um registro para a lixeira (P20): confere a
+                configuração da tabela, o parâmetro LIXEIRA_ATIVA, se o
+                registro existe e não está na lixeira, se nada usa o registro
+                (SIS_Lixeira_Referencias) e as travas (mês fechado e trava
+                própria); então desativa o registro, preenche DT_EXCLUSAO e
+                USUARIO_EXCLUSAO e grava a linha em SIS.Lixeira com o prazo
+                (fn_SIS_Lixeira_Dias).
+                Recusa = @Mensagem preenchida, sem gravar nada. Quem chama
+                cuida da transação. Uso interno (DENY para a API): chamada
+                por SIS_Lixeira_Excluir e pelo desfazer de uma inclusão.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Marcar]
+    @IdUsuario   INT,
+    @Tabela      NVARCHAR(256),
+    @IdRegistro  BIGINT,
+    @Item        VARCHAR(40),
+    @Motivo      NVARCHAR(400),
+    @IdLixeira   BIGINT        OUTPUT,
+    @Mensagem    NVARCHAR(400) OUTPUT
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @ObjId INT = OBJECT_ID(@Tabela, N'U');
+    DECLARE @Pk NVARCHAR(128) = SIS.fn_SIS_Tabela_PK(@Tabela);
+    DECLARE @Nome NVARCHAR(300), @DescSql NVARCHAR(1000), @Sql NVARCHAR(MAX), @Usuario NVARCHAR(100);
+    DECLARE @Existe INT = 0, @Ativo BIT, @JaExcluido BIT, @Descricao NVARCHAR(400), @Qtd INT, @Onde NVARCHAR(400);
+    DECLARE @TemAlteracao BIT;
+
+    SET @IdLixeira = NULL;
+    SET @Mensagem = N'';
+
+    IF NOT EXISTS (SELECT 1 FROM SIS.Tabela_Config c WHERE c.TABELA = @Tabela AND c.ATIVO = 1 AND c.PERMITE_LIXEIRA = 1)
+       OR @ObjId IS NULL OR @Pk = N''
+       OR COL_LENGTH(@Tabela, N'ATIVO') IS NULL OR COL_LENGTH(@Tabela, N'DT_EXCLUSAO') IS NULL OR COL_LENGTH(@Tabela, N'USUARIO_EXCLUSAO') IS NULL
+    BEGIN
+        SET @Mensagem = N'Este tipo de registro não vai para a lixeira: use Desativar.';
+        RETURN;
+    END;
+
+    IF SIS.fn_SIS_Parametro_SN('LIXEIRA_ATIVA') = 0
+    BEGIN
+        SET @Mensagem = N'A lixeira está desligada (parâmetro LIXEIRA_ATIVA): use Desativar.';
+        RETURN;
+    END;
+
+    SET @Nome = QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId));
+    SELECT @DescSql = NULLIF(LTRIM(RTRIM(c.DESCRICAO_SQL)), N'') FROM SIS.Tabela_Config c WHERE c.TABELA = @Tabela;
+
+    SET @Sql = N'SELECT @Existe = 1, @Ativo = t.ATIVO, @JaExcluido = CASE WHEN t.DT_EXCLUSAO IS NULL THEN 0 ELSE 1 END, '
+             + N'@Descricao = LEFT(CONVERT(NVARCHAR(MAX), ' + ISNULL(@DescSql, N'CAST(t.' + QUOTENAME(@Pk) + N' AS NVARCHAR(30))') + N'), 400) '
+             + N'FROM ' + @Nome + N' t WITH (UPDLOCK, HOLDLOCK) WHERE t.' + QUOTENAME(@Pk) + N' = @Id;';
+    EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @Existe INT OUTPUT, @Ativo BIT OUTPUT, @JaExcluido BIT OUTPUT, @Descricao NVARCHAR(400) OUTPUT',
+         @Id = @IdRegistro, @Existe = @Existe OUTPUT, @Ativo = @Ativo OUTPUT, @JaExcluido = @JaExcluido OUTPUT, @Descricao = @Descricao OUTPUT;
+
+    IF ISNULL(@Existe, 0) = 0
+    BEGIN
+        SET @Mensagem = N'Registro não encontrado.';
+        RETURN;
+    END;
+
+    IF @JaExcluido = 1 OR SIS.fn_SIS_Na_Lixeira(@Tabela, @IdRegistro) = 1
+    BEGIN
+        SET @Mensagem = N'O registro já está na lixeira.';
+        RETURN;
+    END;
+
+    EXEC SIS.SIS_Lixeira_Referencias @Tabela = @Tabela, @IdRegistro = @IdRegistro, @Qtd = @Qtd OUTPUT, @Onde = @Onde OUTPUT;
+    IF ISNULL(@Qtd, 0) > 0
+    BEGIN
+        SET @Mensagem = N'Não dá para excluir: o registro é usado em ' + ISNULL(@Onde, N'outro cadastro')
+                      + CASE WHEN @Qtd > 1 THEN N' e em mais ' + CAST(@Qtd - 1 AS NVARCHAR(10)) + N' lugar(es)' ELSE N'' END
+                      + N'. Use Desativar.';
+        RETURN;
+    END;
+
+    EXEC SIS.SIS_Tabela_Trava_Conferir @Tabela = @Tabela, @IdRegistro = @IdRegistro, @Operacao = 'LIXEIRA', @Mensagem = @Mensagem OUTPUT;
+    IF ISNULL(@Mensagem, N'') <> N'' RETURN;
+    SET @Mensagem = N'';
+
+    SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+    SET @TemAlteracao = CASE WHEN COL_LENGTH(@Tabela, N'DT_ALTERACAO') IS NOT NULL AND COL_LENGTH(@Tabela, N'USUARIO_ALTERACAO') IS NOT NULL THEN 1 ELSE 0 END;
+
+    SET @Sql = N'UPDATE t SET t.ATIVO = 0, t.DT_EXCLUSAO = SYSDATETIME(), t.USUARIO_EXCLUSAO = @Usuario'
+             + CASE WHEN @TemAlteracao = 1 THEN N', t.DT_ALTERACAO = SYSDATETIME(), t.USUARIO_ALTERACAO = @Usuario' ELSE N'' END
+             + N' FROM ' + @Nome + N' t WHERE t.' + QUOTENAME(@Pk) + N' = @Id AND t.DT_EXCLUSAO IS NULL;';
+    EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @Usuario NVARCHAR(100)', @Id = @IdRegistro, @Usuario = @Usuario;
+
+    INSERT INTO SIS.Lixeira (TABELA, ID_REGISTRO, ITEM_CODIGO, DESCRICAO, MOTIVO, ATIVO_ANTES, DT_EXCLUSAO, USUARIO_EXCLUSAO, ID_USUARIO_EXCLUSAO, DT_APAGAR, SITUACAO)
+    VALUES (@Tabela, @IdRegistro, ISNULL(NULLIF(@Item, ''), SIS.fn_SIS_Item_Da_Tabela(@Tabela)), ISNULL(@Descricao, N''), ISNULL(@Motivo, N''),
+            ISNULL(@Ativo, 1), SYSDATETIME(), ISNULL(@Usuario, N''), @IdUsuario,
+            DATEADD(DAY, SIS.fn_SIS_Lixeira_Dias(@Tabela), CAST(SYSDATETIME() AS DATE)), 'LIXEIRA');
+    SET @IdLixeira = SCOPE_IDENTITY();
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Apagar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Apagar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Apaga de vez um registro que está na lixeira (P20), com as
+                filhas que vão junto (SIS.Tabela_Config.TABELAS_FILHAS).
+                Antes confere de novo se nada passou a usar o registro e as
+                travas; se algo usar, não apaga e devolve o motivo. A trigger
+                de auditoria guarda a cópia completa de tudo o que for apagado.
+                Marca a linha da SIS.Lixeira como APAGADO.
+                Recusa = @Mensagem preenchida, sem apagar nada. Quem chama
+                cuida da transação. Uso interno (DENY para a API): chamada por
+                SIS_Lixeira_Esvaziar e SIS_Lixeira_Processar.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Apagar]
+    @IdLixeira  BIGINT,
+    @Usuario    NVARCHAR(100),
+    @Motivo     NVARCHAR(400),
+    @Mensagem   NVARCHAR(400) OUTPUT
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @Tabela NVARCHAR(256), @IdRegistro BIGINT, @ObjId INT, @Pk NVARCHAR(128), @Nome NVARCHAR(300);
+    DECLARE @Qtd INT, @Onde NVARCHAR(400), @Sql NVARCHAR(MAX), @Apagados INT;
+
+    SET @Mensagem = N'';
+
+    SELECT @Tabela = l.TABELA, @IdRegistro = l.ID_REGISTRO
+    FROM SIS.Lixeira l WITH (UPDLOCK, HOLDLOCK)
+    WHERE l.ID_LIXEIRA = @IdLixeira AND l.SITUACAO = 'LIXEIRA';
+
+    IF @Tabela IS NULL
+    BEGIN
+        SET @Mensagem = N'O registro não está mais na lixeira.';
+        RETURN;
+    END;
+
+    SET @ObjId = OBJECT_ID(@Tabela, N'U');
+    SET @Pk = SIS.fn_SIS_Tabela_PK(@Tabela);
+    IF @ObjId IS NULL OR @Pk = N''
+    BEGIN
+        SET @Mensagem = N'Tabela do registro não encontrada.';
+        RETURN;
+    END;
+    SET @Nome = QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId));
+
+    EXEC SIS.SIS_Lixeira_Referencias @Tabela = @Tabela, @IdRegistro = @IdRegistro, @Qtd = @Qtd OUTPUT, @Onde = @Onde OUTPUT;
+    IF ISNULL(@Qtd, 0) > 0
+    BEGIN
+        SET @Mensagem = N'Não foi apagado: o registro passou a ser usado em ' + ISNULL(@Onde, N'outro cadastro') + N'. Recupere-o ou tire o uso antes.';
+        RETURN;
+    END;
+
+    EXEC SIS.SIS_Tabela_Trava_Conferir @Tabela = @Tabela, @IdRegistro = @IdRegistro, @Operacao = 'APAGAR', @Mensagem = @Mensagem OUTPUT;
+    IF ISNULL(@Mensagem, N'') <> N'' RETURN;
+    SET @Mensagem = N'';
+
+    -- Filhas que vão junto
+    SET @Sql = N'';
+    SELECT @Sql = @Sql + N'DELETE FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(OBJECT_ID(f.TABELA, N'U'))) + N'.' + QUOTENAME(OBJECT_NAME(OBJECT_ID(f.TABELA, N'U')))
+                + N' WHERE ' + QUOTENAME(f.COLUNA) + N' = @Id;' + NCHAR(13) + NCHAR(10)
+    FROM (SELECT LEFT(x.v, LEN(x.v) - CHARINDEX(N'.', REVERSE(x.v))) AS TABELA, RIGHT(x.v, CHARINDEX(N'.', REVERSE(x.v)) - 1) AS COLUNA
+          FROM SIS.Tabela_Config c
+          CROSS APPLY (SELECT LTRIM(RTRIM(s.value)) AS v FROM STRING_SPLIT(c.TABELAS_FILHAS, N',') s) x
+          WHERE c.TABELA = @Tabela AND x.v LIKE N'%_._%._%') f
+    WHERE OBJECT_ID(f.TABELA, N'U') IS NOT NULL
+      AND COL_LENGTH(f.TABELA, f.COLUNA) IS NOT NULL;
+
+    IF @Sql <> N''
+        EXEC sys.sp_executesql @Sql, N'@Id BIGINT', @Id = @IdRegistro;
+
+    SET @Sql = N'DELETE FROM ' + @Nome + N' WHERE ' + QUOTENAME(@Pk) + N' = @Id AND DT_EXCLUSAO IS NOT NULL; SET @n = @@ROWCOUNT;';
+    EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @n INT OUTPUT', @Id = @IdRegistro, @n = @Apagados OUTPUT;
+
+    UPDATE l
+       SET l.SITUACAO = 'APAGADO', l.DT_SITUACAO = SYSDATETIME(), l.USUARIO_SITUACAO = ISNULL(@Usuario, N''),
+           l.MOTIVO_SITUACAO = LEFT(ISNULL(@Motivo, N'') + CASE WHEN ISNULL(@Apagados, 0) = 0 THEN N' (o registro já não existia)' ELSE N'' END, 400),
+           l.DT_ALTERACAO = SYSDATETIME(), l.USUARIO_ALTERACAO = ISNULL(@Usuario, N'')
+    FROM SIS.Lixeira l
+    WHERE l.ID_LIXEIRA = @IdLixeira AND l.SITUACAO = 'LIXEIRA';
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Excluir.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Excluir]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Botão Excluir das telas (P20): manda o registro para a
+                lixeira, de onde pode ser recuperado até o fim do prazo
+                (LIXEIRA_DIAS_GUARDA ou o prazo próprio da tela). Só exclui o
+                que nada usa; senão recusa e sugere Desativar.
+                Permissão: EXCLUIR na tela (@Item), e a tela precisa mostrar
+                a tabela (SIS.Item.TABELAS_DA_TELA).
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID_LIXEIRA, DT_APAGAR.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Lixeira_Excluir @IdUsuario = 2, @Item = 'CAD_PESSOA', @Tabela = N'CAD.Pessoa', @IdRegistro = 1, @Motivo = N'cadastro em dobro';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Excluir]
+    @IdUsuario   INT,
+    @Item        VARCHAR(40),
+    @Tabela      NVARCHAR(256),
+    @IdRegistro  BIGINT,
+    @Motivo      NVARCHAR(400) = NULL
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Lixeira_Excluir]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @TranCountEntrada INT = @@TRANCOUNT;
+    DECLARE @Recusa NVARCHAR(400) = N'', @IdLixeira BIGINT, @DtApagar DATE;
+
+    BEGIN TRY
+        SET @Tabela = LTRIM(RTRIM(ISNULL(@Tabela, N'')));
+        SET @Motivo = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'EXCLUIR') = 0
+            SET @Recusa = N'Você não tem permissão para excluir nesta tela.';
+        ELSE IF SIS.fn_SIS_Item_Tem_Tabela(@Item, @Tabela) = 0
+            SET @Recusa = N'Esta tela não exclui esse tipo de registro.';
+        ELSE IF @IdRegistro IS NULL
+            SET @Recusa = N'Escolha o registro a excluir.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID_LIXEIRA, CAST(NULL AS DATE) AS DT_APAGAR;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Lixeira';
+        IF @TranCountEntrada = 0 BEGIN TRANSACTION;
+            EXEC SIS.SIS_Lixeira_Marcar @IdUsuario = @IdUsuario, @Tabela = @Tabela, @IdRegistro = @IdRegistro, @Item = @Item,
+                 @Motivo = @Motivo, @IdLixeira = @IdLixeira OUTPUT, @Mensagem = @Recusa OUTPUT;
+        IF @TranCountEntrada = 0 COMMIT TRANSACTION;
+
+        IF ISNULL(@Recusa, N'') <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID_LIXEIRA, CAST(NULL AS DATE) AS DT_APAGAR;
+            RETURN;
+        END;
+
+        SELECT @DtApagar = l.DT_APAGAR FROM SIS.Lixeira l WHERE l.ID_LIXEIRA = @IdLixeira;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(N'Registro enviado para a lixeira. Pode ser recuperado até ' + ISNULL(SIS.fn_SIS_Formatar_Data(@DtApagar), N'') + N' (Sistema › Lixeira).' AS NVARCHAR(400)) AS MENSAGEM,
+               @IdLixeira AS ID_LIXEIRA, @DtApagar AS DT_APAGAR;
+    END TRY
+    BEGIN CATCH
+        IF @TranCountEntrada = 0 AND @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível excluir o registro. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS BIGINT) AS ID_LIXEIRA, CAST(NULL AS DATE) AS DT_APAGAR;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Recuperar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Recuperar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Botão Recuperar da tela Sistema › Lixeira (P20): o registro
+                volta como estava antes de ir para a lixeira (ativo ou
+                desativado). Antes confere:
+                  - os campos únicos configurados (SIS.Tabela_Config.
+                    CAMPOS_UNICOS, ex.: CPF/CNPJ): se outro registro vivo tiver
+                    o mesmo valor, recusa e mostra qual é;
+                  - se algum registro ligado (chave estrangeira) está na
+                    lixeira: recupere esse antes;
+                  - as travas (mês fechado e trava própria).
+                Permissão: RECUPERAR em SIS_LIXEIRA e VER na tela do registro.
+                Devolve 1 linha: SUCESSO, MENSAGEM, TABELA, ID_REGISTRO.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Lixeira_Recuperar @IdUsuario = 2, @IdLixeira = 1, @Motivo = N'excluído por engano';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Recuperar]
+    @IdUsuario  INT,
+    @IdLixeira  BIGINT,
+    @Motivo     NVARCHAR(400) = NULL
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Lixeira_Recuperar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @TranCountEntrada INT = @@TRANCOUNT;
+    DECLARE @Recusa NVARCHAR(400) = N'', @Tabela NVARCHAR(256), @IdRegistro BIGINT, @Item VARCHAR(40), @AtivoAntes BIT;
+    DECLARE @ObjId INT, @Pk NVARCHAR(128), @Nome NVARCHAR(300), @Sql NVARCHAR(MAX), @Usuario NVARCHAR(100);
+    DECLARE @Campos TABLE (ORDEM INT IDENTITY(1,1), CAMPO NVARCHAR(128));
+    DECLARE @Fks TABLE (ORDEM INT IDENTITY(1,1), COLUNA NVARCHAR(128), TABELA_REF NVARCHAR(256));
+    DECLARE @i INT, @Total INT, @Campo NVARCHAR(128), @Outro BIGINT, @Ref BIGINT, @TabRef NVARCHAR(256), @DescSql NVARCHAR(1000), @DescOutro NVARCHAR(400);
+    DECLARE @TemAlteracao BIT, @Linhas INT;
+
+    BEGIN TRY
+        SET @Motivo = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+
+        SELECT @Tabela = l.TABELA, @IdRegistro = l.ID_REGISTRO, @Item = l.ITEM_CODIGO, @AtivoAntes = l.ATIVO_ANTES
+        FROM SIS.Lixeira l
+        WHERE l.ID_LIXEIRA = @IdLixeira;
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_LIXEIRA', 'RECUPERAR') = 0
+            SET @Recusa = N'Você não tem permissão para recuperar registros da lixeira.';
+        ELSE IF @Tabela IS NULL
+            SET @Recusa = N'Registro da lixeira não encontrado.';
+        ELSE IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'VER') = 0
+            SET @Recusa = N'Você não tem permissão para ver a tela deste registro.';
+        ELSE IF NOT EXISTS (SELECT 1 FROM SIS.Lixeira l WHERE l.ID_LIXEIRA = @IdLixeira AND l.SITUACAO = 'LIXEIRA')
+            SET @Recusa = N'O registro não está mais na lixeira.';
+
+        SET @ObjId = OBJECT_ID(@Tabela, N'U');
+        SET @Pk = SIS.fn_SIS_Tabela_PK(@Tabela);
+        IF @Recusa = N'' AND (@ObjId IS NULL OR @Pk = N'')
+            SET @Recusa = N'Tabela do registro não encontrada.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(@Tabela AS NVARCHAR(256)) AS TABELA, @IdRegistro AS ID_REGISTRO;
+            RETURN;
+        END;
+
+        SET @Nome = QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId));
+        SELECT @DescSql = NULLIF(LTRIM(RTRIM(c.DESCRICAO_SQL)), N'') FROM SIS.Tabela_Config c WHERE c.TABELA = @Tabela;
+
+        -- Campos únicos contra os registros vivos
+        SET @EtapaAtual = 'Campos únicos';
+        INSERT INTO @Campos (CAMPO)
+        SELECT LTRIM(RTRIM(s.value))
+        FROM SIS.Tabela_Config c
+        CROSS APPLY STRING_SPLIT(c.CAMPOS_UNICOS, N',') s
+        WHERE c.TABELA = @Tabela AND LTRIM(RTRIM(s.value)) <> N'' AND COL_LENGTH(@Tabela, LTRIM(RTRIM(s.value))) IS NOT NULL;
+
+        SELECT @i = 1, @Total = COUNT(*) FROM @Campos;
+        WHILE @i <= @Total AND @Recusa = N''
+        BEGIN
+            SELECT @Campo = c.CAMPO FROM @Campos c WHERE c.ORDEM = @i;
+            SET @Outro = NULL;
+            SET @Sql = N'SELECT TOP 1 @Outro = o.' + QUOTENAME(@Pk) + N', @Desc = LEFT(CONVERT(NVARCHAR(MAX), '
+                     + ISNULL(REPLACE(@DescSql, N't.', N'o.'), N'CAST(o.' + QUOTENAME(@Pk) + N' AS NVARCHAR(30))') + N'), 400)'
+                     + N' FROM ' + @Nome + N' o INNER JOIN ' + @Nome + N' t ON t.' + QUOTENAME(@Pk) + N' = @Id'
+                     + N' WHERE o.' + QUOTENAME(@Pk) + N' <> @Id AND o.DT_EXCLUSAO IS NULL'
+                     + N' AND ISNULL(CONVERT(NVARCHAR(MAX), t.' + QUOTENAME(@Campo) + N'), N'''') <> N'''''
+                     + N' AND o.' + QUOTENAME(@Campo) + N' = t.' + QUOTENAME(@Campo)
+                     + N' ORDER BY o.' + QUOTENAME(@Pk) + N';';
+            EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @Outro BIGINT OUTPUT, @Desc NVARCHAR(400) OUTPUT', @Id = @IdRegistro, @Outro = @Outro OUTPUT, @Desc = @DescOutro OUTPUT;
+            IF @Outro IS NOT NULL
+                SET @Recusa = LEFT(N'Já existe outro cadastro com o mesmo ' + @Campo + N': ' + ISNULL(@DescOutro, N'') + N' (código ' + CAST(@Outro AS NVARCHAR(20))
+                            + N'). Confira se é o mesmo antes de recuperar.', 400);
+            SET @i = @i + 1;
+        END;
+
+        -- Registros ligados que estão na lixeira
+        SET @EtapaAtual = 'Registros ligados';
+        IF @Recusa = N''
+        BEGIN
+            INSERT INTO @Fks (COLUNA, TABELA_REF)
+            SELECT pc.name, OBJECT_SCHEMA_NAME(fk.referenced_object_id) + N'.' + OBJECT_NAME(fk.referenced_object_id)
+            FROM sys.foreign_keys fk
+            INNER JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id = fk.object_id
+            INNER JOIN sys.columns pc ON pc.object_id = fkc.parent_object_id AND pc.column_id = fkc.parent_column_id
+            WHERE fk.parent_object_id = @ObjId
+              AND (SELECT COUNT(*) FROM sys.foreign_key_columns x WHERE x.constraint_object_id = fk.object_id) = 1;
+
+            SELECT @i = 1, @Total = COUNT(*) FROM @Fks;
+            WHILE @i <= @Total AND @Recusa = N''
+            BEGIN
+                SELECT @Campo = f.COLUNA, @TabRef = f.TABELA_REF FROM @Fks f WHERE f.ORDEM = @i;
+                SET @Ref = NULL;
+                SET @Sql = N'SELECT @Ref = TRY_CONVERT(BIGINT, t.' + QUOTENAME(@Campo) + N') FROM ' + @Nome + N' t WHERE t.' + QUOTENAME(@Pk) + N' = @Id;';
+                EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @Ref BIGINT OUTPUT', @Id = @IdRegistro, @Ref = @Ref OUTPUT;
+                IF @Ref IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(@TabRef, @Ref) = 1
+                    SET @Recusa = LEFT(N'Este registro está ligado a outro que também está na lixeira ('
+                                + ISNULL((SELECT TOP 1 l.DESCRICAO FROM SIS.Lixeira l WHERE l.TABELA = @TabRef AND l.ID_REGISTRO = @Ref AND l.SITUACAO = 'LIXEIRA'), N'')
+                                + N'). Recupere aquele antes.', 400);
+                SET @i = @i + 1;
+            END;
+        END;
+
+        IF @Recusa = N''
+        BEGIN
+            EXEC SIS.SIS_Tabela_Trava_Conferir @Tabela = @Tabela, @IdRegistro = @IdRegistro, @Operacao = 'RECUPERAR', @Mensagem = @Recusa OUTPUT;
+            SET @Recusa = ISNULL(@Recusa, N'');
+        END;
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(@Tabela AS NVARCHAR(256)) AS TABELA, @IdRegistro AS ID_REGISTRO;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+        SET @TemAlteracao = CASE WHEN COL_LENGTH(@Tabela, N'DT_ALTERACAO') IS NOT NULL AND COL_LENGTH(@Tabela, N'USUARIO_ALTERACAO') IS NOT NULL THEN 1 ELSE 0 END;
+        SET @Sql = N'UPDATE t SET t.ATIVO = @Ativo, t.DT_EXCLUSAO = NULL, t.USUARIO_EXCLUSAO = NULL'
+                 + CASE WHEN @TemAlteracao = 1 THEN N', t.DT_ALTERACAO = SYSDATETIME(), t.USUARIO_ALTERACAO = @Usuario' ELSE N'' END
+                 + N' FROM ' + @Nome + N' t WHERE t.' + QUOTENAME(@Pk) + N' = @Id AND t.DT_EXCLUSAO IS NOT NULL; SET @n = @@ROWCOUNT;';
+
+        IF @TranCountEntrada = 0 BEGIN TRANSACTION;
+            EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @Ativo BIT, @Usuario NVARCHAR(100), @n INT OUTPUT',
+                 @Id = @IdRegistro, @Ativo = @AtivoAntes, @Usuario = @Usuario, @n = @Linhas OUTPUT;
+
+            UPDATE l
+               SET l.SITUACAO = 'RECUPERADO', l.DT_SITUACAO = SYSDATETIME(), l.USUARIO_SITUACAO = ISNULL(@Usuario, N''),
+                   l.MOTIVO_SITUACAO = @Motivo, l.DT_ALTERACAO = SYSDATETIME(), l.USUARIO_ALTERACAO = ISNULL(@Usuario, N'')
+            FROM SIS.Lixeira l
+            WHERE l.ID_LIXEIRA = @IdLixeira AND l.SITUACAO = 'LIXEIRA';
+        IF @TranCountEntrada = 0 COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(CASE WHEN @AtivoAntes = 1 THEN N'Registro recuperado: voltou ativo.' ELSE N'Registro recuperado: voltou desativado, como estava antes de ir para a lixeira.' END AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(@Tabela AS NVARCHAR(256)) AS TABELA, @IdRegistro AS ID_REGISTRO;
+    END TRY
+    BEGIN CATCH
+        IF @TranCountEntrada = 0 AND @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível recuperar o registro. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(@Tabela AS NVARCHAR(256)) AS TABELA, @IdRegistro AS ID_REGISTRO;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Manter.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Manter]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Botão "Manter mais N dias" da tela Sistema › Lixeira (P20):
+                adia a data em que o registro será apagado de vez, sem
+                recuperar. Conta os dias a partir da data marcada (ou de hoje,
+                se ela já passou) e libera um novo aviso por e-mail.
+                Permissão: ALTERAR em SIS_LIXEIRA e VER na tela do registro.
+                Devolve 1 linha: SUCESSO, MENSAGEM, DT_APAGAR.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Lixeira_Manter @IdUsuario = 2, @IdLixeira = 1, @Dias = 30;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Manter]
+    @IdUsuario  INT,
+    @IdLixeira  BIGINT,
+    @Dias       INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Lixeira_Manter]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa NVARCHAR(400) = N'', @Item VARCHAR(40), @Situacao VARCHAR(12), @DtApagar DATE, @Usuario NVARCHAR(100);
+
+    BEGIN TRY
+        SELECT @Item = l.ITEM_CODIGO, @Situacao = l.SITUACAO FROM SIS.Lixeira l WHERE l.ID_LIXEIRA = @IdLixeira;
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_LIXEIRA', 'ALTERAR') = 0
+            SET @Recusa = N'Você não tem permissão para mudar o prazo da lixeira.';
+        ELSE IF @Situacao IS NULL
+            SET @Recusa = N'Registro da lixeira não encontrado.';
+        ELSE IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'VER') = 0
+            SET @Recusa = N'Você não tem permissão para ver a tela deste registro.';
+        ELSE IF @Situacao <> 'LIXEIRA'
+            SET @Recusa = N'O registro não está mais na lixeira.';
+        ELSE IF ISNULL(@Dias, 0) NOT BETWEEN 1 AND 3650
+            SET @Recusa = N'Informe de 1 a 3650 dias.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS DATE) AS DT_APAGAR;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+        UPDATE l
+           SET @DtApagar = l.DT_APAGAR = DATEADD(DAY, @Dias, CASE WHEN l.DT_APAGAR < CAST(SYSDATETIME() AS DATE) THEN CAST(SYSDATETIME() AS DATE) ELSE l.DT_APAGAR END),
+               l.DT_AVISO = NULL, l.DT_ALTERACAO = SYSDATETIME(), l.USUARIO_ALTERACAO = @Usuario
+        FROM SIS.Lixeira l
+        WHERE l.ID_LIXEIRA = @IdLixeira AND l.SITUACAO = 'LIXEIRA';
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(N'Prazo adiado: o registro fica na lixeira até ' + ISNULL(SIS.fn_SIS_Formatar_Data(@DtApagar), N'') + N'.' AS NVARCHAR(400)) AS MENSAGEM,
+               @DtApagar AS DT_APAGAR;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível mudar o prazo. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS DATE) AS DT_APAGAR;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Esvaziar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Esvaziar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Botão "Esvaziar agora" da tela Sistema › Lixeira (P20): apaga
+                de vez os registros escolhidos (@Ids = lista de ID_LIXEIRA
+                separados por vírgula), sem esperar o prazo. Cada registro é
+                independente: se um não puder ser apagado (passou a ser usado,
+                trava), os outros seguem. A cópia completa fica na auditoria.
+                Permissão: ESVAZIAR em SIS_LIXEIRA e VER na tela de cada
+                registro (os de telas que o usuário não vê são ignorados).
+                Devolve 1 linha: SUCESSO, MENSAGEM, QTD_APAGADOS, QTD_RECUSADOS.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Lixeira_Esvaziar @IdUsuario = 2, @Ids = N'1,2';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Esvaziar]
+    @IdUsuario  INT,
+    @Ids        NVARCHAR(MAX),
+    @Motivo     NVARCHAR(400) = NULL
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Sem XACT_ABORT: laço isolado, um registro ruim não derruba os outros (PADRAO_SQL regras 2 e 13).
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Lixeira_Esvaziar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @TranCountEntrada INT = @@TRANCOUNT;
+    DECLARE @Lista TABLE (ORDEM INT IDENTITY(1,1), ID_LIXEIRA BIGINT);
+    DECLARE @i INT = 1, @Total INT, @Id BIGINT, @Msg NVARCHAR(400), @PrimeiraRecusa NVARCHAR(400) = N'';
+    DECLARE @Apagados INT = 0, @Recusados INT = 0, @Usuario NVARCHAR(100);
+
+    IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_LIXEIRA', 'ESVAZIAR') = 0
+    BEGIN
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Você não tem permissão para esvaziar a lixeira.' AS NVARCHAR(400)) AS MENSAGEM, 0 AS QTD_APAGADOS, 0 AS QTD_RECUSADOS;
+        RETURN;
+    END;
+
+    INSERT INTO @Lista (ID_LIXEIRA)
+    SELECT DISTINCT l.ID_LIXEIRA
+    FROM STRING_SPLIT(ISNULL(@Ids, N''), N',') s
+    INNER JOIN SIS.Lixeira l ON l.ID_LIXEIRA = TRY_CONVERT(BIGINT, LTRIM(RTRIM(s.value)))
+    WHERE l.SITUACAO = 'LIXEIRA'
+      AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, l.ITEM_CODIGO, 'VER') = 1;
+
+    SELECT @Total = COUNT(*) FROM @Lista;
+    IF @Total = 0
+    BEGIN
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Escolha os registros da lixeira que serão apagados de vez.' AS NVARCHAR(400)) AS MENSAGEM, 0 AS QTD_APAGADOS, 0 AS QTD_RECUSADOS;
+        RETURN;
+    END;
+
+    SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+    SET @Motivo = ISNULL(NULLIF(LTRIM(RTRIM(@Motivo)), N''), N'Esvaziar agora');
+    SET @EtapaAtual = 'Apagando';
+
+    WHILE @i <= @Total
+    BEGIN
+        SELECT @Id = l.ID_LIXEIRA FROM @Lista l WHERE l.ORDEM = @i;
+        SET @Msg = N'';
+        BEGIN TRY
+            IF @TranCountEntrada = 0 BEGIN TRANSACTION;
+                EXEC SIS.SIS_Lixeira_Apagar @IdLixeira = @Id, @Usuario = @Usuario, @Motivo = @Motivo, @Mensagem = @Msg OUTPUT;
+            IF @TranCountEntrada = 0 COMMIT TRANSACTION;
+
+            IF ISNULL(@Msg, N'') = N'' SET @Apagados = @Apagados + 1;
+            ELSE
+            BEGIN
+                SET @Recusados = @Recusados + 1;
+                IF @PrimeiraRecusa = N'' SET @PrimeiraRecusa = @Msg;
+            END;
+        END TRY
+        BEGIN CATCH
+            IF @TranCountEntrada = 0 AND @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+            IF XACT_STATE() <> -1
+                INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+                VALUES (@NomeProc, @EtapaAtual + N' ' + CAST(@Id AS NVARCHAR(20)), ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+            SET @Recusados = @Recusados + 1;
+            IF @PrimeiraRecusa = N'' SET @PrimeiraRecusa = N'Um registro não pôde ser apagado (erro registrado para análise).';
+            IF XACT_STATE() = -1 BREAK;
+        END CATCH;
+        SET @i = @i + 1;
+    END;
+
+    SELECT CAST(CASE WHEN @Apagados > 0 THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+           CAST(LEFT(CAST(@Apagados AS NVARCHAR(10)) + N' registro(s) apagado(s) de vez.'
+                + CASE WHEN @Recusados > 0 THEN N' ' + CAST(@Recusados AS NVARCHAR(10)) + N' não apagado(s): ' + @PrimeiraRecusa ELSE N'' END, 400) AS NVARCHAR(400)) AS MENSAGEM,
+           @Apagados AS QTD_APAGADOS, @Recusados AS QTD_RECUSADOS;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Listar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Lista da tela Sistema › Lixeira (P20), uma tela só para todos
+                os módulos: filtros por módulo, tela, período da exclusão,
+                quem excluiu, texto e situação (padrão LIXEIRA; '' = todas,
+                para ver o histórico de recuperados e apagados). Só traz os
+                registros das telas que o usuário pode ver. APAGA_LOGO = 1
+                quando o registro será apagado dentro do prazo do aviso
+                (LIXEIRA_AVISO_DIAS, "apaga amanhã").
+                Permissão: VER em SIS_LIXEIRA.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Lixeira_Listar @IdUsuario = 2;
+    -- EXEC SIS.SIS_Lixeira_Listar @IdUsuario = 2, @Modulo = 'CAD', @Situacao = '';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Listar]
+    @IdUsuario  INT,
+    @Modulo     VARCHAR(10)   = NULL,
+    @Item       VARCHAR(40)   = NULL,
+    @DtInicio   DATE          = NULL,
+    @DtFim      DATE          = NULL,
+    @Usuario    NVARCHAR(100) = NULL,
+    @Texto      NVARCHAR(100) = NULL,
+    @Situacao   VARCHAR(12)   = 'LIXEIRA'
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Lixeira_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+    DECLARE @Hoje DATE = CAST(SYSDATETIME() AS DATE);
+    DECLARE @Aviso INT;
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_LIXEIRA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver a lixeira.', 1;
+
+        SET @Modulo   = NULLIF(LTRIM(RTRIM(ISNULL(@Modulo, ''))), '');
+        SET @Item     = NULLIF(LTRIM(RTRIM(ISNULL(@Item, ''))), '');
+        SET @Usuario  = NULLIF(LTRIM(RTRIM(ISNULL(@Usuario, N''))), N'');
+        SET @Texto    = NULLIF(LTRIM(RTRIM(ISNULL(@Texto, N''))), N'');
+        SET @Situacao = NULLIF(LTRIM(RTRIM(ISNULL(@Situacao, ''))), '');
+        SET @Aviso    = SIS.fn_SIS_Parametro_Inteiro('LIXEIRA_AVISO_DIAS');
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT l.ID_LIXEIRA,
+               m.CODIGO AS MODULO_CODIGO,
+               m.NOME   AS MODULO_NOME,
+               l.ITEM_CODIGO,
+               i.NOME   AS TELA_NOME,
+               CAST(l.TABELA AS NVARCHAR(256)) AS TABELA,
+               l.ID_REGISTRO,
+               l.DESCRICAO,
+               l.MOTIVO,
+               l.DT_EXCLUSAO,
+               l.USUARIO_EXCLUSAO,
+               l.DT_APAGAR,
+               CAST(CASE WHEN l.SITUACAO = 'LIXEIRA' THEN DATEDIFF(DAY, @Hoje, l.DT_APAGAR) ELSE 0 END AS INT) AS DIAS_RESTANTES,
+               CAST(CASE WHEN l.SITUACAO = 'LIXEIRA' AND @Aviso > 0 AND l.DT_APAGAR <= DATEADD(DAY, @Aviso, @Hoje) THEN 1 ELSE 0 END AS BIT) AS APAGA_LOGO,
+               l.SITUACAO,
+               l.DT_SITUACAO,
+               l.USUARIO_SITUACAO,
+               l.MOTIVO_SITUACAO,
+               l.DT_AVISO
+        FROM SIS.Lixeira l WITH (NOLOCK)
+        INNER JOIN SIS.Item   i WITH (NOLOCK) ON i.CODIGO    = l.ITEM_CODIGO
+        INNER JOIN SIS.Modulo m WITH (NOLOCK) ON m.ID_MODULO = i.ID_MODULO
+        WHERE (@Situacao IS NULL OR l.SITUACAO = @Situacao)
+          AND (@Modulo   IS NULL OR m.CODIGO = @Modulo)
+          AND (@Item     IS NULL OR l.ITEM_CODIGO = @Item)
+          AND (@DtInicio IS NULL OR l.DT_EXCLUSAO >= @DtInicio)
+          AND (@DtFim    IS NULL OR l.DT_EXCLUSAO <  DATEADD(DAY, 1, @DtFim))
+          AND (@Usuario  IS NULL OR l.USUARIO_EXCLUSAO = @Usuario)
+          AND (@Texto    IS NULL OR l.DESCRICAO LIKE N'%' + @Texto + N'%' OR l.MOTIVO LIKE N'%' + @Texto + N'%')
+          AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, l.ITEM_CODIGO, 'VER') = 1
+        ORDER BY m.ORDEM_MENU, i.ORDEM, l.DT_EXCLUSAO DESC, l.ID_LIXEIRA DESC;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível carregar a lixeira. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Prazo_Listar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Prazo_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Prazos da lixeira por tela (P20), para a tela Sistema ›
+                Lixeira: tela, módulo, prazo próprio (vazio = vale o geral),
+                prazo que vale e quantos registros estão na lixeira. Só as
+                telas que o usuário pode ver.
+                Permissão: VER em SIS_LIXEIRA.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Lixeira_Prazo_Listar @IdUsuario = 2;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Prazo_Listar]
+    @IdUsuario  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Lixeira_Prazo_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_LIXEIRA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver a lixeira.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT CAST(c.TABELA AS NVARCHAR(256)) AS TABELA,
+               x.ITEM_CODIGO,
+               i.NOME AS TELA_NOME,
+               m.CODIGO AS MODULO_CODIGO,
+               m.NOME AS MODULO_NOME,
+               c.DIAS_GUARDA,
+               SIS.fn_SIS_Lixeira_Dias(c.TABELA) AS DIAS_VALE,
+               SIS.fn_SIS_Parametro_Inteiro('LIXEIRA_DIAS_GUARDA') AS DIAS_GERAL,
+               (SELECT COUNT(*) FROM SIS.Lixeira l WITH (NOLOCK) WHERE l.TABELA = c.TABELA AND l.SITUACAO = 'LIXEIRA') AS QTD_NA_LIXEIRA
+        FROM SIS.Tabela_Config c WITH (NOLOCK)
+        CROSS APPLY (SELECT SIS.fn_SIS_Item_Da_Tabela(c.TABELA) AS ITEM_CODIGO) x
+        INNER JOIN SIS.Item   i WITH (NOLOCK) ON i.CODIGO = x.ITEM_CODIGO
+        INNER JOIN SIS.Modulo m WITH (NOLOCK) ON m.ID_MODULO = i.ID_MODULO
+        WHERE c.ATIVO = 1
+          AND c.PERMITE_LIXEIRA = 1
+          AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, x.ITEM_CODIGO, 'VER') = 1
+        ORDER BY m.ORDEM_MENU, i.ORDEM, c.TABELA;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível carregar os prazos da lixeira. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Prazo_Gravar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Prazo_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Prazo próprio da lixeira para uma tela (P20). @Dias vazio
+                (NULL) = volta a valer o prazo geral (LIXEIRA_DIAS_GUARDA).
+                Vale para o que for excluído daqui em diante; o que já está na
+                lixeira mantém a data marcada (use "Manter mais N dias").
+                Permissão: ALTERAR em SIS_LIXEIRA e VER na tela.
+                Devolve 1 linha: SUCESSO, MENSAGEM.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Lixeira_Prazo_Gravar @IdUsuario = 2, @Tabela = N'CAD.Pessoa', @Dias = 120;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Prazo_Gravar]
+    @IdUsuario  INT,
+    @Tabela     NVARCHAR(256),
+    @Dias       INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Lixeira_Prazo_Gravar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa NVARCHAR(400) = N'', @Usuario NVARCHAR(100);
+
+    BEGIN TRY
+        SET @Tabela = LTRIM(RTRIM(ISNULL(@Tabela, N'')));
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_LIXEIRA', 'ALTERAR') = 0
+            SET @Recusa = N'Você não tem permissão para mudar o prazo da lixeira.';
+        ELSE IF NOT EXISTS (SELECT 1 FROM SIS.Tabela_Config c WHERE c.TABELA = @Tabela AND c.ATIVO = 1 AND c.PERMITE_LIXEIRA = 1)
+            SET @Recusa = N'Esta tela não usa a lixeira.';
+        ELSE IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, SIS.fn_SIS_Item_Da_Tabela(@Tabela), 'VER') = 0
+            SET @Recusa = N'Você não tem permissão para ver esta tela.';
+        ELSE IF @Dias IS NOT NULL AND @Dias NOT BETWEEN 1 AND 3650
+            SET @Recusa = N'Informe de 1 a 3650 dias, ou deixe em branco para usar o prazo geral.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+        UPDATE c
+           SET c.DIAS_GUARDA = @Dias, c.DT_ALTERACAO = SYSDATETIME(), c.USUARIO_ALTERACAO = @Usuario
+        FROM SIS.Tabela_Config c
+        WHERE c.TABELA = @Tabela
+          AND ISNULL(c.DIAS_GUARDA, -1) <> ISNULL(@Dias, -1);
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(CASE WHEN @Dias IS NULL THEN N'Prazo próprio retirado: vale o prazo geral (' + CAST(SIS.fn_SIS_Lixeira_Dias(@Tabela) AS NVARCHAR(10)) + N' dias).'
+                         ELSE N'Prazo gravado: ' + CAST(@Dias AS NVARCHAR(10)) + N' dias, para o que for excluído daqui em diante.' END AS NVARCHAR(400)) AS MENSAGEM;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar o prazo. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Lixeira_Processar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Lixeira_Processar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Rotina diária da lixeira (P20; rotina LIXEIRA_LIMPEZA):
+                  1) limpeza (liga/desliga LIXEIRA_LIMPEZA_ATIVA): apaga de vez
+                     o que passou do prazo (DT_APAGAR até hoje). O que passou a
+                     ser usado não é apagado: o motivo fica na linha da lixeira
+                     e sai no aviso;
+                  2) aviso: um e-mail para o grupo do parâmetro
+                     LIXEIRA_AVISO_GRUPO com o que será apagado nos próximos
+                     LIXEIRA_AVISO_DIAS dia(s) e ainda não foi avisado. Sem
+                     nada para avisar, não sai e-mail. Em teste (@bRunLocal),
+                     o aviso vai para o EMAIL_TESTE e não marca "avisado".
+                Blocos independentes (regra 13): no fim, se algum falhou,
+                relança um erro agregado (a rotina fica com resultado ERRO).
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Lixeira_Processar;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Lixeira_Processar]
+    @bRunLocal  BIT = NULL
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Sem XACT_ABORT: laço isolado na limpeza (regras 2 e 13).
+    SET @bRunLocal = ISNULL(@bRunLocal, CASE WHEN DB_NAME() LIKE '%[_]LOCAL' THEN 1 ELSE 0 END);
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Lixeira_Processar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Limpeza';
+    DECLARE @Hoje DATE = CAST(SYSDATETIME() AS DATE);
+    DECLARE @Vencidos TABLE (ORDEM INT IDENTITY(1,1), ID_LIXEIRA BIGINT);
+    DECLARE @Aviso TABLE (ID_LIXEIRA BIGINT PRIMARY KEY);
+    DECLARE @i INT = 1, @Total INT, @Id BIGINT, @Msg NVARCHAR(400), @Falhas INT = 0;
+    DECLARE @Dias INT, @Grupo VARCHAR(30), @Para NVARCHAR(MAX), @Linhas NVARCHAR(MAX), @Corpo NVARCHAR(MAX), @Assunto NVARCHAR(400), @Chave NVARCHAR(200), @IdEmail BIGINT;
+    DECLARE @Qtd INT;
+
+    -- 1) Limpeza do que venceu
+    BEGIN TRY
+        IF SIS.fn_SIS_Parametro_SN('LIXEIRA_LIMPEZA_ATIVA') = 1
+        BEGIN
+            INSERT INTO @Vencidos (ID_LIXEIRA)
+            SELECT l.ID_LIXEIRA FROM SIS.Lixeira l WHERE l.SITUACAO = 'LIXEIRA' AND l.DT_APAGAR <= @Hoje ORDER BY l.ID_LIXEIRA;
+            SELECT @Total = COUNT(*) FROM @Vencidos;
+
+            WHILE @i <= @Total
+            BEGIN
+                SELECT @Id = v.ID_LIXEIRA FROM @Vencidos v WHERE v.ORDEM = @i;
+                SET @Msg = N'';
+                BEGIN TRY
+                    BEGIN TRANSACTION;
+                        EXEC SIS.SIS_Lixeira_Apagar @IdLixeira = @Id, @Usuario = N'rotina', @Motivo = N'Prazo da lixeira vencido', @Mensagem = @Msg OUTPUT;
+                        IF ISNULL(@Msg, N'') <> N''
+                            UPDATE l SET l.MOTIVO_SITUACAO = @Msg, l.DT_ALTERACAO = SYSDATETIME(), l.USUARIO_ALTERACAO = N'rotina'
+                            FROM SIS.Lixeira l WHERE l.ID_LIXEIRA = @Id AND l.SITUACAO = 'LIXEIRA' AND l.MOTIVO_SITUACAO <> @Msg;
+                    COMMIT TRANSACTION;
+                END TRY
+                BEGIN CATCH
+                    IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+                    INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+                    VALUES (@NomeProc, N'Limpeza ' + CAST(@Id AS NVARCHAR(20)), ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+                    SET @Falhas = @Falhas + 1;
+                END CATCH;
+                SET @i = @i + 1;
+            END;
+        END;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+        VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        SET @Falhas = @Falhas + 1;
+    END CATCH;
+
+    -- 2) Aviso do que vai ser apagado
+    BEGIN TRY
+        SET @EtapaAtual = 'Aviso';
+        SET @Dias  = SIS.fn_SIS_Parametro_Inteiro('LIXEIRA_AVISO_DIAS');
+        SET @Grupo = CONVERT(VARCHAR(30), LTRIM(RTRIM(ISNULL(SIS.fn_SIS_Parametro('LIXEIRA_AVISO_GRUPO'), N''))));
+
+        IF @Dias > 0
+        BEGIN
+            INSERT INTO @Aviso (ID_LIXEIRA)
+            SELECT l.ID_LIXEIRA
+            FROM SIS.Lixeira l
+            WHERE l.SITUACAO = 'LIXEIRA'
+              AND l.DT_AVISO IS NULL
+              AND l.DT_APAGAR <= DATEADD(DAY, @Dias, @Hoje);
+            SELECT @Qtd = COUNT(*) FROM @Aviso;
+
+            SET @Para = CASE WHEN @Grupo = '' THEN N'' ELSE SIS.fn_SIS_Emails_Do_Grupo(@Grupo) END;
+            IF @Qtd > 0 AND @Para = N''
+                INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+                VALUES (@NomeProc, @EtapaAtual, 0, N'Aviso da lixeira não enviado: o grupo de e-mail do parâmetro LIXEIRA_AVISO_GRUPO está vazio ou sem destinatário.', 0, SYSDATETIME());
+
+            IF @Qtd > 0 AND @Para <> N''
+            BEGIN
+                SELECT @Linhas = STRING_AGG(CONVERT(NVARCHAR(MAX),
+                           N'<tr style="background:' + CASE WHEN x.N % 2 = 0 THEN N'#f5f5f5' ELSE N'#ffffff' END + N'">'
+                         + N'<td style="padding:6px;border-bottom:1px solid #eeeeee">' + SIS.fn_SIS_Texto_HTML(ISNULL(x.MODULO, N'') + N' › ' + ISNULL(x.TELA, N'')) + N'</td>'
+                         + N'<td style="padding:6px;border-bottom:1px solid #eeeeee">' + SIS.fn_SIS_Texto_HTML(ISNULL(x.DESCRICAO, N''))
+                         + CASE WHEN ISNULL(x.MOTIVO_SITUACAO, N'') <> N'' THEN N'<br><span style="color:#E65100">' + SIS.fn_SIS_Texto_HTML(x.MOTIVO_SITUACAO) + N'</span>' ELSE N'' END + N'</td>'
+                         + N'<td style="padding:6px;border-bottom:1px solid #eeeeee">' + SIS.fn_SIS_Texto_HTML(ISNULL(x.USUARIO_EXCLUSAO, N'')) + N'<br>' + ISNULL(SIS.fn_SIS_Formatar_Data_Hora(x.DT_EXCLUSAO), N'') + N'</td>'
+                         + N'<td style="padding:6px;border-bottom:1px solid #eeeeee;text-align:center">' + ISNULL(SIS.fn_SIS_Formatar_Data(x.DT_APAGAR), N'') + N'</td></tr>'), N'')
+                       WITHIN GROUP (ORDER BY x.N)
+                FROM (SELECT ROW_NUMBER() OVER (ORDER BY l.DT_APAGAR, m.ORDEM_MENU, i.ORDEM, l.ID_LIXEIRA) AS N,
+                             m.NOME AS MODULO, i.NOME AS TELA, l.DESCRICAO, l.MOTIVO_SITUACAO, l.USUARIO_EXCLUSAO, l.DT_EXCLUSAO, l.DT_APAGAR
+                      FROM @Aviso a
+                      INNER JOIN SIS.Lixeira l ON l.ID_LIXEIRA = a.ID_LIXEIRA
+                      LEFT  JOIN SIS.Item   i ON i.CODIGO = l.ITEM_CODIGO
+                      LEFT  JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO) x;
+
+                SET @Corpo = SIS.fn_SIS_Email_HTML(N'Lixeira: registros que serão apagados de vez', 'INFO',
+                    N'<p>Os registros abaixo estão na lixeira e serão <b>apagados de vez</b> na data indicada. '
+                    + N'Para manter algum, abra <b>Sistema › Lixeira</b> e use <b>Recuperar</b> ou <b>Manter mais N dias</b>.</p>'
+                    + N'<table style="width:100%;border-collapse:collapse;font-size:13px">'
+                    + N'<tr style="background:#eeeeee"><th style="padding:6px;text-align:left">Módulo › Tela</th><th style="padding:6px;text-align:left">Registro</th>'
+                    + N'<th style="padding:6px;text-align:left">Excluído por / em</th><th style="padding:6px">Apaga em</th></tr>'
+                    + ISNULL(@Linhas, N'') + N'</table>',
+                    @NomeProc, @Grupo, 0);
+
+                SET @Assunto = LEFT(ISNULL(SIS.fn_SIS_Parametro('SISTEMA_NOME'), N'SisCMJ') + N' - Lixeira: ' + CAST(@Qtd AS NVARCHAR(10))
+                             + N' registro(s) serão apagados de vez', 400);
+                SET @Chave = N'LIXEIRA_AVISO_' + CONVERT(NVARCHAR(8), @Hoje, 112) + N'_' + CAST((SELECT MAX(a.ID_LIXEIRA) FROM @Aviso a) AS NVARCHAR(20))
+                           + CASE WHEN @bRunLocal = 1 THEN N'_' + CONVERT(NVARCHAR(30), SYSDATETIME(), 126) ELSE N'' END;
+
+                EXEC SIS.SIS_Email_Enfileirar @Para = @Para, @Assunto = @Assunto, @CorpoHTML = @Corpo, @Tipo = 'LIXEIRA_AVISO',
+                     @Origem = @NomeProc, @ChaveOrigem = @Chave, @Grupo = @Grupo, @IdEmail = @IdEmail OUTPUT;
+
+                IF @bRunLocal = 0 AND @IdEmail IS NOT NULL
+                    UPDATE l SET l.DT_AVISO = SYSDATETIME()
+                    FROM SIS.Lixeira l
+                    INNER JOIN @Aviso a ON a.ID_LIXEIRA = l.ID_LIXEIRA
+                    WHERE l.DT_AVISO IS NULL;
+            END;
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+        VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        SET @Falhas = @Falhas + 1;
+    END CATCH;
+
+    IF @Falhas > 0
+        THROW 50002, N'Rotina da lixeira terminou com falha (ver o log de erros).', 1;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Historico_Desfazer_Montar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Historico_Desfazer_Montar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Motor do desfazer pelo histórico (P20). Monta, sem gravar
+                nada, o plano do que vai mudar, na tabela #Desfazer_Plano
+                criada por quem chama (SIS_Historico_Desfazer_Previa e
+                SIS_Historico_Desfazer). Modos:
+                  REGISTRO  voltar o registro (e as filhas que vão junto) para
+                            como estava logo depois da operação @IdAuditoria,
+                            ou na data/hora @DataHora;
+                  OPERACAO  desfazer a operação (transação) da linha
+                            @IdAuditoria;
+                  LOTE      desfazer tudo o que o lote @IdLote fez.
+                Para cada campo alterado: o valor novo é o "antes" da primeira
+                mudança do conjunto; só muda se hoje o campo estiver igual ao
+                "depois" da última (senão CONFLITO: alguém mexeu depois).
+                Inclusão no conjunto: conforme SIS.Tabela_Config.
+                DESFAZER_INCLUSAO (LIXEIRA, DESATIVAR, APAGAR ou RECUSAR).
+                Exclusão definitiva no conjunto: conforme DESFAZER_EXCLUSAO
+                (REINSERIR, só tabelas de ligação como permissões, ou RECUSAR).
+                No modo REGISTRO entram também as filhas que vão junto,
+                inclusive as já apagadas (achadas pela foto da auditoria).
+                BLOQUEADO: tabela sem desfazer, registro apagado de vez ou na
+                lixeira, mês fechado, trava própria. IGNORADO: campo sigiloso,
+                bloqueado na configuração, de controle ou a marca da lixeira.
+                Comparação de texto em binário, igual à trigger de auditoria.
+                Uso interno (DENY para a API).
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Historico_Desfazer_Montar]
+    @Modo         VARCHAR(10),
+    @Tabela       NVARCHAR(256) = NULL,
+    @IdRegistro   BIGINT        = NULL,
+    @IdAuditoria  BIGINT        = NULL,
+    @DataHora     DATETIME2(0)  = NULL,
+    @IdLote       BIGINT        = NULL
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Limite BIGINT, @Transacao BIGINT, @Sql NVARCHAR(MAX), @Lista NVARCHAR(MAX);
+    DECLARE @i INT, @Total INT, @T NVARCHAR(256), @ObjId INT, @Pk NVARCHAR(128), @Nome NVARCHAR(300), @DescSql NVARCHAR(1000);
+    DECLARE @Id BIGINT, @Msg NVARCHAR(400), @ColData NVARCHAR(128), @DataNova DATE;
+
+    DROP TABLE IF EXISTS #Reg;
+    DROP TABLE IF EXISTS #Lin;
+    DROP TABLE IF EXISTS #Campo;
+    DROP TABLE IF EXISTS #Atual;
+    DROP TABLE IF EXISTS #Rec;
+    DROP TABLE IF EXISTS #Tab;
+
+    CREATE TABLE #Reg  (TABELA NVARCHAR(256) COLLATE DATABASE_DEFAULT NOT NULL, ID_REGISTRO BIGINT NOT NULL, PRIMARY KEY (TABELA, ID_REGISTRO));
+    CREATE TABLE #Lin  (ID_AUDITORIA BIGINT NOT NULL PRIMARY KEY, TABELA NVARCHAR(256) COLLATE DATABASE_DEFAULT NOT NULL, ID_REGISTRO BIGINT NOT NULL, OPERACAO CHAR(1) NOT NULL,
+                        CAMPO NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL, VALOR_ANTES NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL, VALOR_DEPOIS NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL);
+    CREATE TABLE #Campo (TABELA NVARCHAR(256) COLLATE DATABASE_DEFAULT NOT NULL, ID_REGISTRO BIGINT NOT NULL, CAMPO NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL,
+                         PRIMEIRA BIGINT NOT NULL, ULTIMA BIGINT NOT NULL, VALOR_NOVO NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL, VALOR_ESPERADO NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL,
+                         PRIMARY KEY (TABELA, ID_REGISTRO, CAMPO));
+    CREATE TABLE #Atual (TABELA NVARCHAR(256) COLLATE DATABASE_DEFAULT NOT NULL, ID_REGISTRO BIGINT NOT NULL, CAMPO NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL, VALOR NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL,
+                         PRIMARY KEY (TABELA, ID_REGISTRO, CAMPO));
+    CREATE TABLE #Rec  (TABELA NVARCHAR(256) COLLATE DATABASE_DEFAULT NOT NULL, ID_REGISTRO BIGINT NOT NULL, TEM_I BIT NOT NULL, TEM_E BIT NOT NULL,
+                        EXISTE BIT NOT NULL DEFAULT (0), DESCRICAO NVARCHAR(400) COLLATE DATABASE_DEFAULT NULL, BLOQUEIO NVARCHAR(400) COLLATE DATABASE_DEFAULT NULL,
+                        ACAO VARCHAR(10) COLLATE DATABASE_DEFAULT NULL, AVISO NVARCHAR(400) COLLATE DATABASE_DEFAULT NULL, FOTO NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL,
+                        PRIMARY KEY (TABELA, ID_REGISTRO));
+    CREATE TABLE #Tab  (ORDEM INT IDENTITY(1,1) NOT NULL, TABELA NVARCHAR(256) COLLATE DATABASE_DEFAULT NOT NULL);
+
+    -- 1) Linhas da auditoria que entram no conjunto
+    IF @Modo = 'REGISTRO'
+    BEGIN
+        IF @IdAuditoria IS NOT NULL
+        BEGIN
+            SELECT @Transacao = a.TRANSACAO, @Limite = a.ID_AUDITORIA FROM SIS.Auditoria a WHERE a.ID_AUDITORIA = @IdAuditoria;
+            IF @Transacao IS NOT NULL
+                SELECT @Limite = MAX(a.ID_AUDITORIA) FROM SIS.Auditoria a WHERE a.TRANSACAO = @Transacao;
+        END;
+        IF @Limite IS NULL AND @DataHora IS NOT NULL
+            SELECT @Limite = ISNULL(MAX(a.ID_AUDITORIA), 0) FROM SIS.Auditoria a WHERE a.DT_OPERACAO <= @DataHora;
+        IF @Limite IS NULL GOTO Fim;
+
+        INSERT INTO #Reg (TABELA, ID_REGISTRO) VALUES (@Tabela, @IdRegistro);
+
+        -- filhas que vão junto: as que existem hoje e as incluídas/apagadas depois do ponto (pela foto da auditoria)
+        SET @Sql = N'';
+        SELECT @Sql = @Sql
+                    + N'INSERT INTO #Reg (TABELA, ID_REGISTRO) SELECT DISTINCT N''' + REPLACE(f.TABELA, N'''', N'''''') + N''', CAST(f.'
+                    + QUOTENAME(SIS.fn_SIS_Tabela_PK(f.TABELA)) + N' AS BIGINT) FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(OBJECT_ID(f.TABELA, N'U'))) + N'.'
+                    + QUOTENAME(OBJECT_NAME(OBJECT_ID(f.TABELA, N'U'))) + N' f WHERE f.' + QUOTENAME(f.COLUNA) + N' = @Id'
+                    + N' AND NOT EXISTS (SELECT 1 FROM #Reg r WHERE r.TABELA = N''' + REPLACE(f.TABELA, N'''', N'''''') + N''' AND r.ID_REGISTRO = f.'
+                    + QUOTENAME(SIS.fn_SIS_Tabela_PK(f.TABELA)) + N');' + NCHAR(13) + NCHAR(10)
+                    + N'INSERT INTO #Reg (TABELA, ID_REGISTRO) SELECT DISTINCT a.TABELA, a.ID_REGISTRO FROM SIS.Auditoria a'
+                    + N' WHERE a.TABELA = N''' + REPLACE(f.TABELA, N'''', N'''''') + N''' AND a.OPERACAO IN (''I'', ''E'') AND a.ID_AUDITORIA > @Limite'
+                    + N' AND JSON_VALUE(COALESCE(a.VALOR_DEPOIS, a.VALOR_ANTES), N''$.' + REPLACE(f.COLUNA, N'''', N'''''') + N''') = CAST(@Id AS NVARCHAR(30))'
+                    + N' AND NOT EXISTS (SELECT 1 FROM #Reg r WHERE r.TABELA = a.TABELA AND r.ID_REGISTRO = a.ID_REGISTRO);' + NCHAR(13) + NCHAR(10)
+        FROM (SELECT LEFT(x.v, LEN(x.v) - CHARINDEX(N'.', REVERSE(x.v))) AS TABELA, RIGHT(x.v, CHARINDEX(N'.', REVERSE(x.v)) - 1) AS COLUNA
+              FROM SIS.Tabela_Config c
+              CROSS APPLY (SELECT LTRIM(RTRIM(s.value)) AS v FROM STRING_SPLIT(c.TABELAS_FILHAS, N',') s) x
+              WHERE c.TABELA = @Tabela AND x.v LIKE N'%_._%._%') f
+        WHERE OBJECT_ID(f.TABELA, N'U') IS NOT NULL AND COL_LENGTH(f.TABELA, f.COLUNA) IS NOT NULL AND SIS.fn_SIS_Tabela_PK(f.TABELA) <> N'';
+        IF @Sql <> N'' EXEC sys.sp_executesql @Sql, N'@Id BIGINT, @Limite BIGINT', @Id = @IdRegistro, @Limite = @Limite;
+
+        INSERT INTO #Lin (ID_AUDITORIA, TABELA, ID_REGISTRO, OPERACAO, CAMPO, VALOR_ANTES, VALOR_DEPOIS)
+        SELECT a.ID_AUDITORIA, a.TABELA, a.ID_REGISTRO, a.OPERACAO, a.CAMPO, a.VALOR_ANTES, a.VALOR_DEPOIS
+        FROM SIS.Auditoria a
+        INNER JOIN #Reg r ON r.TABELA = a.TABELA AND r.ID_REGISTRO = a.ID_REGISTRO
+        WHERE a.ID_AUDITORIA > @Limite;
+    END;
+
+    IF @Modo = 'OPERACAO'
+    BEGIN
+        SELECT @Transacao = a.TRANSACAO FROM SIS.Auditoria a WHERE a.ID_AUDITORIA = @IdAuditoria;
+
+        INSERT INTO #Lin (ID_AUDITORIA, TABELA, ID_REGISTRO, OPERACAO, CAMPO, VALOR_ANTES, VALOR_DEPOIS)
+        SELECT a.ID_AUDITORIA, a.TABELA, a.ID_REGISTRO, a.OPERACAO, a.CAMPO, a.VALOR_ANTES, a.VALOR_DEPOIS
+        FROM SIS.Auditoria a
+        WHERE (@Transacao IS NOT NULL AND a.TRANSACAO = @Transacao)
+           OR (@Transacao IS NULL AND a.ID_AUDITORIA = @IdAuditoria);
+    END;
+
+    IF @Modo = 'LOTE'
+        INSERT INTO #Lin (ID_AUDITORIA, TABELA, ID_REGISTRO, OPERACAO, CAMPO, VALOR_ANTES, VALOR_DEPOIS)
+        SELECT a.ID_AUDITORIA, a.TABELA, a.ID_REGISTRO, a.OPERACAO, a.CAMPO, a.VALOR_ANTES, a.VALOR_DEPOIS
+        FROM SIS.Auditoria a
+        WHERE a.ID_LOTE = @IdLote;
+
+    IF NOT EXISTS (SELECT 1 FROM #Lin) GOTO Fim;
+
+    -- 2) Registros e campos
+    INSERT INTO #Rec (TABELA, ID_REGISTRO, TEM_I, TEM_E)
+    SELECT l.TABELA, l.ID_REGISTRO,
+           CAST(MAX(CASE WHEN l.OPERACAO = 'I' THEN 1 ELSE 0 END) AS BIT),
+           CAST(MAX(CASE WHEN l.OPERACAO = 'E' THEN 1 ELSE 0 END) AS BIT)
+    FROM #Lin l
+    GROUP BY l.TABELA, l.ID_REGISTRO;
+
+    INSERT INTO #Campo (TABELA, ID_REGISTRO, CAMPO, PRIMEIRA, ULTIMA)
+    SELECT l.TABELA, l.ID_REGISTRO, l.CAMPO, MIN(l.ID_AUDITORIA), MAX(l.ID_AUDITORIA)
+    FROM #Lin l
+    WHERE l.OPERACAO = 'A' AND l.CAMPO <> N''
+    GROUP BY l.TABELA, l.ID_REGISTRO, l.CAMPO;
+
+    UPDATE c SET c.VALOR_NOVO = p.VALOR_ANTES, c.VALOR_ESPERADO = u.VALOR_DEPOIS
+    FROM #Campo c
+    INNER JOIN #Lin p ON p.ID_AUDITORIA = c.PRIMEIRA
+    INNER JOIN #Lin u ON u.ID_AUDITORIA = c.ULTIMA;
+
+    -- inclusão a desativar: o campo ATIVO entra para leitura do valor de hoje
+    INSERT INTO #Campo (TABELA, ID_REGISTRO, CAMPO, PRIMEIRA, ULTIMA, VALOR_NOVO, VALOR_ESPERADO)
+    SELECT r.TABELA, r.ID_REGISTRO, N'ATIVO', 0, 0, N'0', NULL
+    FROM #Rec r
+    INNER JOIN SIS.Tabela_Config cf ON cf.TABELA = r.TABELA AND cf.ATIVO = 1 AND cf.DESFAZER_INCLUSAO = 'DESATIVAR'
+    WHERE r.TEM_I = 1 AND COL_LENGTH(r.TABELA, N'ATIVO') IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM #Campo c WHERE c.TABELA = r.TABELA AND c.ID_REGISTRO = r.ID_REGISTRO AND c.CAMPO = N'ATIVO');
+
+    -- inclusão a desativar: o valor novo do ATIVO é sempre 0 (mesmo que o ATIVO tenha mudado depois)
+    UPDATE c SET c.VALOR_NOVO = N'0'
+    FROM #Campo c
+    INNER JOIN #Rec r ON r.TABELA = c.TABELA AND r.ID_REGISTRO = c.ID_REGISTRO
+    INNER JOIN SIS.Tabela_Config cf ON cf.TABELA = r.TABELA AND cf.ATIVO = 1 AND cf.DESFAZER_INCLUSAO = 'DESATIVAR'
+    WHERE r.TEM_I = 1 AND c.CAMPO = N'ATIVO';
+
+    -- 3) Valores de hoje, existência e descrição (uma consulta por tabela)
+    INSERT INTO #Tab (TABELA) SELECT DISTINCT r.TABELA FROM #Rec r WHERE OBJECT_ID(r.TABELA, N'U') IS NOT NULL AND SIS.fn_SIS_Tabela_PK(r.TABELA) <> N'';
+    SELECT @i = 1, @Total = COUNT(*) FROM #Tab;
+    WHILE @i <= @Total
+    BEGIN
+        SELECT @T = t.TABELA FROM #Tab t WHERE t.ORDEM = @i;
+        SET @ObjId = OBJECT_ID(@T, N'U');
+        SET @Pk = SIS.fn_SIS_Tabela_PK(@T);
+        SET @Nome = QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId));
+        SET @DescSql = NULL;
+        SELECT @DescSql = NULLIF(LTRIM(RTRIM(cf.DESCRICAO_SQL)), N'') FROM SIS.Tabela_Config cf WHERE cf.TABELA = @T;
+
+        SET @Sql = N'UPDATE r SET r.EXISTE = 1, r.DESCRICAO = LEFT(CONVERT(NVARCHAR(MAX), '
+                 + ISNULL(@DescSql, N'CAST(t.' + QUOTENAME(@Pk) + N' AS NVARCHAR(30))') + N'), 400)'
+                 + N' FROM #Rec r INNER JOIN ' + @Nome + N' t ON t.' + QUOTENAME(@Pk) + N' = r.ID_REGISTRO WHERE r.TABELA = @T;';
+        EXEC sys.sp_executesql @Sql, N'@T NVARCHAR(256)', @T = @T;
+
+        SET @Lista = NULL;
+        SELECT @Lista = STRING_AGG(CONVERT(NVARCHAR(MAX),
+                   N'(N''' + REPLACE(x.CAMPO, N'''', N'''''') + N''', '
+                 + CASE WHEN ty.name IN ('date', 'datetime', 'datetime2', 'smalldatetime', 'datetimeoffset', 'time') THEN N'CONVERT(NVARCHAR(MAX), t.' + QUOTENAME(x.CAMPO) + N', 121)'
+                        WHEN ty.name IN ('varbinary', 'binary', 'image', 'timestamp') THEN N'CASE WHEN t.' + QUOTENAME(x.CAMPO) + N' IS NULL THEN NULL ELSE N''***'' END'
+                        ELSE N'CONVERT(NVARCHAR(MAX), t.' + QUOTENAME(x.CAMPO) + N')' END + N')'), N', ')
+        FROM (SELECT DISTINCT c.CAMPO FROM #Campo c WHERE c.TABELA = @T) x
+        INNER JOIN sys.columns col ON col.object_id = @ObjId AND col.name = x.CAMPO
+        INNER JOIN sys.types ty ON ty.system_type_id = col.system_type_id AND ty.user_type_id = col.system_type_id
+        WHERE ty.name NOT IN ('text', 'ntext', 'geography', 'geometry');
+
+        IF @Lista IS NOT NULL
+        BEGIN
+            SET @Sql = N'INSERT INTO #Atual (TABELA, ID_REGISTRO, CAMPO, VALOR) SELECT @T, c.ID_REGISTRO, c.CAMPO, v.VALOR'
+                     + N' FROM #Campo c INNER JOIN ' + @Nome + N' t ON t.' + QUOTENAME(@Pk) + N' = c.ID_REGISTRO'
+                     + N' CROSS APPLY (VALUES ' + @Lista + N') v (CAMPO, VALOR)'
+                     + N' WHERE c.TABELA = @T AND v.CAMPO = c.CAMPO;';
+            EXEC sys.sp_executesql @Sql, N'@T NVARCHAR(256)', @T = @T;
+        END;
+        SET @i = @i + 1;
+    END;
+
+    -- 4) Decisão por registro: ACAO = CAMPOS, LIXEIRA, DESATIVAR, APAGAR, REINSERIR ou NADA; BLOQUEIO = o que impede
+    UPDATE r SET r.FOTO = (SELECT TOP 1 l.VALOR_ANTES FROM #Lin l WHERE l.TABELA = r.TABELA AND l.ID_REGISTRO = r.ID_REGISTRO AND l.OPERACAO = 'E' ORDER BY l.ID_AUDITORIA)
+    FROM #Rec r WHERE r.TEM_E = 1;
+
+    UPDATE r SET
+           r.BLOQUEIO = CASE
+             WHEN cf.TABELA IS NULL OR cf.PERMITE_DESFAZER = 0 THEN N'Este tipo de registro não pode ser desfeito pelo histórico.'
+             WHEN r.TEM_I = 1 AND r.TEM_E = 1 THEN NULL
+             WHEN r.TEM_E = 1 AND r.EXISTE = 0 AND cf.DESFAZER_EXCLUSAO = 'REINSERIR' THEN NULL
+             WHEN r.TEM_E = 1 AND r.EXISTE = 0 THEN N'O registro foi apagado de vez: não dá para desfazer.'
+             WHEN r.EXISTE = 0 AND r.TEM_I = 1 AND cf.DESFAZER_INCLUSAO = 'APAGAR' THEN NULL
+             WHEN r.EXISTE = 0 THEN N'O registro foi apagado de vez depois: não dá para desfazer.'
+             WHEN SIS.fn_SIS_Na_Lixeira(r.TABELA, r.ID_REGISTRO) = 1 THEN N'O registro está na lixeira: recupere-o antes (Sistema › Lixeira).'
+             WHEN r.TEM_I = 1 AND cf.DESFAZER_INCLUSAO = 'RECUSAR' THEN N'O registro foi incluído nesta operação e este tipo de inclusão não é desfeito.'
+             WHEN r.TEM_I = 1 AND cf.DESFAZER_INCLUSAO = 'LIXEIRA' AND cf.PERMITE_LIXEIRA = 0 THEN N'O registro foi incluído nesta operação e não pode ir para a lixeira.'
+             WHEN r.TEM_I = 1 AND cf.DESFAZER_INCLUSAO = 'DESATIVAR' AND COL_LENGTH(r.TABELA, N'ATIVO') IS NULL THEN N'O registro foi incluído nesta operação e não pode ser desativado.'
+             END,
+           r.ACAO = CASE
+             WHEN r.TEM_I = 1 AND r.TEM_E = 1 THEN 'NADA'
+             WHEN r.TEM_E = 1 AND r.EXISTE = 0 THEN 'REINSERIR'
+             WHEN r.EXISTE = 0 THEN 'NADA'
+             WHEN r.TEM_I = 1 THEN cf.DESFAZER_INCLUSAO
+             ELSE 'CAMPOS' END,
+           r.AVISO = CASE
+             WHEN r.TEM_I = 1 AND r.TEM_E = 1 THEN N'Incluído e apagado dentro do que será desfeito: nada a fazer.'
+             WHEN r.TEM_E = 1 AND r.EXISTE = 0 THEN N'Apagado nesta operação: volta como estava (com código novo).'
+             WHEN r.EXISTE = 0 THEN N'Incluído nesta operação e já não existe: nada a fazer.'
+             WHEN r.TEM_I = 1 AND cf.DESFAZER_INCLUSAO = 'LIXEIRA' THEN N'Incluído nesta operação: vai para a lixeira (pode ser recuperado).'
+             WHEN r.TEM_I = 1 AND cf.DESFAZER_INCLUSAO = 'APAGAR' THEN N'Incluído nesta operação: será retirado.'
+             END
+    FROM #Rec r
+    LEFT JOIN SIS.Tabela_Config cf ON cf.TABELA = r.TABELA AND cf.ATIVO = 1;
+
+    UPDATE #Rec SET BLOQUEIO = N'O registro apagado tinha campo sigiloso e não pode voltar.'
+    WHERE BLOQUEIO IS NULL AND ACAO = 'REINSERIR' AND FOTO LIKE N'%"***"%';
+
+    -- 5) Plano: registros inteiros (lixeira, apagar, reinserir, nada)
+    INSERT INTO #Desfazer_Plano (TABELA, ID_REGISTRO, DESCRICAO, CAMPO, VALOR_ATUAL, VALOR_NOVO, ACAO, SITUACAO, MENSAGEM, ULTIMA_AUDITORIA)
+    SELECT r.TABELA, r.ID_REGISTRO, r.DESCRICAO, N'', NULL, CASE WHEN r.ACAO = 'REINSERIR' THEN r.FOTO END,
+           r.ACAO, 'OK', r.AVISO,
+           (SELECT MAX(l.ID_AUDITORIA) FROM #Lin l WHERE l.TABELA = r.TABELA AND l.ID_REGISTRO = r.ID_REGISTRO)
+    FROM #Rec r
+    WHERE r.BLOQUEIO IS NULL AND r.ACAO IN ('LIXEIRA', 'APAGAR', 'REINSERIR', 'NADA');
+
+    -- 6) Plano: campos (registros a alterar e inclusões a desativar)
+    INSERT INTO #Desfazer_Plano (TABELA, ID_REGISTRO, DESCRICAO, CAMPO, VALOR_ATUAL, VALOR_NOVO, ACAO, SITUACAO, MENSAGEM, ULTIMA_AUDITORIA)
+    SELECT c.TABELA, c.ID_REGISTRO, r.DESCRICAO, c.CAMPO, a.VALOR, c.VALOR_NOVO,
+           CASE WHEN x.IGNORAR = 1 OR x.JA_ESTA = 1 THEN 'NADA'
+                WHEN x.IGUAL_ESPERADO = 1 OR r.ACAO = 'DESATIVAR' THEN 'ALTERAR' ELSE 'NADA' END,
+           CASE WHEN x.IGNORAR = 1 THEN 'IGNORADO'
+                WHEN x.JA_ESTA = 1 OR x.IGUAL_ESPERADO = 1 OR r.ACAO = 'DESATIVAR' THEN 'OK' ELSE 'CONFLITO' END,
+           CAST(CASE WHEN a.CAMPO IS NULL THEN N'O campo não existe mais.'
+                     WHEN x.IGNORAR = 1 THEN N'Campo que não é desfeito (sigiloso, calculado, de controle ou marca da lixeira).'
+                     WHEN x.JA_ESTA = 1 THEN N'Já está assim.'
+                     WHEN r.ACAO = 'DESATIVAR' THEN N'Incluído nesta operação: vai ser desativado.'
+                     WHEN x.IGUAL_ESPERADO = 1 THEN N''
+                     ELSE LEFT(N'Mudou depois desta operação: hoje está "' + ISNULL(a.VALOR, N'(vazio)') + N'".', 400) END AS NVARCHAR(400)),
+           NULLIF(c.ULTIMA, 0)
+    FROM #Campo c
+    INNER JOIN #Rec r ON r.TABELA = c.TABELA AND r.ID_REGISTRO = c.ID_REGISTRO
+    LEFT  JOIN SIS.Tabela_Config cf ON cf.TABELA = c.TABELA
+    LEFT  JOIN #Atual a ON a.TABELA = c.TABELA AND a.ID_REGISTRO = c.ID_REGISTRO AND a.CAMPO = c.CAMPO
+    CROSS APPLY (SELECT
+           CAST(CASE WHEN a.CAMPO IS NULL
+                       OR c.CAMPO IN (N'DT_CRIACAO', N'USUARIO_CRIACAO', N'DT_ALTERACAO', N'USUARIO_ALTERACAO', N'DT_EXCLUSAO', N'USUARIO_EXCLUSAO')
+                       OR c.CAMPO = SIS.fn_SIS_Tabela_PK(c.TABELA)
+                       OR c.VALOR_NOVO = N'***' OR c.VALOR_ESPERADO = N'***' OR a.VALOR = N'***'
+                       OR EXISTS (SELECT 1 FROM STRING_SPLIT(ISNULL(cf.CAMPOS_BLOQUEADOS, N''), N',') s WHERE LTRIM(RTRIM(s.value)) = c.CAMPO)
+                     THEN 1 ELSE 0 END AS BIT) AS IGNORAR,
+           CAST(CASE WHEN (a.VALOR IS NULL AND c.VALOR_NOVO IS NULL)
+                       OR (a.VALOR COLLATE Latin1_General_BIN2 = c.VALOR_NOVO COLLATE Latin1_General_BIN2) THEN 1 ELSE 0 END AS BIT) AS JA_ESTA,
+           CAST(CASE WHEN (a.VALOR IS NULL AND c.VALOR_ESPERADO IS NULL)
+                       OR (a.VALOR COLLATE Latin1_General_BIN2 = c.VALOR_ESPERADO COLLATE Latin1_General_BIN2) THEN 1 ELSE 0 END AS BIT) AS IGUAL_ESPERADO
+        ) x
+    WHERE r.BLOQUEIO IS NULL
+      AND (r.ACAO = 'CAMPOS' OR (r.ACAO = 'DESATIVAR' AND c.CAMPO = N'ATIVO'));
+
+    -- 7) Travas (mês fechado e trava própria) dos registros que vão mudar e ainda existem
+    DROP TABLE IF EXISTS #Trava;
+    SELECT ROW_NUMBER() OVER (ORDER BY p.TABELA, p.ID_REGISTRO) AS ORDEM, p.TABELA, p.ID_REGISTRO
+    INTO #Trava
+    FROM #Desfazer_Plano p
+    WHERE p.ACAO IN ('ALTERAR', 'LIXEIRA', 'APAGAR')
+    GROUP BY p.TABELA, p.ID_REGISTRO;
+
+    SELECT @i = 1, @Total = COUNT(*) FROM #Trava;
+    WHILE @i <= @Total
+    BEGIN
+        SELECT @T = t.TABELA, @Id = t.ID_REGISTRO FROM #Trava t WHERE t.ORDEM = @i;
+        SET @ColData = NULL;
+        SELECT @ColData = NULLIF(cf.COLUNA_DATA_MES, N'') FROM SIS.Tabela_Config cf WHERE cf.TABELA = @T;
+        SET @DataNova = (SELECT TOP 1 TRY_CONVERT(DATE, p.VALOR_NOVO, 121) FROM #Desfazer_Plano p
+                         WHERE p.TABELA = @T AND p.ID_REGISTRO = @Id AND p.CAMPO = @ColData AND p.ACAO = 'ALTERAR' ORDER BY p.ORDEM);
+        SET @Msg = N'';
+        EXEC SIS.SIS_Tabela_Trava_Conferir @Tabela = @T, @IdRegistro = @Id, @Operacao = 'DESFAZER', @DataNova = @DataNova, @Mensagem = @Msg OUTPUT;
+        IF ISNULL(@Msg, N'') <> N''
+            UPDATE #Rec SET BLOQUEIO = @Msg WHERE TABELA = @T AND ID_REGISTRO = @Id;
+        SET @i = @i + 1;
+    END;
+    DROP TABLE IF EXISTS #Trava;
+
+    -- 8) Registros bloqueados: uma linha cada, sem os campos
+    DELETE p FROM #Desfazer_Plano p INNER JOIN #Rec r ON r.TABELA = p.TABELA AND r.ID_REGISTRO = p.ID_REGISTRO WHERE r.BLOQUEIO IS NOT NULL;
+
+    INSERT INTO #Desfazer_Plano (TABELA, ID_REGISTRO, DESCRICAO, CAMPO, VALOR_ATUAL, VALOR_NOVO, ACAO, SITUACAO, MENSAGEM, ULTIMA_AUDITORIA)
+    SELECT r.TABELA, r.ID_REGISTRO, r.DESCRICAO, N'', NULL, NULL, 'NADA', 'BLOQUEADO', r.BLOQUEIO,
+           (SELECT MAX(l.ID_AUDITORIA) FROM #Lin l WHERE l.TABELA = r.TABELA AND l.ID_REGISTRO = r.ID_REGISTRO)
+    FROM #Rec r
+    WHERE r.BLOQUEIO IS NOT NULL;
+
+Fim:
+    DROP TABLE IF EXISTS #Reg;
+    DROP TABLE IF EXISTS #Lin;
+    DROP TABLE IF EXISTS #Campo;
+    DROP TABLE IF EXISTS #Atual;
+    DROP TABLE IF EXISTS #Rec;
+    DROP TABLE IF EXISTS #Tab;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Historico_Desfazer_Previa.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Historico_Desfazer_Previa]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Prévia do desfazer pelo histórico (P20), sem gravar nada: o
+                que vai mudar, campo a campo (como está agora e como vai
+                ficar), o que vai para a lixeira e o que impede (CONFLITO,
+                BLOQUEADO). Usada pela aba Histórico das fichas e pela tela de
+                Auditoria antes de confirmar. Modos e regras: ver
+                SIS_Historico_Desfazer_Montar.
+                Permissão: DESFAZER na tela (@Item); no modo REGISTRO a tela
+                precisa mostrar a tabela; no modo LOTE, a tela é
+                SIS_AUDITORIA.
+                Devolve as linhas do plano, com TELA_NOME e as colunas
+                PODE_DESFAZER (1 = tudo certo) e RESUMO iguais em todas.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Historico_Desfazer_Previa @IdUsuario = 2, @Item = 'CAD_PESSOA', @Modo = 'REGISTRO', @Tabela = N'CAD.Pessoa', @IdRegistro = 1, @IdAuditoria = 10;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Historico_Desfazer_Previa]
+    @IdUsuario    INT,
+    @Item         VARCHAR(40),
+    @Modo         VARCHAR(10),
+    @Tabela       NVARCHAR(256) = NULL,
+    @IdRegistro   BIGINT        = NULL,
+    @IdAuditoria  BIGINT        = NULL,
+    @DataHora     DATETIME2(0)  = NULL,
+    @IdLote       BIGINT        = NULL
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Historico_Desfazer_Previa]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+    DECLARE @Pode BIT, @Resumo NVARCHAR(400), @Muda INT, @Impede INT;
+
+    DROP TABLE IF EXISTS #Desfazer_Plano;
+
+    BEGIN TRY
+        SET @Modo   = UPPER(LTRIM(RTRIM(ISNULL(@Modo, ''))));
+        SET @Tabela = LTRIM(RTRIM(ISNULL(@Tabela, N'')));
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'DESFAZER') = 0
+            THROW 50001, N'Você não tem permissão para desfazer nesta tela.', 1;
+        IF @Modo NOT IN ('REGISTRO', 'OPERACAO', 'LOTE')
+            THROW 50001, N'Modo de desfazer inválido.', 1;
+        IF @Modo = 'REGISTRO' AND (SIS.fn_SIS_Item_Tem_Tabela(@Item, @Tabela) = 0 OR @IdRegistro IS NULL OR (@IdAuditoria IS NULL AND @DataHora IS NULL))
+            THROW 50001, N'Escolha o registro e o ponto do histórico para onde voltar.', 1;
+        IF @Modo = 'OPERACAO' AND @IdAuditoria IS NULL
+            THROW 50001, N'Escolha a operação a desfazer.', 1;
+        IF @Modo = 'LOTE' AND (@Item <> 'SIS_AUDITORIA' OR @IdLote IS NULL)
+            THROW 50001, N'Escolha o lote a desfazer (tela de Auditoria).', 1;
+
+        SET @EtapaAtual = 'Montagem';
+        CREATE TABLE #Desfazer_Plano
+        (
+            ORDEM             INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+            TABELA            NVARCHAR(256) COLLATE DATABASE_DEFAULT NOT NULL,
+            ID_REGISTRO       BIGINT        NOT NULL,
+            DESCRICAO         NVARCHAR(400) COLLATE DATABASE_DEFAULT NULL,
+            CAMPO             NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL,
+            VALOR_ATUAL       NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL,
+            VALOR_NOVO        NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL,
+            ACAO              VARCHAR(10)   COLLATE DATABASE_DEFAULT NOT NULL,
+            SITUACAO          VARCHAR(10)   COLLATE DATABASE_DEFAULT NOT NULL,
+            MENSAGEM          NVARCHAR(400) COLLATE DATABASE_DEFAULT NULL,
+            ULTIMA_AUDITORIA  BIGINT        NULL
+        );
+
+        EXEC SIS.SIS_Historico_Desfazer_Montar @Modo = @Modo, @Tabela = @Tabela, @IdRegistro = @IdRegistro,
+             @IdAuditoria = @IdAuditoria, @DataHora = @DataHora, @IdLote = @IdLote;
+
+        SELECT @Muda = COUNT(*) FROM #Desfazer_Plano WHERE ACAO IN ('ALTERAR', 'LIXEIRA', 'APAGAR', 'REINSERIR');
+        SELECT @Impede = COUNT(*) FROM #Desfazer_Plano WHERE SITUACAO IN ('CONFLITO', 'BLOQUEADO');
+        SET @Pode = CASE WHEN @Muda > 0 AND @Impede = 0 THEN 1 ELSE 0 END;
+        SET @Resumo = CASE WHEN @Impede > 0 THEN CAST(@Impede AS NVARCHAR(10)) + N' ponto(s) impedem desfazer: veja as linhas em vermelho.'
+                           WHEN @Muda = 0 THEN N'Nada a desfazer: já está tudo como estava.'
+                           ELSE CAST(@Muda AS NVARCHAR(10)) + N' mudança(s) a fazer. Confira e informe o motivo.' END;
+
+        SELECT p.ORDEM,
+               p.TABELA,
+               ISNULL(i.NOME, p.TABELA) AS TELA_NOME,
+               p.ID_REGISTRO,
+               ISNULL(p.DESCRICAO, N'') AS DESCRICAO,
+               p.CAMPO,
+               ISNULL(CAST(p.VALOR_ATUAL AS NVARCHAR(4000)), N'') AS VALOR_ATUAL,
+               ISNULL(CAST(p.VALOR_NOVO  AS NVARCHAR(4000)), N'') AS VALOR_NOVO,
+               p.ACAO,
+               p.SITUACAO,
+               ISNULL(p.MENSAGEM, N'') AS MENSAGEM,
+               p.ULTIMA_AUDITORIA,
+               @Pode AS PODE_DESFAZER,
+               @Resumo AS RESUMO
+        FROM #Desfazer_Plano p
+        LEFT JOIN SIS.Item i ON i.CODIGO = SIS.fn_SIS_Item_Da_Tabela(p.TABELA)
+        ORDER BY CASE p.SITUACAO WHEN 'BLOQUEADO' THEN 0 WHEN 'CONFLITO' THEN 1 ELSE 2 END, p.TABELA, p.ID_REGISTRO, p.ORDEM;
+
+        DROP TABLE IF EXISTS #Desfazer_Plano;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> -1 DROP TABLE IF EXISTS #Desfazer_Plano;
+        IF ERROR_NUMBER() = 50001 THROW;
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        THROW 50001, N'Não foi possível montar a prévia. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Historico_Desfazer.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Historico_Desfazer]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Desfaz pelo histórico (P20), depois da prévia
+                (SIS_Historico_Desfazer_Previa): voltar um registro a um ponto
+                do histórico (REGISTRO), desfazer uma operação (OPERACAO) ou
+                um lote inteiro (LOTE, tela de Auditoria).
+                Tudo-ou-nada: se houver qualquer CONFLITO ou BLOQUEADO, não
+                faz nada. Grava como alteração nova (a auditoria registra
+                tudo, com a origem "desfazer"), as inclusões desfeitas vão para
+                a lixeira, são desativadas ou retiradas (tabelas de ligação),
+                as exclusões de tabelas de ligação voltam com a foto da
+                auditoria (código novo), e o pedido fica em SIS.Desfazer
+                com o motivo (obrigatório).
+                Permissão: DESFAZER na tela (@Item) e, para cada tipo de
+                registro que vai mudar, DESFAZER numa tela que o mostra.
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID_DESFAZER, QTD_REGISTROS,
+                QTD_CAMPOS, QTD_LIXEIRA.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Historico_Desfazer @IdUsuario = 2, @Item = 'CAD_PESSOA', @Modo = 'OPERACAO', @IdAuditoria = 10, @Motivo = N'alterado por engano';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Historico_Desfazer]
+    @IdUsuario    INT,
+    @Item         VARCHAR(40),
+    @Modo         VARCHAR(10),
+    @Tabela       NVARCHAR(256) = NULL,
+    @IdRegistro   BIGINT        = NULL,
+    @IdAuditoria  BIGINT        = NULL,
+    @DataHora     DATETIME2(0)  = NULL,
+    @IdLote       BIGINT        = NULL,
+    @Motivo       NVARCHAR(400) = NULL
+WITH EXECUTE AS OWNER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Historico_Desfazer]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @TranCountEntrada INT = @@TRANCOUNT;
+    DECLARE @Recusa NVARCHAR(400) = N'', @Usuario NVARCHAR(100), @OrigemAntes NVARCHAR(256), @OrigemNova NVARCHAR(256);
+    DECLARE @Muda INT, @Impede INT, @QtdReg INT, @QtdCampos INT, @QtdLixeira INT, @IdDesfazer BIGINT, @Transacao BIGINT;
+    DECLARE @Alt TABLE (ORDEM INT IDENTITY(1,1), TABELA NVARCHAR(256), CAMPO NVARCHAR(128), QTD INT);
+    DECLARE @Lix TABLE (ORDEM INT IDENTITY(1,1), TABELA NVARCHAR(256), ID_REGISTRO BIGINT);
+    DECLARE @Apg TABLE (ORDEM INT IDENTITY(1,1), TABELA NVARCHAR(256), QTD INT);
+    DECLARE @Rei TABLE (ORDEM INT IDENTITY(1,1), TABELA NVARCHAR(256), FOTO NVARCHAR(MAX));
+    DECLARE @Foto NVARCHAR(MAX), @Cols NVARCHAR(MAX), @With NVARCHAR(MAX);
+    DECLARE @i INT, @Total INT, @T NVARCHAR(256), @C NVARCHAR(128), @Qtd INT, @Feitos INT, @Id BIGINT;
+    DECLARE @ObjId INT, @Pk NVARCHAR(128), @Nome NVARCHAR(300), @Tipo NVARCHAR(128), @EData BIT, @Expr NVARCHAR(400), @Sql NVARCHAR(MAX), @IdLixeira BIGINT, @Msg NVARCHAR(400);
+    DECLARE @TelaSemPermissao NVARCHAR(256);
+
+    DROP TABLE IF EXISTS #Desfazer_Plano;
+
+    BEGIN TRY
+        SET @Modo   = UPPER(LTRIM(RTRIM(ISNULL(@Modo, ''))));
+        SET @Tabela = LTRIM(RTRIM(ISNULL(@Tabela, N'')));
+        SET @Motivo = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'DESFAZER') = 0
+            SET @Recusa = N'Você não tem permissão para desfazer nesta tela.';
+        ELSE IF @Modo NOT IN ('REGISTRO', 'OPERACAO', 'LOTE')
+            SET @Recusa = N'Modo de desfazer inválido.';
+        ELSE IF @Modo = 'REGISTRO' AND (SIS.fn_SIS_Item_Tem_Tabela(@Item, @Tabela) = 0 OR @IdRegistro IS NULL OR (@IdAuditoria IS NULL AND @DataHora IS NULL))
+            SET @Recusa = N'Escolha o registro e o ponto do histórico para onde voltar.';
+        ELSE IF @Modo = 'OPERACAO' AND @IdAuditoria IS NULL
+            SET @Recusa = N'Escolha a operação a desfazer.';
+        ELSE IF @Modo = 'LOTE' AND (@Item <> 'SIS_AUDITORIA' OR @IdLote IS NULL)
+            SET @Recusa = N'Escolha o lote a desfazer (tela de Auditoria).';
+        ELSE IF LEN(@Motivo) < 3
+            SET @Recusa = N'Informe o motivo do desfazer.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID_DESFAZER, 0 AS QTD_REGISTROS, 0 AS QTD_CAMPOS, 0 AS QTD_LIXEIRA;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Montagem';
+        CREATE TABLE #Desfazer_Plano
+        (
+            ORDEM             INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+            TABELA            NVARCHAR(256) COLLATE DATABASE_DEFAULT NOT NULL,
+            ID_REGISTRO       BIGINT        NOT NULL,
+            DESCRICAO         NVARCHAR(400) COLLATE DATABASE_DEFAULT NULL,
+            CAMPO             NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL,
+            VALOR_ATUAL       NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL,
+            VALOR_NOVO        NVARCHAR(MAX) COLLATE DATABASE_DEFAULT NULL,
+            ACAO              VARCHAR(10)   COLLATE DATABASE_DEFAULT NOT NULL,
+            SITUACAO          VARCHAR(10)   COLLATE DATABASE_DEFAULT NOT NULL,
+            MENSAGEM          NVARCHAR(400) COLLATE DATABASE_DEFAULT NULL,
+            ULTIMA_AUDITORIA  BIGINT        NULL
+        );
+
+        EXEC SIS.SIS_Historico_Desfazer_Montar @Modo = @Modo, @Tabela = @Tabela, @IdRegistro = @IdRegistro,
+             @IdAuditoria = @IdAuditoria, @DataHora = @DataHora, @IdLote = @IdLote;
+
+        SELECT @Muda = COUNT(*) FROM #Desfazer_Plano WHERE ACAO IN ('ALTERAR', 'LIXEIRA', 'APAGAR', 'REINSERIR');
+        SELECT @Impede = COUNT(*) FROM #Desfazer_Plano WHERE SITUACAO IN ('CONFLITO', 'BLOQUEADO');
+
+        IF @Impede > 0
+            SET @Recusa = LEFT(N'Nada foi desfeito: ' + CAST(@Impede AS NVARCHAR(10)) + N' ponto(s) impedem. '
+                        + ISNULL((SELECT TOP 1 p.MENSAGEM FROM #Desfazer_Plano p WHERE p.SITUACAO IN ('CONFLITO', 'BLOQUEADO')
+                                  ORDER BY CASE p.SITUACAO WHEN 'BLOQUEADO' THEN 0 ELSE 1 END, p.ORDEM), N''), 400);
+        ELSE IF @Muda = 0
+            SET @Recusa = N'Nada a desfazer: já está tudo como estava.';
+
+        -- Permissão para cada tipo de registro que vai mudar
+        IF @Recusa = N''
+        BEGIN
+            SELECT TOP 1 @TelaSemPermissao = p.TABELA
+            FROM (SELECT DISTINCT TABELA FROM #Desfazer_Plano WHERE ACAO IN ('ALTERAR', 'LIXEIRA', 'APAGAR', 'REINSERIR')) p
+            WHERE NOT EXISTS (SELECT 1 FROM SIS.Item it
+                              CROSS APPLY STRING_SPLIT(it.TABELAS_DA_TELA, ',') s
+                              WHERE LTRIM(RTRIM(s.value)) = p.TABELA AND it.TIPO = 'TELA'
+                                AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, it.CODIGO, 'DESFAZER') = 1)
+            ORDER BY p.TABELA;
+            IF @TelaSemPermissao IS NOT NULL
+                SET @Recusa = LEFT(N'Você não tem permissão para desfazer em ' + ISNULL((SELECT i.NOME FROM SIS.Item i WHERE i.CODIGO = SIS.fn_SIS_Item_Da_Tabela(@TelaSemPermissao)), @TelaSemPermissao) + N'.', 400);
+        END;
+
+        IF @Recusa <> N''
+        BEGIN
+            DROP TABLE IF EXISTS #Desfazer_Plano;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID_DESFAZER, 0 AS QTD_REGISTROS, 0 AS QTD_CAMPOS, 0 AS QTD_LIXEIRA;
+            RETURN;
+        END;
+
+        INSERT INTO @Alt (TABELA, CAMPO, QTD)
+        SELECT p.TABELA, p.CAMPO, COUNT(*) FROM #Desfazer_Plano p WHERE p.ACAO = 'ALTERAR' GROUP BY p.TABELA, p.CAMPO ORDER BY p.TABELA, p.CAMPO;
+        INSERT INTO @Lix (TABELA, ID_REGISTRO)
+        SELECT p.TABELA, p.ID_REGISTRO FROM #Desfazer_Plano p WHERE p.ACAO = 'LIXEIRA' ORDER BY p.ORDEM DESC;
+        INSERT INTO @Apg (TABELA, QTD)
+        SELECT p.TABELA, COUNT(*) FROM #Desfazer_Plano p WHERE p.ACAO = 'APAGAR' GROUP BY p.TABELA ORDER BY p.TABELA;
+        INSERT INTO @Rei (TABELA, FOTO)
+        SELECT p.TABELA, p.VALOR_NOVO FROM #Desfazer_Plano p WHERE p.ACAO = 'REINSERIR' ORDER BY p.ORDEM;
+
+        SELECT @QtdReg = COUNT(*) FROM (SELECT DISTINCT TABELA, ID_REGISTRO FROM #Desfazer_Plano WHERE ACAO IN ('ALTERAR', 'LIXEIRA', 'APAGAR', 'REINSERIR')) x;
+        SELECT @QtdCampos = COUNT(*) FROM #Desfazer_Plano WHERE ACAO = 'ALTERAR';
+        SELECT @QtdLixeira = COUNT(*) FROM @Lix;
+
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+        SET @OrigemAntes = ISNULL(CONVERT(NVARCHAR(256), SESSION_CONTEXT(N'ORIGEM')), N'');
+        SET @OrigemNova = LEFT(CASE WHEN @OrigemAntes = N'' THEN N'' ELSE @OrigemAntes + N' › ' END + N'desfazer', 256);
+
+        SET @EtapaAtual = 'Gravação';
+        IF @TranCountEntrada = 0 BEGIN TRANSACTION;
+
+            EXEC sys.sp_set_session_context @key = N'ORIGEM', @value = @OrigemNova;
+            SET @Transacao = CURRENT_TRANSACTION_ID();
+
+            -- Inclusões de tabelas de ligação: retiradas
+            SELECT @i = 1, @Total = COUNT(*) FROM @Apg;
+            WHILE @i <= @Total
+            BEGIN
+                SELECT @T = a.TABELA, @Qtd = a.QTD FROM @Apg a WHERE a.ORDEM = @i;
+                SET @ObjId = OBJECT_ID(@T, N'U');
+                SET @Pk = SIS.fn_SIS_Tabela_PK(@T);
+                SET @Sql = N'DELETE t FROM ' + QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId)) + N' t'
+                         + N' INNER JOIN #Desfazer_Plano p ON p.ID_REGISTRO = t.' + QUOTENAME(@Pk) + N' WHERE p.TABELA = @T AND p.ACAO = ''APAGAR''; SET @n = @@ROWCOUNT;';
+                SET @Feitos = 0;
+                EXEC sys.sp_executesql @Sql, N'@T NVARCHAR(256), @n INT OUTPUT', @T = @T, @n = @Feitos OUTPUT;
+                IF ISNULL(@Feitos, 0) <> @Qtd
+                    THROW 50003, N'Nada foi desfeito: alguém mudou estes registros enquanto a prévia estava aberta. Abra a prévia de novo.', 1;
+                SET @i = @i + 1;
+            END;
+
+            -- Campos: um UPDATE por tabela e campo, só onde o valor de hoje ainda é o da prévia
+            SELECT @i = 1, @Total = COUNT(*) FROM @Alt;
+            WHILE @i <= @Total
+            BEGIN
+                SELECT @T = a.TABELA, @C = a.CAMPO, @Qtd = a.QTD FROM @Alt a WHERE a.ORDEM = @i;
+                SET @ObjId = OBJECT_ID(@T, N'U');
+                SET @Pk = SIS.fn_SIS_Tabela_PK(@T);
+                SET @Nome = QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId));
+                SET @Tipo = SIS.fn_SIS_Coluna_Tipo(@T, @C);
+                SET @EData = CASE WHEN @Tipo LIKE N'DATE%' OR @Tipo LIKE N'TIME%' OR @Tipo LIKE N'SMALLDATETIME%' THEN 1 ELSE 0 END;
+                SET @Expr = CASE WHEN @EData = 1 THEN N'CONVERT(NVARCHAR(MAX), t.' + QUOTENAME(@C) + N', 121)' ELSE N'CONVERT(NVARCHAR(MAX), t.' + QUOTENAME(@C) + N')' END;
+
+                SET @Sql = N'UPDATE t SET t.' + QUOTENAME(@C) + N' = CONVERT(' + @Tipo + N', p.VALOR_NOVO' + CASE WHEN @EData = 1 THEN N', 121' ELSE N'' END + N')'
+                         + CASE WHEN COL_LENGTH(@T, N'DT_ALTERACAO') IS NOT NULL AND COL_LENGTH(@T, N'USUARIO_ALTERACAO') IS NOT NULL AND @C NOT IN (N'DT_ALTERACAO', N'USUARIO_ALTERACAO')
+                                THEN N', t.DT_ALTERACAO = SYSDATETIME(), t.USUARIO_ALTERACAO = @Usuario' ELSE N'' END
+                         + N' FROM ' + @Nome + N' t INNER JOIN #Desfazer_Plano p ON p.ID_REGISTRO = t.' + QUOTENAME(@Pk)
+                         + N' WHERE p.TABELA = @T AND p.CAMPO = @C AND p.ACAO = ''ALTERAR'''
+                         + N' AND ((' + @Expr + N' IS NULL AND p.VALOR_ATUAL IS NULL) OR (' + @Expr + N' COLLATE Latin1_General_BIN2 = p.VALOR_ATUAL COLLATE Latin1_General_BIN2));'
+                         + N' SET @n = @@ROWCOUNT;';
+                SET @Feitos = 0;
+                EXEC sys.sp_executesql @Sql, N'@T NVARCHAR(256), @C NVARCHAR(128), @Usuario NVARCHAR(100), @n INT OUTPUT', @T = @T, @C = @C, @Usuario = @Usuario, @n = @Feitos OUTPUT;
+                IF ISNULL(@Feitos, 0) <> @Qtd
+                    THROW 50003, N'Nada foi desfeito: alguém mudou estes registros enquanto a prévia estava aberta. Abra a prévia de novo.', 1;
+                SET @i = @i + 1;
+            END;
+
+            -- Exclusões de tabelas de ligação: voltam com a foto da auditoria (código novo)
+            SELECT @i = 1, @Total = COUNT(*) FROM @Rei;
+            WHILE @i <= @Total
+            BEGIN
+                SELECT @T = r.TABELA, @Foto = r.FOTO FROM @Rei r WHERE r.ORDEM = @i;
+                SET @ObjId = OBJECT_ID(@T, N'U');
+                SELECT @Cols = STRING_AGG(CONVERT(NVARCHAR(MAX), QUOTENAME(c.name)), N', ') WITHIN GROUP (ORDER BY c.column_id),
+                       @With = STRING_AGG(CONVERT(NVARCHAR(MAX), QUOTENAME(c.name) + N' ' + SIS.fn_SIS_Coluna_Tipo(@T, c.name) + N' ''$.' + REPLACE(c.name, N'''', N'''''') + N''''), N', ')
+                                 WITHIN GROUP (ORDER BY c.column_id)
+                FROM sys.columns c
+                INNER JOIN sys.types ty ON ty.system_type_id = c.system_type_id AND ty.user_type_id = c.system_type_id
+                WHERE c.object_id = @ObjId AND c.is_identity = 0 AND c.is_computed = 0
+                  AND c.name NOT IN (N'DT_CRIACAO', N'USUARIO_CRIACAO', N'DT_ALTERACAO', N'USUARIO_ALTERACAO')
+                  AND ty.name NOT IN ('varbinary', 'binary', 'image', 'timestamp', 'text', 'ntext', 'geography', 'geometry');
+                SET @Sql = N'INSERT INTO ' + QUOTENAME(OBJECT_SCHEMA_NAME(@ObjId)) + N'.' + QUOTENAME(OBJECT_NAME(@ObjId)) + N' (' + @Cols + N')'
+                         + N' SELECT ' + @Cols + N' FROM OPENJSON(@Foto) WITH (' + @With + N');';
+                BEGIN TRY
+                    EXEC sys.sp_executesql @Sql, N'@Foto NVARCHAR(MAX)', @Foto = @Foto;
+                END TRY
+                BEGIN CATCH
+                    IF ERROR_NUMBER() IN (2601, 2627)
+                        THROW 50003, N'Nada foi desfeito: um registro apagado não pode voltar porque já existe outro igual.', 1;
+                    THROW;
+                END CATCH;
+                SET @i = @i + 1;
+            END;
+
+            -- Inclusões desfeitas: para a lixeira (das filhas para o principal)
+            SELECT @i = 1, @Total = COUNT(*) FROM @Lix;
+            WHILE @i <= @Total
+            BEGIN
+                SELECT @T = l.TABELA, @Id = l.ID_REGISTRO FROM @Lix l WHERE l.ORDEM = @i;
+                SET @Msg = N'';
+                EXEC SIS.SIS_Lixeira_Marcar @IdUsuario = @IdUsuario, @Tabela = @T, @IdRegistro = @Id, @Item = NULL,
+                     @Motivo = @Motivo, @IdLixeira = @IdLixeira OUTPUT, @Mensagem = @Msg OUTPUT;
+                IF ISNULL(@Msg, N'') <> N''
+                BEGIN
+                    SET @Msg = LEFT(N'Nada foi desfeito: um registro incluído não pôde ir para a lixeira. ' + @Msg, 400);
+                    THROW 50003, @Msg, 1;
+                END;
+                SET @i = @i + 1;
+            END;
+
+            INSERT INTO SIS.Desfazer (TIPO, ITEM_CODIGO, TABELA, ID_REGISTRO, ID_AUDITORIA, DT_ALVO, TRANSACAO_ALVO, ID_LOTE_ALVO, MOTIVO,
+                                      QTD_REGISTROS, QTD_CAMPOS, QTD_LIXEIRA, TRANSACAO, ID_USUARIO, USUARIO)
+            VALUES (@Modo, ISNULL(@Item, ''), @Tabela, @IdRegistro, @IdAuditoria, @DataHora,
+                    CASE WHEN @Modo = 'OPERACAO' THEN (SELECT a.TRANSACAO FROM SIS.Auditoria a WHERE a.ID_AUDITORIA = @IdAuditoria) END,
+                    @IdLote, @Motivo, ISNULL(@QtdReg, 0), ISNULL(@QtdCampos, 0), ISNULL(@QtdLixeira, 0), @Transacao, @IdUsuario, ISNULL(@Usuario, N''));
+            SET @IdDesfazer = SCOPE_IDENTITY();
+
+            EXEC sys.sp_set_session_context @key = N'ORIGEM', @value = @OrigemAntes;
+        IF @TranCountEntrada = 0 COMMIT TRANSACTION;
+
+        DROP TABLE IF EXISTS #Desfazer_Plano;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(N'Desfeito: ' + CAST(ISNULL(@QtdCampos, 0) AS NVARCHAR(10)) + N' campo(s) em ' + CAST(ISNULL(@QtdReg, 0) AS NVARCHAR(10)) + N' registro(s)'
+                    + CASE WHEN @QtdLixeira > 0 THEN N'; ' + CAST(@QtdLixeira AS NVARCHAR(10)) + N' registro(s) incluído(s) foram para a lixeira' ELSE N'' END
+                    + CASE WHEN (SELECT ISNULL(SUM(a.QTD), 0) FROM @Apg a) > 0 THEN N'; ' + CAST((SELECT SUM(a.QTD) FROM @Apg a) AS NVARCHAR(10)) + N' retirado(s)' ELSE N'' END
+                    + CASE WHEN (SELECT COUNT(*) FROM @Rei) > 0 THEN N'; ' + CAST((SELECT COUNT(*) FROM @Rei) AS NVARCHAR(10)) + N' devolvido(s)' ELSE N'' END
+                    + N'. Tudo ficou no histórico.' AS NVARCHAR(400)) AS MENSAGEM,
+               @IdDesfazer AS ID_DESFAZER, ISNULL(@QtdReg, 0) AS QTD_REGISTROS, ISNULL(@QtdCampos, 0) AS QTD_CAMPOS, ISNULL(@QtdLixeira, 0) AS QTD_LIXEIRA;
+    END TRY
+    BEGIN CATCH
+        IF @TranCountEntrada = 0 AND @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF XACT_STATE() <> -1
+        BEGIN
+            EXEC sys.sp_set_session_context @key = N'ORIGEM', @value = @OrigemAntes;
+            DROP TABLE IF EXISTS #Desfazer_Plano;
+            IF ERROR_NUMBER() <> 50003
+                INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+                VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+        END;
+
+        SELECT CAST(0 AS BIT) AS SUCESSO,
+               CAST(CASE WHEN ERROR_NUMBER() = 50003 THEN ERROR_MESSAGE() ELSE N'Não foi possível desfazer. Nada foi alterado; o erro foi registrado para análise.' END AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS BIGINT) AS ID_DESFAZER, 0 AS QTD_REGISTROS, 0 AS QTD_CAMPOS, 0 AS QTD_LIXEIRA;
+    END CATCH;
+END;
+GO
+GO
+
 -- =============================================================================
 -- 8. TRIGGERS
 -- =============================================================================
@@ -14946,7 +17468,10 @@ GO
                   - DENY de INSERT/UPDATE/DELETE em SIS.Auditoria (além da
                     trigger de proteção);
                   - DENY de EXECUTE no gerador de triggers (só instalação);
-                  - DENY de EXECUTE no registro de atualização (só o atualizar.cmd).
+                  - DENY de EXECUTE no registro de atualização (só o atualizar.cmd);
+                  - DENY de EXECUTE nas procedures internas da lixeira e do
+                    desfazer (só chamadas por dentro, pelas procedures das
+                    telas, com EXECUTE AS OWNER).
                 O login e o usuário do banco (ex.: sistemacmj_api) são
                 criados na instalação do servidor (instalador / MASTER), que
                 também coloca o usuário neste papel: a senha nunca fica em
@@ -14956,6 +17481,8 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02d).
     v1.1 (22/11/2026) - DENY em SIS_Atualizacao_Registrar (etapa 03h).
+    v1.2 (22/11/2026) - Etapa 04b (P20): DENY nas procedures internas da
+                        lixeira e do desfazer.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -14978,6 +17505,15 @@ DENY INSERT, UPDATE, DELETE ON [SIS].[Auditoria] TO [rl_sistemacmj_api];
 DENY EXECUTE ON [SIS].[SIS_Auditoria_Trigger_Gerar] TO [rl_sistemacmj_api];
 IF OBJECT_ID(N'[SIS].[SIS_Atualizacao_Registrar]', N'P') IS NOT NULL
     DENY EXECUTE ON [SIS].[SIS_Atualizacao_Registrar] TO [rl_sistemacmj_api];
+GO
+
+DECLARE @Internas NVARCHAR(MAX) = N'';
+SELECT @Internas = @Internas + N'DENY EXECUTE ON ' + QUOTENAME(OBJECT_SCHEMA_NAME(o.object_id)) + N'.' + QUOTENAME(o.name) + N' TO [rl_sistemacmj_api];' + NCHAR(13) + NCHAR(10)
+FROM sys.objects o
+WHERE o.type = 'P'
+  AND o.object_id IN (OBJECT_ID(N'[SIS].[SIS_Lixeira_Marcar]'), OBJECT_ID(N'[SIS].[SIS_Lixeira_Apagar]'), OBJECT_ID(N'[SIS].[SIS_Lixeira_Referencias]'),
+                      OBJECT_ID(N'[SIS].[SIS_Tabela_Trava_Conferir]'), OBJECT_ID(N'[SIS].[SIS_Historico_Desfazer_Montar]'));
+EXEC sys.sp_executesql @Internas;
 GO
 GO
 
@@ -15070,6 +17606,9 @@ GO
     v1.9 (22/11/2026) - Etapa 04a: SENHA_PROVISORIA_PADRAO e SENHA_PROVISORIA_HORAS
                         (botão Reiniciar senha da tela de Usuários; decisão do
                         Celso de 16/11/2026, PADRAO_TELAS regra 13).
+    v2.0 (22/11/2026) - Etapa 04b (P20): LIXEIRA_ATIVA, LIXEIRA_DIAS_GUARDA (90),
+                        LIXEIRA_AVISO_DIAS, LIXEIRA_AVISO_GRUPO e
+                        LIXEIRA_LIMPEZA_ATIVA.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -15159,7 +17698,17 @@ FROM (VALUES
         ('SENHA_PROVISORIA_PADRAO', N'@12345', 'TEXTO',
          N'Senha provisória dada pelo botão Reiniciar senha da tela de Usuários. O usuário é obrigado a trocá-la no primeiro acesso.', 'SIS', 0),
         ('SENHA_PROVISORIA_HORAS', N'24', 'INTEIRO',
-         N'Horas que a senha provisória vale. Passado esse tempo sem o usuário trocar, o login recusa e é preciso reiniciar a senha de novo. 0 = não vence. Não vale para o administrador geral.', 'SIS', 1)
+         N'Horas que a senha provisória vale. Passado esse tempo sem o usuário trocar, o login recusa e é preciso reiniciar a senha de novo. 0 = não vence. Não vale para o administrador geral.', 'SIS', 1),
+        ('LIXEIRA_ATIVA', N'S', 'SN',
+         N'S = o botão Excluir das telas manda o registro para a lixeira (recuperável). N = a lixeira fica desligada e só é possível desativar.', 'SIS', 1),
+        ('LIXEIRA_DIAS_GUARDA', N'90', 'INTEIRO',
+         N'Dias que um registro excluído fica na lixeira antes de ser apagado de vez (mínimo 1). Cada tela pode ter prazo próprio na configuração das tabelas; vazio = vale este.', 'SIS', 1),
+        ('LIXEIRA_AVISO_DIAS', N'1', 'INTEIRO',
+         N'Com quantos dias de antecedência o e-mail avisa o que será apagado de vez da lixeira. 0 = sem aviso.', 'SIS', 1),
+        ('LIXEIRA_AVISO_GRUPO', N'LIXEIRA_AVISO', 'TEXTO',
+         N'Grupo de e-mail que recebe o aviso do que será apagado da lixeira (tela Grupos de e-mail).', 'SIS', 1),
+        ('LIXEIRA_LIMPEZA_ATIVA', N'S', 'SN',
+         N'S = a rotina diária apaga de vez o que passou do prazo da lixeira. N = nada é apagado (o aviso continua saindo).', 'SIS', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Parametro p WHERE p.CHAVE = v.CHAVE);
@@ -15181,6 +17730,10 @@ GO
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (16/11/2026) - Ação EXECUTAR (rotinas e comandos; etapa 02d).
     v1.2 (20/11/2026) - Ação RESTAURAR (restauração de backup pela tela; etapa 03d2).
+    v1.3 (22/11/2026) - Etapa 04b (P20): DESATIVAR (o antigo "Excluir", que só
+                        desativava), DESFAZER (pelo histórico), RECUPERAR e
+                        ESVAZIAR (lixeira); EXCLUIR passa a mandar para a
+                        lixeira (nome acertado).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -15204,9 +17757,19 @@ FROM (VALUES
         ('DESBLOQUEAR',      N'Desbloquear usuário',        130),
         ('REDEFINIR_SENHA',  N'Definir senha provisória',   140),
         ('EXECUTAR',         N'Executar (rotina, comando)', 150),
-        ('RESTAURAR',        N'Restaurar backup do banco',  160)
+        ('RESTAURAR',        N'Restaurar backup do banco',  160),
+        ('DESATIVAR',        N'Desativar / reativar',        45),
+        ('DESFAZER',         N'Desfazer pelo histórico',    170),
+        ('RECUPERAR',        N'Recuperar da lixeira',       180),
+        ('ESVAZIAR',         N'Esvaziar a lixeira (apagar de vez)', 190)
      ) v (CODIGO, NOME, ORDEM)
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Acao a WHERE a.CODIGO = v.CODIGO);
+GO
+
+UPDATE a
+   SET a.NOME = N'Excluir (vai para a lixeira) / cancelar', a.DT_ALTERACAO = SYSDATETIME(), a.USUARIO_ALTERACAO = N'instalacao'
+FROM SIS.Acao a
+WHERE a.CODIGO = 'EXCLUIR' AND a.NOME = N'Excluir / cancelar registro';
 GO
 GO
 
@@ -15240,6 +17803,8 @@ GO
     v1.3 (16/11/2026) - Etapa 02d: "Rotinas automáticas" e "Instalação e
                         manutenção" (exclusivas); agrupador "E-mails" com
                         "Grupos de e-mail" e "E-mails enviados".
+    v1.4 (22/11/2026) - Etapa 04b (P20): tela "Lixeira" (Monitoramento) e ação
+                        DESFAZER em Usuários, Perfis e Auditoria (lote).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -15266,7 +17831,8 @@ FROM (VALUES
         ('SIS', NULL,                'SIS_MONITORAMENTO', N'Monitoramento',       'MENU', '',                     30, 0, 1, ''),
         ('SIS', 'SIS_MONITORAMENTO', 'SIS_LOG_ERRO',      N'Log de erros',        'TELA', 'sis/log-erros.html',   10, 0, 1, ''),
         ('SIS', 'SIS_MONITORAMENTO', 'SIS_AUDITORIA',     N'Auditoria',           'TELA', 'sis/auditoria.html',   20, 0, 1, ''),
-        ('SIS', 'SIS_MONITORAMENTO', 'SIS_LOTE',          N'Lotes',               'TELA', 'sis/lotes.html',       30, 0, 1, 'SIS.Lote')
+        ('SIS', 'SIS_MONITORAMENTO', 'SIS_LOTE',          N'Lotes',               'TELA', 'sis/lotes.html',       30, 0, 1, 'SIS.Lote'),
+        ('SIS', 'SIS_MONITORAMENTO', 'SIS_LIXEIRA',       N'Lixeira',             'TELA', 'sis/lixeira.html',     40, 0, 1, 'SIS.Lixeira,SIS.Tabela_Config')
      ) v (MODULO, PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS);
 
 DECLARE @Passada INT = 1;
@@ -15335,7 +17901,15 @@ FROM (VALUES
         ('SIS_EMAIL_FILA','VER'),
         ('SIS_EMAIL_FILA','ENVIAR'),
         ('SIS_EMAIL_FILA','CANCELAR'),
-        ('SIS_EMAIL_FILA','EXPORTAR')
+        ('SIS_EMAIL_FILA','EXPORTAR'),
+        ('SIS_LIXEIRA',   'VER'),
+        ('SIS_LIXEIRA',   'RECUPERAR'),
+        ('SIS_LIXEIRA',   'ALTERAR'),
+        ('SIS_LIXEIRA',   'ESVAZIAR'),
+        ('SIS_LIXEIRA',   'EXPORTAR'),
+        ('SIS_USUARIO',   'DESFAZER'),
+        ('SIS_PERFIL',    'DESFAZER'),
+        ('SIS_AUDITORIA', 'DESFAZER')
      ) v (ITEM, ACAO)
 INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
 INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
@@ -15465,6 +18039,7 @@ GO
     v1.1 (16/11/2026) - Etapa 02d: grupos de e-mail, rotinas (sem as colunas
                         de execução) e comandos. Filas e logs não são
                         auditados (têm histórico próprio).
+    v1.2 (22/11/2026) - Etapa 04b (P20): SIS.Lixeira e SIS.Tabela_Config.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -15490,6 +18065,9 @@ EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'SIS.Rotina',            @Criar 
      @CamposIgnorados = N'PROXIMA_EXECUCAO,SOLICITADA_POR,EM_EXECUCAO,DT_INICIO_EXECUCAO,ULTIMA_EXECUCAO,ULTIMO_RESULTADO,ULTIMA_MENSAGEM';
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'SIS.Comando',           @Criar = 1;
 GO
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'SIS.Lixeira',           @Criar = 1;
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'SIS.Tabela_Config',     @Criar = 1;
+GO
 GO
 
 -- -----------------------------------------------------------------------------
@@ -15510,6 +18088,8 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02d): limpeza do log passo a passo e
                         liberação de e-mails presos.
+    v1.1 (22/11/2026) - Etapa 04b (P20): LIXEIRA_LIMPEZA (limpeza e aviso da
+                        lixeira, todo dia às 06:40).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -15526,7 +18106,10 @@ FROM (VALUES
          CAST(0 AS INT), CAST('03:10' AS TIME(0)), CAST('' AS VARCHAR(20)), CAST(0 AS TINYINT), CAST(60 AS INT)),
         ('EMAIL_PRESOS', N'Liberar e-mails presos',
          N'Devolve para a fila os e-mails que ficaram "processando" (o serviço parou no meio do envio), conforme o parâmetro EMAIL_MINUTOS_PRESO.',
-         N'SIS.SIS_Email_Presos_Liberar', 'SIS', 'MINUTOS', 10, '00:00', '', 0, 10)
+         N'SIS.SIS_Email_Presos_Liberar', 'SIS', 'MINUTOS', 10, '00:00', '', 0, 10),
+        ('LIXEIRA_LIMPEZA', N'Lixeira: limpeza e aviso',
+         N'Apaga de vez o que passou do prazo da lixeira (LIXEIRA_DIAS_GUARDA ou o prazo da tela) e avisa por e-mail o que será apagado nos próximos LIXEIRA_AVISO_DIAS dia(s).',
+         N'SIS.SIS_Lixeira_Processar', 'SIS', 'DIARIA', 0, '06:40', '', 0, 30)
      ) v (CODIGO, NOME, DESCRICAO, PROCEDIMENTO, MODULO, FREQUENCIA, INTERVALO, HORARIO, DIAS, DIA_MES, LIMITE)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Rotina r WHERE r.CODIGO = v.CODIGO);
@@ -15678,6 +18261,10 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): ações DESATIVAR (o antigo Excluir) e
+                        DESFAZER nas telas de cadastro; DESATIVAR nasce com
+                        quem já tinha EXCLUIR (perfil e exceção do usuário),
+                        porque até aqui o Excluir só desativava.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -15725,6 +18312,40 @@ FROM (VALUES
      ) v (ITEM, ACAO)
 INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
 INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+GO
+
+DECLARE @NovosDesativar TABLE (ID_ITEM_ACAO INT NOT NULL, ID_ITEM INT NOT NULL);
+DECLARE @IdExcluir INT = (SELECT a.ID_ACAO FROM SIS.Acao a WHERE a.CODIGO = 'EXCLUIR');
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+OUTPUT inserted.ID_ITEM_ACAO, inserted.ID_ITEM INTO @NovosDesativar (ID_ITEM_ACAO, ID_ITEM)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('CAD_EMPRESA' AS VARCHAR(40))), ('CAD_PESSOA'), ('CAD_CENTRO_CUSTO'), ('CAD_PLANO_CONTA'), ('BANCO_CONTA')) v (ITEM)
+INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
+INNER JOIN SIS.Acao a ON a.CODIGO = 'DESATIVAR'
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+
+-- quem tinha EXCLUIR (que desativava) recebe DESATIVAR, só quando a ação nasce
+INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO, USUARIO_CRIACAO)
+SELECT pp.ID_PERFIL, n.ID_ITEM_ACAO, N'instalacao'
+FROM @NovosDesativar n
+INNER JOIN SIS.Item_Acao ie ON ie.ID_ITEM = n.ID_ITEM AND ie.ID_ACAO = @IdExcluir
+INNER JOIN SIS.Perfil_Permissao pp ON pp.ID_ITEM_ACAO = ie.ID_ITEM_ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao x WHERE x.ID_PERFIL = pp.ID_PERFIL AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+
+INSERT INTO SIS.Usuario_Permissao (ID_USUARIO, ID_ITEM_ACAO, TIPO, USUARIO_CRIACAO)
+SELECT up.ID_USUARIO, n.ID_ITEM_ACAO, up.TIPO, N'instalacao'
+FROM @NovosDesativar n
+INNER JOIN SIS.Item_Acao ie ON ie.ID_ITEM = n.ID_ITEM AND ie.ID_ACAO = @IdExcluir
+INNER JOIN SIS.Usuario_Permissao up ON up.ID_ITEM_ACAO = ie.ID_ITEM_ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Usuario_Permissao x WHERE x.ID_USUARIO = up.ID_USUARIO AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('CAD_EMPRESA' AS VARCHAR(40))), ('CAD_PESSOA'), ('CAD_CENTRO_CUSTO'), ('CAD_PLANO_CONTA'), ('BANCO_CONTA'), ('BANCO_BANCO')) v (ITEM)
+INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
+INNER JOIN SIS.Acao a ON a.CODIGO = 'DESFAZER'
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
 GO
 GO
@@ -16069,6 +18690,8 @@ GO
 
   Changelog:
     v1.0 (22/11/2026) - Criação (etapa 04a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): Financeiro não recebe DESFAZER
+                        (liberável por perfil; decisão do Celso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -16097,9 +18720,89 @@ INNER JOIN SIS.Acao   a ON a.ID_ACAO   = ia.ID_ACAO
 WHERE ia.ATIVO = 1
   AND m.CODIGO <> 'SIS'
   AND (   (n.NOME = N'Consulta'   AND a.CODIGO = 'VER')
-       OR (n.NOME = N'Financeiro' AND m.CODIGO IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO <> 'REABRIR')
+       OR (n.NOME = N'Financeiro' AND m.CODIGO IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO NOT IN ('REABRIR', 'DESFAZER'))
        OR (n.NOME = N'Financeiro' AND m.CODIGO NOT IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO = 'VER'))
   AND NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao pp WHERE pp.ID_PERFIL = n.ID_PERFIL AND pp.ID_ITEM_ACAO = ia.ID_ITEM_ACAO);
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/Carga_SIS_Tabela_Config.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : carga de [SIS].[Tabela_Config] e do grupo de e-mail da lixeira
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 22/11/2026
+  Descrição   : Configuração do desfazer e da lixeira por tabela (P20,
+                docs/requisitos/Lixeira_Desfazer.md). Inclui o que falta e
+                acerta a parte técnica (filhas, campos, descrição) das que já
+                existem; o prazo próprio (DIAS_GUARDA) é da CMJ e nunca é
+                mudado por aqui.
+                Grupo de e-mail LIXEIRA_AVISO (aviso do que será apagado):
+                nasce com o e-mail interno do sistema; a CMJ ajusta na tela
+                Grupos de e-mail.
+                Idempotente.
+  Changelog:
+    v1.0 (22/11/2026) - Criação (etapa 04b).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+DROP TABLE IF EXISTS #CargaConfig;
+
+SELECT v.TABELA, v.DESFAZER, v.LIXEIRA, v.BLOQUEADOS, v.UNICOS, v.FILHAS, v.INCLUSAO, v.EXCLUSAO, v.DESCRICAO
+INTO #CargaConfig
+FROM (VALUES
+        (CAST(N'CAD.Pessoa' AS NVARCHAR(256)), CAST(1 AS BIT), CAST(1 AS BIT), CAST(N'' AS NVARCHAR(1000)), CAST(N'CPF_CNPJ' AS NVARCHAR(400)),
+         CAST(N'CAD.Pessoa_Contato.ID_PESSOA,CAD.Pessoa_Vinculo.ID_PESSOA,CAD.Pessoa_Dado_Bancario.ID_PESSOA' AS NVARCHAR(1000)),
+         CAST('LIXEIRA' AS VARCHAR(10)), CAST('RECUSAR' AS VARCHAR(10)),
+         CAST(N't.NOME + CASE WHEN t.CPF_CNPJ <> '''' THEN N'' ('' + CONVERT(NVARCHAR(20), t.CPF_CNPJ) + N'')'' ELSE N'''' END' AS NVARCHAR(1000))),
+        (N'CAD.Pessoa_Contato',       1, 0, N'', N'', N'', 'DESATIVAR', 'RECUSAR', N'CONVERT(NVARCHAR(20), t.TIPO) + N'': '' + t.VALOR'),
+        (N'CAD.Pessoa_Vinculo',       1, 0, N'', N'', N'', 'DESATIVAR', 'RECUSAR', N'N''Vínculo '' + CONVERT(NVARCHAR(30), t.TIPO)'),
+        (N'CAD.Pessoa_Dado_Bancario', 1, 0, N'', N'', N'', 'DESATIVAR', 'RECUSAR', N'N''Conta '' + CONVERT(NVARCHAR(20), t.AGENCIA) + N'' / '' + CONVERT(NVARCHAR(30), t.CONTA)'),
+        (N'CAD.Empresa',              1, 1, N'', N'CNPJ', N'', 'LIXEIRA', 'RECUSAR', N't.RAZAO_SOCIAL'),
+        (N'CAD.Centro_Custo',         1, 1, N'', N'', N'', 'LIXEIRA', 'RECUSAR', N'CONVERT(NVARCHAR(30), t.CODIGO) + N'' - '' + t.DESCRICAO'),
+        (N'CAD.Plano_Grupo',          1, 1, N'', N'', N'', 'LIXEIRA', 'RECUSAR', N't.DESCRICAO'),
+        (N'CAD.Plano_Subgrupo',       1, 1, N'', N'', N'', 'LIXEIRA', 'RECUSAR', N't.DESCRICAO'),
+        (N'CAD.Plano_Conta',          1, 1, N'', N'', N'', 'LIXEIRA', 'RECUSAR', N't.DESCRICAO'),
+        (N'BANCO.Conta',              1, 1, N'', N'', N'', 'LIXEIRA', 'RECUSAR', N't.DESCRICAO'),
+        (N'BANCO.Banco',              1, 0, N'', N'', N'', 'RECUSAR', 'RECUSAR', N'CONVERT(NVARCHAR(10), t.CODIGO) + N'' - '' + t.NOME'),
+        (N'SIS.Usuario',              1, 0, N'SENHA_HASH,SENHA_SALT,SENHA_ITERACOES,SENHA_ALGORITMO,DT_SENHA,TROCAR_SENHA,TENTATIVAS_ERRADAS,DT_ULTIMO_LOGIN,BLOQUEADO,DT_BLOQUEIO,INTERNO',
+         N'', N'SIS.Usuario_Permissao.ID_USUARIO', 'DESATIVAR', 'RECUSAR', N'CONVERT(NVARCHAR(100), t.LOGIN) + N'' - '' + t.NOME'),
+        (N'SIS.Usuario_Permissao',    1, 0, N'', N'', N'', 'APAGAR', 'REINSERIR', N'N''Permissão '' + CAST(t.ID_ITEM_ACAO AS NVARCHAR(10))'),
+        (N'SIS.Perfil',               1, 0, N'NIVEL_ADMIN', N'', N'SIS.Perfil_Permissao.ID_PERFIL', 'DESATIVAR', 'RECUSAR', N't.NOME'),
+        (N'SIS.Perfil_Permissao',     1, 0, N'', N'', N'', 'APAGAR', 'REINSERIR', N'N''Permissão '' + CAST(t.ID_ITEM_ACAO AS NVARCHAR(10))')
+     ) v (TABELA, DESFAZER, LIXEIRA, BLOQUEADOS, UNICOS, FILHAS, INCLUSAO, EXCLUSAO, DESCRICAO);
+
+INSERT INTO SIS.Tabela_Config (TABELA, PERMITE_DESFAZER, PERMITE_LIXEIRA, CAMPOS_BLOQUEADOS, CAMPOS_UNICOS, TABELAS_FILHAS, DESFAZER_INCLUSAO, DESFAZER_EXCLUSAO, DESCRICAO_SQL, USUARIO_CRIACAO)
+SELECT c.TABELA, c.DESFAZER, c.LIXEIRA, c.BLOQUEADOS, c.UNICOS, c.FILHAS, c.INCLUSAO, c.EXCLUSAO, c.DESCRICAO, N'instalacao'
+FROM #CargaConfig c
+WHERE OBJECT_ID(c.TABELA, N'U') IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM SIS.Tabela_Config t WHERE t.TABELA = c.TABELA);
+
+UPDATE t
+   SET t.PERMITE_DESFAZER = c.DESFAZER, t.PERMITE_LIXEIRA = c.LIXEIRA, t.CAMPOS_BLOQUEADOS = c.BLOQUEADOS, t.CAMPOS_UNICOS = c.UNICOS,
+       t.TABELAS_FILHAS = c.FILHAS, t.DESFAZER_INCLUSAO = c.INCLUSAO, t.DESFAZER_EXCLUSAO = c.EXCLUSAO, t.DESCRICAO_SQL = c.DESCRICAO,
+       t.DT_ALTERACAO = SYSDATETIME(), t.USUARIO_ALTERACAO = N'instalacao'
+FROM SIS.Tabela_Config t
+INNER JOIN #CargaConfig c ON c.TABELA = t.TABELA
+WHERE t.PERMITE_DESFAZER <> c.DESFAZER OR t.PERMITE_LIXEIRA <> c.LIXEIRA OR t.CAMPOS_BLOQUEADOS <> c.BLOQUEADOS OR t.CAMPOS_UNICOS <> c.UNICOS
+   OR t.TABELAS_FILHAS <> c.FILHAS OR t.DESFAZER_INCLUSAO <> c.INCLUSAO OR t.DESFAZER_EXCLUSAO <> c.EXCLUSAO OR t.DESCRICAO_SQL <> c.DESCRICAO;
+
+DROP TABLE IF EXISTS #CargaConfig;
+GO
+
+INSERT INTO SIS.Grupo_Email (CODIGO, NOME, DESCRICAO, USUARIO_CRIACAO)
+SELECT 'LIXEIRA_AVISO', N'Aviso da lixeira', N'Recebem o aviso diário do que será apagado de vez da lixeira (Sistema › Lixeira).', N'instalacao'
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Grupo_Email g WHERE g.CODIGO = 'LIXEIRA_AVISO');
+
+INSERT INTO SIS.Grupo_Email_Destinatario (ID_GRUPO_EMAIL, EMAIL, NOME, USUARIO_CRIACAO)
+SELECT g.ID_GRUPO_EMAIL, N'construtora.m.judice@gmail.com', N'Administração do sistema', N'instalacao'
+FROM SIS.Grupo_Email g
+WHERE g.CODIGO = 'LIXEIRA_AVISO'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Grupo_Email_Destinatario d WHERE d.ID_GRUPO_EMAIL = g.ID_GRUPO_EMAIL);
 GO
 GO
 
@@ -16168,19 +18871,20 @@ GO
                       1.7 (22/11/2026) ajuda exclusiva do administrador geral (SIS_Ajuda_Geral_Obter, tela SIS_AJUDA_GERAL).
                       1.8 (22/11/2026) atualização em um clique (SIS.Atualizacao, SIS_Atualizacao_Registrar).
                       1.9 (22/11/2026) telas de Usuários e Perfis (senha provisória que vence, perfis Financeiro e Consulta).
+                      2.0 (22/11/2026) histórico padrão: desfazer pela auditoria e lixeira (P20, etapa 04b).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '1.9';
+DECLARE @Versao VARCHAR(20) = '2.0';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;
 GO
 GO
 
-PRINT N'MASTER v1.9 concluido sem erro.';
+PRINT N'MASTER v2.0 concluido sem erro.';
 GO
 
 SET NOEXEC OFF;

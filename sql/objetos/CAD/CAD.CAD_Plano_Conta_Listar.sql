@@ -12,6 +12,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Plano_Conta_Listar @IdUsuario = 2;
@@ -46,6 +47,7 @@ BEGIN
                    CONVERT(VARCHAR(12), RIGHT('00' + CONVERT(VARCHAR(3), g.NUMERO), 2) + '.00.000') AS ORDEM_ARVORE,
                    g.DT_ALTERACAO, ISNULL(g.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
             FROM CAD.Plano_Grupo g WITH (NOLOCK)
+            WHERE g.DT_EXCLUSAO IS NULL
             UNION ALL
             SELECT CAST(2 AS TINYINT), s.ID_PLANO_SUBGRUPO, s.ID_PLANO_GRUPO, s.NUMERO,
                    CONVERT(VARCHAR(12), RIGHT('0' + CONVERT(VARCHAR(3), g.NUMERO), 2) + '.' + CONVERT(VARCHAR(3), s.NUMERO)),
@@ -55,6 +57,7 @@ BEGIN
                    s.DT_ALTERACAO, ISNULL(s.USUARIO_ALTERACAO, N'')
             FROM CAD.Plano_Subgrupo s WITH (NOLOCK)
             INNER JOIN CAD.Plano_Grupo g WITH (NOLOCK) ON g.ID_PLANO_GRUPO = s.ID_PLANO_GRUPO
+            WHERE s.DT_EXCLUSAO IS NULL
             UNION ALL
             SELECT CAST(3 AS TINYINT), v.ID_PLANO_CONTA, v.ID_PLANO_SUBGRUPO, v.NUMERO_CONTA, v.CODIGO,
                    v.DESCRICAO, v.TIPO, v.CUSTO_OBRA, v.CONTABIL, v.CONTA_CONTABIL_REF,
@@ -62,6 +65,7 @@ BEGIN
                    c.DT_ALTERACAO, ISNULL(c.USUARIO_ALTERACAO, N'')
             FROM CAD.vw_CAD_Plano_Conta v WITH (NOLOCK)
             INNER JOIN CAD.Plano_Conta c WITH (NOLOCK) ON c.ID_PLANO_CONTA = v.ID_PLANO_CONTA
+            WHERE c.DT_EXCLUSAO IS NULL
         ) x
         WHERE (ISNULL(@SomenteAtivos, 0) = 0 OR x.ATIVO_EFETIVO = 1)
         ORDER BY x.ORDEM_ARVORE;

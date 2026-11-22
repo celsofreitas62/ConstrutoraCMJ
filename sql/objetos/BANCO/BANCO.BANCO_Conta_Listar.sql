@@ -10,6 +10,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC BANCO.BANCO_Conta_Listar @IdUsuario = 2;
@@ -47,6 +48,7 @@ BEGIN
         LEFT  JOIN BANCO.Banco b WITH (NOLOCK) ON b.ID_BANCO = c.ID_BANCO
         WHERE (@IdEmpresa IS NULL OR c.ID_EMPRESA = @IdEmpresa)
           AND (ISNULL(@SomenteAtivos, 0) = 0 OR c.ATIVO = 1)
+          AND c.DT_EXCLUSAO IS NULL
         ORDER BY e.RAZAO_SOCIAL, c.ORDEM, c.DESCRICAO;
     END TRY
     BEGIN CATCH

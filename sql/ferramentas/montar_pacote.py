@@ -169,9 +169,31 @@ ORDEM_03G = ['objetos/SIS/SIS.SIS_Ajuda_Geral_Obter.sql', 'objetos/SIS/Carga_SIS
 ORDEM_03H = ['objetos/SIS/SIS.Atualizacao.sql', 'objetos/SIS/SIS.SIS_Atualizacao_Registrar.sql', 'objetos/SIS/SIS.rl_sistemacmj_api.sql', 'objetos/SIS/Carga_SIS_Versao.sql']
 ORDEM_04A = ['objetos/SIS/SIS.Login_Log.sql', 'objetos/SIS/SIS.SIS_Usuario_Login_Processar.sql', 'objetos/SIS/SIS.SIS_Usuario_Listar.sql',
              'objetos/SIS/SIS.SIS_Usuario_Obter.sql', 'objetos/SIS/Carga_SIS_Parametro.sql', 'objetos/SIS/Carga_SIS_Perfil_Padrao.sql', 'objetos/SIS/Carga_SIS_Versao.sql']
+ORDEM_04B = ['objetos/SIS/SIS.Auditoria.sql', 'objetos/SIS/SIS.Tabela_Config.sql', 'objetos/SIS/SIS.Lixeira.sql', 'objetos/SIS/SIS.Desfazer.sql',
+             'objetos/CAD/CAD.Pessoa.sql', 'objetos/CAD/CAD.Empresa.sql', 'objetos/CAD/CAD.Centro_Custo.sql', 'objetos/CAD/CAD.Plano_Grupo.sql',
+             'objetos/CAD/CAD.Plano_Subgrupo.sql', 'objetos/CAD/CAD.Plano_Conta.sql', 'objetos/BANCO/BANCO.Conta.sql',
+             'objetos/SIS/SIS.fn_SIS_Tabela_PK.sql', 'objetos/SIS/SIS.fn_SIS_Coluna_Tipo.sql', 'objetos/SIS/SIS.fn_SIS_Item_Da_Tabela.sql',
+             'objetos/SIS/SIS.fn_SIS_Na_Lixeira.sql', 'objetos/SIS/SIS.fn_SIS_Lixeira_Dias.sql',
+             'objetos/SIS/SIS.SIS_Tabela_Trava_Conferir.sql', 'objetos/SIS/SIS.SIS_Lixeira_Referencias.sql', 'objetos/SIS/SIS.SIS_Lixeira_Marcar.sql',
+             'objetos/SIS/SIS.SIS_Lixeira_Apagar.sql', 'objetos/SIS/SIS.SIS_Lixeira_Excluir.sql', 'objetos/SIS/SIS.SIS_Lixeira_Recuperar.sql',
+             'objetos/SIS/SIS.SIS_Lixeira_Manter.sql', 'objetos/SIS/SIS.SIS_Lixeira_Esvaziar.sql', 'objetos/SIS/SIS.SIS_Lixeira_Listar.sql',
+             'objetos/SIS/SIS.SIS_Lixeira_Prazo_Listar.sql', 'objetos/SIS/SIS.SIS_Lixeira_Prazo_Gravar.sql', 'objetos/SIS/SIS.SIS_Lixeira_Processar.sql',
+             'objetos/SIS/SIS.SIS_Historico_Desfazer_Montar.sql', 'objetos/SIS/SIS.SIS_Historico_Desfazer_Previa.sql', 'objetos/SIS/SIS.SIS_Historico_Desfazer.sql',
+             'objetos/CAD/CAD.CAD_Pessoa_Excluir.sql', 'objetos/CAD/CAD.CAD_Empresa_Excluir.sql', 'objetos/CAD/CAD.CAD_Centro_Custo_Excluir.sql',
+             'objetos/CAD/CAD.CAD_Plano_Excluir.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Excluir.sql',
+             'objetos/CAD/CAD.CAD_Pessoa_Listar.sql', 'objetos/CAD/CAD.CAD_Pessoa_Obter.sql', 'objetos/CAD/CAD.CAD_Empresa_Listar.sql',
+             'objetos/CAD/CAD.CAD_Centro_Custo_Listar.sql', 'objetos/CAD/CAD.CAD_Plano_Conta_Listar.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Listar.sql',
+             'objetos/CAD/CAD.CAD_Pessoa_Gravar.sql', 'objetos/CAD/CAD.CAD_Empresa_Gravar.sql', 'objetos/CAD/CAD.CAD_Centro_Custo_Gravar.sql',
+             'objetos/CAD/CAD.CAD_Plano_Grupo_Gravar.sql', 'objetos/CAD/CAD.CAD_Plano_Subgrupo_Gravar.sql', 'objetos/CAD/CAD.CAD_Plano_Conta_Gravar.sql',
+             'objetos/BANCO/BANCO.BANCO_Conta_Gravar.sql',
+             'objetos/SIS/SIS.rl_sistemacmj_api.sql',
+             'objetos/SIS/Carga_SIS_Parametro.sql', 'objetos/SIS/Carga_SIS_Acao.sql', 'objetos/SIS/Carga_SIS_Item.sql', 'objetos/CAD/Carga_CAD_Item.sql',
+             'objetos/SIS/Carga_SIS_Perfil_Padrao.sql', 'objetos/SIS/Carga_SIS_Rotina.sql', 'objetos/SIS/Carga_SIS_Tabela_Config.sql',
+             'objetos/SIS/Carga_SIS_Auditoria_Triggers.sql', 'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql', 'objetos/SIS/Carga_SIS_Versao.sql']
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
-ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B, '03d': ORDEM_03D, '03g': ORDEM_03G, '03h': ORDEM_03H, '04a': ORDEM_04A}[PARTE]
-TITULO = {'04a': '04a - telas de Usuarios e Perfis (senha provisoria que vence, perfis de fabrica Financeiro e Consulta); banco 1.9',
+ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B, '03d': ORDEM_03D, '03g': ORDEM_03G, '03h': ORDEM_03H, '04a': ORDEM_04A, '04b': ORDEM_04B}[PARTE]
+TITULO = {'04b': '04b - historico padrao: desfazer pela auditoria e lixeira (P20); banco 2.0',
+          '04a': '04a - telas de Usuarios e Perfis (senha provisoria que vence, perfis de fabrica Financeiro e Consulta); banco 1.9',
           '03h': '03h - atualizacao em um clique (historico SIS.Atualizacao, registro pelo atualizar.cmd); banco 1.8',
           '03g': '03g - ajuda exclusiva do administrador geral (procedure de acesso com registro, tela SIS_AJUDA_GERAL); banco 1.7',
           '03d': '03d - ajustes da base SIS na etapa 03d (rodapé dos e-mails sem CNPJ, limite de login por computador, versão do banco)',
@@ -192,10 +214,10 @@ cab = """/**********************************************************************
   Gerado em   : """ + __import__('datetime').date.today().strftime('%d/%m/%Y') + """ pelo Claude, juntando os arquivos de sql/objetos/
                 na ordem da regra 59. NÃO EDITAR ESTE ARQUIVO: corrigir o
                 arquivo do objeto e gerar o pacote de novo.
-  Pré-requisito: """ + {'02a': 'sql/local/00_SISTEMACMJ_LOCAL_Criar_Banco.sql já rodado.', '02b': 'pacote 02a já rodado.', '02b2': 'pacotes 02a e 02b já rodados.', '02c': 'pacotes 02a, 02b e 02b2 já rodados.', '02d': 'pacotes 02a, 02b, 02b2 e 02c já rodados.', '03a': 'pacotes 02a a 02d já rodados.', '03c': 'pacotes 02a a 02d e 03a já rodados.', '03c_mig': 'pacote 03c já rodado; CSV do Access na pasta legado/dados_brutos.', '03c2': 'pacotes 03c e 03c_mig já rodados.', '03c2b': 'pacote 03c2 e sql/local/03c2_Migracao_Cadastros_LOCAL.sql já rodados.', '03d': 'pacotes 02a a 03c2b já rodados.', '03g': 'pacotes 02a a 03d já rodados.', '03h': 'pacotes 02a a 03g já rodados.', '04a': 'pacotes 02a a 03h já rodados.'}[PARTE] + """
+  Pré-requisito: """ + {'02a': 'sql/local/00_SISTEMACMJ_LOCAL_Criar_Banco.sql já rodado.', '02b': 'pacote 02a já rodado.', '02b2': 'pacotes 02a e 02b já rodados.', '02c': 'pacotes 02a, 02b e 02b2 já rodados.', '02d': 'pacotes 02a, 02b, 02b2 e 02c já rodados.', '03a': 'pacotes 02a a 02d já rodados.', '03c': 'pacotes 02a a 02d e 03a já rodados.', '03c_mig': 'pacote 03c já rodado; CSV do Access na pasta legado/dados_brutos.', '03c2': 'pacotes 03c e 03c_mig já rodados.', '03c2b': 'pacote 03c2 e sql/local/03c2_Migracao_Cadastros_LOCAL.sql já rodados.', '03d': 'pacotes 02a a 03c2b já rodados.', '03g': 'pacotes 02a a 03d já rodados.', '03h': 'pacotes 02a a 03g já rodados.', '04a': 'pacotes 02a a 03h já rodados.', '04b': 'pacotes 02a a 04a já rodados.'}[PARTE] + """
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > F5.
                 Pode rodar de novo: é idempotente.
-  Depois      : """ + {'04a': 'rodar sql/testes/SIS/04a_Homologacao_Usuarios.sql e 02b_Homologacao_SIS.sql.', '03h': 'rodar sql/testes/SIS/03h_Homologacao_Atualizacao.sql.', '03g': 'rodar sql/testes/SIS/03g_Homologacao_Ajuda_Geral.sql.', '03d': 'enviar um comunicado de teste e conferir o rodapé sem CNPJ.', '02a': 'rodar sql/testes/SIS/02a_Homologacao_SIS.sql.', '02b': 'rodar sql/testes/SIS/02b_Homologacao_SIS.sql e depois\n                sql/testes/SIS/02a_Homologacao_SIS.sql (v1.1).', '02b2': 'rodar sql/testes/SIS/02b2_Homologacao_SIS.sql.', '02c': 'rodar sql/testes/SIS/02c_Homologacao_SIS.sql e depois\n                02b_Homologacao_SIS.sql (v1.2), para conferir que nada quebrou.',
+  Depois      : """ + {'04b': 'rodar sql/testes/SIS/04b_Homologacao_Lixeira_Desfazer.sql, 04a, 03a e 02b.', '04a': 'rodar sql/testes/SIS/04a_Homologacao_Usuarios.sql e 02b_Homologacao_SIS.sql.', '03h': 'rodar sql/testes/SIS/03h_Homologacao_Atualizacao.sql.', '03g': 'rodar sql/testes/SIS/03g_Homologacao_Ajuda_Geral.sql.', '03d': 'enviar um comunicado de teste e conferir o rodapé sem CNPJ.', '02a': 'rodar sql/testes/SIS/02a_Homologacao_SIS.sql.', '02b': 'rodar sql/testes/SIS/02b_Homologacao_SIS.sql e depois\n                sql/testes/SIS/02a_Homologacao_SIS.sql (v1.1).', '02b2': 'rodar sql/testes/SIS/02b2_Homologacao_SIS.sql.', '02c': 'rodar sql/testes/SIS/02c_Homologacao_SIS.sql e depois\n                02b_Homologacao_SIS.sql (v1.2), para conferir que nada quebrou.',
           '02d': 'rodar sql/testes/SIS/02d_Homologacao_SIS.sql e depois\n                02c_Homologacao_SIS.sql (v1.3) e 02b_Homologacao_SIS.sql.',
           '03a': 'rodar sql/testes/CAD/03a_Homologacao_CAD.sql e depois\n                02d, 02c e 02b, para conferir que nada quebrou.',
           '03c_mig': 'rodar sql/local/03c_Ensaio_Migracao_LOCAL.sql.',
@@ -225,7 +247,7 @@ for root, _, files in os.walk(BASE):
             rel = os.path.relpath(os.path.join(root, f), BASE)
             if rel.startswith('pacotes'): continue
             gravar(rel, ler(rel))
-gravar('pacotes/' + PARTE + ('_SIS' if (PARTE.startswith('02') or PARTE in ('03d', '03g', '03h', '04a')) else ('_FIN' if PARTE == '03c' else ('' if PARTE == '03c_mig' else ('_mig' if PARTE in ('03c2', '03c2b') else '_CAD')))) + '_LOCAL.sql', ''.join(partes))
+gravar('pacotes/' + PARTE + ('_SIS' if (PARTE.startswith('02') or PARTE in ('03d', '03g', '03h', '04a', '04b')) else ('_FIN' if PARTE == '03c' else ('' if PARTE == '03c_mig' else ('_mig' if PARTE in ('03c2', '03c2b') else '_CAD')))) + '_LOCAL.sql', ''.join(partes))
 
 # conferência
 for root, _, files in os.walk(BASE):

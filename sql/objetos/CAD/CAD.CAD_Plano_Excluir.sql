@@ -6,10 +6,13 @@
   Descrição   : Desativa (ou reativa, @Reativar = 1) um grupo (@Nivel 1), subgrupo (2)
                 ou conta (3) do plano. Nada é apagado: desativar o grupo ou o subgrupo
                 esconde tudo abaixo dele das listas de escolha (ATIVO_EFETIVO), sem
-                mexer nos filhos. Permissão: EXCLUIR em CAD_PLANO_CONTA.
+                mexer nos filhos. Permissão: DESATIVAR em CAD_PLANO_CONTA.
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): permissão DESATIVAR (o botão Excluir
+                        passa a mandar para a lixeira) e recusa se o registro
+                        estiver na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Plano_Excluir @IdUsuario = 2, @Nivel = 3, @Id = 1;
@@ -37,8 +40,10 @@ BEGIN
     BEGIN TRY
         SET @Reativar = ISNULL(@Reativar, 0);
 
-        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', 'EXCLUIR') = 0
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', 'DESATIVAR') = 0
             SET @Recusa = N'Você não tem permissão para desativar ou reativar o plano de contas.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(CASE @Nivel WHEN 1 THEN N'CAD.Plano_Grupo' WHEN 2 THEN N'CAD.Plano_Subgrupo' ELSE N'CAD.Plano_Conta' END, @Id) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes (Sistema › Lixeira).';
         IF @Recusa = N'' AND ISNULL(@Nivel, 0) NOT IN (1, 2, 3)
             SET @Recusa = N'Nível inválido (1 grupo, 2 subgrupo, 3 conta).';
 

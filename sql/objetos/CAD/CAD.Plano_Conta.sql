@@ -11,6 +11,8 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
+                        (lixeira: preenchidas = registro na lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -40,4 +42,11 @@ BEGIN
         CONSTRAINT CK_Plano_Conta_DESCRICAO CHECK (DESCRICAO <> N'')
     );
 END;
+GO
+
+IF COL_LENGTH(N'CAD.Plano_Conta', N'DT_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Plano_Conta] ADD DT_EXCLUSAO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'CAD.Plano_Conta', N'USUARIO_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Plano_Conta] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
 GO

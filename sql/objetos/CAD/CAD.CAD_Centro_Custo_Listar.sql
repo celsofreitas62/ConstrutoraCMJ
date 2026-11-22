@@ -10,6 +10,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Centro_Custo_Listar @IdUsuario = 2;
@@ -47,6 +48,7 @@ BEGIN
         LEFT  JOIN BANCO.Conta ce WITH (NOLOCK) ON ce.ID_CONTA = e.ID_CONTA_BANCARIA_PADRAO
         WHERE (@IdEmpresa IS NULL OR cc.ID_EMPRESA = @IdEmpresa)
           AND (ISNULL(@SomenteAtivos, 0) = 0 OR cc.ATIVO = 1)
+          AND cc.DT_EXCLUSAO IS NULL
         ORDER BY cc.CODIGO;
     END TRY
     BEGIN CATCH

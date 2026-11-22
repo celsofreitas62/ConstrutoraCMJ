@@ -24,6 +24,8 @@
 
   Changelog:
     v1.0 (22/11/2026) - Criação (etapa 04a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): Financeiro não recebe DESFAZER
+                        (liberável por perfil; decisão do Celso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -52,7 +54,7 @@ INNER JOIN SIS.Acao   a ON a.ID_ACAO   = ia.ID_ACAO
 WHERE ia.ATIVO = 1
   AND m.CODIGO <> 'SIS'
   AND (   (n.NOME = N'Consulta'   AND a.CODIGO = 'VER')
-       OR (n.NOME = N'Financeiro' AND m.CODIGO IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO <> 'REABRIR')
+       OR (n.NOME = N'Financeiro' AND m.CODIGO IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO NOT IN ('REABRIR', 'DESFAZER'))
        OR (n.NOME = N'Financeiro' AND m.CODIGO NOT IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO = 'VER'))
   AND NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao pp WHERE pp.ID_PERFIL = n.ID_PERFIL AND pp.ID_ITEM_ACAO = ia.ID_ITEM_ACAO);
 GO

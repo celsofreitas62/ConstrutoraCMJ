@@ -10,6 +10,10 @@
     v1.0 (15/11/2026) - Criação (etapa 02b).
     v1.1 (16/11/2026) - Ação EXECUTAR (rotinas e comandos; etapa 02d).
     v1.2 (20/11/2026) - Ação RESTAURAR (restauração de backup pela tela; etapa 03d2).
+    v1.3 (22/11/2026) - Etapa 04b (P20): DESATIVAR (o antigo "Excluir", que só
+                        desativava), DESFAZER (pelo histórico), RECUPERAR e
+                        ESVAZIAR (lixeira); EXCLUIR passa a mandar para a
+                        lixeira (nome acertado).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -33,7 +37,17 @@ FROM (VALUES
         ('DESBLOQUEAR',      N'Desbloquear usuário',        130),
         ('REDEFINIR_SENHA',  N'Definir senha provisória',   140),
         ('EXECUTAR',         N'Executar (rotina, comando)', 150),
-        ('RESTAURAR',        N'Restaurar backup do banco',  160)
+        ('RESTAURAR',        N'Restaurar backup do banco',  160),
+        ('DESATIVAR',        N'Desativar / reativar',        45),
+        ('DESFAZER',         N'Desfazer pelo histórico',    170),
+        ('RECUPERAR',        N'Recuperar da lixeira',       180),
+        ('ESVAZIAR',         N'Esvaziar a lixeira (apagar de vez)', 190)
      ) v (CODIGO, NOME, ORDEM)
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Acao a WHERE a.CODIGO = v.CODIGO);
+GO
+
+UPDATE a
+   SET a.NOME = N'Excluir (vai para a lixeira) / cancelar', a.DT_ALTERACAO = SYSDATETIME(), a.USUARIO_ALTERACAO = N'instalacao'
+FROM SIS.Acao a
+WHERE a.CODIGO = 'EXCLUIR' AND a.NOME = N'Excluir / cancelar registro';
 GO

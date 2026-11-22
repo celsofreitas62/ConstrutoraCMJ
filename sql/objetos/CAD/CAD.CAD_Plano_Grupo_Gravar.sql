@@ -10,6 +10,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -40,6 +41,8 @@ BEGIN
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', CASE WHEN @IdPlanoGrupo IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar o plano de contas.';
+        IF @Recusa = N'' AND @IdPlanoGrupo IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Plano_Grupo', @IdPlanoGrupo) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
         IF @Recusa = N'' AND @IdPlanoGrupo IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Grupo x WHERE x.ID_PLANO_GRUPO = @IdPlanoGrupo)
             SET @Recusa = N'Registro do plano de contas não encontrado.';
         IF @Recusa = N'' AND @Descricao = N''

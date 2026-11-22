@@ -12,6 +12,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Pessoa_Listar @IdUsuario = 2, @Busca = N'silva';
@@ -65,6 +66,7 @@ BEGIN
                p.ATIVO, p.DT_ALTERACAO, ISNULL(p.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
         FROM CAD.Pessoa p WITH (NOLOCK)
         WHERE (ISNULL(@SomenteAtivos, 1) = 0 OR p.ATIVO = 1)
+          AND p.DT_EXCLUSAO IS NULL
           AND (   @Papel = ''
                OR (@Papel = 'CLIENTE' AND p.CLIENTE = 1) OR (@Papel = 'FORNECEDOR' AND p.FORNECEDOR = 1)
                OR (@Papel = 'FUNCIONARIO' AND p.FUNCIONARIO = 1) OR (@Papel = 'CORRETOR' AND p.CORRETOR = 1))

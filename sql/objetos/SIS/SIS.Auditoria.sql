@@ -21,6 +21,8 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (22/11/2026) - Etapa 04b (P20): índice por TRANSACAO (desfazer uma
+                        operação inteira pelo histórico).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -60,4 +62,7 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Auditoria]') AND i.name = N'IX_Auditoria_ID_LOTE')
     CREATE NONCLUSTERED INDEX IX_Auditoria_ID_LOTE ON [SIS].[Auditoria] (ID_LOTE) WHERE ID_LOTE IS NOT NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Auditoria]') AND i.name = N'IX_Auditoria_TRANSACAO')
+    CREATE NONCLUSTERED INDEX IX_Auditoria_TRANSACAO ON [SIS].[Auditoria] (TRANSACAO, ID_AUDITORIA) WHERE TRANSACAO IS NOT NULL;
 GO

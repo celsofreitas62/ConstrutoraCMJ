@@ -13,6 +13,8 @@
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02d): limpeza do log passo a passo e
                         liberação de e-mails presos.
+    v1.1 (22/11/2026) - Etapa 04b (P20): LIXEIRA_LIMPEZA (limpeza e aviso da
+                        lixeira, todo dia às 06:40).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -29,7 +31,10 @@ FROM (VALUES
          CAST(0 AS INT), CAST('03:10' AS TIME(0)), CAST('' AS VARCHAR(20)), CAST(0 AS TINYINT), CAST(60 AS INT)),
         ('EMAIL_PRESOS', N'Liberar e-mails presos',
          N'Devolve para a fila os e-mails que ficaram "processando" (o serviço parou no meio do envio), conforme o parâmetro EMAIL_MINUTOS_PRESO.',
-         N'SIS.SIS_Email_Presos_Liberar', 'SIS', 'MINUTOS', 10, '00:00', '', 0, 10)
+         N'SIS.SIS_Email_Presos_Liberar', 'SIS', 'MINUTOS', 10, '00:00', '', 0, 10),
+        ('LIXEIRA_LIMPEZA', N'Lixeira: limpeza e aviso',
+         N'Apaga de vez o que passou do prazo da lixeira (LIXEIRA_DIAS_GUARDA ou o prazo da tela) e avisa por e-mail o que será apagado nos próximos LIXEIRA_AVISO_DIAS dia(s).',
+         N'SIS.SIS_Lixeira_Processar', 'SIS', 'DIARIA', 0, '06:40', '', 0, 30)
      ) v (CODIGO, NOME, DESCRICAO, PROCEDIMENTO, MODULO, FREQUENCIA, INTERVALO, HORARIO, DIAS, DIA_MES, LIMITE)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Rotina r WHERE r.CODIGO = v.CODIGO);

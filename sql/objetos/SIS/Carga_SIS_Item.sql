@@ -25,6 +25,8 @@
     v1.3 (16/11/2026) - Etapa 02d: "Rotinas automáticas" e "Instalação e
                         manutenção" (exclusivas); agrupador "E-mails" com
                         "Grupos de e-mail" e "E-mails enviados".
+    v1.4 (22/11/2026) - Etapa 04b (P20): tela "Lixeira" (Monitoramento) e ação
+                        DESFAZER em Usuários, Perfis e Auditoria (lote).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -51,7 +53,8 @@ FROM (VALUES
         ('SIS', NULL,                'SIS_MONITORAMENTO', N'Monitoramento',       'MENU', '',                     30, 0, 1, ''),
         ('SIS', 'SIS_MONITORAMENTO', 'SIS_LOG_ERRO',      N'Log de erros',        'TELA', 'sis/log-erros.html',   10, 0, 1, ''),
         ('SIS', 'SIS_MONITORAMENTO', 'SIS_AUDITORIA',     N'Auditoria',           'TELA', 'sis/auditoria.html',   20, 0, 1, ''),
-        ('SIS', 'SIS_MONITORAMENTO', 'SIS_LOTE',          N'Lotes',               'TELA', 'sis/lotes.html',       30, 0, 1, 'SIS.Lote')
+        ('SIS', 'SIS_MONITORAMENTO', 'SIS_LOTE',          N'Lotes',               'TELA', 'sis/lotes.html',       30, 0, 1, 'SIS.Lote'),
+        ('SIS', 'SIS_MONITORAMENTO', 'SIS_LIXEIRA',       N'Lixeira',             'TELA', 'sis/lixeira.html',     40, 0, 1, 'SIS.Lixeira,SIS.Tabela_Config')
      ) v (MODULO, PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS);
 
 DECLARE @Passada INT = 1;
@@ -120,7 +123,15 @@ FROM (VALUES
         ('SIS_EMAIL_FILA','VER'),
         ('SIS_EMAIL_FILA','ENVIAR'),
         ('SIS_EMAIL_FILA','CANCELAR'),
-        ('SIS_EMAIL_FILA','EXPORTAR')
+        ('SIS_EMAIL_FILA','EXPORTAR'),
+        ('SIS_LIXEIRA',   'VER'),
+        ('SIS_LIXEIRA',   'RECUPERAR'),
+        ('SIS_LIXEIRA',   'ALTERAR'),
+        ('SIS_LIXEIRA',   'ESVAZIAR'),
+        ('SIS_LIXEIRA',   'EXPORTAR'),
+        ('SIS_USUARIO',   'DESFAZER'),
+        ('SIS_PERFIL',    'DESFAZER'),
+        ('SIS_AUDITORIA', 'DESFAZER')
      ) v (ITEM, ACAO)
 INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
 INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO

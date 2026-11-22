@@ -20,6 +20,8 @@
     v1.0 (16/11/2026) - Criação (etapa 02d).
     v1.1 (17/11/2026) - Contagem das triggers de auditoria sem as do comunicado
                         (etapa 03c).
+    v1.3 (22/11/2026) - Etapa 04b: triggers da SIS.Lixeira e SIS.Tabela_Config (19);
+                        rodapé com o nome do sistema do parâmetro SISTEMA_NOME.
 
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
@@ -139,7 +141,7 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Parâmetros novos da 02d', N'5', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Parametro p WHERE p.CHAVE IN ('EMAIL_DOMINIO_INTERNO','EMAIL_MINUTOS_PRESO','BACKUP_PASTA','BACKUP_PASTA_EXTERNA','ATUALIZACAO_PASTA')))),
  (N'Rotinas da carga (com próxima execução)', N'2', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM #ProxRotina p WHERE p.CODIGO IN ('LOG_LIMPEZA','EMAIL_PRESOS') AND p.PROXIMA IS NOT NULL))),
  (N'Comandos da carga', N'14', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Comando c WHERE c.ATIVO = 1))),
- (N'Triggers de auditoria (13 + 4)', N'17', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t WHERE t.name LIKE N'tg[_]SIS[_]%[_]Auditoria' AND t.name <> N'tg_SIS_Auditoria_Protecao'
+ (N'Triggers de auditoria (13 + 4 + 2 da 04b)', N'19', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t WHERE t.name LIKE N'tg[_]SIS[_]%[_]Auditoria' AND t.name <> N'tg_SIS_Auditoria_Protecao'
                                                                            AND t.name NOT LIKE N'tg[_]SIS[_]Comunicado%'))),
  (N'Fila de e-mail não é auditada', N'0', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t WHERE t.parent_id = OBJECT_ID(N'SIS.Email_Fila')))),
  (N'celso: Rotinas/EXECUTAR e Instalação/EXECUTAR', N'1/1',
@@ -180,7 +182,7 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
   CASE WHEN @Html LIKE N'%' + SIS.fn_SIS_Parametro_Cor('EMPRESA_COR_PRINCIPAL') + N'%' THEN N'1' ELSE N'0' END + N'|'
   + CASE WHEN @Html LIKE N'%cid:logo[_]empresa%' THEN N'1' ELSE N'0' END + N'|'
   + CASE WHEN @Html LIKE N'%TESTE &lt;1&gt;%' THEN N'1' ELSE N'0' END + N'|'
-  + CASE WHEN @Html LIKE N'%Gerado automaticamente pelo sistema SistemaCMJ: `[SIS`]`.`[Teste`]%' ESCAPE N'`' THEN N'1' ELSE N'0' END + N'|'
+  + CASE WHEN @Html LIKE N'%Gerado automaticamente pelo sistema ' + ISNULL(SIS.fn_SIS_Parametro('SISTEMA_NOME'), N'SistemaCMJ') + N': `[SIS`]`.`[Teste`]%' ESCAPE N'`' THEN N'1' ELSE N'0' END + N'|'
   + CASE WHEN @Html LIKE N'%Grupo de Destinatários: HML[_]GRUPO%' THEN N'1' ELSE N'0' END);
 SET @Html = SIS.fn_SIS_Email_HTML(N'Vencido', 'ALERTA', N'', N'[SIS].[Teste]', '', 1);
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES

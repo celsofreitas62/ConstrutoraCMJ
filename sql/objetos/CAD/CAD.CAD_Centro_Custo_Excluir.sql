@@ -5,10 +5,13 @@
   Criação     : 16/11/2026
   Descrição   : Desativa (ou reativa, @Reativar = 1) um centro de custo. Nada é
                 apagado. Reativar exige a empresa ativa.
-                Permissão: EXCLUIR em CAD_CENTRO_CUSTO.
+                Permissão: DESATIVAR em CAD_CENTRO_CUSTO.
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): permissão DESATIVAR (o botão Excluir
+                        passa a mandar para a lixeira) e recusa se o registro
+                        estiver na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Centro_Custo_Excluir @IdUsuario = 2, @IdCentroCusto = 1;
@@ -35,8 +38,10 @@ BEGIN
     BEGIN TRY
         SET @Reativar = ISNULL(@Reativar, 0);
 
-        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', 'EXCLUIR') = 0
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', 'DESATIVAR') = 0
             SET @Recusa = N'Você não tem permissão para desativar ou reativar centros de custo.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(N'CAD.Centro_Custo', @IdCentroCusto) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes (Sistema › Lixeira).';
 
         IF @Recusa = N''
         BEGIN

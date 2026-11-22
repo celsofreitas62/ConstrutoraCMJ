@@ -11,6 +11,7 @@
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - Colunas CNPJ_COMPRAS e CNPJ_COMPRAS_FORMATADO, etapa 03c2.
+    v1.2 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Listar @IdUsuario = 2;
@@ -47,6 +48,7 @@ BEGIN
         FROM CAD.Empresa e WITH (NOLOCK)
         LEFT JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = e.ID_CONTA_BANCARIA_PADRAO
         WHERE (ISNULL(@SomenteAtivos, 0) = 0 OR e.ATIVO = 1)
+          AND e.DT_EXCLUSAO IS NULL
         ORDER BY e.RAZAO_SOCIAL;
     END TRY
     BEGIN CATCH

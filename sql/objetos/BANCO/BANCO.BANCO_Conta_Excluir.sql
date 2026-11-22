@@ -5,10 +5,13 @@
   Criação     : 16/11/2026
   Descrição   : Desativa (ou reativa, @Reativar = 1) uma conta. Nada é apagado.
                 Não desativa a conta que é padrão de empresa ou centro de custo ativo
-                (troque a conta padrão antes). Permissão: EXCLUIR em BANCO_CONTA.
+                (troque a conta padrão antes). Permissão: DESATIVAR em BANCO_CONTA.
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): permissão DESATIVAR (o botão Excluir
+                        passa a mandar para a lixeira) e recusa se o registro
+                        estiver na lixeira.
 
   Homologação (LOCAL):
     -- EXEC BANCO.BANCO_Conta_Excluir @IdUsuario = 2, @IdConta = 1;
@@ -35,8 +38,10 @@ BEGIN
     BEGIN TRY
         SET @Reativar = ISNULL(@Reativar, 0);
 
-        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CONTA', 'EXCLUIR') = 0
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CONTA', 'DESATIVAR') = 0
             SET @Recusa = N'Você não tem permissão para desativar ou reativar contas bancárias.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(N'BANCO.Conta', @IdConta) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes (Sistema › Lixeira).';
 
         IF @Recusa = N''
         BEGIN
