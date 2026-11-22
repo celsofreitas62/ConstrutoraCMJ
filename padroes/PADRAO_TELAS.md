@@ -25,6 +25,7 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 10. **Todo campo de toda tela** tem dica ao passar o mouse (e ao receber o foco pelo teclado): para que serve o campo, se é **obrigatório** ou não, e o formato ou um exemplo quando ajudar (ex.: "CPF da pessoa. Obrigatório para cliente. Pode digitar com ou sem pontos.").
 11. A dica fica no HTML do campo (atributo `data-dica`) e é mostrada por um componente único (mesmo arquivo JS/CSS para todas as telas); campo obrigatório também leva o `*` no rótulo.
 12. Botões que não são óbvios também têm dica (o que acontece ao clicar). A dica é curta; o detalhe fica na ajuda "?" da tela.
+12a. **A dica nunca cobre a caixa de digitação** (pedido do Celso, 22/11/2026): aparece **acima do rótulo** do campo; sem espaço acima, **ao lado** do campo; sem espaço ao lado, abaixo. Pela entrada no campo (foco, inclusive o foco automático ao abrir a tela) **some sozinha em 3 segundos**; pelo mouse, fica enquanto o mouse estiver sobre o campo.
 
 ## 5. Usuários: reiniciar senha (pedido do Celso, 16/11/2026)
 
