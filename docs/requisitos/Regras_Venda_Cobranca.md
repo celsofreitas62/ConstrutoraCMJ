@@ -31,7 +31,7 @@ Conferência dos exemplos da CMJ: 4.502,5477 ÷ 3.896,2883 = 1,15559921 (8 casas
 
 ## 3. Boletos (Sicredi, CNAB 240 desde 23/11/2026; antes CNAB 400)
 
-> **23/11/2026**: o Sicredi liberou a **troca de arquivos** com o layout **CNAB 240** (tela "Importar Arquivos" do internet banking: meio Sicredi Internet, respeita sequencial do arquivo, sequencial do último arquivo enviado = 0, valida CEP, até 30 MB por arquivo, enviado depois das 19h é processado no dia seguinte). O que abaixo cita o CNAB 400 vale como regra de negócio; o layout passa a ser o 240. **Falta o manual CNAB 240 do Sicredi.**
+> **23/11/2026**: o Sicredi liberou a **troca de arquivos** com o layout **CNAB 240** (tela "Importar Arquivos" do internet banking: meio Sicredi Internet, respeita sequencial do arquivo, sequencial do último arquivo enviado = 0, valida CEP, até 30 MB por arquivo, enviado depois das 19h é processado no dia seguinte). O que abaixo cita o CNAB 400 vale como regra de negócio; o layout passa a ser o 240. **Manual CNAB 240 recebido em 23/11/2026**: `Manuais Sicredi/media_produtos_filer_public_2026_03_12_manual_cnab_240_29.pdf` (versão 2.9, fev/2026, 100 páginas; layout do arquivo "081"). Remessa: header de arquivo e de lote, segmentos **P e Q** (obrigatórios), R (multa, desconto), S (mensagens), Y01 (beneficiário final) e **Y04** (boleto híbrido com PIX: o TXID vai em branco, o Sicredi gera); retorno: segmentos **T e U** e Y04 (leitura obrigatória para imprimir o QR Code do boleto híbrido; ocorrência 61 = liquidação PIX). O Sicredi exige a **homologação dos arquivos** gerados pelo sistema antes da troca em produção (seção 2 do manual).
 
 | Empresa | Cooperativa | Posto | Conta | Beneficiário |
 |---|---|---|---|---|
@@ -45,7 +45,7 @@ Conferência dos exemplos da CMJ: 4.502,5477 ÷ 3.896,2883 = 1,15559921 (8 casas
 - Quem envia o boleto ao cliente: **a CMJ** (no SisCMJ: e-mail com o PDF, item 4 da seção 1).
 - **Boleto híbrido com QR Code PIX**: sim (registro tipo 8 do CNAB 400 e leitura obrigatória do tipo 8 no retorno).
 - Troca de arquivos: ~~CNAB 400, a CMJ vai pedir a liberação~~ **liberada em 23/11/2026 no CNAB 240**.
-- Manual: `Manuais Sicredi/` (CNAB 400 versão 3.0, fev/2026, e guia da cobrança no internet banking).
+- Manual: `Manuais Sicredi/` (**CNAB 240 versão 2.9**, fev/2026, o que vale; CNAB 400 versão 3.0 só de referência; guia da cobrança no internet banking).
 
 ## 4. Empresas e RET
 

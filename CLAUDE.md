@@ -323,7 +323,7 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 
 1. ~~Camada de API~~: **resolvido** em 14/11/2026 (ASP.NET Core).
 2. ~~Caminho do .mdb~~: **resolvido** em 14/11/2026 (pasta `CashBookCMJ/`, dividido em front-end e back-end).
-3. **Sicredi** (respondido em parte em 17/11/2026; **atualizado em 23/11/2026: troca de arquivos LIBERADA no layout CNAB 240**, ver diário; falta o manual CNAB 240): layout ~~CNAB 400~~ **CNAB 240**; hoje os boletos são feitos **no site do banco**; cooperativa **0217**, conta **73623-5**, código do beneficiário **55.73623**, carteira **Simples**. Falta:
+3. **Sicredi** (respondido em parte em 17/11/2026; **atualizado em 23/11/2026: troca de arquivos LIBERADA no layout CNAB 240**, ver diário; **manual CNAB 240 v2.9 recebido**, `Manuais Sicredi/`; resumo na seção 3 do `Regras_Venda_Cobranca.md`; o Sicredi exige homologar os arquivos antes de usar): layout ~~CNAB 400~~ **CNAB 240**; hoje os boletos são feitos **no site do banco**; cooperativa **0217**, conta **73623-5**, código do beneficiário **55.73623**, carteira **Simples**. Falta:
    - ~~manual do CNAB 400~~: **recebido** em 17/11/2026 (`Manuais Sicredi/`: manual CNAB 400 versão 3.0, fev/2026, e guia da cobrança no internet banking); falta a liberação da **troca de arquivos** (remessa/retorno) para a conta, já que hoje se usa o site;
    - ~~posto, regras e contas de cobrança~~: **respondidos** em 17/11/2026 (`docs/requisitos/Regras_Venda_Cobranca.md`): posto **55**; cobrança em **Orion, Opera e Music**; juros 1% a.m. pro rata e multa 2% (podem variar por cliente); desconto em parâmetro; sem protesto/negativação; baixa manual; boleto híbrido com PIX; a CMJ envia o boleto;
    - avaliar a **API de Cobrança do Sicredi** como evolução do CNAB.
