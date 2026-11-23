@@ -1,7 +1,7 @@
 ﻿/*******************************************************************************
   Pacote      : 03c2 - migração dos cadastros: CNPJ para notas de compra e DDA na empresa (CAD, vai para o MASTER) e classificação, de-paras e carga dos cadastros do Access (schema MIG, NÃO vai para o MASTER)
   Banco       : SISTEMACMJ_LOCAL (somente desenvolvimento)
-  Gerado em   : 22/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
+  Gerado em   : 23/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
                 na ordem da regra 59. NÃO EDITAR ESTE ARQUIVO: corrigir o
                 arquivo do objeto e gerar o pacote de novo.
   Pré-requisito: pacotes 03c e 03c_mig já rodados.
@@ -43,6 +43,8 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - CNPJ_COMPRAS (CNPJ para notas de compra e DDA), etapa 03c2.
+    v1.2 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
+                        (lixeira: preenchidas = registro na lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -101,6 +103,13 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UQ_Empresa_CNPJ' AND obj
     CREATE UNIQUE NONCLUSTERED INDEX UQ_Empresa_CNPJ ON [CAD].[Empresa] (CNPJ) WHERE CNPJ <> '';
 GO
 
+IF COL_LENGTH(N'CAD.Empresa', N'DT_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Empresa] ADD DT_EXCLUSAO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'CAD.Empresa', N'USUARIO_EXCLUSAO') IS NULL
+    ALTER TABLE [CAD].[Empresa] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
+
 -- =============================================================================
 -- Arquivo: sql/objetos/CAD/CAD.CAD_Empresa_Listar.sql
 -- =============================================================================
@@ -117,6 +126,7 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - Colunas CNPJ_COMPRAS e CNPJ_COMPRAS_FORMATADO, etapa 03c2.
+    v1.2 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Listar @IdUsuario = 2;
@@ -153,6 +163,7 @@ BEGIN
         FROM CAD.Empresa e WITH (NOLOCK)
         LEFT JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = e.ID_CONTA_BANCARIA_PADRAO
         WHERE (ISNULL(@SomenteAtivos, 0) = 0 OR e.ATIVO = 1)
+          AND e.DT_EXCLUSAO IS NULL
         ORDER BY e.RAZAO_SOCIAL;
     END TRY
     BEGIN CATCH
@@ -187,6 +198,7 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - @CnpjCompras (CNPJ para notas de compra e DDA), etapa 03c2.
+    v1.2 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Gravar @IdUsuario = 2, @RazaoSocial = N'Construtora Teste Ltda', @Cnpj = '11.222.333/0001-81', @Tipo = 'CONSTRUTORA';
@@ -247,6 +259,8 @@ BEGIN
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', CASE WHEN @IdEmpresa IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar empresas.';
+        IF @Recusa = N'' AND @IdEmpresa IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Empresa', @IdEmpresa) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
         IF @Recusa = N'' AND @IdEmpresa IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Empresa e WHERE e.ID_EMPRESA = @IdEmpresa)
             SET @Recusa = N'Empresa não encontrada.';
         IF @Recusa = N'' AND @RazaoSocial = N''
@@ -1399,6 +1413,9 @@ GO
                         Holding; La Sante Sala 110, Allegro 52 e Giuseppina 12
                         inativos (vendidos), Sala 113 ativa até a CMJ confirmar;
                         grupos 11 a 14 entram no custo de obra.
+    v1.2 (23/11/2026) - Respostas da Renata à conferência 03f: Sala 113
+                        vendida (centro inativo); a vaga vendida junto é a
+                        15 (o Access dizia vaga 40; confirmado pelo Celso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1513,7 +1530,7 @@ MERGE MIG.Classif_Centro_Extra AS d
 USING (VALUES
     ('IMO-LS-110',   N'La Sante - Sala 110 e vaga 9',           'IMOVEL_PROPRIO', 25, 0   , N'contas antigas 460 e 670 (aluguel); vendida (CMJ, 20/11/2026)'),
     ('IMO-LS-112',   N'La Sante - Sala 112 e vaga 10',          'IMOVEL_PROPRIO', 25, NULL, N'conta antiga 461; alugada pela Construtora (CMJ, 20/11/2026)'),
-    ('IMO-LS-113',   N'La Sante - Sala 113 e vaga 40',          'IMOVEL_PROPRIO', 25, 1   , N'conta antiga 462; talvez vendida: ativa até a CMJ confirmar (20/11/2026)'),
+    ('IMO-LS-113',   N'La Sante - Sala 113 e vaga 15',          'IMOVEL_PROPRIO', 25, 0   , N'conta antiga 462 (no Access: vaga 40); vendida com a vaga 15 (CMJ, 23/11/2026)'),
     ('IMO-LS-VAGAS', N'La Sante - Vagas de estacionamento',     'IMOVEL_PROPRIO', 25, NULL, N'conta antiga 463'),
     ('IMO-ALG-13',   N'Allegro - Apto. 13',                     'IMOVEL_PROPRIO', 25, NULL, N'contas antigas 506 e 692 (aluguel)'),
     ('IMO-ALG-52',   N'Allegro - Apto. 52',                     'IMOVEL_PROPRIO', 25, 0   , N'conta antiga 507; vendido (CMJ, 20/11/2026)'),

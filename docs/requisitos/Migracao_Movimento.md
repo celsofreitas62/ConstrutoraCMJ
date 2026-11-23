@@ -207,3 +207,32 @@ Arquivo: `CashBookCMJ/Conferencia_Migracao_CMJ_03f_RESPONDIDO.docx`.
 | 5 | nº 308074 (Orival, R$ 5.639,12) e 308076 (Vanessa, R$ 3.331,22) | **parcelas a receber do cliente, ainda não pagas**: contas a receber em aberto | regra na transformação (ou correção na tela de casos) |
 
 **A 3c fecha** com a rodada rápida feita com a cópia nova do Access (itens 1 e 2 corrigidos por ela) e os itens 4 e 5 aplicados.
+
+## 18. Rodada final com o Access de 23/11/2026 (conversa 03f2, 23/11/2026)
+
+Extração do `CashBookCMJ_be.mdb` de 23/11 pelo executor (23 tabelas, 0 erros) e sequência completa no LOCAL (script `executor_sql/processados/..._185_local_03f2_rodada_final.sql`): carga, preparação (corte 01/01/2022), arquivo morto, cadastros (2 passadas, 0 alterações na segunda), transformação e conferência.
+
+**Item 5 da conferência 03f, resposta corrigida pela Renata (23/11/2026)**: os nº 308074 e 308076 **não são valores a receber**. São "créditos" lançados à mão no Access para o saldo devedor do cliente aparecer certo: "a parcela 23 é o valor devido menos o crédito que lancei" (Orival) e "é o valor da parcela 5/5 menos o valor do crédito" (Vanessa). **Decisão do Celso (opção 1)**: **abatimento na parcela**. A parcela entra com o valor original e o crédito vira uma baixa só de abatimento (`VALOR_PRINCIPAL` = `ABATIMENTO`, líquido zero, sem movimento no banco, com o nº do Access e o motivo). O saldo em aberto fica no valor real.
+
+- Mecanismo novo, só no schema MIG (não vai para o MASTER): ação **`ABATER`** em `MIG.Caso_Correcao` com `LINK_VENDA_DESTINO` (`MIG.Tabelas_Transformacao` v1.5, `MIG_Caso_Gravar` v1.4 com `@LinkVenda`, `MIG_Movimento_Transformar` v1.6). Destino inválido (venda que não migra como conta a receber, parcela já paga, abatimento maior que a parcela, sem conta prevista) devolve o documento para a lista de casos com o motivo. A baixa usa a conta prevista da parcela (ou o Caixa contábil da empresa). Na tela de casos aparece como "abatimento de parcela (sem dinheiro)", situação Resolvido. Os dois casos foram gravados pelo banco com o usuário `celso`; a opção na tela só entra se aparecerem outros casos assim (decisão do Celso).
+- **MIGRACAO v1.3** (`montar_migracao.py` v1.3) aplicado por cima no ensaio `SISTEMACMJ` sem erro.
+
+| Parcela | Valor (R$) | Abatimento (R$) | Saldo em aberto (R$) | Vencimento |
+|---|---:|---:|---:|---|
+| Orival, Apto. 2, parcela 23/36 (venda 14662) | 11.455,50 | 5.639,12 (nº 308074) | 5.816,38 | 15/03/2027 |
+| Vanessa, Apto. 16, Mensal 4 5/5 (venda 14883) | 8.889,54 | 3.331,22 (nº 308076) | 5.558,32 | 10/06/2028 |
+
+**Resultado**:
+
+| | 3ª rodada (03f, Access de 20/11) | Rodada final (03f2, Access de 23/11) |
+|---|---:|---:|
+| Títulos: diferença Access × sistema, todos os anos | 0,00 | 0,00 |
+| Casos pendentes na tela | 139 | **137** |
+| Casos com valor em aberto ainda pendentes | 2 | **0** |
+| Abatimentos de parcela | – | 2 (R$ 8.970,34) |
+
+- Gravado: 18.615 lançamentos a pagar (R$ 79,16 mi), 4.274 a receber (R$ 79,81 mi), 989 parcelas em aberto (R$ 13,56 mi), 21.902 baixas, 12.143 movimentos de baixa, 3.926 transferências, 5.599 lotes do Access.
+- Itens da conferência 03f: **1** nº 277727 apagado no Access (o pagamento do Vanderlei ficou só no nº 310158, no lote); **3** R$ 85.000 da Holding como pago e não compensado (regra aprovada); **4** `IMO-LS-113` "La Sante - Sala 113 e vaga 15", inativo; **5** abatimento (acima). **2 continua**: a venda 13514 ainda está com a data do movimento **30/04/2057** no Access de 23/11 (nº 271407 e 271408); aparece o ano 2057 na conferência por ano. Perguntado de novo à Renata (`CashBookCMJ/Conferencia_Migracao_CMJ_03f2.docx`); basta ela corrigir no Access, e a rodada da virada (fase 8) já pega a data certa.
+- Testes: 03c2c 61/0, 03c2 20/0, 03a 68/0.
+
+**A 3c está fechada.** A migração está pronta e repetível. Na virada (fase 8), basta rodar de novo com a cópia final do Access; as correções e decisões da tela continuam valendo.

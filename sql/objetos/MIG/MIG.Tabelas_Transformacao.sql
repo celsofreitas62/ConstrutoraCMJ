@@ -12,8 +12,12 @@
                                          motivo da primeira vez). Atualizada a
                                          cada rodada.
                 MIG.Caso_Correcao        decisão por documento, gravada pela
-                                         tela de casos: IGNORAR (não migra) ou
-                                         ARQUIVO_MORTO (vai para o arquivo morto).
+                                         tela de casos: IGNORAR (não migra),
+                                         ARQUIVO_MORTO (vai para o arquivo morto)
+                                         ou ABATER (o documento é um "crédito"
+                                         manual que abate a parcela da venda
+                                         LINK_VENDA_DESTINO: vira baixa só de
+                                         abatimento, sem dinheiro).
                 MIG.Caso_Correcao_Linha  correção por linha do Access (obra,
                                          pessoa, conta, plano, datas, valores,
                                          confirmado, ignorar a linha), aplicada a
@@ -43,6 +47,10 @@
     v1.4 (20/11/2026) - Etapa 03d (instalação no servidor): teste do formato
                         antigo de Caso_Correcao/_Linha com IF aninhado; em banco
                         novo o SELECT na tabela ainda inexistente dava erro 208.
+    v1.5 (23/11/2026) - Etapa 03f2: ação ABATER em Caso_Correcao (com
+                        LINK_VENDA_DESTINO = venda/parcela do Access que o
+                        "crédito" manual abate). Resposta da Renata de
+                        23/11/2026 (nº 308074 e 308076).
 
 *******************************************************************************/
 SET ANSI_NULLS ON;
@@ -99,8 +107,10 @@ IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NULL
         USUARIO_CRIACAO    NVARCHAR(100)  NOT NULL,
         DT_ALTERACAO       DATETIME2(0)   NULL,
         USUARIO_ALTERACAO  NVARCHAR(100)  NULL,
+        LINK_VENDA_DESTINO INT            NULL,
         CONSTRAINT UQ_Caso_Correcao_UNIDADE UNIQUE (UNIDADE),
-        CONSTRAINT CK_Caso_Correcao_ACAO CHECK (ACAO IN ('IGNORAR', 'ARQUIVO_MORTO'))
+        CONSTRAINT CK_Caso_Correcao_ACAO CHECK (ACAO IN ('IGNORAR', 'ARQUIVO_MORTO', 'ABATER')),
+        CONSTRAINT CK_Caso_Correcao_ABATER CHECK ((ACAO = 'ABATER' AND LINK_VENDA_DESTINO > 0) OR (ACAO <> 'ABATER' AND LINK_VENDA_DESTINO IS NULL))
     );
 GO
 
@@ -175,6 +185,21 @@ IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'HASH_ACCESS') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD HASH_ACCESS VARBINARY(32) NULL;
 IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'LOTE') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD LOTE INT NULL CONSTRAINT CK_Caso_Correcao_Linha_LOTE CHECK (LOTE >= 0);
+GO
+
+-- v1.5: abatimento de parcela (ACAO = 'ABATER' + venda de destino)
+IF COL_LENGTH(N'MIG.Caso_Correcao', N'LINK_VENDA_DESTINO') IS NULL
+    ALTER TABLE [MIG].[Caso_Correcao] ADD LINK_VENDA_DESTINO INT NULL;
+GO
+IF EXISTS (SELECT 1 FROM sys.check_constraints k WHERE k.name = N'CK_Caso_Correcao_ACAO' AND k.parent_object_id = OBJECT_ID(N'MIG.Caso_Correcao')
+           AND k.definition NOT LIKE N'%ABATER%')
+    ALTER TABLE [MIG].[Caso_Correcao] DROP CONSTRAINT CK_Caso_Correcao_ACAO;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints k WHERE k.name = N'CK_Caso_Correcao_ACAO' AND k.parent_object_id = OBJECT_ID(N'MIG.Caso_Correcao'))
+    ALTER TABLE [MIG].[Caso_Correcao] ADD CONSTRAINT CK_Caso_Correcao_ACAO CHECK (ACAO IN ('IGNORAR', 'ARQUIVO_MORTO', 'ABATER'));
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints k WHERE k.name = N'CK_Caso_Correcao_ABATER' AND k.parent_object_id = OBJECT_ID(N'MIG.Caso_Correcao'))
+    ALTER TABLE [MIG].[Caso_Correcao] ADD CONSTRAINT CK_Caso_Correcao_ABATER
+        CHECK ((ACAO = 'ABATER' AND LINK_VENDA_DESTINO > 0) OR (ACAO <> 'ABATER' AND LINK_VENDA_DESTINO IS NULL));
 GO
 
 -- busca de linha do Access pelo código (tela de casos e migração); MIG_Movimento_Preparar também cria

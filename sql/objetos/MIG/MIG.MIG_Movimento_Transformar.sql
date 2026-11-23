@@ -21,6 +21,12 @@
                             e o Caixa contábil da empresa (banco da linha, se
                             houver; senão a conta padrão da obra ou da empresa);
                   CASO      o resto: MIG.Caso, para a tela de correção.
+                  ABATER    documento marcado na tela como "crédito" manual que
+                            abate a parcela de uma venda (MIG.Caso_Correcao,
+                            LINK_VENDA_DESTINO): vira uma baixa só de
+                            abatimento na parcela (VALOR_PRINCIPAL = ABATIMENTO,
+                            líquido zero, sem movimento no banco); a parcela
+                            fica com o saldo real devido.
                 Correções da tela (MIG.Caso_Correcao e Caso_Correcao_Linha) são
                 aplicadas antes da classificação.
                 Situação: linha confirmada = baixa; "efetuado" sem "confirmado"
@@ -60,6 +66,15 @@
     v1.5 (19/11/2026) - Lote novo da migração (900001 em diante); decisões da
                         tela (ignorar / arquivo morto) valem para o documento
                         como ele está depois da troca de lote.
+    v1.6 (23/11/2026) - Etapa 03f2: decisão ABATER (resposta da Renata de
+                        23/11/2026, nº 308074 e 308076): baixa só de abatimento
+                        na parcela da venda de destino, na conta prevista da
+                        parcela (ou no Caixa contábil da empresa), com o nº do
+                        Access e o motivo. Destino inválido (venda que não
+                        migra como conta a receber, já paga, abatimento maior
+                        que a parcela) devolve o documento para a lista de
+                        casos com o motivo. Conferir um documento ABATER
+                        confere também a venda de destino.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
@@ -91,7 +106,7 @@ BEGIN
     DECLARE @Agora        DATETIME2(0) = SYSDATETIME();
 
     BEGIN TRY
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
 
         IF OBJECT_ID(N'MIG.Movimento', N'U') IS NULL
             THROW 50001, N'Rode antes o MIG.MIG_Movimento_Preparar.', 1;
@@ -118,6 +133,13 @@ BEGIN
         WHERE @Filtrar = 1 AND o.LOTE IS NOT NULL
           AND o.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s)
           AND NOT EXISTS (SELECT 1 FROM #Sel s WHERE s.UNIDADE = d.UNIDADE);
+        -- documento que abate uma parcela: confere também a venda de destino
+        INSERT INTO #Sel (UNIDADE, PEDIDO)
+        SELECT DISTINCT 'V:' + CONVERT(VARCHAR(20), cc.LINK_VENDA_DESTINO), 0
+        FROM MIG.Caso_Correcao cc
+        WHERE @Filtrar = 1 AND cc.ACAO = 'ABATER'
+          AND cc.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s)
+          AND NOT EXISTS (SELECT 1 FROM #Sel s WHERE s.UNIDADE = 'V:' + CONVERT(VARCHAR(20), cc.LINK_VENDA_DESTINO));
         IF (@Unidade IS NOT NULL OR @Unidades IS NOT NULL) AND @Filtrar = 0
             THROW 50001, N'Nenhum documento informado para conferir.', 1;
         IF @Filtrar = 1 AND ISNULL(@Executar, 0) = 1
@@ -406,6 +428,41 @@ BEGIN
         FROM #U u WHERE EXISTS (SELECT 1 FROM #T t WHERE t.UNIDADE = u.UNIDADE AND t.PAGO = 1 AND t.ID_CONTA_PAG IS NULL AND t.TC_PAG = 'BCO');
         DELETE t FROM #T t INNER JOIN #U u ON u.UNIDADE = t.UNIDADE WHERE u.REGRA = 'CASO';
 
+        -- abatimentos: "crédito" manual do Access que abate a parcela de uma venda
+        SET @EtapaAtual = 'Abatimentos';
+        SELECT cc.UNIDADE, cc.LINK_VENDA_DESTINO AS LINK, cc.MOTIVO AS MOTIVO_TELA, x.NUM, x.DT, x.VALOR,
+               t.ORIGEM AS T_ORIGEM, t.NUM AS T_NUM, t.VALOR AS T_VALOR, t.PAGO AS T_PAGO,
+               COALESCE(t.ID_CONTA_PAG, cx.ID_CONTA) AS ID_CONTA,
+               CAST(N'' AS NVARCHAR(400)) AS ERRO
+        INTO #Ab
+        FROM MIG.Caso_Correcao cc
+        CROSS APPLY (SELECT MIN(m.NUM) AS NUM,
+                            COALESCE(MIN(CASE WHEN m.DT_MOVTO BETWEEN '2000-01-01' AND '2060-12-31' THEN m.DT_MOVTO END), MIN(m.DT_UNIDADE)) AS DT,
+                            SUM(ISNULL(m.VALOR_CREDITO, 0) - ISNULL(m.VALOR_DEBITO, 0)) AS VALOR
+                     FROM MIG.vw_MIG_Linha_Unidade v
+                     INNER JOIN MIG.Movimento m ON m.ORIGEM = v.ORIGEM AND m.NUM = v.NUM
+                     WHERE v.UNIDADE = cc.UNIDADE) x
+        OUTER APPLY (SELECT TOP (1) t.ORIGEM, t.NUM, t.VALOR, t.PAGO, t.ID_CONTA_PAG, t.ID_EMPRESA
+                     FROM #T t
+                     WHERE t.REGRA = 'VENDA' AND t.UNIDADE = 'V:' + CONVERT(VARCHAR(20), cc.LINK_VENDA_DESTINO)
+                     ORDER BY t.NUM) t
+        LEFT JOIN #CxContabil cx ON cx.ID_EMPRESA = t.ID_EMPRESA
+        WHERE cc.ACAO = 'ABATER'
+          AND (@Filtrar = 0 OR cc.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s));
+
+        UPDATE a
+           SET a.ERRO = CASE
+                   WHEN ISNULL(a.VALOR, 0) <= 0 THEN N'Abatimento: o documento não tem valor de crédito'
+                   WHEN a.DT IS NULL THEN N'Abatimento: o documento não tem data'
+                   WHEN a.T_NUM IS NULL THEN N'Abatimento: a venda ' + CONVERT(NVARCHAR(20), a.LINK) + N' não migra como conta a receber'
+                   WHEN a.T_PAGO = 1 THEN N'Abatimento: a parcela da venda ' + CONVERT(NVARCHAR(20), a.LINK) + N' já está paga'
+                   WHEN a.ID_CONTA IS NULL THEN N'Abatimento: a parcela da venda ' + CONVERT(NVARCHAR(20), a.LINK) + N' não tem conta prevista'
+                   WHEN s.TOTAL > a.T_VALOR THEN N'Abatimento maior que a parcela da venda ' + CONVERT(NVARCHAR(20), a.LINK)
+                                                 + N' (' + FORMAT(s.TOTAL, 'N2', 'pt-BR') + N' × ' + FORMAT(a.T_VALOR, 'N2', 'pt-BR') + N')'
+                   ELSE N'' END
+        FROM #Ab a
+        OUTER APPLY (SELECT SUM(ISNULL(b.VALOR, 0)) AS TOTAL FROM #Ab b WHERE b.LINK = a.LINK) s;
+
         -- casos para a tela, mais os documentos que já têm correção da tela
         SET @EtapaAtual = 'Casos';
         SELECT v.UNIDADE, MIN(m.PADRAO) AS PADRAO, COUNT(*) AS N, SUM(m.VALOR_DEBITO) AS D, SUM(m.VALOR_CREDITO) AS C,
@@ -423,8 +480,16 @@ BEGIN
         FROM #U u
         WHERE u.REGRA = 'CASO' OR EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = u.UNIDADE)
         UNION ALL
-        SELECT d.UNIDADE, ISNULL(d.PADRAO, ''), d.ACAO, N'', N'', d.N, d.D, d.C, d.DT
+        SELECT d.UNIDADE, ISNULL(d.PADRAO, ''),
+               CAST(CASE WHEN ISNULL(a.ERRO, N'') <> N'' THEN 'CASO' ELSE d.ACAO END AS VARCHAR(15)),
+               ISNULL(a.ERRO, N''),
+               CAST(CASE WHEN a.UNIDADE IS NOT NULL AND a.ERRO = N''
+                         THEN N'Abate ' + FORMAT(a.VALOR, 'N2', 'pt-BR') + N' da parcela da venda ' + CONVERT(NVARCHAR(20), a.LINK)
+                              + N' (saldo ' + FORMAT(a.T_VALOR - a.VALOR, 'N2', 'pt-BR') + N')'
+                         ELSE N'' END AS NVARCHAR(400)),
+               d.N, d.D, d.C, d.DT
         FROM #Dec d
+        LEFT JOIN #Ab a ON a.UNIDADE = d.UNIDADE
         UNION ALL   -- todas as linhas do documento marcadas "ignorar": o documento fica de fora
         SELECT m.UNIDADE, MIN(m.PADRAO), 'IGNORAR', N'', N'', COUNT(*), SUM(m.VALOR_DEBITO), SUM(m.VALOR_CREDITO), MIN(m.DT_UNIDADE)
         FROM MIG.Movimento m
@@ -490,7 +555,7 @@ BEGIN
             LEFT JOIN #U u ON u.UNIDADE = s.UNIDADE
             LEFT JOIN #Rev r ON r.UNIDADE = s.UNIDADE
             ORDER BY s.PEDIDO DESC, s.UNIDADE;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
             RETURN;
         END;
 
@@ -509,8 +574,9 @@ BEGIN
                    SUM(CASE WHEN t.PAGO = 1 AND t.ID_CONTA_PAG IS NULL THEN 1 ELSE 0 END) AS PAGO_SEM_CONTA
             FROM #T t GROUP BY t.REGRA, t.TIPO ORDER BY t.REGRA, t.TIPO;
             SELECT 'TRANSFERENCIAS' AS GRADE, r.REGRA, r.TC, COUNT(*) AS QTD, SUM(r.VALOR) AS VALOR FROM #TR r GROUP BY r.REGRA, r.TC;
+            SELECT 'ABATIMENTOS' AS GRADE, a.UNIDADE, a.LINK, a.VALOR, a.T_VALOR AS VALOR_PARCELA, a.T_VALOR - a.VALOR AS SALDO, a.ERRO FROM #Ab a ORDER BY a.UNIDADE;
             SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO' GROUP BY c.MOTIVO ORDER BY COUNT(*) DESC;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
             RETURN;
         END;
 
@@ -602,6 +668,18 @@ BEGIN
         LEFT JOIN #MapLote ml ON ml.UNIDADE = t.UNIDADE
         WHERE t.PAGO = 1 AND t.ID_CONTA_PAG IS NOT NULL;
 
+        SET @EtapaAtual = 'Gravação: abatimentos';
+        INSERT INTO FIN.Baixa (ID_PARCELA, DT_PAGAMENTO, ID_CONTA, FORMA, VALOR_PRINCIPAL, ABATIMENTO, ID_MOVIMENTO, COMPENSADO, DT_COMPENSACAO,
+                               OBSERVACAO, ID_LOTE, CODIGO_ACCESS, USUARIO_CRIACAO)
+        SELECT p.ID_PARCELA, a.DT, a.ID_CONTA, 'OUTRA', a.VALOR, a.VALOR, NULL, 1, a.DT,
+               CAST(LEFT(N'Abatimento sem dinheiro: "crédito" do Access nº ' + CONVERT(NVARCHAR(12), a.NUM) + N' (documento ' + a.UNIDADE + N'). '
+                         + ISNULL(a.MOTIVO_TELA, N''), 400) AS NVARCHAR(400)),
+               @IdLoteGeral, a.NUM, @Usuario
+        FROM #Ab a
+        INNER JOIN #MapLanc m ON m.ORIGEM = a.T_ORIGEM AND m.NUM = a.T_NUM
+        INNER JOIN FIN.Parcela p ON p.ID_LANCAMENTO = m.ID_LANCAMENTO
+        WHERE a.ERRO = N'';
+
         SET @EtapaAtual = 'Gravação: transferências';
         CREATE TABLE #MapTr (ORIGEM VARCHAR(20), NUM INT, ID_TRANSFERENCIA BIGINT, PRIMARY KEY (ORIGEM, NUM));
         MERGE FIN.Transferencia AS d
@@ -641,6 +719,16 @@ BEGIN
         LEFT JOIN #MapTr mt ON mt.ORIGEM = l.ORIGEM AND mt.NUM = l.NUM
         LEFT JOIN #MapTr mt2 ON mt2.ORIGEM = tb.ORIGEM AND mt2.NUM = tb.NUM;
 
+        INSERT INTO MIG.Linha_Destino (ORIGEM, NUM, UNIDADE, REGRA, PAPEL, ID_LANCAMENTO, ID_MOVIMENTO, ID_TRANSFERENCIA, ID_CONTA, VALOR)
+        SELECT v.ORIGEM, v.NUM, a.UNIDADE, 'ABATER', 'ABATIMENTO', m.ID_LANCAMENTO, NULL, NULL, a.ID_CONTA,
+               ISNULL(mv.VALOR_DEBITO, 0) + ISNULL(mv.VALOR_CREDITO, 0)
+        FROM #Ab a
+        INNER JOIN #MapLanc m ON m.ORIGEM = a.T_ORIGEM AND m.NUM = a.T_NUM
+        INNER JOIN MIG.vw_MIG_Linha_Unidade v ON v.UNIDADE = a.UNIDADE
+        INNER JOIN MIG.Movimento mv ON mv.ORIGEM = v.ORIGEM AND mv.NUM = v.NUM
+        WHERE a.ERRO = N''
+          AND NOT EXISTS (SELECT 1 FROM MIG.Linha_Destino d WHERE d.ORIGEM = v.ORIGEM AND d.NUM = v.NUM);
+
         INSERT INTO MIG.DePara_Venda (ID_LANCAMENTO, ORIGEM, NUM, LINK_VENDA, IMOVEL, PARCEIRO, CONTRATO, NUM_DOC)
         SELECT m.ID_LANCAMENTO, t.ORIGEM, t.NUM, ISNULL(t.LINK_VENDA, 0), t.IMOVEL, t.PAR, ISNULL(t.CONTRATO, ''), CAST(LEFT(ISNULL(t.NUM_DOC, N''), 100) AS NVARCHAR(100))
         FROM #T t INNER JOIN #MapLanc m ON m.ORIGEM = t.ORIGEM AND m.NUM = t.NUM
@@ -650,7 +738,7 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
 
         SELECT 'GRAVADO' AS GRADE, r.ORDEM, r.ITEM, r.QTD, r.VALOR
         FROM (
@@ -661,12 +749,13 @@ BEGIN
             UNION ALL SELECT 5, N'Movimentos de baixa (banco/caixa)', COUNT(*), SUM(m.VALOR) FROM BANCO.Movimento m INNER JOIN SIS.Lote x ON x.ID_LOTE = m.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO' AND m.TIPO = 'BAIXA'
             UNION ALL SELECT 6, N'Transferências', COUNT(*), SUM(t.VALOR) FROM FIN.Transferencia t INNER JOIN SIS.Lote x ON x.ID_LOTE = t.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO'
             UNION ALL SELECT 7, N'Lotes do Access', COUNT(*) - 1, NULL FROM SIS.Lote x WHERE x.ORIGEM = 'MIGRACAO'
-            UNION ALL SELECT 8, N'Casos para a tela', COUNT(*), SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO'
+            UNION ALL SELECT 8, N'Abatimentos de parcela (sem dinheiro)', COUNT(*), SUM(b.ABATIMENTO) FROM FIN.Baixa b INNER JOIN SIS.Lote x ON x.ID_LOTE = b.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO' AND b.ABATIMENTO > 0
+            UNION ALL SELECT 9, N'Casos para a tela', COUNT(*), SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO'
         ) r ORDER BY r.ORDEM;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
         IF XACT_STATE() <> -1
             INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
             VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());

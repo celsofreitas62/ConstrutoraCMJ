@@ -13,6 +13,10 @@
                   IGNORAR        o documento não migra (motivo obrigatório);
                   ARQUIVO_MORTO  o documento vai para o arquivo morto (motivo
                                  obrigatório);
+                  ABATER         o documento é um "crédito" manual que abate a
+                                 parcela da venda @LinkVenda (código da venda
+                                 no Access): vira baixa só de abatimento, sem
+                                 dinheiro (motivo obrigatório);
                   DESFAZER       apaga todas as correções e decisões do
                                  documento (volta ao Access).
                 As correções valem em toda nova rodada da migração. Depois de
@@ -36,10 +40,14 @@
                         precisa existir no Access. Documento formado por troca
                         de lote também pode ser corrigido (linhas que vieram de
                         outro lote).
+    v1.4 (23/11/2026) - Etapa 03f2: ação ABATER com @LinkVenda (venda/parcela do
+                        Access que o "crédito" abate; precisa existir entre as
+                        linhas que migram).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'IGNORAR', @Motivo = N'Lançado em dobro no Access';
     -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'DESFAZER';
+    -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'A:M:308074', @Acao = 'ABATER', @LinkVenda = 14662, @Motivo = N'Crédito que abate a parcela 23';
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -50,7 +58,8 @@ CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Gravar]
     @Unidade     VARCHAR(40),
     @Acao        VARCHAR(15),
     @Motivo      NVARCHAR(400) = N'',
-    @LinhasJson  NVARCHAR(MAX) = NULL
+    @LinhasJson  NVARCHAR(MAX) = NULL,
+    @LinkVenda   INT           = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -73,12 +82,19 @@ BEGIN
             SET @Recusa = N'Você não tem permissão para corrigir os casos da migração.';
         IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = @Unidade)
             SET @Recusa = N'Caso não encontrado. Atualize a lista.';
-        IF @Recusa = N'' AND @Acao NOT IN ('CORRIGIR', 'IGNORAR', 'ARQUIVO_MORTO', 'DESFAZER')
+        IF @Recusa = N'' AND @Acao NOT IN ('CORRIGIR', 'IGNORAR', 'ARQUIVO_MORTO', 'ABATER', 'DESFAZER')
             SET @Recusa = N'Ação inválida.';
-        IF @Recusa = N'' AND @Acao IN ('IGNORAR', 'ARQUIVO_MORTO') AND LEN(@Motivo) < 5
+        IF @Recusa = N'' AND @Acao IN ('IGNORAR', 'ARQUIVO_MORTO', 'ABATER') AND LEN(@Motivo) < 5
             SET @Recusa = N'Escreva o motivo da decisão (pelo menos 5 letras).';
         IF @Recusa = N'' AND @Acao = 'CORRIGIR' AND ISJSON(ISNULL(@LinhasJson, N'')) = 0
             SET @Recusa = N'Lista de linhas inválida.';
+        IF @Recusa = N'' AND @Acao = 'ABATER' AND ISNULL(@LinkVenda, 0) <= 0
+            SET @Recusa = N'Informe a venda (parcela) que o crédito abate.';
+        IF @Recusa = N'' AND @Acao = 'ABATER'
+           AND NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.LINK_VENDA = @LinkVenda AND m.DESTINO = 'SISTEMA')
+            SET @Recusa = N'A venda informada não existe entre os documentos que migram.';
+        IF @Recusa = N'' AND @Acao = 'ABATER' AND @Unidade = 'V:' + CONVERT(VARCHAR(20), @LinkVenda)
+            SET @Recusa = N'O documento não pode abater a si mesmo.';
         IF @Recusa <> N''
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID;
@@ -86,6 +102,7 @@ BEGIN
         END;
 
         SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+        IF @Acao <> 'ABATER' SET @LinkVenda = NULL;
 
         IF @Acao = 'CORRIGIR'
         BEGIN
@@ -225,10 +242,11 @@ BEGIN
         ELSE
         BEGIN
             UPDATE MIG.Caso_Correcao
-               SET ACAO = @Acao, MOTIVO = @Motivo, HASH_ACCESS = @HashDoc, DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
-            WHERE UNIDADE = @Unidade AND (ACAO <> @Acao OR MOTIVO <> @Motivo OR ISNULL(HASH_ACCESS, 0x) <> ISNULL(@HashDoc, 0x));
-            INSERT INTO MIG.Caso_Correcao (UNIDADE, ACAO, MOTIVO, HASH_ACCESS, USUARIO_CRIACAO)
-            SELECT @Unidade, @Acao, @Motivo, @HashDoc, @Usuario
+               SET ACAO = @Acao, MOTIVO = @Motivo, HASH_ACCESS = @HashDoc, LINK_VENDA_DESTINO = @LinkVenda, DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+            WHERE UNIDADE = @Unidade AND (ACAO <> @Acao OR MOTIVO <> @Motivo OR ISNULL(HASH_ACCESS, 0x) <> ISNULL(@HashDoc, 0x)
+                                          OR ISNULL(LINK_VENDA_DESTINO, 0) <> ISNULL(@LinkVenda, 0));
+            INSERT INTO MIG.Caso_Correcao (UNIDADE, ACAO, MOTIVO, HASH_ACCESS, LINK_VENDA_DESTINO, USUARIO_CRIACAO)
+            SELECT @Unidade, @Acao, @Motivo, @HashDoc, @LinkVenda, @Usuario
             WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao WHERE UNIDADE = @Unidade);
         END;
         COMMIT TRANSACTION;
@@ -236,6 +254,7 @@ BEGIN
         SELECT CAST(1 AS BIT) AS SUCESSO,
                CAST(CASE @Acao WHEN 'DESFAZER' THEN N'Correções desfeitas: o documento volta a ser como está no Access.'
                                WHEN 'IGNORAR' THEN N'Documento marcado para não migrar.'
+                               WHEN 'ABATER' THEN N'Documento marcado como abatimento da parcela da venda ' + CONVERT(NVARCHAR(20), @LinkVenda) + N'.'
                                ELSE N'Documento marcado para o arquivo morto.' END AS NVARCHAR(400)) AS MENSAGEM,
                CAST(NULL AS BIGINT) AS ID;
     END TRY

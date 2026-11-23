@@ -1,7 +1,7 @@
 ﻿/*******************************************************************************
   Pacote      : 03c2 parte B - auditoria rápida em carga grande (SIS_Auditoria_Trigger_Gerar v1.1, vai para o MASTER) e transformação, tela de casos do movimento do Access em lançamento, parcela, baixa, movimento e transferência; casos e correções (schema MIG, NÃO vai para o MASTER)
   Banco       : SISTEMACMJ_LOCAL (somente desenvolvimento)
-  Gerado em   : 19/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
+  Gerado em   : 23/11/2026 pelo Claude, juntando os arquivos de sql/objetos/
                 na ordem da regra 59. NÃO EDITAR ESTE ARQUIVO: corrigir o
                 arquivo do objeto e gerar o pacote de novo.
   Pré-requisito: pacote 03c2 e sql/local/03c2_Migracao_Cadastros_LOCAL.sql já rodados.
@@ -279,6 +279,7 @@ GO
     v1.1 (16/11/2026) - Etapa 02d: grupos de e-mail, rotinas (sem as colunas
                         de execução) e comandos. Filas e logs não são
                         auditados (têm histórico próprio).
+    v1.2 (22/11/2026) - Etapa 04b (P20): SIS.Lixeira e SIS.Tabela_Config.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -304,6 +305,9 @@ EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'SIS.Rotina',            @Criar 
      @CamposIgnorados = N'PROXIMA_EXECUCAO,SOLICITADA_POR,EM_EXECUCAO,DT_INICIO_EXECUCAO,ULTIMA_EXECUCAO,ULTIMO_RESULTADO,ULTIMA_MENSAGEM';
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'SIS.Comando',           @Criar = 1;
 GO
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'SIS.Lixeira',           @Criar = 1;
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'SIS.Tabela_Config',     @Criar = 1;
+GO
 
 -- =============================================================================
 -- Arquivo: sql/objetos/SIS/Carga_SIS_Comunicado.sql
@@ -323,6 +327,10 @@ GO
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c, boletim semanal da implantação).
+    v1.1 (20/11/2026) - Etapa 03d: a rotina COMUNICADO_PREVIA nasce DESLIGADA fora
+                        do banco de teste (_LOCAL), para o servidor não mandar um
+                        segundo boletim enquanto o notebook manda; o Celso liga
+                        na virada (decisão de 20/11/2026).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -394,7 +402,7 @@ INSERT INTO SIS.Rotina (CODIGO, NOME, DESCRICAO, PROCEDIMENTO, ID_MODULO, FREQUE
                         TEMPO_LIMITE_MINUTOS, ATIVA, PROXIMA_EXECUCAO, USUARIO_CRIACAO)
 SELECT 'COMUNICADO_PREVIA', N'Prévia dos comunicados semanais',
        N'Monta o comunicado da semana (boletim da implantação) e manda a prévia para aprovação. O envio oficial só sai depois de "Aprovar e enviar" na tela Comunicados.',
-       N'SIS.SIS_Comunicado_Previa_Processar', m.ID_MODULO, 'SEMANAL', 0, '09:00', '6', 0, 30, 1,
+       N'SIS.SIS_Comunicado_Previa_Processar', m.ID_MODULO, 'SEMANAL', 0, '09:00', '6', 0, 30, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 1 ELSE 0 END,
        SIS.fn_SIS_Rotina_Proxima('SEMANAL', 0, '09:00', '6', 0, SYSDATETIME()), N'instalacao'
 FROM SIS.Modulo m
 WHERE m.CODIGO = 'SIS'
@@ -485,8 +493,12 @@ GO
                                          motivo da primeira vez). Atualizada a
                                          cada rodada.
                 MIG.Caso_Correcao        decisão por documento, gravada pela
-                                         tela de casos: IGNORAR (não migra) ou
-                                         ARQUIVO_MORTO (vai para o arquivo morto).
+                                         tela de casos: IGNORAR (não migra),
+                                         ARQUIVO_MORTO (vai para o arquivo morto)
+                                         ou ABATER (o documento é um "crédito"
+                                         manual que abate a parcela da venda
+                                         LINK_VENDA_DESTINO: vira baixa só de
+                                         abatimento, sem dinheiro).
                 MIG.Caso_Correcao_Linha  correção por linha do Access (obra,
                                          pessoa, conta, plano, datas, valores,
                                          confirmado, ignorar a linha), aplicada a
@@ -513,6 +525,14 @@ GO
                         o Access mudou ou apagou o que foi corrigido).
     v1.3 (18/11/2026) - Caso_Correcao_Linha.LOTE: troca do lote da linha pela
                         tela (0 = sai do lote; NULL = mantém o do Access).
+    v1.4 (20/11/2026) - Etapa 03d (instalação no servidor): teste do formato
+                        antigo de Caso_Correcao/_Linha com IF aninhado; em banco
+                        novo o SELECT na tabela ainda inexistente dava erro 208.
+    v1.5 (23/11/2026) - Etapa 03f2: ação ABATER em Caso_Correcao (com
+                        LINK_VENDA_DESTINO = venda/parcela do Access que o
+                        "crédito" manual abate). Resposta da Renata de
+                        23/11/2026 (nº 308074 e 308076).
+
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -544,12 +564,17 @@ IF COL_LENGTH(N'MIG.Caso', N'MOTIVO_ORIGINAL') IS NULL
 GO
 
 -- formato antigo (sem ID) e vazio: refaz (a auditoria precisa de chave numérica)
+-- (IF aninhado: o SELECT só é compilado quando a tabela existe; banco novo não dá erro)
 IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NOT NULL AND COL_LENGTH(N'MIG.Caso_Correcao', N'ID_CASO_CORRECAO') IS NULL
-   AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao)
-    DROP TABLE [MIG].[Caso_Correcao];
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao)
+        DROP TABLE [MIG].[Caso_Correcao];
+END;
 IF OBJECT_ID(N'[MIG].[Caso_Correcao_Linha]', N'U') IS NOT NULL AND COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'ID_CASO_CORRECAO_LINHA') IS NULL
-   AND NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha)
-    DROP TABLE [MIG].[Caso_Correcao_Linha];
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha)
+        DROP TABLE [MIG].[Caso_Correcao_Linha];
+END;
 GO
 
 IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NULL
@@ -563,8 +588,10 @@ IF OBJECT_ID(N'[MIG].[Caso_Correcao]', N'U') IS NULL
         USUARIO_CRIACAO    NVARCHAR(100)  NOT NULL,
         DT_ALTERACAO       DATETIME2(0)   NULL,
         USUARIO_ALTERACAO  NVARCHAR(100)  NULL,
+        LINK_VENDA_DESTINO INT            NULL,
         CONSTRAINT UQ_Caso_Correcao_UNIDADE UNIQUE (UNIDADE),
-        CONSTRAINT CK_Caso_Correcao_ACAO CHECK (ACAO IN ('IGNORAR', 'ARQUIVO_MORTO'))
+        CONSTRAINT CK_Caso_Correcao_ACAO CHECK (ACAO IN ('IGNORAR', 'ARQUIVO_MORTO', 'ABATER')),
+        CONSTRAINT CK_Caso_Correcao_ABATER CHECK ((ACAO = 'ABATER' AND LINK_VENDA_DESTINO > 0) OR (ACAO <> 'ABATER' AND LINK_VENDA_DESTINO IS NULL))
     );
 GO
 
@@ -639,6 +666,21 @@ IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'HASH_ACCESS') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD HASH_ACCESS VARBINARY(32) NULL;
 IF COL_LENGTH(N'MIG.Caso_Correcao_Linha', N'LOTE') IS NULL
     ALTER TABLE [MIG].[Caso_Correcao_Linha] ADD LOTE INT NULL CONSTRAINT CK_Caso_Correcao_Linha_LOTE CHECK (LOTE >= 0);
+GO
+
+-- v1.5: abatimento de parcela (ACAO = 'ABATER' + venda de destino)
+IF COL_LENGTH(N'MIG.Caso_Correcao', N'LINK_VENDA_DESTINO') IS NULL
+    ALTER TABLE [MIG].[Caso_Correcao] ADD LINK_VENDA_DESTINO INT NULL;
+GO
+IF EXISTS (SELECT 1 FROM sys.check_constraints k WHERE k.name = N'CK_Caso_Correcao_ACAO' AND k.parent_object_id = OBJECT_ID(N'MIG.Caso_Correcao')
+           AND k.definition NOT LIKE N'%ABATER%')
+    ALTER TABLE [MIG].[Caso_Correcao] DROP CONSTRAINT CK_Caso_Correcao_ACAO;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints k WHERE k.name = N'CK_Caso_Correcao_ACAO' AND k.parent_object_id = OBJECT_ID(N'MIG.Caso_Correcao'))
+    ALTER TABLE [MIG].[Caso_Correcao] ADD CONSTRAINT CK_Caso_Correcao_ACAO CHECK (ACAO IN ('IGNORAR', 'ARQUIVO_MORTO', 'ABATER'));
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints k WHERE k.name = N'CK_Caso_Correcao_ABATER' AND k.parent_object_id = OBJECT_ID(N'MIG.Caso_Correcao'))
+    ALTER TABLE [MIG].[Caso_Correcao] ADD CONSTRAINT CK_Caso_Correcao_ABATER
+        CHECK ((ACAO = 'ABATER' AND LINK_VENDA_DESTINO > 0) OR (ACAO <> 'ABATER' AND LINK_VENDA_DESTINO IS NULL));
 GO
 
 -- busca de linha do Access pelo código (tela de casos e migração); MIG_Movimento_Preparar também cria
@@ -794,6 +836,12 @@ GO
                             e o Caixa contábil da empresa (banco da linha, se
                             houver; senão a conta padrão da obra ou da empresa);
                   CASO      o resto: MIG.Caso, para a tela de correção.
+                  ABATER    documento marcado na tela como "crédito" manual que
+                            abate a parcela de uma venda (MIG.Caso_Correcao,
+                            LINK_VENDA_DESTINO): vira uma baixa só de
+                            abatimento na parcela (VALOR_PRINCIPAL = ABATIMENTO,
+                            líquido zero, sem movimento no banco); a parcela
+                            fica com o saldo real devido.
                 Correções da tela (MIG.Caso_Correcao e Caso_Correcao_Linha) são
                 aplicadas antes da classificação.
                 Situação: linha confirmada = baixa; "efetuado" sem "confirmado"
@@ -833,6 +881,15 @@ GO
     v1.5 (19/11/2026) - Lote novo da migração (900001 em diante); decisões da
                         tela (ignorar / arquivo morto) valem para o documento
                         como ele está depois da troca de lote.
+    v1.6 (23/11/2026) - Etapa 03f2: decisão ABATER (resposta da Renata de
+                        23/11/2026, nº 308074 e 308076): baixa só de abatimento
+                        na parcela da venda de destino, na conta prevista da
+                        parcela (ou no Caixa contábil da empresa), com o nº do
+                        Access e o motivo. Destino inválido (venda que não
+                        migra como conta a receber, já paga, abatimento maior
+                        que a parcela) devolve o documento para a lista de
+                        casos com o motivo. Conferir um documento ABATER
+                        confere também a venda de destino.
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Movimento_Transformar;                 -- prévia
@@ -864,7 +921,7 @@ BEGIN
     DECLARE @Agora        DATETIME2(0) = SYSDATETIME();
 
     BEGIN TRY
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
 
         IF OBJECT_ID(N'MIG.Movimento', N'U') IS NULL
             THROW 50001, N'Rode antes o MIG.MIG_Movimento_Preparar.', 1;
@@ -891,6 +948,13 @@ BEGIN
         WHERE @Filtrar = 1 AND o.LOTE IS NOT NULL
           AND o.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s)
           AND NOT EXISTS (SELECT 1 FROM #Sel s WHERE s.UNIDADE = d.UNIDADE);
+        -- documento que abate uma parcela: confere também a venda de destino
+        INSERT INTO #Sel (UNIDADE, PEDIDO)
+        SELECT DISTINCT 'V:' + CONVERT(VARCHAR(20), cc.LINK_VENDA_DESTINO), 0
+        FROM MIG.Caso_Correcao cc
+        WHERE @Filtrar = 1 AND cc.ACAO = 'ABATER'
+          AND cc.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s)
+          AND NOT EXISTS (SELECT 1 FROM #Sel s WHERE s.UNIDADE = 'V:' + CONVERT(VARCHAR(20), cc.LINK_VENDA_DESTINO));
         IF (@Unidade IS NOT NULL OR @Unidades IS NOT NULL) AND @Filtrar = 0
             THROW 50001, N'Nenhum documento informado para conferir.', 1;
         IF @Filtrar = 1 AND ISNULL(@Executar, 0) = 1
@@ -1179,6 +1243,41 @@ BEGIN
         FROM #U u WHERE EXISTS (SELECT 1 FROM #T t WHERE t.UNIDADE = u.UNIDADE AND t.PAGO = 1 AND t.ID_CONTA_PAG IS NULL AND t.TC_PAG = 'BCO');
         DELETE t FROM #T t INNER JOIN #U u ON u.UNIDADE = t.UNIDADE WHERE u.REGRA = 'CASO';
 
+        -- abatimentos: "crédito" manual do Access que abate a parcela de uma venda
+        SET @EtapaAtual = 'Abatimentos';
+        SELECT cc.UNIDADE, cc.LINK_VENDA_DESTINO AS LINK, cc.MOTIVO AS MOTIVO_TELA, x.NUM, x.DT, x.VALOR,
+               t.ORIGEM AS T_ORIGEM, t.NUM AS T_NUM, t.VALOR AS T_VALOR, t.PAGO AS T_PAGO,
+               COALESCE(t.ID_CONTA_PAG, cx.ID_CONTA) AS ID_CONTA,
+               CAST(N'' AS NVARCHAR(400)) AS ERRO
+        INTO #Ab
+        FROM MIG.Caso_Correcao cc
+        CROSS APPLY (SELECT MIN(m.NUM) AS NUM,
+                            COALESCE(MIN(CASE WHEN m.DT_MOVTO BETWEEN '2000-01-01' AND '2060-12-31' THEN m.DT_MOVTO END), MIN(m.DT_UNIDADE)) AS DT,
+                            SUM(ISNULL(m.VALOR_CREDITO, 0) - ISNULL(m.VALOR_DEBITO, 0)) AS VALOR
+                     FROM MIG.vw_MIG_Linha_Unidade v
+                     INNER JOIN MIG.Movimento m ON m.ORIGEM = v.ORIGEM AND m.NUM = v.NUM
+                     WHERE v.UNIDADE = cc.UNIDADE) x
+        OUTER APPLY (SELECT TOP (1) t.ORIGEM, t.NUM, t.VALOR, t.PAGO, t.ID_CONTA_PAG, t.ID_EMPRESA
+                     FROM #T t
+                     WHERE t.REGRA = 'VENDA' AND t.UNIDADE = 'V:' + CONVERT(VARCHAR(20), cc.LINK_VENDA_DESTINO)
+                     ORDER BY t.NUM) t
+        LEFT JOIN #CxContabil cx ON cx.ID_EMPRESA = t.ID_EMPRESA
+        WHERE cc.ACAO = 'ABATER'
+          AND (@Filtrar = 0 OR cc.UNIDADE IN (SELECT s.UNIDADE FROM #Sel s));
+
+        UPDATE a
+           SET a.ERRO = CASE
+                   WHEN ISNULL(a.VALOR, 0) <= 0 THEN N'Abatimento: o documento não tem valor de crédito'
+                   WHEN a.DT IS NULL THEN N'Abatimento: o documento não tem data'
+                   WHEN a.T_NUM IS NULL THEN N'Abatimento: a venda ' + CONVERT(NVARCHAR(20), a.LINK) + N' não migra como conta a receber'
+                   WHEN a.T_PAGO = 1 THEN N'Abatimento: a parcela da venda ' + CONVERT(NVARCHAR(20), a.LINK) + N' já está paga'
+                   WHEN a.ID_CONTA IS NULL THEN N'Abatimento: a parcela da venda ' + CONVERT(NVARCHAR(20), a.LINK) + N' não tem conta prevista'
+                   WHEN s.TOTAL > a.T_VALOR THEN N'Abatimento maior que a parcela da venda ' + CONVERT(NVARCHAR(20), a.LINK)
+                                                 + N' (' + FORMAT(s.TOTAL, 'N2', 'pt-BR') + N' × ' + FORMAT(a.T_VALOR, 'N2', 'pt-BR') + N')'
+                   ELSE N'' END
+        FROM #Ab a
+        OUTER APPLY (SELECT SUM(ISNULL(b.VALOR, 0)) AS TOTAL FROM #Ab b WHERE b.LINK = a.LINK) s;
+
         -- casos para a tela, mais os documentos que já têm correção da tela
         SET @EtapaAtual = 'Casos';
         SELECT v.UNIDADE, MIN(m.PADRAO) AS PADRAO, COUNT(*) AS N, SUM(m.VALOR_DEBITO) AS D, SUM(m.VALOR_CREDITO) AS C,
@@ -1196,8 +1295,16 @@ BEGIN
         FROM #U u
         WHERE u.REGRA = 'CASO' OR EXISTS (SELECT 1 FROM MIG.Caso_Correcao_Linha o WHERE o.UNIDADE = u.UNIDADE)
         UNION ALL
-        SELECT d.UNIDADE, ISNULL(d.PADRAO, ''), d.ACAO, N'', N'', d.N, d.D, d.C, d.DT
+        SELECT d.UNIDADE, ISNULL(d.PADRAO, ''),
+               CAST(CASE WHEN ISNULL(a.ERRO, N'') <> N'' THEN 'CASO' ELSE d.ACAO END AS VARCHAR(15)),
+               ISNULL(a.ERRO, N''),
+               CAST(CASE WHEN a.UNIDADE IS NOT NULL AND a.ERRO = N''
+                         THEN N'Abate ' + FORMAT(a.VALOR, 'N2', 'pt-BR') + N' da parcela da venda ' + CONVERT(NVARCHAR(20), a.LINK)
+                              + N' (saldo ' + FORMAT(a.T_VALOR - a.VALOR, 'N2', 'pt-BR') + N')'
+                         ELSE N'' END AS NVARCHAR(400)),
+               d.N, d.D, d.C, d.DT
         FROM #Dec d
+        LEFT JOIN #Ab a ON a.UNIDADE = d.UNIDADE
         UNION ALL   -- todas as linhas do documento marcadas "ignorar": o documento fica de fora
         SELECT m.UNIDADE, MIN(m.PADRAO), 'IGNORAR', N'', N'', COUNT(*), SUM(m.VALOR_DEBITO), SUM(m.VALOR_CREDITO), MIN(m.DT_UNIDADE)
         FROM MIG.Movimento m
@@ -1263,7 +1370,7 @@ BEGIN
             LEFT JOIN #U u ON u.UNIDADE = s.UNIDADE
             LEFT JOIN #Rev r ON r.UNIDADE = s.UNIDADE
             ORDER BY s.PEDIDO DESC, s.UNIDADE;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
             RETURN;
         END;
 
@@ -1282,8 +1389,9 @@ BEGIN
                    SUM(CASE WHEN t.PAGO = 1 AND t.ID_CONTA_PAG IS NULL THEN 1 ELSE 0 END) AS PAGO_SEM_CONTA
             FROM #T t GROUP BY t.REGRA, t.TIPO ORDER BY t.REGRA, t.TIPO;
             SELECT 'TRANSFERENCIAS' AS GRADE, r.REGRA, r.TC, COUNT(*) AS QTD, SUM(r.VALOR) AS VALOR FROM #TR r GROUP BY r.REGRA, r.TC;
+            SELECT 'ABATIMENTOS' AS GRADE, a.UNIDADE, a.LINK, a.VALOR, a.T_VALOR AS VALOR_PARCELA, a.T_VALOR - a.VALOR AS SALDO, a.ERRO FROM #Ab a ORDER BY a.UNIDADE;
             SELECT 'CASOS' AS GRADE, c.MOTIVO, COUNT(*) AS DOCUMENTOS, SUM(c.LINHAS) AS LINHAS FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO' GROUP BY c.MOTIVO ORDER BY COUNT(*) DESC;
-            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+            DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
             RETURN;
         END;
 
@@ -1375,6 +1483,18 @@ BEGIN
         LEFT JOIN #MapLote ml ON ml.UNIDADE = t.UNIDADE
         WHERE t.PAGO = 1 AND t.ID_CONTA_PAG IS NOT NULL;
 
+        SET @EtapaAtual = 'Gravação: abatimentos';
+        INSERT INTO FIN.Baixa (ID_PARCELA, DT_PAGAMENTO, ID_CONTA, FORMA, VALOR_PRINCIPAL, ABATIMENTO, ID_MOVIMENTO, COMPENSADO, DT_COMPENSACAO,
+                               OBSERVACAO, ID_LOTE, CODIGO_ACCESS, USUARIO_CRIACAO)
+        SELECT p.ID_PARCELA, a.DT, a.ID_CONTA, 'OUTRA', a.VALOR, a.VALOR, NULL, 1, a.DT,
+               CAST(LEFT(N'Abatimento sem dinheiro: "crédito" do Access nº ' + CONVERT(NVARCHAR(12), a.NUM) + N' (documento ' + a.UNIDADE + N'). '
+                         + ISNULL(a.MOTIVO_TELA, N''), 400) AS NVARCHAR(400)),
+               @IdLoteGeral, a.NUM, @Usuario
+        FROM #Ab a
+        INNER JOIN #MapLanc m ON m.ORIGEM = a.T_ORIGEM AND m.NUM = a.T_NUM
+        INNER JOIN FIN.Parcela p ON p.ID_LANCAMENTO = m.ID_LANCAMENTO
+        WHERE a.ERRO = N'';
+
         SET @EtapaAtual = 'Gravação: transferências';
         CREATE TABLE #MapTr (ORIGEM VARCHAR(20), NUM INT, ID_TRANSFERENCIA BIGINT, PRIMARY KEY (ORIGEM, NUM));
         MERGE FIN.Transferencia AS d
@@ -1414,6 +1534,16 @@ BEGIN
         LEFT JOIN #MapTr mt ON mt.ORIGEM = l.ORIGEM AND mt.NUM = l.NUM
         LEFT JOIN #MapTr mt2 ON mt2.ORIGEM = tb.ORIGEM AND mt2.NUM = tb.NUM;
 
+        INSERT INTO MIG.Linha_Destino (ORIGEM, NUM, UNIDADE, REGRA, PAPEL, ID_LANCAMENTO, ID_MOVIMENTO, ID_TRANSFERENCIA, ID_CONTA, VALOR)
+        SELECT v.ORIGEM, v.NUM, a.UNIDADE, 'ABATER', 'ABATIMENTO', m.ID_LANCAMENTO, NULL, NULL, a.ID_CONTA,
+               ISNULL(mv.VALOR_DEBITO, 0) + ISNULL(mv.VALOR_CREDITO, 0)
+        FROM #Ab a
+        INNER JOIN #MapLanc m ON m.ORIGEM = a.T_ORIGEM AND m.NUM = a.T_NUM
+        INNER JOIN MIG.vw_MIG_Linha_Unidade v ON v.UNIDADE = a.UNIDADE
+        INNER JOIN MIG.Movimento mv ON mv.ORIGEM = v.ORIGEM AND mv.NUM = v.NUM
+        WHERE a.ERRO = N''
+          AND NOT EXISTS (SELECT 1 FROM MIG.Linha_Destino d WHERE d.ORIGEM = v.ORIGEM AND d.NUM = v.NUM);
+
         INSERT INTO MIG.DePara_Venda (ID_LANCAMENTO, ORIGEM, NUM, LINK_VENDA, IMOVEL, PARCEIRO, CONTRATO, NUM_DOC)
         SELECT m.ID_LANCAMENTO, t.ORIGEM, t.NUM, ISNULL(t.LINK_VENDA, 0), t.IMOVEL, t.PAR, ISNULL(t.CONTRATO, ''), CAST(LEFT(ISNULL(t.NUM_DOC, N''), 100) AS NVARCHAR(100))
         FROM #T t INNER JOIN #MapLanc m ON m.ORIGEM = t.ORIGEM AND m.NUM = t.NUM
@@ -1423,7 +1553,7 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
 
         SELECT 'GRAVADO' AS GRADE, r.ORDEM, r.ITEM, r.QTD, r.VALOR
         FROM (
@@ -1434,12 +1564,13 @@ BEGIN
             UNION ALL SELECT 5, N'Movimentos de baixa (banco/caixa)', COUNT(*), SUM(m.VALOR) FROM BANCO.Movimento m INNER JOIN SIS.Lote x ON x.ID_LOTE = m.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO' AND m.TIPO = 'BAIXA'
             UNION ALL SELECT 6, N'Transferências', COUNT(*), SUM(t.VALOR) FROM FIN.Transferencia t INNER JOIN SIS.Lote x ON x.ID_LOTE = t.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO'
             UNION ALL SELECT 7, N'Lotes do Access', COUNT(*) - 1, NULL FROM SIS.Lote x WHERE x.ORIGEM = 'MIGRACAO'
-            UNION ALL SELECT 8, N'Casos para a tela', COUNT(*), SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO'
+            UNION ALL SELECT 8, N'Abatimentos de parcela (sem dinheiro)', COUNT(*), SUM(b.ABATIMENTO) FROM FIN.Baixa b INNER JOIN SIS.Lote x ON x.ID_LOTE = b.ID_LOTE WHERE x.ORIGEM = 'MIGRACAO' AND b.ABATIMENTO > 0
+            UNION ALL SELECT 9, N'Casos para a tela', COUNT(*), SUM(c.VALOR_DEBITO + c.VALOR_CREDITO) FROM MIG.Caso c WHERE c.REGRA_ATUAL = 'CASO'
         ) r ORDER BY r.ORDEM;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel;
+        DROP TABLE IF EXISTS #L, #U, #CentroAdm, #Caixa, #CxContabil, #T, #TR, #MapLote, #MapLanc, #MapParc, #Mov, #MapMov, #MapTr, #Hist, #Dec, #CasoNovo, #Rev, #Sel, #Ab;
         IF XACT_STATE() <> -1
             INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
             VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
@@ -1861,6 +1992,10 @@ GO
                   IGNORAR        o documento não migra (motivo obrigatório);
                   ARQUIVO_MORTO  o documento vai para o arquivo morto (motivo
                                  obrigatório);
+                  ABATER         o documento é um "crédito" manual que abate a
+                                 parcela da venda @LinkVenda (código da venda
+                                 no Access): vira baixa só de abatimento, sem
+                                 dinheiro (motivo obrigatório);
                   DESFAZER       apaga todas as correções e decisões do
                                  documento (volta ao Access).
                 As correções valem em toda nova rodada da migração. Depois de
@@ -1884,10 +2019,14 @@ GO
                         precisa existir no Access. Documento formado por troca
                         de lote também pode ser corrigido (linhas que vieram de
                         outro lote).
+    v1.4 (23/11/2026) - Etapa 03f2: ação ABATER com @LinkVenda (venda/parcela do
+                        Access que o "crédito" abate; precisa existir entre as
+                        linhas que migram).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'IGNORAR', @Motivo = N'Lançado em dobro no Access';
     -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'L:123', @Acao = 'DESFAZER';
+    -- EXEC MIG.MIG_Caso_Gravar @IdUsuario = 1, @Unidade = 'A:M:308074', @Acao = 'ABATER', @LinkVenda = 14662, @Motivo = N'Crédito que abate a parcela 23';
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1898,7 +2037,8 @@ CREATE OR ALTER PROCEDURE [MIG].[MIG_Caso_Gravar]
     @Unidade     VARCHAR(40),
     @Acao        VARCHAR(15),
     @Motivo      NVARCHAR(400) = N'',
-    @LinhasJson  NVARCHAR(MAX) = NULL
+    @LinhasJson  NVARCHAR(MAX) = NULL,
+    @LinkVenda   INT           = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -1921,12 +2061,19 @@ BEGIN
             SET @Recusa = N'Você não tem permissão para corrigir os casos da migração.';
         IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM MIG.Caso c WHERE c.UNIDADE = @Unidade)
             SET @Recusa = N'Caso não encontrado. Atualize a lista.';
-        IF @Recusa = N'' AND @Acao NOT IN ('CORRIGIR', 'IGNORAR', 'ARQUIVO_MORTO', 'DESFAZER')
+        IF @Recusa = N'' AND @Acao NOT IN ('CORRIGIR', 'IGNORAR', 'ARQUIVO_MORTO', 'ABATER', 'DESFAZER')
             SET @Recusa = N'Ação inválida.';
-        IF @Recusa = N'' AND @Acao IN ('IGNORAR', 'ARQUIVO_MORTO') AND LEN(@Motivo) < 5
+        IF @Recusa = N'' AND @Acao IN ('IGNORAR', 'ARQUIVO_MORTO', 'ABATER') AND LEN(@Motivo) < 5
             SET @Recusa = N'Escreva o motivo da decisão (pelo menos 5 letras).';
         IF @Recusa = N'' AND @Acao = 'CORRIGIR' AND ISJSON(ISNULL(@LinhasJson, N'')) = 0
             SET @Recusa = N'Lista de linhas inválida.';
+        IF @Recusa = N'' AND @Acao = 'ABATER' AND ISNULL(@LinkVenda, 0) <= 0
+            SET @Recusa = N'Informe a venda (parcela) que o crédito abate.';
+        IF @Recusa = N'' AND @Acao = 'ABATER'
+           AND NOT EXISTS (SELECT 1 FROM MIG.Movimento m WHERE m.LINK_VENDA = @LinkVenda AND m.DESTINO = 'SISTEMA')
+            SET @Recusa = N'A venda informada não existe entre os documentos que migram.';
+        IF @Recusa = N'' AND @Acao = 'ABATER' AND @Unidade = 'V:' + CONVERT(VARCHAR(20), @LinkVenda)
+            SET @Recusa = N'O documento não pode abater a si mesmo.';
         IF @Recusa <> N''
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID;
@@ -1934,6 +2081,7 @@ BEGIN
         END;
 
         SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+        IF @Acao <> 'ABATER' SET @LinkVenda = NULL;
 
         IF @Acao = 'CORRIGIR'
         BEGIN
@@ -2073,10 +2221,11 @@ BEGIN
         ELSE
         BEGIN
             UPDATE MIG.Caso_Correcao
-               SET ACAO = @Acao, MOTIVO = @Motivo, HASH_ACCESS = @HashDoc, DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
-            WHERE UNIDADE = @Unidade AND (ACAO <> @Acao OR MOTIVO <> @Motivo OR ISNULL(HASH_ACCESS, 0x) <> ISNULL(@HashDoc, 0x));
-            INSERT INTO MIG.Caso_Correcao (UNIDADE, ACAO, MOTIVO, HASH_ACCESS, USUARIO_CRIACAO)
-            SELECT @Unidade, @Acao, @Motivo, @HashDoc, @Usuario
+               SET ACAO = @Acao, MOTIVO = @Motivo, HASH_ACCESS = @HashDoc, LINK_VENDA_DESTINO = @LinkVenda, DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+            WHERE UNIDADE = @Unidade AND (ACAO <> @Acao OR MOTIVO <> @Motivo OR ISNULL(HASH_ACCESS, 0x) <> ISNULL(@HashDoc, 0x)
+                                          OR ISNULL(LINK_VENDA_DESTINO, 0) <> ISNULL(@LinkVenda, 0));
+            INSERT INTO MIG.Caso_Correcao (UNIDADE, ACAO, MOTIVO, HASH_ACCESS, LINK_VENDA_DESTINO, USUARIO_CRIACAO)
+            SELECT @Unidade, @Acao, @Motivo, @HashDoc, @LinkVenda, @Usuario
             WHERE NOT EXISTS (SELECT 1 FROM MIG.Caso_Correcao WHERE UNIDADE = @Unidade);
         END;
         COMMIT TRANSACTION;
@@ -2084,6 +2233,7 @@ BEGIN
         SELECT CAST(1 AS BIT) AS SUCESSO,
                CAST(CASE @Acao WHEN 'DESFAZER' THEN N'Correções desfeitas: o documento volta a ser como está no Access.'
                                WHEN 'IGNORAR' THEN N'Documento marcado para não migrar.'
+                               WHEN 'ABATER' THEN N'Documento marcado como abatimento da parcela da venda ' + CONVERT(NVARCHAR(20), @LinkVenda) + N'.'
                                ELSE N'Documento marcado para o arquivo morto.' END AS NVARCHAR(400)) AS MENSAGEM,
                CAST(NULL AS BIGINT) AS ID;
     END TRY

@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const NOME_SITUACAO = { REVISAR: 'Revisar', PENDENTE: 'Pendente', EM_CORRECAO: 'Em correção', RESOLVIDO: 'Resolvido', IGNORADO: 'Ignorado', ARQUIVO_MORTO: 'Arquivo morto' };
   const NOME_REGRA = {
     LOTE: 'pagamento em lote', VENDA: 'parcela de venda', AVULSO: 'pagamento ou recebimento avulso',
-    TRANSF: 'transferência', TRANSF_PAR: 'transferência', IGNORAR: 'não migra (ignorado)', ARQUIVO_MORTO: 'arquivo morto'
+    TRANSF: 'transferência', TRANSF_PAR: 'transferência', IGNORAR: 'não migra (ignorado)', ARQUIVO_MORTO: 'arquivo morto', ABATER: 'abatimento de parcela (sem dinheiro)'
   };
   const moeda = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
