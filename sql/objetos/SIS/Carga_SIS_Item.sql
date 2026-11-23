@@ -27,6 +27,9 @@
                         "Grupos de e-mail" e "E-mails enviados".
     v1.4 (22/11/2026) - Etapa 04b (P20): tela "Lixeira" (Monitoramento) e ação
                         DESFAZER em Usuários, Perfis e Auditoria (lote).
+    v1.5 (23/11/2026) - Etapa 04c (P22): tela "Versões" (Monitoramento). VER
+                        libera o histórico de atualizações; as notas das
+                        versões são para todos (não dependem de permissão).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -54,7 +57,8 @@ FROM (VALUES
         ('SIS', 'SIS_MONITORAMENTO', 'SIS_LOG_ERRO',      N'Log de erros',        'TELA', 'sis/log-erros.html',   10, 0, 1, ''),
         ('SIS', 'SIS_MONITORAMENTO', 'SIS_AUDITORIA',     N'Auditoria',           'TELA', 'sis/auditoria.html',   20, 0, 1, ''),
         ('SIS', 'SIS_MONITORAMENTO', 'SIS_LOTE',          N'Lotes',               'TELA', 'sis/lotes.html',       30, 0, 1, 'SIS.Lote'),
-        ('SIS', 'SIS_MONITORAMENTO', 'SIS_LIXEIRA',       N'Lixeira',             'TELA', 'sis/lixeira.html',     40, 0, 1, 'SIS.Lixeira,SIS.Tabela_Config')
+        ('SIS', 'SIS_MONITORAMENTO', 'SIS_LIXEIRA',       N'Lixeira',             'TELA', 'sis/lixeira.html',     40, 0, 1, 'SIS.Lixeira,SIS.Tabela_Config'),
+        ('SIS', 'SIS_MONITORAMENTO', 'SIS_VERSOES',       N'Versões',             'TELA', 'sis/versoes.html',     50, 0, 1, '')
      ) v (MODULO, PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS);
 
 DECLARE @Passada INT = 1;
@@ -131,7 +135,9 @@ FROM (VALUES
         ('SIS_LIXEIRA',   'EXPORTAR'),
         ('SIS_USUARIO',   'DESFAZER'),
         ('SIS_PERFIL',    'DESFAZER'),
-        ('SIS_AUDITORIA', 'DESFAZER')
+        ('SIS_AUDITORIA', 'DESFAZER'),
+        ('SIS_VERSOES',   'VER'),
+        ('SIS_VERSOES',   'EXPORTAR')
      ) v (ITEM, ACAO)
 INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
 INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO

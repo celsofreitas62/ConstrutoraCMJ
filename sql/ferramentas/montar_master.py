@@ -9,15 +9,18 @@
 # v1.4 (22/11/2026) - Etapa 04a: pacote 04a (telas de Usuarios e Perfis; banco 1.9).
 # v1.5 (22/11/2026) - Etapa 04b: pacote 04b (desfazer e lixeira, P20; banco 2.0).
 # v1.6 (23/11/2026) - Etapa 04b2: pacote 04b2 (historico padrao das fichas; banco 2.1).
+# v1.7 (23/11/2026) - Etapa 04c: pacote 04c (versoes e notas, P22); gera antes a carga das notas (montar_notas.py).
 # Uso: python3 sql/ferramentas/montar_master.py   (SISTEMACMJ_SQL = pasta sql)
 import os, re, datetime
 BASE = os.environ.get('SISTEMACMJ_SQL', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 # A versao do banco vem de Carga_SIS_Versao.sql (fonte unica).
 VERSAO = re.search(r"@Versao\s+VARCHAR\(20\)\s*=\s*'([0-9.]+)'", open(os.path.join(BASE, 'objetos', 'SIS', 'Carga_SIS_Versao.sql'), encoding='utf-8-sig').read()).group(1)
+import subprocess, sys as _sys
+subprocess.run([_sys.executable, os.path.join(BASE, 'ferramentas', 'montar_notas.py')], check=True, env=dict(os.environ, SISTEMACMJ_SQL=BASE))
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)
-PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2']
+PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2', 'ORDEM_04C']
 ordem = []
 for k in PACOTES:
     for f in ns[k]:
