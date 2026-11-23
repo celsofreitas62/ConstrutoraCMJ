@@ -1,5 +1,5 @@
 ﻿Extração do Access - SistemaCMJ
-Data: 22/11/2026 09:52
+Data: 23/11/2026 10:38
 Access: 16.0   Jet/ACE FE: 4.0   BE: 4.0
 
 Back-end:  23 tabelas, 293 campos, 90 índices, 15 relações
