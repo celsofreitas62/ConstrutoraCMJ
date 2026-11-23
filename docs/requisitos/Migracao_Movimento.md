@@ -193,3 +193,17 @@ Extração nova pelo executor (pedido `extrair_access.pedido`), respostas do 3º
   4. Sala 113 ainda sem confirmação;
   5. os 2 casos com valor em aberto (nº 308074 e 308076, recebimentos parciais da Opera sem banco) continuam pendentes e precisam ser resolvidos antes da virada.
 - **Ajuste no LOCAL**: o `MIG_Movimento_Preparar` v1.2 (índice ORIGEM+NUM, de 19/11) só estava no MASTER de migração, não no LOCAL; aplicado e a rodada refeita. As triggers de auditoria das correções são geradas e diferem só no texto gerado.
+
+## 17. Respostas da Renata à conferência 03f (23/11/2026)
+
+Arquivo: `CashBookCMJ/Conferencia_Migracao_CMJ_03f_RESPONDIDO.docx`.
+
+| # | Ponto | Resposta | O que fazer |
+|---|---|---|---|
+| 1 | Vanderlei, R$ 8.331,00 em 04/10/2024 (nº 277727 × 310158) | **duplicado**: ela apaga o nº 277727 no Access | nada no SisCMJ; vem na cópia nova do Access |
+| 2 | Venda 13514, data do movimento 30/04/2057 | **erro de digitação**: ela corrige para 30/04/2027 no Access | nada no SisCMJ; vem na cópia nova do Access |
+| 3 | R$ 85.000,00 da Holding (nº 310147, 19/11/2026) | **correto**: pagamento feito, confirma no Access quando compensar | nada (regra aprovada: paga e não compensada) |
+| 4 | La Sante Sala 113 / vaga 40 | **vendida**: centro de custo inativo (só histórico). Observação: "a vaga vendida junto com a sala 113 é a 15" | centro `IMO-LS-113` inativo; nome a confirmar com o Celso (vaga 40 × A15) |
+| 5 | nº 308074 (Orival, R$ 5.639,12) e 308076 (Vanessa, R$ 3.331,22) | **parcelas a receber do cliente, ainda não pagas**: contas a receber em aberto | regra na transformação (ou correção na tela de casos) |
+
+**A 3c fecha** com a rodada rápida feita com a cópia nova do Access (itens 1 e 2 corrigidos por ela) e os itens 4 e 5 aplicados.
