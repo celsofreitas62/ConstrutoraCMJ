@@ -236,3 +236,5 @@ Extração do `CashBookCMJ_be.mdb` de 23/11 pelo executor (23 tabelas, 0 erros) 
 - Testes: 03c2c 61/0, 03c2 20/0, 03a 68/0.
 
 **A 3c está fechada.** A migração está pronta e repetível. Na virada (fase 8), basta rodar de novo com a cópia final do Access; as correções e decisões da tela continuam valendo.
+
+**Resposta da Renata (23/11/2026, `Conferencia_Migracao_CMJ_03f2_REPONDIDO.docx`)**: data da venda 13514 corrigida no Access para 30/04/2027 (nº 271407 e 271408); os saldos dos dois abatimentos da Opera não foram contestados. Nada pendente antes da rodada da virada.
