@@ -365,7 +365,7 @@ Avaliação (13/11/2026): **o Celso dá conta sozinho**. É o mesmo tipo de trab
 | 5 | `IMOB` + `VENDA` (empreendimento, unidades, espelho, contrato, parcelas, reajuste) | |
 | 6 | `COBR` Sicredi (remessa, retorno, PDF, e-mail) | |
 | 7 | Relatórios essenciais + ajuda das telas | |
-| 8 | Migração final, roteiro de instalação, **uso em paralelo** com o Access, treinamento do usuário-chave, **virada** | |
+| 8 | Migração final, roteiro de instalação, **uso em paralelo** com o Access, treinamento do usuário-chave, **virada** | Aprovado em 23/11/2026 (03f2): (1) **conferência do saldo devedor por cliente/contrato**, Access × SisCMJ, para a Renata conferir antes da virada; (2) **teste automático da migração** (diferença zero por ano, nenhum caso com valor em aberto pendente) nos testes de homologação |
 | 1.x | Itens de "depois da virada" | |
 
 ## 8. Estrutura da pasta
