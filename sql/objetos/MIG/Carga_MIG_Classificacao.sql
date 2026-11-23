@@ -21,6 +21,9 @@
                         Holding; La Sante Sala 110, Allegro 52 e Giuseppina 12
                         inativos (vendidos), Sala 113 ativa até a CMJ confirmar;
                         grupos 11 a 14 entram no custo de obra.
+    v1.2 (23/11/2026) - Respostas da Renata à conferência 03f: Sala 113
+                        vendida (centro inativo); a vaga vendida junto é a
+                        15 (o Access dizia vaga 40; confirmado pelo Celso).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -135,7 +138,7 @@ MERGE MIG.Classif_Centro_Extra AS d
 USING (VALUES
     ('IMO-LS-110',   N'La Sante - Sala 110 e vaga 9',           'IMOVEL_PROPRIO', 25, 0   , N'contas antigas 460 e 670 (aluguel); vendida (CMJ, 20/11/2026)'),
     ('IMO-LS-112',   N'La Sante - Sala 112 e vaga 10',          'IMOVEL_PROPRIO', 25, NULL, N'conta antiga 461; alugada pela Construtora (CMJ, 20/11/2026)'),
-    ('IMO-LS-113',   N'La Sante - Sala 113 e vaga 40',          'IMOVEL_PROPRIO', 25, 1   , N'conta antiga 462; talvez vendida: ativa até a CMJ confirmar (20/11/2026)'),
+    ('IMO-LS-113',   N'La Sante - Sala 113 e vaga 15',          'IMOVEL_PROPRIO', 25, 0   , N'conta antiga 462 (no Access: vaga 40); vendida com a vaga 15 (CMJ, 23/11/2026)'),
     ('IMO-LS-VAGAS', N'La Sante - Vagas de estacionamento',     'IMOVEL_PROPRIO', 25, NULL, N'conta antiga 463'),
     ('IMO-ALG-13',   N'Allegro - Apto. 13',                     'IMOVEL_PROPRIO', 25, NULL, N'contas antigas 506 e 692 (aluguel)'),
     ('IMO-ALG-52',   N'Allegro - Apto. 52',                     'IMOVEL_PROPRIO', 25, 0   , N'conta antiga 507; vendido (CMJ, 20/11/2026)'),

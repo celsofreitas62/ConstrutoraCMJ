@@ -203,7 +203,7 @@ Arquivo: `CashBookCMJ/Conferencia_Migracao_CMJ_03f_RESPONDIDO.docx`.
 | 1 | Vanderlei, R$ 8.331,00 em 04/10/2024 (nº 277727 × 310158) | **duplicado**: ela apaga o nº 277727 no Access | nada no SisCMJ; vem na cópia nova do Access |
 | 2 | Venda 13514, data do movimento 30/04/2057 | **erro de digitação**: ela corrige para 30/04/2027 no Access | nada no SisCMJ; vem na cópia nova do Access |
 | 3 | R$ 85.000,00 da Holding (nº 310147, 19/11/2026) | **correto**: pagamento feito, confirma no Access quando compensar | nada (regra aprovada: paga e não compensada) |
-| 4 | La Sante Sala 113 / vaga 40 | **vendida**: centro de custo inativo (só histórico). Observação: "a vaga vendida junto com a sala 113 é a 15" | centro `IMO-LS-113` inativo; nome a confirmar com o Celso (vaga 40 × A15) |
+| 4 | La Sante Sala 113 / vaga 40 | **vendida**: centro de custo inativo (só histórico). Observação: "a vaga vendida junto com a sala 113 é a 15" | centro `IMO-LS-113` inativo, nome "La Sante - Sala 113 e vaga 15" (confirmado pelo Celso em 23/11; `Carga_MIG_Classificacao` v1.2, entra na próxima rodada) |
 | 5 | nº 308074 (Orival, R$ 5.639,12) e 308076 (Vanessa, R$ 3.331,22) | **parcelas a receber do cliente, ainda não pagas**: contas a receber em aberto | regra na transformação (ou correção na tela de casos) |
 
 **A 3c fecha** com a rodada rápida feita com a cópia nova do Access (itens 1 e 2 corrigidos por ela) e os itens 4 e 5 aplicados.
