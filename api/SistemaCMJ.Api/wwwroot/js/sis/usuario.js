@@ -103,26 +103,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ---------- Histórico ----------
+  let historico = null;
   async function carregarHistorico() {
-    const corpo = $('linhas-historico');
-    corpo.replaceChildren();
-    const r = await Api.get('/api/sis/usuarios/' + idUsuario + '/historico');
-    if (!r.sucesso) { await Mensagens.tratar(r); linhaVazia(corpo, 6, 'Histórico indisponível.'); return; }
-    historicoCarregado = true;
-    const linhas = r.dados || [];
-    if (!linhas.length) linhaVazia(corpo, 6, 'Nenhuma alteração registrada.');
-    for (const h of linhas) {
-      const tr = Util.el('tr');
-      tr.append(
-        Util.el('td', 'numero', Util.dataHora(h.DT_OPERACAO)),
-        Util.el('td', null, h.USUARIO || ''),
-        Util.el('td', null, h.OPERACAO_NOME || ''),
-        Util.el('td', null, h.CAMPO || (h.OPERACAO === 'A' ? '' : '(registro)')),
-        Util.el('td', 'suave', h.VALOR_ANTES || ''),
-        Util.el('td', null, h.VALOR_DEPOIS || '')
-      );
-      corpo.append(tr);
-    }
+    if (!historico) historico = Historico.criar($('historico'), {
+      item: 'SIS_USUARIO', tabela: 'SIS.Usuario', id: idUsuario, nomeRegistro: 'Usuário', podeDesfazer: acoes.has('DESFAZER'),
+      aoDesfazer: () => { sujo = false; Util.recarregar('/sis/usuario.html?id=' + encodeURIComponent(idUsuario) + '#historico'); }
+    });
+    if (await historico.carregar()) historicoCarregado = true;
   }
 
   // ---------- Cabeçalho e avisos ----------
@@ -233,6 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     Util.recarregar('/sis/usuario.html?id=' + encodeURIComponent(novoId) + (mudancas.length ? '#permissoes' : ''));
   });
   if (idUsuario && location.hash === '#permissoes') abrirAba($('aba-permissoes'));
+  if (idUsuario && location.hash === '#historico') abrirAba($('aba-historico'));
 
   // ---------- Reiniciar senha / desbloquear ----------
   $('botao-reiniciar').addEventListener('click', async () => {

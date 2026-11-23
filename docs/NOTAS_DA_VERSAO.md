@@ -4,6 +4,12 @@ Fonte única das notas de cada versão (o que foi corrigido e o que é novo), em
 O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.txt`; o `atualizar.cmd` mostra e grava no banco (`SIS.Atualizacao`), base da futura tela **Sistema › Versões** (pedido P22).
 **Regra**: toda versão nova ganha a sua seção aqui **antes** de publicar (o publicar recusa pacote sem nota). Título da seção = versão do banco (`## 1.8 (22/11/2026)`). Itens começam por **Novo:**, **Melhoria:** ou **Correção:**.
 
+## 2.1 (23/11/2026)
+- Novo: tela **Lixeira** (Sistema › Monitoramento). Mostra o que foi excluído em cada tela, agrupado por módulo, com **Recuperar**, **Manter mais dias** e **Esvaziar agora**, e a aba **Prazos por tela** (quanto tempo cada tela guarda na lixeira).
+- Novo: tela **Auditoria** (Sistema › Monitoramento), o histórico geral do sistema, com filtros por período, usuário, tabela, registro, operação e lote, e os botões **Desfazer esta operação** e **Desfazer o lote**.
+- Melhoria: a aba **Histórico** das fichas de Pessoa, Usuário e Perfil agora agrupa o que foi gravado junto, tem filtros e os botões **Voltar para como estava aqui** e **Desfazer esta operação**, sempre com prévia e motivo. O histórico da pessoa inclui contatos, dados bancários e vínculos (inclusive os já apagados); o do perfil e do usuário, as permissões.
+- Melhoria: a ficha de Pessoa tem os botões **Desativar** (sai das listas, sem prazo) e **Excluir** (vai para a lixeira); a lista de Pessoas tem o atalho **Lixeira de Pessoas**.
+
 ## 2.0 (22/11/2026)
 - Novo: **lixeira**. O botão Excluir das telas manda o registro para a lixeira, de onde ele pode ser recuperado; depois do prazo (90 dias, ajustável por tela) ele é apagado de vez. Só vai para a lixeira o que não é usado em nenhum lugar; o resto pode ser desativado, como antes.
 - Novo: aviso por e-mail, um dia antes, do que vai ser apagado de vez da lixeira, com a opção de manter por mais alguns dias.

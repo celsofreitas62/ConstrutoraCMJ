@@ -14,6 +14,7 @@
 //                  encerra as sessões);
 //                - usuário novo já nasce com a senha provisória (se quem
 //                  incluiu tem REDEFINIR_SENHA), em vez de ficar sem senha.
+//              Aba Histórico: endpoint geral (HistoricoEndpoints, 04b2).
 // =============================================================================
 using System.Text.Json;
 using SistemaCMJ.Api.Infra;
@@ -40,7 +41,6 @@ public static class UsuarioEndpoints
             ListarPermissoes(null, id, http, banco, logger));
         app.MapPost("/api/sis/usuarios/{id:int}/permissoes", (int id, PermissoesPedido p, HttpContext http, Banco banco, ILogger<Program> logger) =>
             GravarPermissoes(null, id, p, http, banco, logger));
-        app.MapGet("/api/sis/usuarios/{id:int}/historico", HistoricoUsuario);
 
         app.MapGet("/api/sis/perfis", ListarPerfis);
         app.MapGet("/api/sis/perfis/{id:int}", ObterPerfil);
@@ -50,7 +50,6 @@ public static class UsuarioEndpoints
         app.MapPost("/api/sis/perfis/{id:int}/permissoes", (int id, PermissoesPedido p, HttpContext http, Banco banco, ILogger<Program> logger) =>
             GravarPermissoes(id, null, p, http, banco, logger));
         app.MapGet("/api/sis/perfis/{id:int}/usuarios", UsuariosDoPerfil);
-        app.MapGet("/api/sis/perfis/{id:int}/historico", HistoricoPerfil);
     }
 
     // ------------------------------------------------------------------ Usuários
@@ -165,15 +164,6 @@ public static class UsuarioEndpoints
             return resultado.Bool("SUCESSO") ? Resposta.Ok(new { id }, resultado.Texto("MENSAGEM")) : Resposta.Atencao(resultado.Texto("MENSAGEM"));
         });
 
-    private static Task<IResult> HistoricoUsuario(int id, HttpContext http, Banco banco, ILogger<Program> logger) =>
-        Resposta.Rodar(http, banco, logger, async () =>
-        {
-            var usuario = http.Usuario();
-            // As exceções de permissão ficam na tela geral de Auditoria (o registro some ao ser tirado).
-            var alvos = new List<(string Tabela, long Id, string Parte)> { ("SIS.Usuario", id, "Usuário") };
-            return Resposta.Ok(await HistoricoAsync(ItemUsuario, alvos, usuario, banco, http.RequestAborted));
-        });
-
     // ------------------------------------------------------------------ Perfis
 
     private static Task<IResult> ListarPerfis(string? situacao, HttpContext http, Banco banco, ILogger<Program> logger) =>
@@ -233,14 +223,6 @@ public static class UsuarioEndpoints
             return Resposta.Ok(linhas.Where(l => l.Int("ID_PERFIL") == id).ToList());
         });
 
-    private static Task<IResult> HistoricoPerfil(int id, HttpContext http, Banco banco, ILogger<Program> logger) =>
-        Resposta.Rodar(http, banco, logger, async () =>
-        {
-            var usuario = http.Usuario();
-            var alvos = new List<(string Tabela, long Id, string Parte)> { ("SIS.Perfil", id, "Perfil") };
-            return Resposta.Ok(await HistoricoAsync(ItemPerfil, alvos, usuario, banco, http.RequestAborted));
-        });
-
     // ------------------------------------------------------------------ Permissões (perfil ou usuário)
 
     private static Task<IResult> ListarPermissoes(int? idPerfil, int? idUsuarioAlvo, HttpContext http, Banco banco, ILogger<Program> logger) =>
@@ -275,31 +257,4 @@ public static class UsuarioEndpoints
                 ? Resposta.Ok(new { qtd = resultado.Int("QTD_ALTERADA") }, resultado.Texto("MENSAGEM"))
                 : Resposta.Atencao(resultado.Texto("MENSAGEM"));
         });
-
-    // ------------------------------------------------------------------ Histórico (aba)
-
-    private static async Task<List<Linha>> HistoricoAsync(string item, List<(string Tabela, long Id, string Parte)> alvos, Contexto usuario, Banco banco, CancellationToken ct)
-    {
-        var todas = new List<Linha>();
-        foreach (var (tabela, idRegistro, parte) in alvos)
-        {
-            var linhas = await banco.ExecutarAsync("SIS.SIS_Auditoria_Registro_Listar", new Dictionary<string, object?>
-            {
-                ["IdUsuario"] = usuario.IdUsuario,
-                ["Item"] = item,
-                ["Tabela"] = tabela,
-                ["IdRegistro"] = idRegistro
-            }, usuario, ct);
-            // Senha: nunca mostra hash, salt nem iterações; fica só "Senha definida em" (DT_SENHA).
-            linhas = linhas.Where(l => l.Texto("CAMPO").ToUpperInvariant() is not ("SENHA_HASH" or "SENHA_SALT" or "SENHA_ITERACOES" or "SENHA_ALGORITMO")).ToList();
-            foreach (var linha in linhas)
-            {
-                linha["PARTE"] = parte;
-                if (linha.Texto("CAMPO").Equals("DT_SENHA", StringComparison.OrdinalIgnoreCase))
-                    linha["CAMPO"] = "Senha definida em";
-            }
-            todas.AddRange(linhas);
-        }
-        return todas.OrderByDescending(l => l.Long("ID_AUDITORIA")).Take(500).ToList();
-    }
 }

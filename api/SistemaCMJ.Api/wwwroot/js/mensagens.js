@@ -11,6 +11,10 @@
      Mensagens.confirmar(titulo, texto, botao) janela Confirmar/Cancelar -> true/false
      Mensagens.concluido(texto)             janela com OK: registro gravado (todas as telas)
      Mensagens.sucesso(texto)               aviso discreto que some sozinho
+     Mensagens.pedirTexto(titulo, texto, {rotulo, botao, obrigatorio, minimo,
+                          tipo, valor, dica})   janela com um campo (ex.: motivo,
+                                            número de dias) -> texto ou null
+                                            se cancelar (04b2, 23/11/2026)
      Mensagens.tratar(resposta, {foco})     resposta da API: mostra a janela se
                                             não deu certo; devolve true/false
    ========================================================================== */
@@ -141,5 +145,67 @@ const Mensagens = (() => {
     return false;
   }
 
-  return { alerta, confirmar, concluido, sucesso, tratar };
+  function pedirTexto(titulo, texto, opcoes = {}) {
+    const { rotulo = 'Motivo', botao = 'Confirmar', obrigatorio = false, minimo = 3, tipo = 'text', valor = '', dica = '' } = opcoes;
+    return enfileirar(() => new Promise((resolver) => {
+      const janela = document.createElement('dialog');
+      janela.className = 'janela';
+      janela.setAttribute('aria-labelledby', 'janela-titulo');
+      const topo = document.createElement('div');
+      topo.className = 'janela-topo';
+      const spanIcone = document.createElement('span');
+      spanIcone.innerHTML = ICONES.PERGUNTA;
+      const h2 = document.createElement('h2');
+      h2.id = 'janela-titulo';
+      h2.textContent = titulo;
+      topo.append(spanIcone, h2);
+      const p = document.createElement('p');
+      p.className = 'janela-texto';
+      p.textContent = texto;
+      const rot = document.createElement('label');
+      rot.className = 'campo janela-campo';
+      rot.textContent = rotulo + (obrigatorio ? ' *' : '');
+      if (dica) rot.dataset.dica = dica;
+      const campo = document.createElement(tipo === 'textarea' ? 'textarea' : 'input');
+      if (tipo !== 'textarea') campo.type = tipo;
+      if (tipo === 'number') { campo.min = '1'; campo.step = '1'; }
+      campo.maxLength = 400;
+      campo.value = valor;
+      rot.append(campo);
+      const erro = document.createElement('div');
+      erro.className = 'aviso-revisar';
+      erro.hidden = true;
+      const barra = document.createElement('div');
+      barra.className = 'janela-botoes';
+      const cancelar = document.createElement('button');
+      cancelar.type = 'button';
+      cancelar.className = 'botao';
+      cancelar.textContent = 'Cancelar';
+      const ok = document.createElement('button');
+      ok.type = 'button';
+      ok.className = 'botao botao-principal';
+      ok.textContent = botao;
+      barra.append(cancelar, ok);
+      const fechar = (v) => { janela.close(); janela.remove(); resolver(v); };
+      cancelar.addEventListener('click', () => fechar(null));
+      ok.addEventListener('click', () => {
+        const v = campo.value.trim();
+        if (obrigatorio && v.length < minimo) {
+          erro.textContent = tipo === 'number' ? 'Informe o número.' : 'Escreva pelo menos ' + minimo + ' letras.';
+          erro.hidden = false;
+          campo.focus();
+          return;
+        }
+        fechar(v);
+      });
+      campo.addEventListener('keydown', (e) => { if (e.key === 'Enter' && tipo !== 'textarea') { e.preventDefault(); ok.click(); } });
+      janela.addEventListener('cancel', (e) => { e.preventDefault(); fechar(null); });
+      janela.append(topo, p, rot, erro, barra);
+      document.body.append(janela);
+      janela.showModal();
+      campo.focus();
+    }));
+  }
+
+  return { alerta, confirmar, concluido, sucesso, tratar, pedirTexto };
 })();

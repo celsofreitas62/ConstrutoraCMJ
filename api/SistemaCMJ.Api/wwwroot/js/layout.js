@@ -15,6 +15,8 @@
                Layout.iniciar() devolve { sessao, acoes } -- acoes = ações
                permitidas na tela (Set: VER, INCLUIR, ALTERAR, EXCLUIR...),
                para esconder os botões (a procedure confere de novo).
+               Layout.acoesDe(caminho) = ações em OUTRA tela do menu (ex.: o
+               atalho "Lixeira desta tela" só aparece para quem vê a Lixeira).
    ========================================================================== */
 'use strict';
 
@@ -240,5 +242,11 @@ const Layout = (() => {
     return { sessao, acoes };
   }
 
-  return { iniciar, aplicarIdentidade };
+  /** Ações permitidas numa tela do menu (vazio = não vê ou não está pronta). Usar depois do iniciar(). */
+  function acoesDe(caminho) {
+    const tela = [...nos.values()].find((n) => n.TIPO === 'TELA' && n.CAMINHO === caminho);
+    return new Set(tela ? (tela.ACOES || '').split(',').filter(Boolean) : []);
+  }
+
+  return { iniciar, aplicarIdentidade, acoesDe };
 })();

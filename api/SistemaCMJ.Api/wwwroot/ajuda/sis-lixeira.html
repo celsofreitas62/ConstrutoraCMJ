@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Lixeira</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> ver o que foi excluído nas telas do sistema, recuperar o que foi excluído por engano e cuidar de quando cada coisa é apagada de vez.</p>
+  <h2>Como funciona a lixeira</h2>
+  <ul>
+    <li>O botão <strong>Excluir</strong> das telas manda o registro para cá. Ele some de todas as telas, mas pode ser recuperado até o prazo acabar.</li>
+    <li>Passado o prazo (padrão: 90 dias), uma rotina diária apaga de vez. A cópia completa fica para sempre no histórico (tela Auditoria).</li>
+    <li>Um dia antes, sai um e-mail para o grupo <strong>LIXEIRA_AVISO</strong> (ajustável em Sistema › Grupos de e-mail) com o que vai ser apagado. Na lista, esses registros aparecem com a marca <strong>apaga logo</strong>.</li>
+    <li>Só vai para a lixeira o que não é usado em nenhum lugar. O que é usado pode ser <strong>desativado</strong> (botão Desativar das telas), que não tem prazo.</li>
+    <li>Enquanto estiver na lixeira, o registro continua ocupando o código e o documento (CPF/CNPJ). Para cadastrar outro igual, recupere ou esvazie antes.</li>
+    <li>Cada pessoa só vê aqui as telas que pode ver no sistema.</li>
+  </ul>
+  <h2>Aba Registros</h2>
+  <ul>
+    <li><strong>Filtros</strong>: módulo, tela, período da exclusão, quem excluiu, texto (descrição ou motivo) e situação (na lixeira, recuperados, apagados de vez ou todos). A lista fica agrupada por módulo, com o total de cada um.</li>
+    <li><strong>Recuperar</strong>: o registro volta para as telas como estava antes de ser excluído (ativo ou desativado). É recusado se já existir outro cadastro com o mesmo documento ou código, ou se ele depende de outro registro que também está na lixeira (recupere esse primeiro).</li>
+    <li><strong>Manter mais…</strong>: adia o dia em que o registro é apagado de vez, sem tirar da lixeira.</li>
+    <li><strong>Esvaziar agora</strong>: marque os registros e clique para apagar de vez sem esperar o prazo. Não tem volta. Se algum passou a ser usado em outro lugar, ele não é apagado e você é avisado.</li>
+    <li>Cada botão aparece só para quem tem a permissão: Recuperar, Alterar (manter mais dias) e Esvaziar.</li>
+  </ul>
+  <h2>Aba Prazos por tela</h2>
+  <ul>
+    <li>Quantos dias o que for excluído em cada tela fica na lixeira. Em branco = vale o prazo geral (parâmetro do sistema).</li>
+    <li>O prazo novo vale para o que for excluído daqui em diante; o que já está na lixeira não muda (use Manter mais… se precisar).</li>
+  </ul>
+  <h2>Atalho nas listas</h2>
+  <ul>
+    <li>As listas (ex.: Pessoas) têm o atalho <strong>Lixeira de …</strong>, que abre esta tela já filtrada naquela tela.</li>
+  </ul>
+</body>
+</html>

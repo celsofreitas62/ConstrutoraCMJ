@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Lixeira</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/sis/lixeira.js" defer></script>
+</head>
+<body data-tela="sis/lixeira.html" data-ajuda="sis-lixeira" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Sistema › Monitoramento › Lixeira</div>
+          <h1>Lixeira</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button data-dica="Apaga de vez os registros marcados, sem esperar o prazo. Não tem volta (a cópia fica só no histórico). Pede confirmação." type="button" class="botao botao-perigo" id="botao-esvaziar" hidden>Esvaziar agora</button>
+        <button data-dica="Busca de novo a lista." type="button" class="botao" id="botao-atualizar">Atualizar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="abas" role="tablist" aria-label="Partes da tela">
+        <button type="button" class="aba" role="tab" id="aba-lista" aria-controls="painel-lista" aria-selected="true">Registros</button>
+        <button type="button" class="aba" role="tab" id="aba-prazos" aria-controls="painel-prazos" aria-selected="false">Prazos por tela</button>
+      </div>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <section class="painel-aba" role="tabpanel" id="painel-lista" aria-labelledby="aba-lista">
+            <form class="filtros" id="filtros" role="search">
+              <label data-dica="Mostra só um módulo do sistema (ex.: Cadastros)." class="campo f-1">Módulo
+                <select id="modulo"><option value="">Todos</option></select>
+              </label>
+              <label data-dica="Mostra só os registros de uma tela (ex.: Pessoas)." class="campo f-1">Tela
+                <select id="tela"><option value="">Todas</option></select>
+              </label>
+              <label data-dica="Mostra só o que foi excluído a partir desta data. Opcional." class="campo f-1">Excluído de
+                <input type="date" id="inicio">
+              </label>
+              <label data-dica="Mostra só o que foi excluído até esta data. Opcional." class="campo f-1">até
+                <input type="date" id="fim">
+              </label>
+              <label data-dica="Login de quem excluiu (exato). Opcional." class="campo f-1">Quem excluiu
+                <input id="usuario" maxlength="100" autocomplete="off">
+              </label>
+              <label data-dica="Parte da descrição do registro ou do motivo. A lista atualiza sozinha." class="campo f-1">Texto
+                <input type="search" id="texto" maxlength="100" autocomplete="off" placeholder="Ex.: ribeiro">
+              </label>
+              <label data-dica="Na lixeira (pode recuperar), recuperados, apagados de vez ou todos." class="campo f-1">Situação
+                <select id="situacao">
+                  <option value="LIXEIRA">Na lixeira</option>
+                  <option value="RECUPERADO">Recuperados</option>
+                  <option value="APAGADO">Apagados de vez</option>
+                  <option value="TODOS">Todos</option>
+                </select>
+              </label>
+            </form>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead>
+                  <tr>
+                    <th scope="col" class="celula-marca" id="col-marca" hidden><label class="marcar-coluna" data-dica="Marca ou desmarca todos os que estão na lista (para Esvaziar agora)."><input type="checkbox" id="marcar-todos" aria-label="Marcar todos"></label></th>
+                    <th scope="col">Tela</th>
+                    <th scope="col">Registro</th>
+                    <th scope="col">Excluído</th>
+                    <th scope="col">Motivo</th>
+                    <th scope="col">Apaga de vez em</th>
+                    <th scope="col">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="linhas"></tbody>
+              </table>
+            </div>
+            <div class="rodape-lista">
+              <span id="contagem" aria-live="polite"></span>
+              <span id="nota-prazo"></span>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-prazos" aria-labelledby="aba-prazos" hidden>
+            <span class="suave" id="nota-geral"></span>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead>
+                  <tr><th scope="col">Módulo</th><th scope="col">Tela</th><th scope="col">Prazo próprio (dias)</th><th scope="col">Prazo que vale</th><th scope="col">Na lixeira agora</th><th scope="col"></th></tr>
+                </thead>
+                <tbody id="linhas-prazos"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

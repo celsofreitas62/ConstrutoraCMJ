@@ -9,6 +9,7 @@
   <script src="/js/mensagens.js" defer></script>
   <script src="/js/dicas.js" defer></script>
   <script src="/js/layout.js" defer></script>
+  <script src="/js/historico.js" defer></script>
   <script src="/js/sis/permissoes.js" defer></script>
   <script src="/js/sis/situacao-senha.js" defer></script>
   <script src="/js/sis/perfil.js" defer></script>
@@ -70,13 +71,7 @@
           </section>
 
           <section class="painel-aba" role="tabpanel" id="painel-historico" aria-labelledby="aba-historico" hidden>
-            <span class="suave">Quem mudou o quê e quando neste perfil. Somente consulta: ninguém altera o histórico. As permissões marcadas e desmarcadas aparecem na tela de Auditoria.</span>
-            <div class="rolagem">
-              <table class="tabela tabela-larga">
-                <thead><tr><th scope="col">Data e hora</th><th scope="col">Usuário</th><th scope="col">Operação</th><th scope="col">Campo</th><th scope="col">Antes</th><th scope="col">Depois</th></tr></thead>
-                <tbody id="linhas-historico"></tbody>
-              </table>
-            </div>
+            <div id="historico"></div>
           </section>
         </form>
         <aside class="cartao ajuda" id="ajuda" hidden></aside>

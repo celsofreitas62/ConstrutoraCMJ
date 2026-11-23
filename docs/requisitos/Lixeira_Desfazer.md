@@ -55,3 +55,18 @@ Banco e programa **2.0**, pacote `sql/pacotes/04b_SIS_LOCAL.sql`, MASTER v2.0, t
 
 Observação de teste: dentro de uma transação só (testes SQL), "operação" e "ponto do histórico por operação" juntam tudo; o teste usa o ponto por data/hora e lotes. O modo por operação será conferido pela tela (04b2).
 
+## 7. Feito na 04b2 (23/11/2026)
+
+Banco e programa **2.1** (pacote `sql/pacotes/04b2_SIS_LOCAL.sql`, MASTER v2.1, teste `sql/testes/SIS/04b2_Homologacao_Historico.sql` 10/0 no LOCAL e no ensaio).
+
+| Peça | O que é |
+|---|---|
+| `SIS.SIS_Historico_Listar` | aba Histórico de todas as fichas: o registro e as filhas que vão junto (inclusive já apagadas), com `TRANSACAO`, `PRINCIPAL` e `DESCRICAO` (tela › ação nas permissões) |
+| `SIS_Auditoria_Registro_Listar` / `SIS_Auditoria_Listar` v1.1 | devolvem `TRANSACAO` (e `TELA_NOME` na geral) |
+| `Endpoints/HistoricoEndpoints.cs` | `/api/sis/historico` (+ `/previa`, `/desfazer`), `/api/sis/lixeira` (+ `/excluir`, `/{id}/recuperar`, `/{id}/manter`, `/esvaziar`, `/prazos`), `/api/sis/auditoria`; `SENHA_*` nunca sai |
+| `js/historico.js` | componente único: aba Histórico (filtros, agrupada por operação, Voltar para como estava aqui, Desfazer esta operação) e a prévia do desfazer (também usada pela Auditoria) |
+| `sis/lixeira.html` | Lixeira (Registros + Prazos por tela; `?item=` abre filtrada) |
+| `sis/auditoria.html` | histórico geral com desfazer operação e lote (`?lote=`, `?tabela=`, `?id=`) |
+| Ficha de Pessoa | Desativar/Reativar (DESATIVAR), Excluir (lixeira); na lixeira abre só para consulta |
+
+Testes das telas 15/0, com o passo novo "desfazer a gravação pela aba Histórico" (confere o modo OPERACAO pelo caminho real, pendência da 04b-A).

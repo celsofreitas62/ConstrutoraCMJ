@@ -29,7 +29,9 @@ Conferência dos exemplos da CMJ: 4.502,5477 ÷ 3.896,2883 = 1,15559921 (8 casas
 | Variação | podem ser diferentes por cliente (padrão em parâmetro, exceção no contrato) |
 | Parcela paga em atraso | o boleto mantém o reajuste do mês do vencimento; calculam-se multa e juros; o cliente pode pedir acerto ou reparcelamento (renegociação, seção 3.3 item 6 do CLAUDE.md) |
 
-## 3. Boletos (Sicredi, CNAB 400)
+## 3. Boletos (Sicredi, CNAB 240 desde 23/11/2026; antes CNAB 400)
+
+> **23/11/2026**: o Sicredi liberou a **troca de arquivos** com o layout **CNAB 240** (tela "Importar Arquivos" do internet banking: meio Sicredi Internet, respeita sequencial do arquivo, sequencial do último arquivo enviado = 0, valida CEP, até 30 MB por arquivo, enviado depois das 19h é processado no dia seguinte). O que abaixo cita o CNAB 400 vale como regra de negócio; o layout passa a ser o 240. **Falta o manual CNAB 240 do Sicredi.**
 
 | Empresa | Cooperativa | Posto | Conta | Beneficiário |
 |---|---|---|---|---|
@@ -42,7 +44,7 @@ Conferência dos exemplos da CMJ: 4.502,5477 ÷ 3.896,2883 = 1,15559921 (8 casas
 - **Baixa** do boleto vencido: manual, pelo operador do financeiro (no SisCMJ: botão de baixa/cancelamento que gera a instrução de baixa na remessa).
 - Quem envia o boleto ao cliente: **a CMJ** (no SisCMJ: e-mail com o PDF, item 4 da seção 1).
 - **Boleto híbrido com QR Code PIX**: sim (registro tipo 8 do CNAB 400 e leitura obrigatória do tipo 8 no retorno).
-- Troca de arquivos CNAB 400: a CMJ vai pedir a liberação ao gerente para as contas de cobrança.
+- Troca de arquivos: ~~CNAB 400, a CMJ vai pedir a liberação~~ **liberada em 23/11/2026 no CNAB 240**.
 - Manual: `Manuais Sicredi/` (CNAB 400 versão 3.0, fev/2026, e guia da cobrança no internet banking).
 
 ## 4. Empresas e RET

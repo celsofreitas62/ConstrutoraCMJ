@@ -25,12 +25,13 @@
                       1.8 (22/11/2026) atualização em um clique (SIS.Atualizacao, SIS_Atualizacao_Registrar).
                       1.9 (22/11/2026) telas de Usuários e Perfis (senha provisória que vence, perfis Financeiro e Consulta).
                       2.0 (22/11/2026) histórico padrão: desfazer pela auditoria e lixeira (P20, etapa 04b).
+                      2.1 (23/11/2026) telas da lixeira, do histórico e da auditoria (P20, etapa 04b2).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '2.0';
+DECLARE @Versao VARCHAR(20) = '2.1';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;

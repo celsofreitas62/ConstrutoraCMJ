@@ -14,6 +14,8 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (23/11/2026) - Etapa 04b2: devolve TRANSACAO (agrupa o que foi gravado
+                        junto; a aba Histórico desfaz por operação).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Auditoria_Registro_Listar @IdUsuario = 2, @Item = 'SIS_PARAMETRO', @Tabela = N'SIS.Parametro', @IdRegistro = 1;
@@ -55,7 +57,8 @@ BEGIN
                a.USUARIO,
                a.ESTACAO,
                a.ORIGEM,
-               a.ID_LOTE
+               a.ID_LOTE,
+               a.TRANSACAO
         FROM SIS.Auditoria a WITH (NOLOCK)
         WHERE a.TABELA = @Tabela
           AND a.ID_REGISTRO = @IdRegistro

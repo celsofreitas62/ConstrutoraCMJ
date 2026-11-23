@@ -11,7 +11,10 @@
 //                   de JavaScript e nenhuma chamada da API responde 500;
 //                3) gravar um registro de teste de verdade, pelo caminho do
 //                   usuário (usuário "teste.automatico", inativo, só LOCAL):
-//                   Gravar -> "Gravar?" -> Confirmar -> "Concluído".
+//                   Gravar -> "Gravar?" -> Confirmar -> "Concluído";
+//                4) desfazer essa gravação pela aba Histórico (04b2, 23/11/2026):
+//                   "Desfazer esta operação" -> prévia -> motivo -> "Concluído"
+//                   e o nome volta a ser o de antes.
 //              Resultado: uma linha por conferência, "RESULTADO: OK" ou
 //              "RESULTADO: FALHAS (n)" no fim; código de saída = falhas.
 //              Foto da tela em cada falha em %LOCALAPPDATA%\SistemaCMJ\testes_telas.
@@ -132,6 +135,8 @@ errosJs.Clear();
 errosApi.Clear();
 relogio.Restart();
 var motivoGravar = "";
+var nomeAntes = "";
+var idTeste = 0;
 try
 {
     var busca = await Api("/api/sis/usuarios?busca=" + Uri.EscapeDataString(loginGravacao) + "&situacao=TODOS");
@@ -139,6 +144,8 @@ try
         .Where(u => u.GetProperty("LOGIN").GetString() == loginGravacao).Select(u => u.GetProperty("ID_USUARIO").GetInt32()).FirstOrDefault();
     await pagina.GotoAsync(endereco + "/sis/usuario.html" + (idExistente > 0 ? "?id=" + idExistente : ""), new() { WaitUntil = WaitUntilState.NetworkIdle });
     if (idExistente == 0) await pagina.Locator("#login").FillAsync(loginGravacao);
+    idTeste = idExistente;
+    nomeAntes = (await pagina.Locator("#nome").InputValueAsync()).Trim();
     var nome = "Teste automatico das telas " + DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
     await pagina.Locator("#nome").FillAsync(nome);
     await pagina.Locator("#perfil").SelectOptionAsync(new SelectOptionValue { Label = "Consulta" });
@@ -167,6 +174,41 @@ try
 catch (Exception erro) { motivoGravar = erro.Message.Split('\n')[0]; }
 Linha(motivoGravar.Length == 0, "gravar usuario de teste " + loginGravacao + " (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivoGravar);
 if (motivoGravar.Length > 0) await Foto("gravar");
+
+// ---------------------------------------------------------------- 4) Desfazer pela aba Histórico
+if (motivoGravar.Length == 0 && idTeste > 0)
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    relogio.Restart();
+    var motivoDesfazer = "";
+    try
+    {
+        await pagina.Locator("#aba-historico").ClickAsync();
+        var botaoDesfazer = pagina.Locator("#historico tr.linha-grupo").First.Locator("button", new() { HasText = "Desfazer esta operação" });
+        await botaoDesfazer.WaitForAsync(new() { Timeout = 10000 });
+        await botaoDesfazer.ClickAsync();
+        await pagina.Locator("dialog.janela textarea").WaitForAsync(new() { Timeout = 10000 });
+        await pagina.Locator("dialog.janela textarea").FillAsync("teste automatico das telas");
+        await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+        await pagina.WaitForFunctionAsync("() => { const h = document.querySelector('dialog.janela h2'); return h && (h.textContent === 'Concluído' || h.textContent === 'Atenção' || h.textContent === 'Erro'); }", null, new() { Timeout = 15000 });
+        var resposta = await JanelaAberta();
+        if (resposta?.Titulo != "Concluído") motivoDesfazer = "janela \"" + resposta?.Titulo + "\": " + resposta?.Texto;
+        else
+        {
+            await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await pagina.WaitForTimeoutAsync(500);
+            var voltou = (await pagina.Locator("#nome").InputValueAsync()).Trim();
+            if (voltou != nomeAntes) motivoDesfazer = "depois de desfazer, o nome e \"" + voltou + "\" (esperado \"" + nomeAntes + "\")";
+        }
+        if (motivoDesfazer.Length == 0 && errosJs.Count > 0) motivoDesfazer = "erro de JavaScript: " + errosJs[0];
+        if (motivoDesfazer.Length == 0 && errosApi.Count > 0) motivoDesfazer = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivoDesfazer = erro.Message.Split('\n')[0]; }
+    Linha(motivoDesfazer.Length == 0, "desfazer a gravacao pela aba Historico (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivoDesfazer);
+    if (motivoDesfazer.Length > 0) await Foto("desfazer");
+}
 
 // ---------------------------------------------------------------- Fim
 try { await pagina.EvaluateAsync("() => fetch('/api/logout', { method: 'POST', headers: { 'X-CMJ': '1' } })"); } catch { }

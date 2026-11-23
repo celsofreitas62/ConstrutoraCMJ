@@ -9,6 +9,7 @@
   <script src="/js/mensagens.js" defer></script>
   <script src="/js/dicas.js" defer></script>
   <script src="/js/layout.js" defer></script>
+  <script src="/js/historico.js" defer></script>
   <script src="/js/cad/pessoa.js" defer></script>
 </head>
 <body data-tela="cad/pessoa.html" data-menu="cad/pessoas.html" data-ajuda="cad-pessoa" data-exige-tela>
@@ -22,7 +23,8 @@
           <h1 id="titulo">Nova pessoa</h1>
           <div class="subtitulo" id="subtitulo"></div>
         </div>
-        <button data-dica="Desativa a pessoa: some das listas de escolha, mas continua no histórico." type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
+        <button data-dica="Manda a pessoa para a lixeira (some de todas as telas; pode ser recuperada na Lixeira até o prazo acabar). Só dá para excluir quem não é usado em nenhum lugar; senão, use Desativar. Pede confirmação." type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
+        <button data-dica="Desativa a pessoa: some das listas de escolha, mas continua nos lançamentos e no histórico. Sem prazo; dá para reativar quando quiser. Pede confirmação." type="button" class="botao" id="botao-desativar" hidden>Desativar</button>
         <button data-dica="Volta a pessoa para as listas de escolha." type="button" class="botao" id="botao-reativar" hidden>Reativar</button>
         <button data-dica="Volta para a lista sem gravar (avisa se houver alteração)." type="button" class="botao" id="botao-cancelar">Cancelar</button>
         <button data-dica="Grava tudo de uma vez (dados, contatos, contas e vínculos). Pede confirmação antes." type="submit" form="ficha" class="botao botao-principal" id="botao-gravar" hidden>Gravar</button>
@@ -30,6 +32,7 @@
       </div>
 
       <div class="aviso-faixa" id="aviso-documento" role="note" hidden></div>
+      <div class="aviso-faixa" id="aviso-lixeira" role="note" hidden></div>
 
       <div class="abas" role="tablist" aria-label="Partes da ficha">
         <button type="button" class="aba" role="tab" id="aba-dados" aria-controls="painel-dados" aria-selected="true">Dados principais</button>
@@ -182,13 +185,7 @@
           </section>
 
           <section class="painel-aba" role="tabpanel" id="painel-historico" aria-labelledby="aba-historico" hidden>
-            <span class="suave">Quem mudou o quê e quando nesta pessoa. Somente consulta: ninguém altera o histórico.</span>
-            <div class="rolagem">
-              <table class="tabela tabela-larga">
-                <thead><tr><th scope="col">Data e hora</th><th scope="col">Usuário</th><th scope="col">Parte</th><th scope="col">Operação</th><th scope="col">Campo</th><th scope="col">Antes</th><th scope="col">Depois</th></tr></thead>
-                <tbody id="linhas-historico"></tbody>
-              </table>
-            </div>
+            <div id="historico"></div>
           </section>
         </form>
         <aside class="cartao ajuda" id="ajuda" hidden></aside>

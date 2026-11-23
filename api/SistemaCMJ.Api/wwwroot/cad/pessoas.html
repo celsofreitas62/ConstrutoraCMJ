@@ -21,6 +21,7 @@
           <div class="caminho">Cadastros › Pessoas</div>
           <h1>Pessoas</h1>
         </div>
+        <a data-dica="Abre a Lixeira já filtrada nas pessoas excluídas (recuperar ou ver quando serão apagadas de vez)." class="link-lixeira" href="/sis/lixeira.html?item=CAD_PESSOA" id="link-lixeira" hidden>Lixeira de Pessoas</a>
         <button data-dica="Baixa a lista que está na tela num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
         <a data-dica="Abre a ficha em branco para cadastrar uma pessoa nova." class="botao botao-principal" href="/cad/pessoa.html" id="botao-incluir" hidden>+ Incluir</a>
         <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
@@ -39,7 +40,7 @@
             <option value="CORRETOR">Corretores</option>
           </select>
         </label>
-        <label data-dica="Ativos, inativos (excluídos) ou todos." class="campo f-1">Situação
+        <label data-dica="Ativos, inativos (desativados) ou todos. As pessoas excluídas ficam na Lixeira." class="campo f-1">Situação
           <select id="situacao">
             <option value="ATIVOS">Ativos</option>
             <option value="INATIVOS">Inativos</option>

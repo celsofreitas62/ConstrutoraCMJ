@@ -12,6 +12,8 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (23/11/2026) - Etapa 04b2: devolve TRANSACAO e TELA_NOME (tela Auditoria
+                        agrupa por operação e mostra o nome da tela).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Auditoria_Listar @IdUsuario = 2;
@@ -69,8 +71,11 @@ BEGIN
                a.USUARIO,
                a.ESTACAO,
                a.ORIGEM,
-               a.ID_LOTE
+               a.ID_LOTE,
+               a.TRANSACAO,
+               ISNULL(i.NOME, a.TABELA) AS TELA_NOME
         FROM SIS.Auditoria a WITH (NOLOCK)
+        LEFT JOIN SIS.Item i WITH (NOLOCK) ON i.CODIGO = SIS.fn_SIS_Item_Da_Tabela(a.TABELA)
         WHERE a.DT_OPERACAO >= @DtInicio
           AND a.DT_OPERACAO <  DATEADD(DAY, 1, @DtFim)
           AND (@Usuario    IS NULL OR a.USUARIO LIKE N'%' + @Usuario + N'%')

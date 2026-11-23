@@ -326,3 +326,25 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .marca-excecao.marca-menos { color: var(--erro); }
 .nota .marca-excecao { margin: 0 2px; }
 .celula-marca input { vertical-align: middle; }
+
+/* ---------- Histórico padrão, desfazer, lixeira e auditoria (04b2, P20) ---------- */
+.historico-filtros { padding: 0; }
+.tabela-historico tr.linha-grupo td { background: #FAFAF9; border-top: 2px solid var(--borda); padding-top: 8px; padding-bottom: 8px; }
+.grupo-info { margin-right: 12px; line-height: 30px; }
+.grupo-acoes { display: inline-flex; flex-wrap: wrap; gap: 6px; float: right; }
+.botao-pequeno { min-height: 30px; padding: 0 10px; font-size: 12px; }
+.celula-valor { max-width: 340px; overflow-wrap: anywhere; }
+.tabela-previa { width: 100%; }
+.tabela-previa td { vertical-align: top; font-size: 13px; }
+.tabela-previa tr.linha-conflito td { background: #FDE7E4; color: #9B1C12; }
+.tabela-previa tr.linha-ignorada-previa td { color: var(--texto-suave); }
+.janela .aviso-faixa { margin-bottom: 12px; }
+.janela-campo { margin: 14px 0 6px; display: flex; flex-direction: column; gap: 6px; }
+.janela-campo textarea, .janela-campo input { width: 100%; box-sizing: border-box; }
+.etiqueta-apaga { background: #FDE7E4; color: #9B1C12; font-weight: 600; }
+.tabela tr.linha-modulo td { background: var(--cor-principal-clara); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.acoes-linha { display: flex; flex-wrap: wrap; gap: 6px; }
+.situacao-lixeira { background: #FDE7E4; color: #9B1C12; }
+.situacao-recuperado { background: #E7F3E8; color: #1E6B22; }
+.situacao-apagado { background: #EFEFED; color: #555555; }
+.link-lixeira { font-size: 13px; align-self: center; }

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Auditoria</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/historico.js" defer></script>
+  <script src="/js/sis/auditoria.js" defer></script>
+</head>
+<body data-tela="sis/auditoria.html" data-ajuda="sis-auditoria" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Sistema › Monitoramento › Auditoria</div>
+          <h1>Auditoria</h1>
+          <div class="subtitulo">Histórico geral: tudo o que foi incluído, alterado ou excluído no sistema, por quem e quando.</div>
+        </div>
+        <button data-dica="Busca de novo com os filtros." type="button" class="botao" id="botao-atualizar">Atualizar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Primeiro dia do período. Em branco = 7 dias antes do fim." class="campo f-1">De
+          <input type="date" id="inicio">
+        </label>
+        <label data-dica="Último dia do período. Em branco = hoje." class="campo f-1">Até
+          <input type="date" id="fim">
+        </label>
+        <label data-dica="Login de quem fez, ou parte dele. Opcional." class="campo f-1">Usuário
+          <input id="usuario" maxlength="100" autocomplete="off">
+        </label>
+        <label data-dica="Nome técnico da tabela, ou parte dele (ex.: Pessoa, Perfil_Permissao). Opcional." class="campo f-1">Tabela
+          <input id="tabela" maxlength="256" autocomplete="off" placeholder="Ex.: Pessoa">
+        </label>
+        <label data-dica="Código do registro (ex.: código da pessoa). Opcional." class="campo f-1">Código do registro
+          <input id="registro" type="number" min="1" step="1">
+        </label>
+        <label data-dica="Inclusões, alterações ou exclusões." class="campo f-1">Operação
+          <select id="operacao">
+            <option value="">Todas</option>
+            <option value="I">Inclusões</option>
+            <option value="A">Alterações</option>
+            <option value="E">Exclusões</option>
+          </select>
+        </label>
+        <label data-dica="Número do lote (o que foi gerado junto por um processo, ex.: uma importação). Opcional." class="campo f-1">Lote
+          <input id="lote" type="number" min="1" step="1">
+        </label>
+        <button data-dica="Busca com os filtros. Atalho: Enter." type="submit" class="botao botao-principal">Buscar</button>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div class="rolagem">
+            <table class="tabela tabela-larga tabela-historico">
+              <thead>
+                <tr><th scope="col">Tela</th><th scope="col">Registro</th><th scope="col">Operação</th><th scope="col">Campo</th><th scope="col">Antes</th><th scope="col">Depois</th></tr>
+              </thead>
+              <tbody id="linhas"></tbody>
+            </table>
+          </div>
+          <div class="rodape-lista">
+            <span id="contagem" aria-live="polite"></span>
+            <span>Agrupado por operação (o que foi gravado junto). Clique no número do lote para ver só ele.</span>
+          </div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

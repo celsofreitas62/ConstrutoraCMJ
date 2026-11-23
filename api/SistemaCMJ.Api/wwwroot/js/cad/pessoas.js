@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let pedido = 0;
 
   document.getElementById('botao-incluir').hidden = !acoes.has('INCLUIR');
+  document.getElementById('link-lixeira').hidden = !Layout.acoesDe('sis/lixeira.html').has('VER');
   const exportar = document.getElementById('botao-exportar');
   exportar.hidden = !acoes.has('EXPORTAR');
 

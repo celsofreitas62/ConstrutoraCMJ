@@ -29,7 +29,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let bancos = [];
   let sujo = false;
   let historicoCarregado = false;
-  const podeEditar = idPessoa ? acoes.has('ALTERAR') : acoes.has('INCLUIR');
+  let naLixeira = false;
+  let podeEditar = idPessoa ? acoes.has('ALTERAR') : acoes.has('INCLUIR');
 
   // ---------- Abas ----------
   const abas = [...document.querySelectorAll('.aba')];
@@ -321,29 +322,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ---------- Histórico ----------
+  let historico = null;
   async function carregarHistorico() {
-    const corpo = $('linhas-historico');
-    corpo.replaceChildren();
-    linhaVazia(corpo, 7, 'Carregando…');
-    const r = await Api.get('/api/cad/pessoas/' + idPessoa + '/historico');
-    corpo.replaceChildren();
-    if (!r.sucesso) { await Mensagens.tratar(r); linhaVazia(corpo, 7, 'Histórico indisponível.'); return; }
-    historicoCarregado = true;
-    const linhas = r.dados || [];
-    if (!linhas.length) linhaVazia(corpo, 7, 'Nenhuma alteração registrada.');
-    for (const h of linhas) {
-      const tr = Util.el('tr');
-      tr.append(
-        Util.el('td', 'numero', Util.dataHora(h.DT_OPERACAO)),
-        Util.el('td', null, h.USUARIO || ''),
-        Util.el('td', null, h.PARTE || ''),
-        Util.el('td', null, h.OPERACAO_NOME || ''),
-        Util.el('td', null, h.CAMPO || (h.OPERACAO === 'A' ? '' : '(registro)')),
-        Util.el('td', 'suave', h.VALOR_ANTES || ''),
-        Util.el('td', null, h.VALOR_DEPOIS || '')
-      );
-      corpo.append(tr);
-    }
+    if (!historico) historico = Historico.criar($('historico'), {
+      item: 'CAD_PESSOA', tabela: 'CAD.Pessoa', id: idPessoa, nomeRegistro: 'Pessoa', podeDesfazer: acoes.has('DESFAZER'),
+      aoDesfazer: () => { sujo = false; Util.recarregar('/cad/pessoa.html?id=' + encodeURIComponent(idPessoa) + '#historico'); }
+    });
+    if (await historico.carregar()) historicoCarregado = true;
   }
 
   // ---------- Permissões ----------
@@ -396,8 +381,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     vinculos = (p.VINCULOS || []).map((v) => ({ ...v }));
     atualizarCabecalho(p);
     $('aba-historico').hidden = false;
-    $('botao-excluir').hidden = !ativo || !acoes.has('EXCLUIR');
-    $('botao-reativar').hidden = ativo || !acoes.has('EXCLUIR');
+    naLixeira = !!p.NA_LIXEIRA;
+    if (naLixeira) {
+      const aviso = $('aviso-lixeira');
+      aviso.replaceChildren(document.createTextNode('Esta pessoa está na lixeira: a ficha abre só para consulta. Para usar de novo, recupere na '));
+      const link = Util.el('a', null, 'Lixeira');
+      link.href = '/sis/lixeira.html?item=CAD_PESSOA';
+      aviso.append(link, document.createTextNode('.'));
+      aviso.hidden = false;
+    }
+    $('botao-excluir').hidden = naLixeira || !acoes.has('EXCLUIR');
+    $('botao-desativar').hidden = naLixeira || !ativo || !acoes.has('DESATIVAR');
+    $('botao-reativar').hidden = naLixeira || ativo || !acoes.has('DESATIVAR');
   } else {
     aplicarTipo('F');
     $('cliente').checked = true;
@@ -405,6 +400,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     atualizarCabecalho(null);
   }
 
+  if (naLixeira) podeEditar = false;
   $('botao-gravar').hidden = !podeEditar;
   desenharContatos();
   desenharBancarios();
@@ -456,20 +452,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     location.replace('/cad/pessoa.html?id=' + encodeURIComponent(novoId));
   });
 
-  // ---------- Excluir / reativar / cancelar ----------
+  // ---------- Desativar / reativar / excluir (lixeira) / cancelar ----------
   async function mudarSituacao(reativar) {
     const nome = $('nome').value.trim() || 'esta pessoa';
+    if (sujo && !(await Mensagens.confirmar('Há alterações não gravadas', 'Esta ação não grava as outras alterações da ficha, que serão perdidas. Continuar?', 'Continuar'))) return;
     const ok = reativar
       ? await Mensagens.confirmar('Reativar pessoa?', 'A pessoa ' + nome + ' volta a aparecer nas listas de escolha.', 'Reativar')
-      : await Mensagens.confirmar('Excluir pessoa?', 'A pessoa ' + nome + ' será desativada: some das listas de escolha, mas continua nos lançamentos e no histórico.', 'Excluir');
+      : await Mensagens.confirmar('Desativar pessoa?', 'A pessoa ' + nome + ' será desativada: some das listas de escolha, mas continua nos lançamentos e no histórico. Dá para reativar quando quiser.', 'Desativar');
     if (!ok) return;
     const r = await Api.post('/api/cad/pessoas/' + idPessoa + '/excluir', { reativar });
     if (!(await Mensagens.tratar(r))) return;
     await Mensagens.concluido(r.mensagem || 'Situação alterada.');
     location.replace('/cad/pessoa.html?id=' + encodeURIComponent(idPessoa));
   }
-  $('botao-excluir').addEventListener('click', () => mudarSituacao(false));
+  $('botao-desativar').addEventListener('click', () => mudarSituacao(false));
   $('botao-reativar').addEventListener('click', () => mudarSituacao(true));
+
+  $('botao-excluir').addEventListener('click', async () => {
+    const nome = $('nome').value.trim() || 'esta pessoa';
+    if (sujo && !(await Mensagens.confirmar('Há alterações não gravadas', 'Excluir não grava as outras alterações da ficha, que serão perdidas. Continuar?', 'Continuar'))) return;
+    const motivo = await Mensagens.pedirTexto('Excluir pessoa?',
+      'A pessoa ' + nome + ' vai para a lixeira: some de todas as telas e pode ser recuperada na Lixeira até o prazo acabar; depois é apagada de vez. '
+      + 'Só dá para excluir quem não é usado em nenhum lugar (senão, use Desativar). Enquanto estiver na lixeira, o CPF/CNPJ continua ocupado.',
+      { rotulo: 'Motivo (opcional)', botao: 'Excluir', tipo: 'textarea', dica: 'Por que está excluindo. Opcional. Aparece na Lixeira e no histórico.' });
+    if (motivo === null) return;
+    const r = await Api.post('/api/sis/lixeira/excluir', { item: 'CAD_PESSOA', tabela: 'CAD.Pessoa', idRegistro: idPessoa, motivo });
+    if (!(await Mensagens.tratar(r))) return;
+    sujo = false;
+    await Mensagens.concluido(r.mensagem || 'Pessoa enviada para a lixeira.');
+    location.replace('/cad/pessoas.html');
+  });
+  if (idPessoa && location.hash === '#historico') abrirAba($('aba-historico'));
 
   async function sair(destino) {
     if (sujo && podeEditar && !(await Mensagens.confirmar('Descartar alterações?', 'Há alterações que ainda não foram gravadas. Elas serão perdidas.', 'Descartar'))) return;

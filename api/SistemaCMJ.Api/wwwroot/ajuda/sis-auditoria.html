@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Auditoria</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> o histórico geral do sistema. Mostra tudo o que foi incluído, alterado ou excluído, em qualquer tela, por quem, quando, de qual computador e o valor antes e depois. Ninguém altera nem apaga a auditoria.</p>
+  <h2>Filtros</h2>
+  <ul>
+    <li><strong>De / Até</strong>: período (padrão: os últimos 7 dias).</li>
+    <li><strong>Usuário</strong> e <strong>Tabela</strong>: nome ou parte dele (a tabela é o nome técnico, ex.: <em>Pessoa</em>, <em>Perfil_Permissao</em>).</li>
+    <li><strong>Código do registro</strong>, <strong>Operação</strong> (inclusão, alteração, exclusão) e <strong>Lote</strong> (o que um processo gerou de uma vez, ex.: uma importação).</li>
+    <li>Mostra até as 2.000 mudanças mais recentes do filtro; para ver mais, estreite o período.</li>
+  </ul>
+  <h2>Lista</h2>
+  <ul>
+    <li>As mudanças ficam agrupadas por <strong>operação</strong> (o que foi gravado junto). O cabeçalho do grupo mostra data e hora, usuário, computador, rotina de origem e o lote, se houver.</li>
+    <li>Clique no número do lote para ver só o que aquele lote fez.</li>
+    <li>Inclusões e exclusões mostram um resumo do registro; passe o mouse para ver tudo.</li>
+  </ul>
+  <h2>Desfazer</h2>
+  <ul>
+    <li><strong>Desfazer esta operação</strong>: volta o que foi gravado naquela operação.</li>
+    <li><strong>Desfazer o lote</strong>: volta tudo o que o lote fez, em todas as telas, na ordem inversa.</li>
+    <li>Antes, abre a <strong>prévia</strong> com cada campo (como está agora e como vai ficar). O motivo é obrigatório. É tudo ou nada: se alguém mexeu depois num daqueles campos, a linha aparece em vermelho e nada é desfeito.</li>
+    <li>Inclusões desfeitas vão para a lixeira (ou são desativadas, conforme a tela). Senha nunca é desfeita.</li>
+    <li>Precisa da permissão <strong>Desfazer</strong> nesta tela e também na tela de cada registro que vai mudar.</li>
+  </ul>
+</body>
+</html>

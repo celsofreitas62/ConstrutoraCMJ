@@ -8,6 +8,7 @@
 # v1.3 (22/11/2026) - Etapa 03h: pacote 03h (atualizacao em um clique; banco 1.8).
 # v1.4 (22/11/2026) - Etapa 04a: pacote 04a (telas de Usuarios e Perfis; banco 1.9).
 # v1.5 (22/11/2026) - Etapa 04b: pacote 04b (desfazer e lixeira, P20; banco 2.0).
+# v1.6 (23/11/2026) - Etapa 04b2: pacote 04b2 (historico padrao das fichas; banco 2.1).
 # Uso: python3 sql/ferramentas/montar_master.py   (SISTEMACMJ_SQL = pasta sql)
 import os, re, datetime
 BASE = os.environ.get('SISTEMACMJ_SQL', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -16,7 +17,7 @@ VERSAO = re.search(r"@Versao\s+VARCHAR\(20\)\s*=\s*'([0-9.]+)'", open(os.path.jo
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)
-PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B']
+PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2']
 ordem = []
 for k in PACOTES:
     for f in ns[k]:
@@ -55,7 +56,7 @@ cab = """/**********************************************************************
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : """ + hoje + """ por sql/ferramentas/montar_master.py, juntando os
-                arquivos de sql/objetos aprovados (pacotes 02a a 04b), sem o schema
+                arquivos de sql/objetos aprovados (pacotes 02a a 04b2), sem o schema
                 MIG (regra 60). NAO EDITAR ESTE ARQUIVO: corrigir o arquivo do
                 objeto e gerar o MASTER de novo.
   Descricao   : Instala (ou atualiza) TODO o banco do SisCMJ no servidor do

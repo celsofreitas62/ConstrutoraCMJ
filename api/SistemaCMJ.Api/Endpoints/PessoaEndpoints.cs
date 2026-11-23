@@ -8,6 +8,9 @@
 //              CAD_Pessoa_Listar / _Obter / _Gravar / _Excluir.
 //              Contatos, vínculos e dados bancários vão como JSON, no formato
 //              que o CAD_Pessoa_Obter devolve e o CAD_Pessoa_Gravar recebe.
+//              Desde a 04b2 (23/11/2026): "excluir" = Desativar/Reativar
+//              (ação DESATIVAR); o Excluir (lixeira) e a aba Histórico usam
+//              os endpoints gerais de HistoricoEndpoints.
 // =============================================================================
 using System.Globalization;
 using System.Text.Json;
@@ -52,20 +55,12 @@ public static class PessoaEndpoints
 {
     private const string Item = "CAD_PESSOA";
 
-    // Partes da ficha que têm histórico próprio (TABELAS_DA_TELA de CAD_PESSOA).
-    private static readonly (string Coluna, string Tabela, string Parte)[] Partes =
-    [
-        ("CONTATOS", "CAD.Pessoa_Contato", "Contato"),
-        ("DADOS_BANCARIOS", "CAD.Pessoa_Dado_Bancario", "Dado bancário")
-    ];
-
     public static void Mapear(WebApplication app)
     {
         app.MapGet("/api/cad/pessoas", Listar);
         app.MapGet("/api/cad/pessoas/{id:int}", Obter);
         app.MapPost("/api/cad/pessoas", Gravar);
         app.MapPost("/api/cad/pessoas/{id:int}/excluir", Excluir);
-        app.MapGet("/api/cad/pessoas/{id:int}/historico", Historico);
     }
 
     private static Task<IResult> Listar(string? busca, string? papel, string? situacao, HttpContext http, Banco banco, ILogger<Program> logger) =>
@@ -156,37 +151,6 @@ public static class PessoaEndpoints
                 ["Reativar"] = pedido.Reativar
             }, usuario, http.RequestAborted);
             return Resposta.DeGravacao(resultado);
-        });
-
-    /// <summary>Aba "Histórico": a pessoa e as partes dela (contatos, dados bancários), mais recente primeiro.</summary>
-    private static Task<IResult> Historico(int id, HttpContext http, Banco banco, ILogger<Program> logger) =>
-        Resposta.Rodar(http, banco, logger, async () =>
-        {
-            var usuario = http.Usuario();
-            var ficha = await ObterLinhaAsync(id, usuario, banco, http.RequestAborted);
-
-            var alvos = new List<(string Tabela, long Id, string Parte)> { ("CAD.Pessoa", id, "Pessoa") };
-            foreach (var (coluna, tabela, parte) in Partes)
-                if (ComoJson(ficha.Texto(coluna)) is { ValueKind: JsonValueKind.Array } lista)
-                    foreach (var item in lista.EnumerateArray())
-                        if (item.TryGetProperty("id", out var idParte) && idParte.TryGetInt64(out var valor))
-                            alvos.Add((tabela, valor, parte));
-
-            var todas = new List<Linha>();
-            foreach (var (tabela, idRegistro, parte) in alvos)
-            {
-                var linhas = await banco.ExecutarAsync("SIS.SIS_Auditoria_Registro_Listar", new Dictionary<string, object?>
-                {
-                    ["IdUsuario"] = usuario.IdUsuario,
-                    ["Item"] = Item,
-                    ["Tabela"] = tabela,
-                    ["IdRegistro"] = idRegistro
-                }, usuario, http.RequestAborted);
-                foreach (var linha in linhas)
-                    linha["PARTE"] = parte;
-                todas.AddRange(linhas);
-            }
-            return Resposta.Ok(todas.OrderByDescending(l => l.Long("ID_AUDITORIA")).Take(500).ToList());
         });
 
     private static async Task<Linha> ObterLinhaAsync(int id, Contexto usuario, Banco banco, CancellationToken ct) =>
