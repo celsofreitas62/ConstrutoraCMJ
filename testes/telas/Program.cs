@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 //  SistemaCMJ - testes/telas/Program.cs
 //  Autor     : Celso de Freitas
 //  Refatorado: Claude
@@ -15,7 +15,9 @@
 //                1b) aviso "O que há de novo" (Entendi) e versão no topo (04c2);
 //                4) desfazer essa gravação pela aba Histórico (04b2, 23/11/2026):
 //                   "Desfazer esta operação" -> prévia -> motivo -> "Concluído"
-//                   e o nome volta a ser o de antes.
+//                   e o nome volta a ser o de antes;
+//                5) consultas de CEP e CNPJ (04d2); 6) anexar e excluir um
+//                   arquivo de teste na ficha do parceiro (04d2).
 //              Resultado: uma linha por conferência, "RESULTADO: OK" ou
 //              "RESULTADO: FALHAS (n)" no fim; código de saída = falhas.
 //              Foto da tela em cada falha em %LOCALAPPDATA%\SistemaCMJ\testes_telas.
@@ -234,6 +236,69 @@ if (motivoGravar.Length == 0 && idTeste > 0)
     catch (Exception erro) { motivoDesfazer = erro.Message.Split('\n')[0]; }
     Linha(motivoDesfazer.Length == 0, "desfazer a gravacao pela aba Historico (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivoDesfazer);
     if (motivoDesfazer.Length > 0) await Foto("desfazer");
+}
+
+// ---------------------------------------------------------------- 5) Consultas de CEP e CNPJ (04d2, 25/11/2026)
+// Dependem da internet: falha de comunicação com o serviço aparece como aviso (ATENCAO), não como erro da tela.
+foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consulta de CEP 37701-000"), ("/api/cad/consulta/cnpj/25686528000197", "consulta de CNPJ da CMJ") })
+{
+    try
+    {
+        var r = await Api(rota);
+        var ok = r.GetProperty("sucesso").GetBoolean();
+        Linha(ok, oque, ok ? "" : r.GetProperty("mensagem").GetString() ?? "");
+    }
+    catch (Exception erro) { Linha(false, oque, erro.Message.Split('\n')[0]); }
+}
+
+// ---------------------------------------------------------------- 6) Anexar e excluir um arquivo de teste (04d2, 25/11/2026)
+// No primeiro parceiro ativo da lista: + Anexar arquivo -> tipo Outro -> arquivo .txt -> Anexar -> "Concluído";
+// depois Excluir (motivo) -> "Concluído". O arquivo fica guardado como excluído (não atrapalha).
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    relogio.Restart();
+    var motivoAnexo = "";
+    try
+    {
+        var lista = await Api("/api/cad/pessoas?situacao=ATIVOS");
+        var idParceiro = lista.GetProperty("dados").EnumerateArray().Select(p => p.GetProperty("ID_PESSOA").GetInt32()).FirstOrDefault();
+        if (idParceiro == 0) motivoAnexo = "nenhum parceiro ativo para anexar";
+        else
+        {
+            await pagina.GotoAsync(endereco + "/cad/pessoa.html?id=" + idParceiro + "#anexos", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            var anexar = pagina.Locator("#anexos button", new() { HasText = "+ Anexar arquivo" });
+            await anexar.WaitForAsync(new() { Timeout = 10000 });
+            await anexar.ClickAsync();
+            var janela = pagina.Locator("dialog.janela");
+            await janela.Locator("select").WaitForAsync(new() { Timeout = 10000 });
+            await janela.Locator("select").SelectOptionAsync("OUTRO");
+            var nomeArquivo = "teste-automatico-" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt";
+            await janela.Locator("input[type=file]").SetInputFilesAsync(new FilePayload { Name = nomeArquivo, MimeType = "text/plain", Buffer = System.Text.Encoding.UTF8.GetBytes("Teste automatico das telas " + Guid.NewGuid()) });
+            await janela.Locator(".botao-principal").ClickAsync();
+            await pagina.WaitForFunctionAsync("() => { const h = document.querySelector('dialog.janela h2'); return (h && h.textContent === 'Concluído') || [...document.querySelectorAll('dialog.janela .aviso-revisar')].some(a => !a.hidden); }", null, new() { Timeout = 20000 });
+            var resposta = await JanelaAberta();
+            if (resposta?.Titulo != "Concluído") motivoAnexo = "anexar: " + (await janela.Locator(".aviso-revisar").First.InnerTextAsync()).Trim();
+            else
+            {
+                await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+                var linha = pagina.Locator("#anexos tr", new() { HasText = nomeArquivo });
+                await linha.WaitForAsync(new() { Timeout = 10000 });
+                await linha.Locator("button", new() { HasText = "Excluir" }).ClickAsync();
+                await pagina.Locator("dialog.janela input").FillAsync("teste automatico das telas");
+                await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+                await pagina.WaitForFunctionAsync("() => { const h = document.querySelector('dialog.janela h2'); return h && (h.textContent === 'Concluído' || h.textContent === 'Atenção' || h.textContent === 'Erro'); }", null, new() { Timeout = 15000 });
+                var r2 = await JanelaAberta();
+                if (r2?.Titulo != "Concluído") motivoAnexo = "excluir: janela \"" + r2?.Titulo + "\": " + r2?.Texto;
+                else await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+            }
+        }
+        if (motivoAnexo.Length == 0 && errosJs.Count > 0) motivoAnexo = "erro de JavaScript: " + errosJs[0];
+        if (motivoAnexo.Length == 0 && errosApi.Count > 0) motivoAnexo = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivoAnexo = erro.Message.Split('\n')[0]; }
+    Linha(motivoAnexo.Length == 0, "anexar e excluir arquivo de teste na ficha do parceiro (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivoAnexo);
+    if (motivoAnexo.Length > 0) await Foto("anexos");
 }
 
 // ---------------------------------------------------------------- Fim
