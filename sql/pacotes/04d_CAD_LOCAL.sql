@@ -1550,6 +1550,110 @@ END;
 GO
 
 -- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Consulta_Config_Obter.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Consulta_Config_Obter]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Configuração das consultas de CEP e CNPJ na internet (lidas
+                pela API antes de consultar) e, quando @Cep é informado, o
+                endereço guardado em CAD.Cep_Cache se ainda estiver no prazo
+                (CEP_CACHE_DIAS). Permissão: INCLUIR ou ALTERAR em CAD_PESSOA
+                ou em CAD_EMPRESA (quem preenche cadastros).
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Consulta_Config_Obter]
+    @IdUsuario INT,
+    @Cep       VARCHAR(10) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Pode BIT = CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'INCLUIR') = 1
+                               OR SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'ALTERAR') = 1
+                               OR SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'INCLUIR') = 1
+                               OR SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'ALTERAR') = 1 THEN 1 ELSE 0 END;
+    SET @Cep = CAD.fn_CAD_Somente_Digitos(@Cep);
+
+    SELECT @Pode AS PODE,
+           SIS.fn_SIS_Parametro_SN('CEP_CONSULTA_ATIVA')  AS CEP_ATIVA,
+           SIS.fn_SIS_Parametro('CEP_URL_PRINCIPAL')      AS CEP_URL_PRINCIPAL,
+           SIS.fn_SIS_Parametro('CEP_URL_RESERVA')        AS CEP_URL_RESERVA,
+           SIS.fn_SIS_Parametro_SN('CNPJ_CONSULTA_ATIVA') AS CNPJ_ATIVA,
+           SIS.fn_SIS_Parametro('CNPJ_URL')               AS CNPJ_URL,
+           ISNULL(SIS.fn_SIS_Parametro_Inteiro('CONSULTA_TEMPO_LIMITE_SEG'), 8) AS TEMPO_LIMITE_SEG,
+           c.LOGRADOURO, c.COMPLEMENTO, c.BAIRRO, c.CIDADE, c.UF, c.CODIGO_IBGE, c.FONTE,
+           CAST(CASE WHEN c.CEP IS NULL THEN 0 ELSE 1 END AS BIT) AS CEP_EM_CACHE
+    FROM (SELECT 1 AS X) x
+    LEFT JOIN CAD.Cep_Cache c
+           ON @Pode = 1 AND c.CEP = @Cep
+          AND c.DT_CONSULTA >= DATEADD(DAY, -ISNULL(SIS.fn_SIS_Parametro_Inteiro('CEP_CACHE_DIAS'), 180), SYSDATETIME());
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Cep_Cache_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Cep_Cache_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Guarda (ou renova) o endereço de um CEP consultado na internet
+                pela API. Dado público dos Correios. Só grava com cidade e UF.
+                Permissão: a mesma do CAD_Consulta_Config_Obter.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Cep_Cache_Gravar]
+    @IdUsuario   INT,
+    @Cep         VARCHAR(10),
+    @Logradouro  NVARCHAR(150) = NULL,
+    @Complemento NVARCHAR(60)  = NULL,
+    @Bairro      NVARCHAR(60)  = NULL,
+    @Cidade      NVARCHAR(60),
+    @Uf          CHAR(2),
+    @CodigoIbge  VARCHAR(7)    = NULL,
+    @Fonte       VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    SET @Cep = CAD.fn_CAD_Somente_Digitos(@Cep);
+    SET @Uf  = UPPER(LTRIM(RTRIM(ISNULL(@Uf, ''))));
+
+    IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'INCLUIR') = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'ALTERAR') = 0
+       AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'INCLUIR') = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'ALTERAR') = 0
+        RETURN;
+    IF LEN(@Cep) <> 8 OR LTRIM(RTRIM(ISNULL(@Cidade, N''))) = N'' OR LEN(@Uf) <> 2
+        RETURN;
+
+    MERGE CAD.Cep_Cache AS d
+    USING (SELECT @Cep AS CEP) s ON d.CEP = s.CEP
+    WHEN MATCHED THEN UPDATE SET LOGRADOURO = LEFT(ISNULL(@Logradouro, N''), 150), COMPLEMENTO = LEFT(ISNULL(@Complemento, N''), 60),
+                                 BAIRRO = LEFT(ISNULL(@Bairro, N''), 60), CIDADE = LEFT(@Cidade, 60), UF = @Uf,
+                                 CODIGO_IBGE = LEFT(ISNULL(@CodigoIbge, ''), 7), FONTE = LEFT(@Fonte, 20), DT_CONSULTA = SYSDATETIME()
+    WHEN NOT MATCHED THEN INSERT (CEP, LOGRADOURO, COMPLEMENTO, BAIRRO, CIDADE, UF, CODIGO_IBGE, FONTE)
+                          VALUES (@Cep, LEFT(ISNULL(@Logradouro, N''), 150), LEFT(ISNULL(@Complemento, N''), 60), LEFT(ISNULL(@Bairro, N''), 60),
+                                  LEFT(@Cidade, 60), @Uf, LEFT(ISNULL(@CodigoIbge, ''), 7), LEFT(@Fonte, 20));
+END;
+GO
+
+-- =============================================================================
 -- Arquivo: sql/objetos/CAD/Carga_CAD_Item.sql
 -- =============================================================================
 /*******************************************************************************
