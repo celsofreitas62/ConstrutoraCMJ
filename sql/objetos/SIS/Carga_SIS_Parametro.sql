@@ -45,6 +45,9 @@
                         CEP_CONSULTA_ATIVA, CEP_URL_PRINCIPAL, CEP_URL_RESERVA,
                         CEP_CACHE_DIAS, CNPJ_CONSULTA_ATIVA, CNPJ_URL,
                         CONSULTA_TEMPO_LIMITE_SEG e COBRANCA_APTO_EXIGE_*.
+    v2.3 (25/11/2026) - Etapa 04e: CENTRO_ENCERRADO_BLOQUEIA (lançamento novo em
+                        centro de custo encerrado: S = bloqueia, N = só avisa) e
+                        SELETOR_LIMITE (máximo de linhas nas escolhas com busca).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -178,7 +181,11 @@ FROM (VALUES
         ('COBRANCA_APTO_EXIGE_EMAIL', N'S', 'SN',
          N'Cadastro apto para cobrança (boleto): exige e-mail principal (ou de cobrança) válido.', 'CAD', 1),
         ('COBRANCA_APTO_EXIGE_TELEFONE', N'N', 'SN',
-         N'Cadastro apto para cobrança (boleto): exige celular ou telefone.', 'CAD', 1)
+         N'Cadastro apto para cobrança (boleto): exige celular ou telefone.', 'CAD', 1),
+        ('CENTRO_ENCERRADO_BLOQUEIA', N'S', 'SN',
+         N'Lançamento novo com data depois do encerramento do centro de custo (obra entregue): S = bloqueia; N = só avisa.', 'CAD', 1),
+        ('SELETOR_LIMITE', N'50', 'INTEIRO',
+         N'Máximo de linhas mostradas nas escolhas com busca (conta do plano, centro de custo, conta bancária).', 'CAD', 0)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Parametro p WHERE p.CHAVE = v.CHAVE);

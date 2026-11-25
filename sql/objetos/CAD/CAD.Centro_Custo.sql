@@ -15,6 +15,10 @@
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
                         (lixeira: preenchidas = registro na lixeira).
+    v1.2 (25/11/2026) - Etapa 04e: DT_ENCERRAMENTO (obra entregue/centro
+                        encerrado: depois dessa data, lançamento novo é bloqueado
+                        ou avisado, parâmetro CENTRO_ENCERRADO_BLOQUEIA, regra
+                        aplicada no FIN na 04f).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -52,4 +56,9 @@ IF COL_LENGTH(N'CAD.Centro_Custo', N'DT_EXCLUSAO') IS NULL
 GO
 IF COL_LENGTH(N'CAD.Centro_Custo', N'USUARIO_EXCLUSAO') IS NULL
     ALTER TABLE [CAD].[Centro_Custo] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
+
+-- v1.2: data de encerramento do centro (04e)
+IF COL_LENGTH(N'CAD.Centro_Custo', N'DT_ENCERRAMENTO') IS NULL
+    ALTER TABLE [CAD].[Centro_Custo] ADD DT_ENCERRAMENTO DATE NULL;
 GO

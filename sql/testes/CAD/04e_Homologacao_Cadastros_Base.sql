@@ -3,7 +3,7 @@
                 conta padrão da própria empresa), contas bancárias (travas com
                 movimento e mês fechado); depois centros de custo e plano de contas.
   Autor       : Celso de Freitas / Refatorado: Claude
-  Criação     : 25/11/2026 (v1.0, parte A). Roda no SISTEMACMJ_LOCAL e no banco do MASTER.
+  Criação     : 25/11/2026 (v1.0, parte A; v1.1 parte B: centros e seletor). Roda no SISTEMACMJ_LOCAL e no banco do MASTER.
   Observação  : não muda nada (tudo desfeito com ROLLBACK).
 *******************************************************************************/
 SET NOCOUNT ON;
@@ -95,6 +95,72 @@ INSERT @r SELECT N'saldo inicial em mês aberto aceito', N'1', (SELECT CAST(SUCE
 INSERT @r SELECT N'Conta_Obter devolve TEM_MOVIMENTO e PADRAO_DA_EMPRESA', N'2', CAST(COUNT(*) AS NVARCHAR(5))
        FROM sys.dm_exec_describe_first_result_set(N'EXEC BANCO.BANCO_Conta_Obter @IdUsuario = 1, @IdConta = 1', NULL, 0)
        WHERE name IN ('TEM_MOVIMENTO', 'PADRAO_DA_EMPRESA');
+-- ---------- parte B: centros de custo e seletor ----------
+DECLARE @CC INT, @CC2 INT;
+DELETE @g;
+INSERT @g EXEC CAD.CAD_Centro_Custo_Gravar @IdUsuario = @Celso, @IdEmpresa = @E, @Codigo = 'tst04e', @Descricao = N'Obra Teste 04e', @Tipo = 'OBRA',
+     @IdContaBancariaPadrao = @C2, @DtEncerramento = '20261201', @MexerEncerramento = 1;
+SET @CC = (SELECT ID FROM @g);
+INSERT @r SELECT N'inclui centro (código em maiúsculas, encerramento)', N'TST04E 2026-12-01', (SELECT CODIGO + N' ' + CONVERT(NVARCHAR(10), DT_ENCERRAMENTO, 23) FROM CAD.Centro_Custo WHERE ID_CENTRO_CUSTO = @CC);
+DELETE @g;
+INSERT @g EXEC CAD.CAD_Centro_Custo_Gravar @IdUsuario = @Celso, @IdCentroCusto = @CC, @IdEmpresa = @E, @Codigo = 'TST04E', @Descricao = N'Obra Teste 04e', @Tipo = 'OBRA', @IdContaBancariaPadrao = @C2;
+INSERT @r SELECT N'sem @MexerEncerramento: data mantida', N'2026-12-01', (SELECT CONVERT(NVARCHAR(10), DT_ENCERRAMENTO, 23) FROM CAD.Centro_Custo WHERE ID_CENTRO_CUSTO = @CC);
+DELETE @g;
+INSERT @g EXEC CAD.CAD_Centro_Custo_Gravar @IdUsuario = @Celso, @IdCentroCusto = @CC, @IdEmpresa = @E, @Codigo = 'TST04E', @Descricao = N'Obra Teste 04e', @Tipo = 'OBRA', @MexerEncerramento = 1;
+INSERT @r SELECT N'com @MexerEncerramento e NULL: reabre o centro', N'S', CASE WHEN (SELECT DT_ENCERRAMENTO FROM CAD.Centro_Custo WHERE ID_CENTRO_CUSTO = @CC) IS NULL THEN N'S' ELSE N'N' END;
+IF @E2 IS NOT NULL
+BEGIN
+    DECLARE @ContaE2 INT = (SELECT TOP 1 ID_CONTA FROM BANCO.Conta WHERE ID_EMPRESA = @E2 AND ATIVO = 1);
+    DELETE @g;
+    INSERT @g EXEC CAD.CAD_Centro_Custo_Gravar @IdUsuario = @Celso, @IdCentroCusto = @CC, @IdEmpresa = @E, @Codigo = 'TST04E', @Descricao = N'Obra Teste 04e', @Tipo = 'OBRA',
+         @IdContaBancariaPadrao = @ContaE2;
+    INSERT @r SELECT N'conta padrão de outra empresa recusada no centro', N'0', (SELECT CAST(SUCESSO AS NVARCHAR(1)) FROM @g);
+END
+ELSE INSERT @r VALUES (N'conta padrão de outra empresa recusada no centro', N'0', N'0');
+SET @CC2 = (SELECT TOP 1 l.ID_CENTRO_CUSTO FROM FIN.Lancamento l);
+IF @CC2 IS NOT NULL AND @E2 IS NOT NULL
+BEGIN
+    DECLARE @CodCC2 VARCHAR(20), @DescCC2 NVARCHAR(100), @TipoCC2 VARCHAR(15), @EmpCC2 INT;
+    SELECT @CodCC2 = CODIGO, @DescCC2 = DESCRICAO, @TipoCC2 = TIPO, @EmpCC2 = ID_EMPRESA FROM CAD.Centro_Custo WHERE ID_CENTRO_CUSTO = @CC2;
+    DELETE @g;
+    INSERT @g EXEC CAD.CAD_Centro_Custo_Gravar @IdUsuario = @Celso, @IdCentroCusto = @CC2, @IdEmpresa = @E, @Codigo = @CodCC2, @Descricao = @DescCC2, @Tipo = @TipoCC2;
+    INSERT @r SELECT N'centro com lançamento não muda de empresa', N'0', (SELECT CAST(SUCESSO AS NVARCHAR(1)) FROM @g);
+END
+ELSE INSERT @r VALUES (N'centro com lançamento não muda de empresa', N'0', N'0'); -- banco sem lançamentos (ensaio)
+INSERT @r SELECT N'Centro_Obter devolve as colunas novas', N'4', CAST(COUNT(*) AS NVARCHAR(5))
+       FROM sys.dm_exec_describe_first_result_set(N'EXEC CAD.CAD_Centro_Custo_Obter @IdUsuario = 1, @IdCentroCusto = 1', NULL, 0)
+       WHERE name IN ('DT_ENCERRAMENTO', 'ENCERRADO', 'QTD_LANCAMENTOS', 'NA_LIXEIRA');
+
+-- seletor
+DECLARE @s TABLE (ID INT, CODIGO VARCHAR(20), DESCRICAO NVARCHAR(100), COMPLEMENTO NVARCHAR(400), ATIVO BIT);
+INSERT @s EXEC CAD.CAD_Seletor_Listar @IdUsuario = @Celso, @Tipo = 'CENTRO', @Busca = N'teste 04', @IdEmpresa = @E;
+INSERT @r SELECT N'seletor de centro acha por parte da descrição', N'TST04E', (SELECT TOP 1 CODIGO FROM @s);
+DELETE @s;
+INSERT @s EXEC CAD.CAD_Seletor_Listar @IdUsuario = @Celso, @Tipo = 'CONTA', @Busca = N'conta teste', @IdEmpresa = @E;
+INSERT @r SELECT N'seletor de conta acha sem acento/maiúsculas', N'1', CAST(COUNT(*) AS NVARCHAR(5)) FROM @s WHERE ID = @C;
+DELETE @s;
+UPDATE CAD.Centro_Custo SET ATIVO = 0 WHERE ID_CENTRO_CUSTO = @CC;
+INSERT @s EXEC CAD.CAD_Seletor_Listar @IdUsuario = @Celso, @Tipo = 'CENTRO', @Busca = N'teste 04', @IdEmpresa = @E;
+INSERT @r SELECT N'seletor não mostra centro inativo', N'0', CAST(COUNT(*) AS NVARCHAR(5)) FROM @s;
+DELETE @s;
+INSERT @s EXEC CAD.CAD_Seletor_Listar @IdUsuario = @Celso, @Tipo = 'CENTRO', @Busca = N'xyz', @IdAtual = @CC;
+INSERT @r SELECT N'seletor devolve o valor atual mesmo inativo', N'1', CAST(COUNT(*) AS NVARCHAR(5)) FROM @s WHERE ID = @CC AND ATIVO = 0;
+DELETE @s;
+IF EXISTS (SELECT 1 FROM CAD.Plano_Conta WHERE ATIVO = 1)
+BEGIN
+    INSERT @s EXEC CAD.CAD_Seletor_Listar @IdUsuario = @Celso, @Tipo = 'PLANO';
+    INSERT @r SELECT N'seletor do plano: código no formato 00.00.000', N'0', CAST(COUNT(*) AS NVARCHAR(5)) FROM @s WHERE CODIGO NOT LIKE '[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]';
+END
+ELSE INSERT @r VALUES (N'seletor do plano: código no formato 00.00.000', N'0', N'0');
+BEGIN TRY
+    DELETE @s;
+    INSERT @s EXEC CAD.CAD_Seletor_Listar @IdUsuario = @Celso, @Tipo = 'X';
+    INSERT @r VALUES (N'seletor recusa tipo inválido', N'erro', N'sem erro');
+END TRY
+BEGIN CATCH
+    INSERT @r VALUES (N'seletor recusa tipo inválido', N'erro', N'erro');
+END CATCH;
+INSERT @r SELECT N'parâmetros novos da 04e', N'2', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE CHAVE IN ('CENTRO_ENCERRADO_BLOQUEIA', 'SELETOR_LIMITE');
 ROLLBACK;
 
 SELECT CASO, ESPERADO, OBTIDO, CASE WHEN ESPERADO = OBTIDO THEN 'OK' ELSE 'FALHOU' END AS RESULTADO FROM @r;

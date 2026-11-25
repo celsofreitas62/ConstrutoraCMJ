@@ -40,6 +40,7 @@
         <button type="button" class="aba" role="tab" id="aba-endereco" aria-controls="painel-endereco" aria-selected="false">Endereço</button>
         <button type="button" class="aba" role="tab" id="aba-rodape" aria-controls="painel-rodape" aria-selected="false">Rodapé dos e-mails</button>
         <button type="button" class="aba" role="tab" id="aba-contas" aria-controls="painel-contas" aria-selected="false" hidden>Contas bancárias</button>
+        <button type="button" class="aba" role="tab" id="aba-centros" aria-controls="painel-centros" aria-selected="false" hidden>Centros de custo</button>
         <button type="button" class="aba" role="tab" id="aba-anexos" aria-controls="painel-anexos" aria-selected="false" hidden>Anexos</button>
         <button type="button" class="aba" role="tab" id="aba-historico" aria-controls="painel-historico" aria-selected="false" hidden>Histórico</button>
       </div>
@@ -151,6 +152,19 @@
               <table class="tabela tabela-larga">
                 <thead><tr><th scope="col">Descrição</th><th scope="col">Tipo</th><th scope="col">Banco</th><th scope="col">Agência / conta</th><th scope="col">Padrão</th><th scope="col">Situação</th></tr></thead>
                 <tbody id="linhas-contas"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-centros" aria-labelledby="aba-centros" hidden>
+            <div class="barra-lista">
+              <span class="suave">Obras, escritório e imóveis desta empresa. Clique na linha para abrir a ficha do centro.</span>
+              <a data-dica="Abre a ficha de centro de custo novo já com esta empresa." class="botao botao-contorno" id="incluir-centro" hidden>+ Incluir centro</a>
+            </div>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead><tr><th scope="col">Código</th><th scope="col">Descrição</th><th scope="col">Tipo</th><th scope="col">Conta padrão</th><th scope="col">Encerramento</th><th scope="col">Situação</th></tr></thead>
+                <tbody id="linhas-centros"></tbody>
               </table>
             </div>
           </section>

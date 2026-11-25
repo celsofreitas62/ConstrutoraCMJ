@@ -201,7 +201,9 @@ ORDEM_04D = ['objetos/CAD/CAD.Parceiro_Tipo.sql', 'objetos/CAD/CAD.Pessoa_Tipo.s
              'objetos/CAD/Carga_CAD_Parceiro_Tipo.sql', 'objetos/SIS/Carga_SIS_Parametro.sql', 'objetos/CAD/CAD.fn_CAD_Pessoa_Pendencia_Cobranca.sql', 'objetos/CAD/CAD.CAD_Parceiro_Tipo_Listar.sql', 'objetos/CAD/CAD.CAD_Parceiro_Tipo_Gravar.sql', 'objetos/CAD/CAD.CAD_Pessoa_Gravar.sql', 'objetos/CAD/CAD.CAD_Pessoa_Obter.sql', 'objetos/CAD/CAD.CAD_Pessoa_Listar.sql', 'objetos/CAD/CAD.CAD_Consulta_Config_Obter.sql', 'objetos/CAD/CAD.CAD_Cep_Cache_Gravar.sql', 'objetos/SIS/SIS.SIS_Anexo_Gravar.sql', 'objetos/SIS/SIS.SIS_Anexo_Listar.sql', 'objetos/CAD/Carga_CAD_Item.sql', 'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql', 'objetos/SIS/Carga_SIS_Tabela_Config.sql']
 ORDEM_04D2 = ['objetos/SIS/SIS.SIS_Anexo_Tipo_Listar.sql', 'objetos/MIG/MIG.fn_MIG_Endereco_Separar.sql', 'objetos/MIG/MIG.MIG_Cadastros_Processar.sql',
               'objetos/SIS/Carga_SIS_Versao_Nota.sql', 'objetos/SIS/Carga_SIS_Versao.sql']
-ORDEM_04E = ['objetos/CAD/CAD.Empresa.sql', 'objetos/SIS/Carga_SIS_Anexo_Tipo.sql',
+ORDEM_04E = ['objetos/CAD/CAD.Empresa.sql', 'objetos/CAD/CAD.Centro_Custo.sql', 'objetos/SIS/Carga_SIS_Anexo_Tipo.sql', 'objetos/SIS/Carga_SIS_Parametro.sql',
+             'objetos/CAD/CAD.CAD_Centro_Custo_Listar.sql', 'objetos/CAD/CAD.CAD_Centro_Custo_Obter.sql', 'objetos/CAD/CAD.CAD_Centro_Custo_Gravar.sql',
+             'objetos/CAD/CAD.CAD_Seletor_Listar.sql',
              'objetos/CAD/CAD.CAD_Empresa_Listar.sql', 'objetos/CAD/CAD.CAD_Empresa_Obter.sql', 'objetos/CAD/CAD.CAD_Empresa_Gravar.sql',
              'objetos/BANCO/BANCO.BANCO_Conta_Listar.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Obter.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Gravar.sql',
              'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql']

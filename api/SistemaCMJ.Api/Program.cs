@@ -133,6 +133,7 @@ PessoaEndpoints.Mapear(app);
 ParceiroTipoEndpoints.Mapear(app);
 EmpresaEndpoints.Mapear(app);
 ContaBancariaEndpoints.Mapear(app);
+CentroCustoEndpoints.Mapear(app);
 AnexoEndpoints.Mapear(app);
 UsuarioEndpoints.Mapear(app);
 HistoricoEndpoints.Mapear(app);

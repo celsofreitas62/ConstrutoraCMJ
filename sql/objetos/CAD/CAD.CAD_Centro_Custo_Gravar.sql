@@ -11,6 +11,10 @@
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: @DtEncerramento (só grava com
+                        @MexerEncerramento = 1; sem ele, não mexe); conta padrão
+                        precisa ser da mesma empresa; centro com lançamento não
+                        muda de empresa.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Centro_Custo_Gravar @IdUsuario = 2, @IdEmpresa = 1, @Codigo = 'ESC', @Descricao = N'Escritório', @Tipo = 'ADMINISTRATIVO';
@@ -27,7 +31,9 @@ CREATE OR ALTER PROCEDURE [CAD].[CAD_Centro_Custo_Gravar]
     @Descricao              NVARCHAR(100),
     @Tipo                   VARCHAR(15),
     @Contabil               BIT           = 1,
-    @IdContaBancariaPadrao  INT           = NULL
+    @IdContaBancariaPadrao  INT           = NULL,
+    @DtEncerramento         DATE          = NULL,
+    @MexerEncerramento      BIT           = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -63,6 +69,13 @@ BEGIN
             SET @Recusa = N'A conta padrão escolhida não existe ou está desativada.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Centro_Custo cc WHERE cc.CODIGO = @Codigo AND cc.ID_CENTRO_CUSTO <> ISNULL(@IdCentroCusto, 0))
             SET @Recusa = N'Já existe um centro de custo com este código.';
+        IF @Recusa = N'' AND @IdContaBancariaPadrao IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM BANCO.Conta c WHERE c.ID_CONTA = @IdContaBancariaPadrao AND c.ID_EMPRESA = @IdEmpresa)
+            SET @Recusa = N'A conta padrão precisa ser uma conta da mesma empresa do centro de custo.';
+        IF @Recusa = N'' AND @IdCentroCusto IS NOT NULL
+           AND EXISTS (SELECT 1 FROM CAD.Centro_Custo cc WHERE cc.ID_CENTRO_CUSTO = @IdCentroCusto AND cc.ID_EMPRESA <> @IdEmpresa)
+           AND EXISTS (SELECT 1 FROM FIN.Lancamento l WHERE l.ID_CENTRO_CUSTO = @IdCentroCusto)
+            SET @Recusa = N'O centro de custo já tem lançamentos: não pode mudar de empresa.';
         IF @Recusa <> N''
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdCentroCusto AS ID;
@@ -74,14 +87,16 @@ BEGIN
         SET @EtapaAtual = 'Gravação';
         IF @IdCentroCusto IS NULL
         BEGIN
-            INSERT INTO CAD.Centro_Custo (ID_EMPRESA, CODIGO, DESCRICAO, TIPO, CONTABIL, ID_CONTA_BANCARIA_PADRAO, USUARIO_CRIACAO)
-            VALUES (@IdEmpresa, @Codigo, @Descricao, @Tipo, @Contabil, @IdContaBancariaPadrao, @Usuario);
+            INSERT INTO CAD.Centro_Custo (ID_EMPRESA, CODIGO, DESCRICAO, TIPO, CONTABIL, ID_CONTA_BANCARIA_PADRAO, DT_ENCERRAMENTO, USUARIO_CRIACAO)
+            VALUES (@IdEmpresa, @Codigo, @Descricao, @Tipo, @Contabil, @IdContaBancariaPadrao, CASE WHEN @MexerEncerramento = 1 THEN @DtEncerramento END, @Usuario);
             SET @IdCentroCusto = SCOPE_IDENTITY();
         END
         ELSE
             UPDATE cc
                SET cc.ID_EMPRESA = @IdEmpresa, cc.CODIGO = @Codigo, cc.DESCRICAO = @Descricao, cc.TIPO = @Tipo, cc.CONTABIL = @Contabil,
-                   cc.ID_CONTA_BANCARIA_PADRAO = @IdContaBancariaPadrao, cc.DT_ALTERACAO = SYSDATETIME(), cc.USUARIO_ALTERACAO = @Usuario
+                   cc.ID_CONTA_BANCARIA_PADRAO = @IdContaBancariaPadrao,
+                   cc.DT_ENCERRAMENTO = CASE WHEN ISNULL(@MexerEncerramento, 0) = 1 THEN @DtEncerramento ELSE cc.DT_ENCERRAMENTO END,
+                   cc.DT_ALTERACAO = SYSDATETIME(), cc.USUARIO_ALTERACAO = @Usuario
             FROM CAD.Centro_Custo cc
             WHERE cc.ID_CENTRO_CUSTO = @IdCentroCusto;
 

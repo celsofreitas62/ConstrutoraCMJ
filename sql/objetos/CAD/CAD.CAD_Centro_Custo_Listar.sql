@@ -11,6 +11,8 @@
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: DT_ENCERRAMENTO e ENCERRADO; quem vê
+                        empresas também vê os centros (aba da ficha da empresa).
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Centro_Custo_Listar @IdUsuario = 2;
@@ -33,6 +35,7 @@ BEGIN
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', 'VER') = 0
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'VER') = 0
             THROW 50001, N'Você não tem permissão para ver os centros de custo.', 1;
 
         SET @EtapaAtual = 'Consulta';
@@ -41,6 +44,8 @@ BEGIN
                cc.ID_CONTA_BANCARIA_PADRAO, ISNULL(c.DESCRICAO, N'') AS CONTA_PADRAO_DESCRICAO,
                ISNULL(cc.ID_CONTA_BANCARIA_PADRAO, e.ID_CONTA_BANCARIA_PADRAO) AS ID_CONTA_EFETIVA,
                ISNULL(c.DESCRICAO, ISNULL(ce.DESCRICAO, N'')) AS CONTA_EFETIVA_DESCRICAO,
+               cc.DT_ENCERRAMENTO,
+               CAST(CASE WHEN cc.DT_ENCERRAMENTO <= CONVERT(DATE, SYSDATETIME()) THEN 1 ELSE 0 END AS BIT) AS ENCERRADO,
                cc.ATIVO, cc.CODIGO_ACCESS, cc.DT_ALTERACAO, ISNULL(cc.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
         FROM CAD.Centro_Custo cc WITH (NOLOCK)
         INNER JOIN CAD.Empresa e WITH (NOLOCK) ON e.ID_EMPRESA = cc.ID_EMPRESA

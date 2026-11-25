@@ -8,7 +8,7 @@
                consulta do servidor; rodapé dos e-mails com prévia (P11); conta
                padrão entre as contas da própria empresa; pasta do OFX só para
                administrador; logomarca (anexo do tipo Logomarca); abas Contas
-               bancárias, Anexos e Histórico. Validações de verdade ficam no
+               bancárias, Centros de custo, Anexos e Histórico. Validações de verdade ficam no
                CAD_Empresa_Gravar.
    ========================================================================== */
 'use strict';
@@ -116,6 +116,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     sel.value = atual;
   }
 
+  // ---------- Centros de custo da empresa ----------
+  async function carregarCentros() {
+    const r = await Api.get('/api/cad/centros-custo', { idEmpresa });
+    if (!r.sucesso) { $('aba-centros').hidden = true; return; }
+    const centros = r.dados || [];
+    const corpo = $('linhas-centros');
+    corpo.replaceChildren();
+    if (!centros.length) {
+      const tr = Util.el('tr');
+      const td = Util.el('td', 'vazio', 'Nenhum centro de custo cadastrado para esta empresa.');
+      td.colSpan = 6;
+      tr.append(td);
+      corpo.append(tr);
+    }
+    for (const c of centros) {
+      const tr = Util.el('tr', 'clicavel');
+      tr.tabIndex = 0;
+      const abrir = () => sair('/cad/centro-custo.html?id=' + encodeURIComponent(c.ID_CENTRO_CUSTO));
+      tr.addEventListener('click', abrir);
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') abrir(); });
+      const sit = Util.el('td');
+      sit.append(Util.el('span', 'situacao ' + (c.ATIVO && !c.ENCERRADO ? 'situacao-ativo' : 'situacao-inativo'), !c.ATIVO ? 'Inativo' : (c.ENCERRADO ? 'Encerrado' : 'Em uso')));
+      tr.append(Util.el('td', 'numero', c.CODIGO), Util.el('td', 'forte', c.DESCRICAO), Util.el('td', null, Rotulos.de('centroTipo', c.TIPO)),
+        Util.el('td', null, c.CONTA_PADRAO_DESCRICAO || (c.CONTA_EFETIVA_DESCRICAO ? c.CONTA_EFETIVA_DESCRICAO + ' (da empresa)' : '')),
+        Util.el('td', null, Util.data(c.DT_ENCERRAMENTO)), sit);
+      corpo.append(tr);
+    }
+    const emUso = centros.filter((c) => c.ATIVO && !c.ENCERRADO).length;
+    $('aba-centros').textContent = 'Centros de custo' + (centros.length ? ' (' + emUso + ' em uso)' : '');
+  }
+
   // ---------- Logomarca (anexo do tipo LOGOMARCA mais recente) ----------
   async function carregarLogomarca() {
     const r = await Api.get('/api/sis/anexos', { item: 'CAD_EMPRESA', tabela: 'CAD.Empresa', idRegistro: idEmpresa });
@@ -172,7 +203,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     naLixeira = !!e.NA_LIXEIRA;
     podePastaOfx = !!e.PODE_PASTA_OFX;
     atualizarCabecalho(e);
-    for (const id of ['aba-contas', 'aba-anexos', 'aba-historico']) $(id).hidden = false;
+    for (const id of ['aba-contas', 'aba-centros', 'aba-anexos', 'aba-historico']) $(id).hidden = false;
+    const incluirCentro = $('incluir-centro');
+    incluirCentro.href = '/cad/centro-custo.html?empresa=' + encodeURIComponent(idEmpresa);
+    incluirCentro.hidden = naLixeira || !ativo || !Layout.acoesDe('cad/centros-custo.html').has('INCLUIR');
     const incluirConta = $('incluir-conta');
     incluirConta.href = '/banco/conta.html?empresa=' + encodeURIComponent(idEmpresa);
     incluirConta.hidden = naLixeira || !ativo || !Layout.acoesDe('banco/contas.html').has('INCLUIR');
@@ -187,7 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('botao-excluir').hidden = naLixeira || !acoes.has('EXCLUIR');
     $('botao-desativar').hidden = naLixeira || !ativo || !acoes.has('DESATIVAR');
     $('botao-reativar').hidden = naLixeira || ativo || !acoes.has('DESATIVAR');
-    await Promise.all([carregarContas(), carregarLogomarca()]);
+    await Promise.all([carregarContas(), carregarCentros(), carregarLogomarca()]);
   } else {
     podePastaOfx = Number(sessao && sessao.nivelAdmin) >= 1;
     $('tipo').value = 'SPE';
@@ -309,4 +343,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (idEmpresa && location.hash === '#historico') abrirAba($('aba-historico'));
   if (idEmpresa && location.hash === '#anexos') abrirAba($('aba-anexos'));
   if (idEmpresa && location.hash === '#contas') abrirAba($('aba-contas'));
+  if (idEmpresa && location.hash === '#centros') abrirAba($('aba-centros'));
 });

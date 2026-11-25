@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Ficha do centro de custo</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/historico.js" defer></script>
+  <script src="/js/anexos.js" defer></script>
+  <script src="/js/seletor.js" defer></script>
+  <script src="/js/cad/rotulos.js" defer></script>
+  <script src="/js/cad/centro-custo.js" defer></script>
+</head>
+<body data-tela="cad/centro-custo.html" data-menu="cad/centros-custo.html" data-ajuda="cad-centro-custo" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <a href="/cad/centros-custo.html" id="link-voltar">‹ Voltar para a lista de Centros de custo</a>
+          <h1 id="titulo">Novo centro de custo</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button data-dica="Manda o centro de custo para a lixeira (pode ser recuperado até o prazo acabar). Só dá para excluir centro que não é usado em nenhum lugar; senão, use Desativar. Pede confirmação." type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
+        <button data-dica="Desativa o centro: some das listas de escolha, mas continua nos lançamentos e no histórico. Pede confirmação." type="button" class="botao" id="botao-desativar" hidden>Desativar</button>
+        <button data-dica="Volta o centro para as listas de escolha." type="button" class="botao" id="botao-reativar" hidden>Reativar</button>
+        <button data-dica="Volta para a lista sem gravar (avisa se houver alteração)." type="button" class="botao" id="botao-cancelar">Cancelar</button>
+        <button data-dica="Grava a ficha. Pede confirmação antes." type="submit" form="ficha" class="botao botao-principal" id="botao-gravar" hidden>Gravar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="aviso-faixa" id="aviso-encerrado" role="note" hidden></div>
+      <div class="aviso-faixa" id="aviso-lixeira" role="note" hidden></div>
+
+      <div class="abas" role="tablist" aria-label="Partes da ficha">
+        <button type="button" class="aba" role="tab" id="aba-dados" aria-controls="painel-dados" aria-selected="true">Dados do centro</button>
+        <button type="button" class="aba" role="tab" id="aba-anexos" aria-controls="painel-anexos" aria-selected="false" hidden>Anexos</button>
+        <button type="button" class="aba" role="tab" id="aba-historico" aria-controls="painel-historico" aria-selected="false" hidden>Histórico</button>
+      </div>
+
+      <div class="area-lista">
+        <form class="cartao" id="ficha" novalidate>
+          <section class="painel-aba" role="tabpanel" id="painel-dados" aria-labelledby="aba-dados">
+            <div class="grade">
+              <label data-dica="Empresa dona do centro (os lançamentos do centro são desta empresa). Depois que o centro tiver lançamentos, não muda mais." data-obrigatorio class="campo s-2">Empresa *
+                <select id="idEmpresa"><option value="">(escolha)</option></select>
+              </label>
+              <label data-dica="Código curto e único: letras sem acento, números, &quot;_&quot; ou &quot;-&quot; (ex.: 62, ESC, ORION). É o que se digita para achar o centro." data-obrigatorio class="campo">Código *
+                <input id="codigo" maxlength="20" autocomplete="off">
+              </label>
+              <label data-dica="Obra: custo de construção; Administrativo: escritório; Imóvel próprio: salas e apartamentos de aluguel; Particular: gastos pessoais dos sócios." class="campo">Tipo
+                <select id="tipo">
+                  <option value="OBRA">Obra</option>
+                  <option value="ADMINISTRATIVO">Administrativo</option>
+                  <option value="IMOVEL_PROPRIO">Imóvel próprio</option>
+                  <option value="PARTICULAR">Particular</option>
+                </select>
+              </label>
+              <label data-dica="Nome do centro como aparece nas escolhas e nos relatórios (ex.: Residencial Orion)." data-obrigatorio class="campo s-2">Descrição *
+                <input id="descricao" maxlength="100" autocomplete="off">
+              </label>
+              <div class="campo s-2" data-dica="Conta bancária usada nos lançamentos deste centro que não dizem a conta. Em branco, vale a conta padrão da empresa. Só aparecem contas ativas da mesma empresa.">
+                <span>Conta bancária padrão</span>
+                <div id="seletor-conta"></div>
+                <span class="suave" id="conta-empresa"></span>
+              </div>
+              <label data-dica="Dia em que o centro foi encerrado (ex.: obra entregue). Depois dele, lançamento novo neste centro é bloqueado ou só avisado, conforme o parâmetro CENTRO_ENCERRADO_BLOQUEIA. Deixe em branco enquanto estiver em uso." class="campo">Data de encerramento
+                <input id="dtEncerramento" type="date">
+              </label>
+              <div class="campo marcacoes">
+                <label data-dica="Desmarque se os lançamentos deste centro não vão para a contabilidade (o fechamento de mês só trava o que é contábil)." class="marcacao"><input type="checkbox" id="contabil" checked> Vai para a contabilidade</label>
+              </div>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-anexos" aria-labelledby="aba-anexos" hidden>
+            <div id="anexos"></div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-historico" aria-labelledby="aba-historico" hidden>
+            <div id="historico"></div>
+          </section>
+        </form>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+
+      <div class="rodape-ficha" id="rodape"></div>
+    </main>
+  </div>
+</body>
+</html>

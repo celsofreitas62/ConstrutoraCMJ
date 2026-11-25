@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Centros de custo</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/cad/rotulos.js" defer></script>
+  <script src="/js/cad/centros-custo.js" defer></script>
+</head>
+<body data-tela="cad/centros-custo.html" data-ajuda="cad-centros-custo" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Cadastros › Centros de custo</div>
+          <h1>Centros de custo</h1>
+        </div>
+        <a data-dica="Abre a Lixeira já filtrada nos centros de custo excluídos." class="link-lixeira" href="/sis/lixeira.html?item=CAD_CENTRO_CUSTO" id="link-lixeira" hidden>Lixeira</a>
+        <button data-dica="Baixa a lista que está na tela num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <a data-dica="Abre a ficha em branco para cadastrar um centro de custo (obra, escritório, imóvel próprio...)." class="botao botao-principal" href="/cad/centro-custo.html" id="botao-incluir" hidden>+ Incluir</a>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Digite parte da descrição ou o início do código. A lista atualiza sozinha." class="campo f-3">Descrição ou código
+          <input type="search" id="busca" maxlength="60" placeholder="Ex.: orion" autocomplete="off">
+        </label>
+        <label data-dica="Mostra só os centros de uma empresa." class="campo f-1">Empresa
+          <select id="empresa"><option value="">Todas</option></select>
+        </label>
+        <label data-dica="Mostra só um tipo de centro." class="campo f-1">Tipo
+          <select id="tipo">
+            <option value="">Todos</option>
+            <option value="OBRA">Obra</option>
+            <option value="ADMINISTRATIVO">Administrativo</option>
+            <option value="IMOVEL_PROPRIO">Imóvel próprio</option>
+            <option value="PARTICULAR">Particular</option>
+          </select>
+        </label>
+        <label data-dica="Em uso: ativos e não encerrados. Encerrados: obra entregue (passou a data de encerramento). Inativos: desativados. Os excluídos ficam na Lixeira." class="campo f-1">Situação
+          <select id="situacao">
+            <option value="EM_USO">Em uso</option>
+            <option value="ENCERRADOS">Encerrados</option>
+            <option value="INATIVOS">Inativos</option>
+            <option value="TODOS">Todos</option>
+          </select>
+        </label>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div class="rolagem">
+            <table class="tabela tabela-larga">
+              <thead>
+                <tr>
+                  <th scope="col">Código</th>
+                  <th scope="col">Descrição</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Empresa</th>
+                  <th scope="col">Conta padrão</th>
+                  <th scope="col">Contábil</th>
+                  <th scope="col">Encerramento</th>
+                  <th scope="col">Situação</th>
+                </tr>
+              </thead>
+              <tbody id="linhas"></tbody>
+            </table>
+          </div>
+          <div class="rodape-lista">
+            <span id="contagem" aria-live="polite"></span>
+            <span>Clique na linha para abrir a ficha</span>
+          </div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
