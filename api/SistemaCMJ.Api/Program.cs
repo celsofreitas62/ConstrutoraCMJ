@@ -130,6 +130,7 @@ app.UseMiddleware<SessaoMiddleware>();
 AcessoEndpoints.Mapear(app);
 SistemaEndpoints.Mapear(app);
 PessoaEndpoints.Mapear(app);
+ParceiroTipoEndpoints.Mapear(app);
 UsuarioEndpoints.Mapear(app);
 HistoricoEndpoints.Mapear(app);
 VersaoEndpoints.Mapear(app);

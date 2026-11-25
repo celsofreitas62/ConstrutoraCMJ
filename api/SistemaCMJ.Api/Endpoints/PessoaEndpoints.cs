@@ -11,6 +11,9 @@
 //              Desde a 04b2 (23/11/2026): "excluir" = Desativar/Reativar
 //              (ação DESATIVAR); o Excluir (lixeira) e a aba Histórico usam
 //              os endpoints gerais de HistoricoEndpoints.
+//              Desde a 04d2 (25/11/2026): tipos de parceiro (Tipos = JSON
+//              [ids]), conta/centro padrão (NULL = não mexe, 0 = limpa),
+//              filtros idParceiroTipo e pendenciaCobranca na lista.
 // =============================================================================
 using System.Globalization;
 using System.Text.Json;
@@ -47,7 +50,10 @@ public sealed record PessoaPedido(
     string? Observacao,
     JsonElement? Contatos,
     JsonElement? Vinculos,
-    JsonElement? DadosBancarios);
+    JsonElement? DadosBancarios,
+    JsonElement? Tipos = null,
+    int? IdPlanoContaPadrao = null,
+    int? IdCentroCustoPadrao = null);
 
 public sealed record ExcluirPedido(bool Reativar);
 
@@ -63,7 +69,7 @@ public static class PessoaEndpoints
         app.MapPost("/api/cad/pessoas/{id:int}/excluir", Excluir);
     }
 
-    private static Task<IResult> Listar(string? busca, string? papel, string? situacao, HttpContext http, Banco banco, ILogger<Program> logger) =>
+    private static Task<IResult> Listar(string? busca, string? papel, string? situacao, int? idParceiroTipo, bool? pendenciaCobranca, HttpContext http, Banco banco, ILogger<Program> logger) =>
         Resposta.Rodar(http, banco, logger, async () =>
         {
             var usuario = http.Usuario();
@@ -74,7 +80,9 @@ public static class PessoaEndpoints
                 ["Busca"] = Banco.Cortar(busca?.Trim(), 100),
                 ["Papel"] = Banco.Cortar(papel?.Trim(), 12),
                 ["SomenteAtivos"] = situacao == "ATIVOS",
-                ["Limite"] = 500
+                ["Limite"] = 500,
+                ["IdParceiroTipo"] = idParceiroTipo is > 0 ? idParceiroTipo : null,
+                ["PendenciaCobranca"] = pendenciaCobranca == true
             }, usuario, http.RequestAborted);
             if (situacao == "INATIVOS")
                 linhas = linhas.Where(l => !l.Bool("ATIVO")).ToList();
@@ -86,7 +94,7 @@ public static class PessoaEndpoints
         {
             var usuario = http.Usuario();
             var linha = await ObterLinhaAsync(id, usuario, banco, http.RequestAborted);
-            foreach (var coluna in new[] { "CONTATOS", "VINCULOS", "DADOS_BANCARIOS" })
+            foreach (var coluna in new[] { "CONTATOS", "VINCULOS", "DADOS_BANCARIOS", "TIPOS" })
                 linha[coluna] = ComoJson(linha.Texto(coluna));
             return Resposta.Ok(linha);
         });
@@ -135,7 +143,10 @@ public static class PessoaEndpoints
                 ["Observacao"] = Texto(p.Observacao),
                 ["Contatos"] = ListaJson(p.Contatos),
                 ["Vinculos"] = ListaJson(p.Vinculos),
-                ["DadosBancarios"] = ListaJson(p.DadosBancarios)
+                ["DadosBancarios"] = ListaJson(p.DadosBancarios),
+                ["Tipos"] = ListaJson(p.Tipos),
+                ["IdPlanoContaPadrao"] = p.IdPlanoContaPadrao,
+                ["IdCentroCustoPadrao"] = p.IdCentroCustoPadrao
             }, usuario, http.RequestAborted);
             return Resposta.DeGravacao(resultado);
         });
