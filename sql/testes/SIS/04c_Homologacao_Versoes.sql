@@ -1,7 +1,7 @@
 ﻿/*******************************************************************************
   Teste       : 04c - versões e notas da versão (P22)
   Autor       : Celso de Freitas / Refatorado: Claude
-  Criação     : 23/11/2026 (v1.0; v1.1: usuário de consulta temporário quando não há o "claude"). Roda no SISTEMACMJ_LOCAL e no banco do MASTER.
+  Criação     : 23/11/2026 (v1.0; v1.1: usuário de consulta temporário quando não há o "claude"; v1.2 25/11/2026: aviso conferido pelas últimas versões instaladas, sem número fixo). Roda no SISTEMACMJ_LOCAL e no banco do MASTER.
   Observação  : não muda nada (tudo desfeito com ROLLBACK). Pressupõe as notas
                 1.8 a 2.1 do docs/NOTAS_DA_VERSAO.md e o banco na 2.1 ou mais.
 *******************************************************************************/
@@ -79,20 +79,26 @@ INSERT @r SELECT N'histórico: 3 atualizações de hoje (1 desfeita)', N'3|1', C
 INSERT @r SELECT N'histórico: versões do pacote sem repetir', N'S', CASE WHEN NOT EXISTS (SELECT 1 FROM @h WHERE ORIGEM <> 'ATUALIZACAO' AND VERSAO_BANCO_DE = VERSAO_BANCO_PARA) THEN N'S' ELSE N'N' END;
 INSERT @r SELECT N'histórico: nota disponível na 2.1', N'S', CASE WHEN EXISTS (SELECT 1 FROM @h WHERE VERSAO_BANCO_PARA = '2.1' AND TEM_NOTA = 1) THEN N'S' ELSE N'N' END;
 
--- aviso "O que há de novo"
-UPDATE SIS.Usuario_Novidade SET VERSAO_VISTA = '1.9' WHERE ID_USUARIO = @Claude;
+-- aviso "O que há de novo" (v1.2: esperado calculado pelas versões instaladas com nota, da mais nova para a mais velha)
+DECLARE @Vs TABLE (POS INT, VERSAO VARCHAR(20));
+INSERT @Vs SELECT ROW_NUMBER() OVER (ORDER BY VERSAO_NUMERO DESC), VERSAO
+  FROM (SELECT DISTINCT VERSAO, VERSAO_NUMERO FROM SIS.Versao_Nota WHERE VERSAO_NUMERO <= SIS.fn_SIS_Versao_Numero(@Atual)) x;
+DECLARE @V1 VARCHAR(20) = (SELECT VERSAO FROM @Vs WHERE POS = 1), @V2 VARCHAR(20) = (SELECT VERSAO FROM @Vs WHERE POS = 2),
+        @V3 VARCHAR(20) = (SELECT VERSAO FROM @Vs WHERE POS = 3), @V4 VARCHAR(20) = (SELECT VERSAO FROM @Vs WHERE POS = 4),
+        @QtdV INT = (SELECT COUNT(*) FROM @Vs);
+UPDATE SIS.Usuario_Novidade SET VERSAO_VISTA = @V3 WHERE ID_USUARIO = @Claude;
 INSERT @nv EXEC SIS.SIS_Novidades_Obter @IdUsuario = @Claude;
-INSERT @r SELECT N'viu 1.9: aviso com 2.0 e 2.1', N'2.0,2.1|0', CONCAT(STRING_AGG(VERSAO, ',') WITHIN GROUP (ORDER BY VERSAO_NUMERO), '|', MAX(VERSOES_OMITIDAS))
+INSERT @r SELECT N'viu a 3ª mais nova: aviso com as 2 seguintes', CONCAT(@V2, ',', @V1, '|0'), CONCAT(STRING_AGG(VERSAO, ',') WITHIN GROUP (ORDER BY VERSAO_NUMERO), '|', MAX(VERSOES_OMITIDAS))
        FROM (SELECT DISTINCT VERSAO, VERSAO_NUMERO, VERSOES_OMITIDAS FROM @nv) x;
 DELETE @nv;
 UPDATE SIS.Usuario_Novidade SET VERSAO_VISTA = '' WHERE ID_USUARIO = @Claude;
 INSERT @nv EXEC SIS.SIS_Novidades_Obter @IdUsuario = @Claude;
-INSERT @r SELECT N'nunca viu: no máximo 3 versões, 1 omitida', N'1.9,2.0,2.1|1', CONCAT(STRING_AGG(VERSAO, ',') WITHIN GROUP (ORDER BY VERSAO_NUMERO), '|', MAX(VERSOES_OMITIDAS))
+INSERT @r SELECT N'nunca viu: no máximo 3 versões, resto omitido', CONCAT(@V3, ',', @V2, ',', @V1, '|', @QtdV - 3), CONCAT(STRING_AGG(VERSAO, ',') WITHIN GROUP (ORDER BY VERSAO_NUMERO), '|', MAX(VERSOES_OMITIDAS))
        FROM (SELECT DISTINCT VERSAO, VERSAO_NUMERO, VERSOES_OMITIDAS FROM @nv) x;
 DELETE @nv;
 UPDATE SIS.Parametro SET VALOR = N'1' WHERE CHAVE = 'NOVIDADES_VERSOES_MAX';
 INSERT @nv EXEC SIS.SIS_Novidades_Obter @IdUsuario = @Claude;
-INSERT @r SELECT N'máximo 1 versão pelo parâmetro', N'2.1', ISNULL(STRING_AGG(VERSAO, ','), '') FROM (SELECT DISTINCT VERSAO FROM @nv) x;
+INSERT @r SELECT N'máximo 1 versão pelo parâmetro', @V1, ISNULL(STRING_AGG(VERSAO, ','), '') FROM (SELECT DISTINCT VERSAO FROM @nv) x;
 DELETE @nv;
 UPDATE SIS.Parametro SET VALOR = N'N' WHERE CHAVE = 'NOVIDADES_AVISO_ATIVO';
 INSERT @nv EXEC SIS.SIS_Novidades_Obter @IdUsuario = @Claude;
