@@ -13,6 +13,10 @@
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04d (P12, P10): filtro @IdParceiroTipo, @PendenciaCobranca (clientes
+                        com parcela a receber em aberto e cadastro não apto), colunas TIPOS,
+                        APTO_COBRANCA, PENDENCIA_COBRANCA e TITULO_ABERTO.
+
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Pessoa_Listar @IdUsuario = 2, @Busca = N'silva';
@@ -26,7 +30,9 @@ CREATE OR ALTER PROCEDURE [CAD].[CAD_Pessoa_Listar]
     @Busca         NVARCHAR(100) = NULL,
     @Papel         VARCHAR(12)   = NULL,
     @SomenteAtivos BIT           = 1,
-    @Limite        INT           = 500
+    @Limite        INT           = 500,
+    @IdParceiroTipo INT          = NULL,
+    @PendenciaCobranca BIT       = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -63,10 +69,29 @@ BEGIN
                ISNULL((SELECT TOP 1 pc.VALOR FROM CAD.Pessoa_Contato pc WITH (NOLOCK)
                        WHERE pc.ID_PESSOA = p.ID_PESSOA AND pc.ATIVO = 1 AND pc.TIPO <> 'EMAIL'
                        ORDER BY pc.PRINCIPAL DESC, pc.ID_PESSOA_CONTATO), N'') AS TELEFONE_PRINCIPAL,
-               p.ATIVO, p.DT_ALTERACAO, ISNULL(p.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
+               p.ATIVO, p.DT_ALTERACAO, ISNULL(p.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO,
+               ISNULL((SELECT STRING_AGG(t.DESCRICAO, N', ') WITHIN GROUP (ORDER BY t.ORDEM, t.DESCRICAO)
+                       FROM CAD.Pessoa_Tipo x WITH (NOLOCK)
+                       INNER JOIN CAD.Parceiro_Tipo t WITH (NOLOCK) ON t.ID_PARCEIRO_TIPO = x.ID_PARCEIRO_TIPO
+                       WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ATIVO = 1), N'') AS TIPOS,
+               CASE WHEN p.CLIENTE = 1 THEN f.APTO END AS APTO_COBRANCA,
+               CASE WHEN p.CLIENTE = 1 THEN f.PENDENCIA ELSE N'' END AS PENDENCIA_COBRANCA,
+               CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.Lancamento l WITH (NOLOCK)
+                                      INNER JOIN FIN.Parcela pa WITH (NOLOCK) ON pa.ID_LANCAMENTO = l.ID_LANCAMENTO
+                                      WHERE l.ID_PESSOA = p.ID_PESSOA AND l.TIPO = 'R' AND l.SITUACAO = 'ATIVO'
+                                        AND pa.SITUACAO IN ('ABERTA', 'PARCIAL')) THEN 1 ELSE 0 END AS BIT) AS TITULO_ABERTO
         FROM CAD.Pessoa p WITH (NOLOCK)
+        CROSS APPLY CAD.fn_CAD_Pessoa_Pendencia_Cobranca(p.ID_PESSOA) f
         WHERE (ISNULL(@SomenteAtivos, 1) = 0 OR p.ATIVO = 1)
           AND p.DT_EXCLUSAO IS NULL
+          AND (@IdParceiroTipo IS NULL
+               OR EXISTS (SELECT 1 FROM CAD.Pessoa_Tipo x WITH (NOLOCK) WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ID_PARCEIRO_TIPO = @IdParceiroTipo AND x.ATIVO = 1))
+          AND (ISNULL(@PendenciaCobranca, 0) = 0
+               OR (p.CLIENTE = 1 AND f.APTO = 0
+                   AND EXISTS (SELECT 1 FROM FIN.Lancamento l WITH (NOLOCK)
+                               INNER JOIN FIN.Parcela pa WITH (NOLOCK) ON pa.ID_LANCAMENTO = l.ID_LANCAMENTO
+                               WHERE l.ID_PESSOA = p.ID_PESSOA AND l.TIPO = 'R' AND l.SITUACAO = 'ATIVO'
+                                 AND pa.SITUACAO IN ('ABERTA', 'PARCIAL'))))
           AND (   @Papel = ''
                OR (@Papel = 'CLIENTE' AND p.CLIENTE = 1) OR (@Papel = 'FORNECEDOR' AND p.FORNECEDOR = 1)
                OR (@Papel = 'FUNCIONARIO' AND p.FUNCIONARIO = 1) OR (@Papel = 'CORRETOR' AND p.CORRETOR = 1))
