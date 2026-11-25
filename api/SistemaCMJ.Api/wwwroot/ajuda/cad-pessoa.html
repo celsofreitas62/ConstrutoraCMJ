@@ -2,15 +2,23 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>Ajuda: Ficha da pessoa</title>
+  <title>Ajuda: Ficha do parceiro</title>
 </head>
 <body>
-  <p><strong>Para que serve:</strong> incluir, alterar, excluir ou reativar uma pessoa, com contatos, dados bancários e vínculos. Tudo é gravado de uma vez ao clicar em <strong>Gravar</strong>; se algo estiver errado, nada é gravado e a janela diz o que corrigir.</p>
+  <p><strong>Para que serve:</strong> incluir, alterar, desativar, excluir ou reativar um parceiro (cliente, fornecedor, funcionário, corretor ou outro tipo), com endereço, contatos, dados bancários, vínculos e anexos. Tudo é gravado de uma vez ao clicar em <strong>Gravar</strong>; se algo estiver errado, nada é gravado e a janela diz o que corrigir.</p>
   <h2>Dados principais</h2>
   <ul>
     <li>Escolha <strong>Pessoa física</strong> ou <strong>Pessoa jurídica</strong>: os campos mudam conforme o tipo.</li>
-    <li>Nome (ou razão social) e pelo menos um papel são obrigatórios.</li>
-    <li>O CPF/CNPJ é conferido ao gravar; pode digitar com ou sem pontos. Se outra pessoa já tiver o mesmo documento, o sistema grava e avisa.</li>
+    <li>O nome (ou razão social) é obrigatório.</li>
+    <li>Em <strong>Tipos</strong>, marque um ou mais (ex.: cliente e fornecedor ao mesmo tempo). Sem nenhum marcado, o parceiro fica como "N/A". Os tipos são cadastrados em Cadastros › Tipos de parceiro.</li>
+    <li>O CPF/CNPJ é conferido ao gravar; pode digitar com ou sem pontos. Se outro parceiro já tiver o mesmo documento, o sistema grava e avisa.</li>
+    <li><strong>CNPJ</strong> (pessoa jurídica): ao sair do campo, o sistema busca na Receita a razão social, o nome fantasia e o endereço. Se já houver algo digitado diferente, ele pergunta antes de trocar. Se a empresa não estiver ATIVA na Receita, aparece um aviso.</li>
+  </ul>
+  <h2>Endereço</h2>
+  <ul>
+    <li>Digite o <strong>CEP</strong> e saia do campo: logradouro, bairro, cidade e UF são preenchidos sozinhos. Confira e complete o número e o complemento.</li>
+    <li>Se a consulta não responder (sem internet, por exemplo), digite o endereço normalmente.</li>
+    <li>Para emitir boleto, o endereço precisa estar completo: CEP, logradouro, número, bairro, cidade e UF.</li>
   </ul>
   <h2>Contatos</h2>
   <ul>
