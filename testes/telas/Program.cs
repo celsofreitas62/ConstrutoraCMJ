@@ -388,7 +388,9 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
             if (await JanelaAberta() is { } j2) { motivo8 = tipo + ": salvar filtro abriu \"" + j2.Titulo + "\": " + j2.Texto; break; }
             await pagina.Locator("#botao-limpar").ClickAsync();
             await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            var opcao = await pagina.Locator("#filtro-salvo option", new() { HasText = "teste automatico" }).GetAttributeAsync("value");
+            var opcaoSalva = pagina.Locator("#filtro-salvo option", new() { HasText = "teste automatico" });
+            await opcaoSalva.WaitForAsync(new() { State = WaitForSelectorState.Attached, Timeout = 10000 });
+            var opcao = await opcaoSalva.GetAttributeAsync("value");
             if (string.IsNullOrEmpty(opcao)) { motivo8 = tipo + ": filtro salvo nao apareceu em Meus filtros"; break; }
             await pagina.Locator("#filtro-salvo").SelectOptionAsync(opcao);
             await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -396,7 +398,8 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
             await pagina.Locator("#botao-apagar-filtro").ClickAsync();
             await pagina.Locator("dialog.janela .botao-principal").First.ClickAsync();
             await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            if (await pagina.Locator("#filtro-salvo option", new() { HasText = "teste automatico" }).CountAsync() > 0) { motivo8 = tipo + ": filtro nao foi apagado"; break; }
+            try { await pagina.Locator("#filtro-salvo option", new() { HasText = "teste automatico" }).WaitForAsync(new() { State = WaitForSelectorState.Detached, Timeout = 10000 }); }
+            catch (TimeoutException) { motivo8 = tipo + ": filtro nao foi apagado"; break; }
             await pagina.Locator("#botao-limpar").ClickAsync();
             await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
