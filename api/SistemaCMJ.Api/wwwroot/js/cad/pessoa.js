@@ -12,14 +12,36 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const { acoes } = await Layout.iniciar();
+  const { sessao, acoes } = await Layout.iniciar();
+  // 04d2 (25/11/2026): rótulo pelo parâmetro PARCEIRO_ROTULO; tipos de parceiro (vários) no lugar dos papéis.
+  const ROTULO = (sessao && sessao.parceiroRotulo) || 'Parceiro';
+  const NOVO = 'Novo ' + ROTULO.toLowerCase();
   const $ = (id) => document.getElementById(id);
 
   const idPessoa = parseInt(Util.parametro('id') || '0', 10) || null;
   const CAMPOS = ['nome', 'nomeFantasia', 'cpfCnpj', 'rg', 'orgaoEmissor', 'inscricaoEstadual', 'inscricaoMunicipal',
     'dtNascimento', 'nacionalidade', 'profissao', 'estadoCivil', 'regimeBens', 'cep', 'logradouro', 'numero',
     'complemento', 'bairro', 'cidade', 'uf', 'observacao'];
-  const PAPEIS = ['cliente', 'fornecedor', 'funcionario', 'corretor'];
+  let tiposMarcados = new Set();
+
+  /** Desenha uma marcação por tipo ativo (N/A é automático e não aparece) + os inativos que o parceiro já tem. */
+  async function desenharTipos(tiposDoParceiro) {
+    const r = await Api.get('/api/cad/parceiro-tipos', { somenteAtivos: true });
+    const lista = (r.sucesso ? r.dados || [] : []).map((t) => ({ id: t.ID_PARCEIRO_TIPO, codigo: t.CODIGO, descricao: t.DESCRICAO }));
+    for (const t of tiposDoParceiro) if (!lista.some((x) => x.id === t.id)) lista.push({ ...t, descricao: t.descricao + ' (inativo)' });
+    const caixa = $('papeis');
+    for (const t of lista.filter((x) => x.codigo !== 'NA')) {
+      const label = Util.el('label', 'marcacao');
+      const marca = Util.el('input');
+      marca.type = 'checkbox';
+      marca.dataset.idTipo = t.id;
+      marca.id = 'tipo-' + t.codigo.toLowerCase();
+      marca.checked = tiposMarcados.has(t.id);
+      marca.addEventListener('change', () => { if (marca.checked) tiposMarcados.add(t.id); else tiposMarcados.delete(t.id); });
+      label.append(marca, document.createTextNode(' ' + t.descricao));
+      caixa.append(label);
+    }
+  }
 
   let tipo = 'F';
   let ativo = true;
@@ -339,11 +361,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function atualizarCabecalho(p) {
-    $('titulo').textContent = p ? p.NOME : 'Nova pessoa';
-    document.title = 'SistemaCMJ – ' + (p ? p.NOME : 'Nova pessoa');
+    $('titulo').textContent = p ? p.NOME : NOVO;
+    document.title = 'SistemaCMJ – ' + (p ? p.NOME : NOVO);
     if (!p) { $('subtitulo').textContent = 'Preencha os dados e clique em Gravar.'; return; }
-    const papeis = [['CLIENTE', 'Cliente'], ['FORNECEDOR', 'Fornecedor'], ['FUNCIONARIO', 'Funcionário'], ['CORRETOR', 'Corretor']]
-      .filter(([c]) => p[c]).map(([, t]) => t).join(', ');
+    const papeis = (p.TIPOS || []).map((t) => t.descricao).join(', ');
     $('subtitulo').textContent = ['Código ' + String(p.ID_PESSOA).padStart(6, '0'), papeis, p.ATIVO ? 'Ativo' : 'Inativo'].filter(Boolean).join(' · ');
     const partes = [];
     if (p.DT_CRIACAO) partes.push('Criado em ' + Util.dataHora(p.DT_CRIACAO) + (p.USUARIO_CRIACAO ? ' por ' + p.USUARIO_CRIACAO : ''));
@@ -354,7 +375,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('aviso-documento').hidden = repetido === 0;
     $('aviso-documento').textContent = repetido === 1
       ? 'Atenção: existe outra pessoa cadastrada com este mesmo documento.'
-      : 'Atenção: existem ' + repetido + ' outras pessoas cadastradas com este mesmo documento.';
+      : 'Atenção: existem ' + repetido + ' outros parceiros cadastrados com este mesmo documento.';
   }
 
   // ---------- Carga ----------
@@ -375,7 +396,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     for (const [campo, coluna] of Object.entries(colunas)) $(campo).value = p[coluna] ?? '';
     $('dtNascimento').value = Util.dataIso(p.DT_NASCIMENTO);
-    for (const papel of PAPEIS) $(papel).checked = !!p[papel.toUpperCase()];
+    tiposMarcados = new Set((p.TIPOS || []).filter((t) => t.codigo !== 'NA').map((t) => t.id));
+    await desenharTipos(p.TIPOS || []);
     contatos = (p.CONTATOS || []).map((c) => ({ ...c, nome: c.nome ?? '' }));
     bancarios = (p.DADOS_BANCARIOS || []).map((d) => ({ ...d }));
     vinculos = (p.VINCULOS || []).map((v) => ({ ...v }));
@@ -384,7 +406,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     naLixeira = !!p.NA_LIXEIRA;
     if (naLixeira) {
       const aviso = $('aviso-lixeira');
-      aviso.replaceChildren(document.createTextNode('Esta pessoa está na lixeira: a ficha abre só para consulta. Para usar de novo, recupere na '));
+      aviso.replaceChildren(document.createTextNode('Este registro está na lixeira: a ficha abre só para consulta. Para usar de novo, recupere na '));
       const link = Util.el('a', null, 'Lixeira');
       link.href = '/sis/lixeira.html?item=CAD_PESSOA';
       aviso.append(link, document.createTextNode('.'));
@@ -395,7 +417,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('botao-reativar').hidden = naLixeira || ativo || !acoes.has('DESATIVAR');
   } else {
     aplicarTipo('F');
-    $('cliente').checked = true;
+    await desenharTipos([]);
+    const cliente = $('tipo-cliente');
+    if (cliente) { cliente.checked = true; tiposMarcados.add(parseInt(cliente.dataset.idTipo, 10)); }
     $('nacionalidade').value = 'Brasileira';
     atualizarCabecalho(null);
   }
@@ -419,18 +443,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       await Mensagens.alerta(tipo === 'F' ? 'Informe o nome completo.' : 'Informe a razão social.', 'ATENCAO', { foco: $('nome') });
       return;
     }
-    if (!PAPEIS.some((p) => $(p).checked)) {
-      abrirAba($('aba-dados'));
-      await Mensagens.alerta('Marque pelo menos um papel (cliente, fornecedor, funcionário ou corretor).', 'ATENCAO', { foco: $('cliente') });
-      return;
-    }
 
     const nomeGravar = $('nome').value.trim();
     if (!(await Mensagens.confirmar('Gravar?', (idPessoa ? 'Confirma a gravação das alterações de ' : 'Confirma a inclusão de ') + nomeGravar + '?', 'Gravar'))) return;
 
     const corpo = { idPessoa, tipoPessoa: tipo };
     for (const c of CAMPOS) corpo[c] = $(c).value;
-    for (const p of PAPEIS) corpo[p] = $(p).checked;
+    corpo.tipos = [...tiposMarcados];
     if (tipo === 'F') { corpo.nomeFantasia = ''; corpo.inscricaoEstadual = ''; corpo.inscricaoMunicipal = ''; }
     else { corpo.rg = ''; corpo.orgaoEmissor = ''; corpo.dtNascimento = ''; corpo.estadoCivil = ''; corpo.regimeBens = ''; }
     corpo.contatos = contatos.map((c) => ({ id: c.id ?? null, tipo: c.tipo, valor: (c.valor || '').trim(), nome: (c.nome || '').trim(), principal: !!c.principal, recebeCobranca: !!c.recebeCobranca }));
@@ -447,7 +466,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!(await Mensagens.tratar(r))) return;
 
     sujo = false;
-    await Mensagens.concluido(r.mensagem || 'Pessoa gravada.');
+    await Mensagens.concluido(r.mensagem || ROTULO + ' gravado.');
     const novoId = r.dados && r.dados.id ? r.dados.id : idPessoa;
     location.replace('/cad/pessoa.html?id=' + encodeURIComponent(novoId));
   });
@@ -457,8 +476,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nome = $('nome').value.trim() || 'esta pessoa';
     if (sujo && !(await Mensagens.confirmar('Há alterações não gravadas', 'Esta ação não grava as outras alterações da ficha, que serão perdidas. Continuar?', 'Continuar'))) return;
     const ok = reativar
-      ? await Mensagens.confirmar('Reativar pessoa?', 'A pessoa ' + nome + ' volta a aparecer nas listas de escolha.', 'Reativar')
-      : await Mensagens.confirmar('Desativar pessoa?', 'A pessoa ' + nome + ' será desativada: some das listas de escolha, mas continua nos lançamentos e no histórico. Dá para reativar quando quiser.', 'Desativar');
+      ? await Mensagens.confirmar('Reativar ' + ROTULO.toLowerCase() + '?', nome + ' volta a aparecer nas listas de escolha.', 'Reativar')
+      : await Mensagens.confirmar('Desativar ' + ROTULO.toLowerCase() + '?', nome + ' será desativada: some das listas de escolha, mas continua nos lançamentos e no histórico. Dá para reativar quando quiser.', 'Desativar');
     if (!ok) return;
     const r = await Api.post('/api/cad/pessoas/' + idPessoa + '/excluir', { reativar });
     if (!(await Mensagens.tratar(r))) return;
@@ -471,8 +490,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('botao-excluir').addEventListener('click', async () => {
     const nome = $('nome').value.trim() || 'esta pessoa';
     if (sujo && !(await Mensagens.confirmar('Há alterações não gravadas', 'Excluir não grava as outras alterações da ficha, que serão perdidas. Continuar?', 'Continuar'))) return;
-    const motivo = await Mensagens.pedirTexto('Excluir pessoa?',
-      'A pessoa ' + nome + ' vai para a lixeira: some de todas as telas e pode ser recuperada na Lixeira até o prazo acabar; depois é apagada de vez. '
+    const motivo = await Mensagens.pedirTexto('Excluir ' + ROTULO.toLowerCase() + '?',
+      nome + ' vai para a lixeira: some de todas as telas e pode ser recuperada na Lixeira até o prazo acabar; depois é apagada de vez. '
       + 'Só dá para excluir quem não é usado em nenhum lugar (senão, use Desativar). Enquanto estiver na lixeira, o CPF/CNPJ continua ocupado.',
       { rotulo: 'Motivo (opcional)', botao: 'Excluir', tipo: 'textarea', dica: 'Por que está excluindo. Opcional. Aparece na Lixeira e no histórico.' });
     if (motivo === null) return;

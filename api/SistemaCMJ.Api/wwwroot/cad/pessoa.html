@@ -19,8 +19,8 @@
     <main class="conteudo">
       <div class="cabecalho">
         <div class="cabecalho-titulo">
-          <a href="/cad/pessoas.html" id="link-voltar">‹ Voltar para a lista de Pessoas</a>
-          <h1 id="titulo">Nova pessoa</h1>
+          <a href="/cad/pessoas.html" id="link-voltar">‹ Voltar para a lista de Parceiros</a>
+          <h1 id="titulo">Novo parceiro</h1>
           <div class="subtitulo" id="subtitulo"></div>
         </div>
         <button data-dica="Manda a pessoa para a lixeira (some de todas as telas; pode ser recuperada na Lixeira até o prazo acabar). Só dá para excluir quem não é usado em nenhum lugar; senão, use Desativar. Pede confirmação." type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
@@ -54,12 +54,8 @@
                 <button data-dica="Pessoa jurídica (empresa): pede CNPJ, nome fantasia e inscrições." type="button" class="pilula" role="radio" aria-checked="false" data-tipo="J" id="tipo-j">Pessoa jurídica</button>
               </div>
             </div>
-            <fieldset class="marcacoes" id="papeis">
-              <legend class="rotulo-linha">Papéis (pelo menos um)</legend>
-              <label data-dica="Compra imóveis ou serviços da construtora." class="marcacao"><input type="checkbox" id="cliente"> Cliente</label>
-              <label data-dica="Vende materiais ou serviços para a construtora." class="marcacao"><input type="checkbox" id="fornecedor"> Fornecedor</label>
-              <label data-dica="Trabalha para a construtora." class="marcacao"><input type="checkbox" id="funcionario"> Funcionário</label>
-              <label data-dica="Corretor ou imobiliária que intermedia vendas." class="marcacao"><input type="checkbox" id="corretor"> Corretor</label>
+            <fieldset class="marcacoes" id="papeis" data-dica="Marque todos os tipos que valem para este parceiro (ex.: cliente e fornecedor). Sem nenhum, ele fica como N/A. Novos tipos: Cadastros › Tipos de parceiro.">
+              <legend class="rotulo-linha">Tipos de parceiro</legend>
             </fieldset>
 
             <div class="grade">
