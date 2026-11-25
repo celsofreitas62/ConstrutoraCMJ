@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Tipos de parceiro</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/cad/parceiro-tipos.js" defer></script>
+</head>
+<body data-tela="cad/parceiro-tipos.html" data-ajuda="cad-parceiro-tipos" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho" id="caminho">Cadastros › Tipos de parceiro</div>
+          <h1 id="titulo">Tipos de parceiro</h1>
+        </div>
+        <button data-dica="Acrescenta uma linha em branco para criar um tipo novo (ex.: Prestador de serviço). Preencha e clique em Gravar na linha." type="button" class="botao botao-principal" id="botao-incluir" hidden>+ Incluir tipo</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Digite parte da descrição ou o início do código. A lista atualiza sozinha." class="campo f-3">Descrição ou código
+          <input type="search" id="busca" maxlength="60" placeholder="Ex.: fornecedor" autocomplete="off">
+        </label>
+        <label data-dica="Mostra também os tipos desativados." class="marcacao">
+          <input type="checkbox" id="inativos"> Mostrar inativos
+        </label>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div class="rolagem">
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th scope="col">Código</th>
+                  <th scope="col">Descrição</th>
+                  <th scope="col">Ordem</th>
+                  <th scope="col">Ativo</th>
+                  <th scope="col">Parceiros</th>
+                  <th scope="col"><span class="so-leitor">Gravar</span></th>
+                </tr>
+              </thead>
+              <tbody id="linhas"></tbody>
+            </table>
+          </div>
+          <div class="rodape-lista">
+            <span id="contagem" aria-live="polite"></span>
+            <span>Os tipos do sistema (Cliente, Fornecedor, Funcionário, Corretor) só mudam a descrição e a ordem</span>
+          </div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
