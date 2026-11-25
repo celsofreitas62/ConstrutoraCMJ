@@ -4,6 +4,11 @@ Fonte única das notas de cada versão (o que foi corrigido e o que é novo), em
 O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.txt`; o `atualizar.cmd` mostra e grava no banco (`SIS.Atualizacao`), base da futura tela **Sistema › Versões** (pedido P22).
 **Regra**: toda versão nova ganha a sua seção aqui **antes** de publicar (o publicar recusa pacote sem nota). Título da seção = versão do banco (`## 1.8 (22/11/2026)`). Itens começam por **Novo:**, **Melhoria:** ou **Correção:**.
 
+## 2.5 (em preparação: 04f2a a 04f2d)
+- Novo: telas **Contas a pagar** e **Contas a receber** (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.
+- Novo: **Meus filtros**: cada usuário salva os filtros que usa sempre (ex.: "Vencidos da CMJ") e pode marcar um para a tela já abrir com ele. Sem filtro marcado, a tela abre com os últimos filtros usados.
+- Novo: **Exportar Excel** das contas a pagar e a receber com todas as linhas do filtro.
+
 ## 2.4 (25/11/2026)
 - Novo: telas de **Empresas** (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.
 - Novo: **rodapé dos e-mails por empresa**: um texto livre com os contatos (e-mails, telefones, site), com prévia de como vai aparecer.
