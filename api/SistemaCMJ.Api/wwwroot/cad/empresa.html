@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Ficha da empresa</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/historico.js" defer></script>
+  <script src="/js/anexos.js" defer></script>
+  <script src="/js/cad/rotulos.js" defer></script>
+  <script src="/js/cad/empresa.js" defer></script>
+</head>
+<body data-tela="cad/empresa.html" data-menu="cad/empresas.html" data-ajuda="cad-empresa" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <a href="/cad/empresas.html" id="link-voltar">‹ Voltar para a lista de Empresas</a>
+          <h1 id="titulo">Nova empresa</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button data-dica="Manda a empresa para a lixeira (pode ser recuperada até o prazo acabar). Só dá para excluir empresa que não é usada em nenhum lugar (contas, centros, lançamentos); senão, use Desativar. Pede confirmação." type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
+        <button data-dica="Desativa a empresa: some das listas de escolha, mas continua nos lançamentos e no histórico. Antes, desative as contas e os centros de custo dela. Pede confirmação." type="button" class="botao" id="botao-desativar" hidden>Desativar</button>
+        <button data-dica="Volta a empresa para as listas de escolha." type="button" class="botao" id="botao-reativar" hidden>Reativar</button>
+        <button data-dica="Volta para a lista sem gravar (avisa se houver alteração)." type="button" class="botao" id="botao-cancelar">Cancelar</button>
+        <button data-dica="Grava a ficha. Pede confirmação antes." type="submit" form="ficha" class="botao botao-principal" id="botao-gravar" hidden>Gravar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="aviso-faixa" id="aviso-lixeira" role="note" hidden></div>
+
+      <div class="abas" role="tablist" aria-label="Partes da ficha">
+        <button type="button" class="aba" role="tab" id="aba-dados" aria-controls="painel-dados" aria-selected="true">Dados principais</button>
+        <button type="button" class="aba" role="tab" id="aba-endereco" aria-controls="painel-endereco" aria-selected="false">Endereço</button>
+        <button type="button" class="aba" role="tab" id="aba-rodape" aria-controls="painel-rodape" aria-selected="false">Rodapé dos e-mails</button>
+        <button type="button" class="aba" role="tab" id="aba-contas" aria-controls="painel-contas" aria-selected="false" hidden>Contas bancárias</button>
+        <button type="button" class="aba" role="tab" id="aba-anexos" aria-controls="painel-anexos" aria-selected="false" hidden>Anexos</button>
+        <button type="button" class="aba" role="tab" id="aba-historico" aria-controls="painel-historico" aria-selected="false" hidden>Histórico</button>
+      </div>
+
+      <div class="area-lista">
+        <form class="cartao" id="ficha" novalidate>
+
+          <section class="painel-aba" role="tabpanel" id="painel-dados" aria-labelledby="aba-dados">
+            <div class="grade">
+              <label data-dica="Razão social, como no cartão do CNPJ." data-obrigatorio class="campo s-2">Razão social *
+                <input id="razaoSocial" maxlength="150" autocomplete="off">
+              </label>
+              <label data-dica="Nome comercial, se for diferente da razão social. Aparece nas listas." class="campo s-2">Nome fantasia
+                <input id="nomeFantasia" maxlength="100" autocomplete="off">
+              </label>
+              <label data-dica="CNPJ com ou sem pontos (aceita o alfanumérico). Ao sair do campo, o sistema busca os dados na Receita Federal e preenche a ficha." data-obrigatorio class="campo">CNPJ *
+                <input id="cnpj" maxlength="20" autocomplete="off">
+              </label>
+              <label data-dica="Opcional. Segundo CNPJ usado nas notas de compra e no DDA (ex.: SPE no RET). Deixe em branco se for o mesmo." class="campo">CNPJ de compras / DDA
+                <input id="cnpjCompras" maxlength="20" autocomplete="off">
+              </label>
+              <label data-dica="Construtora, SPE (sociedade de propósito específico de uma obra), Holding ou Outra." class="campo">Tipo
+                <select id="tipo">
+                  <option value="CONSTRUTORA">Construtora</option>
+                  <option value="SPE">SPE</option>
+                  <option value="HOLDING">Holding</option>
+                  <option value="OUTRA">Outra</option>
+                </select>
+              </label>
+              <label data-dica="Regime de tributação da empresa (usado nos relatórios e na exportação ao contador)." class="campo">Regime tributário
+                <select id="regimeTributario">
+                  <option value="">(não informado)</option>
+                  <option value="SIMPLES">Simples Nacional</option>
+                  <option value="LUCRO_PRESUMIDO">Lucro Presumido</option>
+                  <option value="LUCRO_REAL">Lucro Real</option>
+                  <option value="RET">RET (regime especial de tributação)</option>
+                </select>
+              </label>
+              <label data-dica="Inscrição estadual, ou ISENTO." class="campo">Inscrição estadual
+                <input id="inscricaoEstadual" maxlength="20" autocomplete="off">
+              </label>
+              <label data-dica="Inscrição municipal (notas de serviço)." class="campo">Inscrição municipal
+                <input id="inscricaoMunicipal" maxlength="20" autocomplete="off">
+              </label>
+              <label data-dica="E-mail principal da empresa." class="campo s-2">E-mail
+                <input id="email" type="email" maxlength="256" autocomplete="off">
+              </label>
+              <label data-dica="Telefone com DDD, só números ou com traço." class="campo">Telefone
+                <input id="telefone" maxlength="30" autocomplete="off">
+              </label>
+              <label data-dica="Conta usada quando um lançamento da empresa não diz a conta (ex.: recebimentos sem conta). Só aparecem as contas ativas desta empresa; cadastre-as na aba Contas bancárias." class="campo">Conta bancária padrão
+                <select id="idContaBancariaPadrao"><option value="">(nenhuma)</option></select>
+              </label>
+              <label data-dica="Só o administrador: pasta do servidor onde ficam os arquivos OFX (extratos) desta empresa, para a conciliação." class="campo s-2" id="campo-pasta-ofx" hidden>Pasta dos arquivos OFX
+                <input id="pastaOfx" maxlength="260" autocomplete="off" placeholder="Ex.: D:\OFX\Orion">
+              </label>
+              <div class="campo s-2" id="logomarca" hidden>
+                <span>Logomarca</span>
+                <img id="logomarca-imagem" alt="Logomarca da empresa" style="max-height:72px;max-width:240px;object-fit:contain;margin-top:6px">
+                <span class="suave">Para trocar, anexe outra do tipo Logomarca na aba Anexos (vale a mais recente).</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-endereco" aria-labelledby="aba-endereco" hidden>
+            <div class="grade-6">
+              <label data-dica="CEP com 8 números. Ao sair do campo, o sistema busca e preenche o endereço (confira e informe o número)." class="campo">CEP
+                <input id="cep" maxlength="10" inputmode="numeric" autocomplete="off">
+              </label>
+              <label data-dica="Rua, avenida, praça..." class="campo s-4">Logradouro
+                <input id="logradouro" maxlength="150" autocomplete="off">
+              </label>
+              <label data-dica="Número (ou S/N)." class="campo">Número
+                <input id="numero" maxlength="20" autocomplete="off">
+              </label>
+              <label data-dica="Sala, andar, bloco..." class="campo s-2">Complemento
+                <input id="complemento" maxlength="60" autocomplete="off">
+              </label>
+              <label data-dica="Bairro." class="campo s-2">Bairro
+                <input id="bairro" maxlength="60" autocomplete="off">
+              </label>
+              <label data-dica="Cidade." class="campo">Cidade
+                <input id="cidade" maxlength="60" autocomplete="off">
+              </label>
+              <label data-dica="Sigla do estado com 2 letras (ex.: MG)." class="campo">UF
+                <input id="uf" maxlength="2" autocomplete="off">
+              </label>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-rodape" aria-labelledby="aba-rodape" hidden>
+            <div class="grade">
+              <label data-dica="Texto livre com os contatos da empresa (e-mails, telefones, site, endereço…), uma informação por linha. Aparece no rodapé dos e-mails que saem em nome desta empresa. E-mails e sites viram links." class="campo s-2">Texto do rodapé
+                <textarea id="rodapeEmail" rows="7" maxlength="1000" placeholder="Ex.:&#10;Financeiro: financeiro@cmj.com.br&#10;Vendas: (35) 3700-0000&#10;Visite nosso site: www.cmj.com.br"></textarea>
+              </label>
+              <div class="campo s-2">
+                <span>Como vai aparecer no e-mail</span>
+                <div id="rodape-previa" class="cartao" style="margin-top:6px;padding:10px 14px;font-size:12px;color:#555;border-top:2px solid #A8A8A8;text-align:justify;min-height:3em"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-contas" aria-labelledby="aba-contas" hidden>
+            <div class="barra-lista">
+              <span class="suave">Contas correntes, caixas e contas de permuta desta empresa. Clique na linha para abrir a ficha da conta.</span>
+              <a data-dica="Abre a ficha de conta nova já com esta empresa." class="botao botao-contorno" id="incluir-conta" hidden>+ Incluir conta</a>
+            </div>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead><tr><th scope="col">Descrição</th><th scope="col">Tipo</th><th scope="col">Banco</th><th scope="col">Agência / conta</th><th scope="col">Padrão</th><th scope="col">Situação</th></tr></thead>
+                <tbody id="linhas-contas"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-anexos" aria-labelledby="aba-anexos" hidden>
+            <div id="anexos"></div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-historico" aria-labelledby="aba-historico" hidden>
+            <div id="historico"></div>
+          </section>
+        </form>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+
+      <div class="rodape-ficha" id="rodape"></div>
+    </main>
+  </div>
+</body>
+</html>

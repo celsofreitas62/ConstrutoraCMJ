@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Empresas</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/cad/rotulos.js" defer></script>
+  <script src="/js/cad/empresas.js" defer></script>
+</head>
+<body data-tela="cad/empresas.html" data-ajuda="cad-empresas" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Cadastros › Empresas</div>
+          <h1>Empresas</h1>
+        </div>
+        <a data-dica="Abre a Lixeira já filtrada nas empresas excluídas." class="link-lixeira" href="/sis/lixeira.html?item=CAD_EMPRESA" id="link-lixeira" hidden>Lixeira</a>
+        <button data-dica="Baixa a lista que está na tela num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <a data-dica="Abre a ficha em branco para cadastrar uma empresa nova (construtora, SPE, holding)." class="botao botao-principal" href="/cad/empresa.html" id="botao-incluir" hidden>+ Incluir</a>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Digite parte da razão social ou do nome fantasia, ou o início do CNPJ. A lista atualiza sozinha." class="campo f-3">Razão social, nome fantasia ou CNPJ
+          <input type="search" id="busca" maxlength="100" placeholder="Ex.: orion" autocomplete="off">
+        </label>
+        <label data-dica="Mostra só as empresas de um tipo." class="campo f-1">Tipo
+          <select id="tipo">
+            <option value="">Todos</option>
+            <option value="CONSTRUTORA">Construtora</option>
+            <option value="SPE">SPE</option>
+            <option value="HOLDING">Holding</option>
+            <option value="OUTRA">Outra</option>
+          </select>
+        </label>
+        <label data-dica="Ativas, inativas (desativadas) ou todas. As excluídas ficam na Lixeira." class="campo f-1">Situação
+          <select id="situacao">
+            <option value="ATIVOS">Ativas</option>
+            <option value="INATIVOS">Inativas</option>
+            <option value="TODOS">Todas</option>
+          </select>
+        </label>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div class="rolagem">
+            <table class="tabela tabela-larga">
+              <thead>
+                <tr>
+                  <th scope="col">Razão social</th>
+                  <th scope="col">CNPJ</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Regime</th>
+                  <th scope="col">Cidade/UF</th>
+                  <th scope="col">Conta padrão</th>
+                  <th scope="col">Contas</th>
+                  <th scope="col">Centros</th>
+                  <th scope="col">Situação</th>
+                </tr>
+              </thead>
+              <tbody id="linhas"></tbody>
+            </table>
+          </div>
+          <div class="rodape-lista">
+            <span id="contagem" aria-live="polite"></span>
+            <span>Clique na linha para abrir a ficha</span>
+          </div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

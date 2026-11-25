@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Bancos</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/banco/bancos.js" defer></script>
+</head>
+<body data-tela="banco/bancos.html" data-ajuda="banco-bancos" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Bancos › Bancos</div>
+          <h1>Bancos</h1>
+        </div>
+        <button data-dica="Baixa a lista que está na tela num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <button data-dica="Acrescenta uma linha em branco para cadastrar um banco. Preencha e clique em Gravar na linha." type="button" class="botao botao-principal" id="botao-incluir" hidden>+ Incluir banco</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Digite parte do nome ou o código do banco. A lista atualiza sozinha." class="campo f-3">Nome ou código
+          <input type="search" id="busca" maxlength="60" placeholder="Ex.: sicredi ou 748" autocomplete="off">
+        </label>
+        <label data-dica="Mostra também os bancos desativados." class="marcacao">
+          <input type="checkbox" id="inativos"> Mostrar inativos
+        </label>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div class="rolagem">
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th scope="col">Código</th>
+                  <th scope="col">Nome</th>
+                  <th scope="col">ISPB</th>
+                  <th scope="col">Ativo</th>
+                  <th scope="col"><span class="so-leitor">Gravar</span></th>
+                </tr>
+              </thead>
+              <tbody id="linhas"></tbody>
+            </table>
+          </div>
+          <div class="rodape-lista">
+            <span id="contagem" aria-live="polite"></span>
+            <span>Usados nas contas bancárias da empresa e nos dados bancários dos parceiros</span>
+          </div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

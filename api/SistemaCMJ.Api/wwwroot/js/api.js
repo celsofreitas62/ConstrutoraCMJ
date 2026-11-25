@@ -109,5 +109,32 @@ const Util = {
   atrasar(fn, ms = 300) {
     let t;
     return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  },
+  /** 1234.5 -> "1.234,50" (04e). */
+  moeda(valor) {
+    return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(valor || 0));
+  },
+  /** "1.234,50" ou "1234.5" -> 1234.5; vazio -> 0; inválido -> NaN (04e). */
+  lerMoeda(texto) {
+    const t = String(texto ?? '').trim().replace(/\s/g, '').replace(/^R\$/, '');
+    if (!t) return 0;
+    const n = t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t;
+    return /^-?\d+(\.\d+)?$/.test(n) ? Number(n) : NaN;
+  },
+  /** Baixa um CSV (separador ";", UTF-8 com BOM) que o Excel abre (04e: padrão das listas). */
+  exportarCsv(nome, cabecalho, linhas) {
+    const campo = (v) => {
+      const t = v === null || v === undefined ? '' : String(v);
+      return /[";\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+    };
+    const texto = '\ufeff' + [cabecalho.map(campo).join(';'), ...linhas.map((l) => l.map(campo).join(';'))].join('\r\n');
+    const url = URL.createObjectURL(new Blob([texto], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nome.replace(/\s+/g, '_') + '_' + new Date().toISOString().substring(0, 10) + '.csv';
+    document.body.append(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 };
