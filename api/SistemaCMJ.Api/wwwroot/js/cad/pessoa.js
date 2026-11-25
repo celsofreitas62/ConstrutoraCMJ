@@ -434,6 +434,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('ficha').addEventListener('change', () => { sujo = true; });
   if (podeEditar) $('nome').focus();
 
+  // ---------- Consulta de CEP e CNPJ (04d2; a API consulta pelo servidor e guarda em cache) ----------
+  const soDigitos = (t) => (t || '').replace(/\D/g, '');
+  /** Preenche os campos: vazios sempre; já preenchidos e diferentes só se confirmar (uma pergunta só). */
+  async function preencher(valores, titulo) {
+    const diferentes = Object.entries(valores).filter(([c, v]) => v && $(c).value.trim() && $(c).value.trim() !== v);
+    const trocar = diferentes.length === 0 || await Mensagens.confirmar(titulo,
+      'Já há dados digitados que são diferentes dos encontrados (' + diferentes.map(([c]) => $(c).closest('label').firstChild.textContent.trim()).join(', ') + '). Trocar pelos encontrados?', 'Trocar');
+    for (const [c, v] of Object.entries(valores)) {
+      if (!v) continue;
+      if (!$(c).value.trim() || trocar) $(c).value = v;
+    }
+    sujo = true;
+  }
+
+  let ultimoCep = soDigitos($('cep').value);
+  $('cep').addEventListener('change', async () => {
+    const cep = soDigitos($('cep').value);
+    if (!podeEditar || cep.length !== 8 || cep === ultimoCep) return;
+    ultimoCep = cep;
+    const r = await Api.get('/api/cad/consulta/cep/' + cep);
+    if (!(await Mensagens.tratar(r, { foco: $('logradouro') }))) return;
+    const e = r.dados || {};
+    await preencher({ logradouro: e.logradouro, bairro: e.bairro, cidade: e.cidade, uf: e.uf }, 'Endereço do CEP');
+    if (e.complemento && !$('complemento').value.trim()) $('complemento').value = e.complemento;
+    Mensagens.sucesso('Endereço preenchido pelo CEP. Confira e informe o número.');
+    $('numero').focus();
+  });
+
+  let ultimoCnpj = tipo === 'J' ? soDigitos($('cpfCnpj').value) : '';
+  $('cpfCnpj').addEventListener('change', async () => {
+    const cnpj = soDigitos($('cpfCnpj').value);
+    if (!podeEditar || tipo !== 'J' || cnpj.length !== 14 || cnpj === ultimoCnpj) return;
+    ultimoCnpj = cnpj;
+    const r = await Api.get('/api/cad/consulta/cnpj/' + cnpj);
+    if (!(await Mensagens.tratar(r, { foco: $('nome') }))) return;
+    const d = r.dados || {};
+    if (d.situacao && !d.situacaoAtiva)
+      await Mensagens.alerta('Atenção: na Receita Federal este CNPJ está com a situação "' + d.situacao + '" (não está ATIVA). Confira antes de cadastrar.', 'ATENCAO');
+    await preencher({ nome: d.razaoSocial, nomeFantasia: d.nomeFantasia, cep: d.cep, logradouro: d.logradouro, numero: d.numero,
+      complemento: d.complemento, bairro: d.bairro, cidade: d.cidade, uf: d.uf }, 'Dados da Receita Federal');
+    ultimoCep = soDigitos($('cep').value);
+    const extras = [d.email && 'e-mail ' + d.email, d.telefone && 'telefone ' + d.telefone].filter(Boolean).join(' e ');
+    Mensagens.sucesso('Dados preenchidos pela Receita Federal. Confira as abas Dados principais e Endereço.'
+      + (extras ? ' Na Receita consta ' + extras + ': inclua na aba Contatos se for o caso.' : ''));
+  });
+
   // ---------- Gravar ----------
   $('ficha').addEventListener('submit', async (e) => {
     e.preventDefault();
