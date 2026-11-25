@@ -10,6 +10,7 @@
   <script src="/js/dicas.js" defer></script>
   <script src="/js/layout.js" defer></script>
   <script src="/js/historico.js" defer></script>
+  <script src="/js/anexos.js" defer></script>
   <script src="/js/cad/pessoa.js" defer></script>
 </head>
 <body data-tela="cad/pessoa.html" data-menu="cad/pessoas.html" data-ajuda="cad-pessoa" data-exige-tela>
@@ -40,6 +41,7 @@
         <button type="button" class="aba" role="tab" id="aba-contatos" aria-controls="painel-contatos" aria-selected="false">Contatos</button>
         <button type="button" class="aba" role="tab" id="aba-bancarios" aria-controls="painel-bancarios" aria-selected="false">Dados bancários</button>
         <button type="button" class="aba" role="tab" id="aba-vinculos" aria-controls="painel-vinculos" aria-selected="false">Vínculos</button>
+        <button type="button" class="aba" role="tab" id="aba-anexos" aria-controls="painel-anexos" aria-selected="false" hidden>Anexos</button>
         <button type="button" class="aba" role="tab" id="aba-historico" aria-controls="painel-historico" aria-selected="false" hidden>Histórico</button>
       </div>
 
@@ -178,6 +180,10 @@
                 <tbody id="linhas-vinculos"></tbody>
               </table>
             </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-anexos" aria-labelledby="aba-anexos" hidden>
+            <div id="anexos"></div>
           </section>
 
           <section class="painel-aba" role="tabpanel" id="painel-historico" aria-labelledby="aba-historico" hidden>

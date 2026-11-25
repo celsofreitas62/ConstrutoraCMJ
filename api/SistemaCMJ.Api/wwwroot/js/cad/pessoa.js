@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let bancos = [];
   let sujo = false;
   let historicoCarregado = false;
+  let anexosCarregados = false;
   let naLixeira = false;
   let podeEditar = idPessoa ? acoes.has('ALTERAR') : acoes.has('INCLUIR');
 
@@ -64,6 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       $(a.getAttribute('aria-controls')).hidden = !ativa;
     }
     if (aba.id === 'aba-historico' && !historicoCarregado) carregarHistorico();
+    if (aba.id === 'aba-anexos' && !anexosCarregados) carregarAnexos();
   }
   abas.forEach((a, i) => {
     a.addEventListener('click', () => abrirAba(a));
@@ -354,6 +356,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // ---------- Anexos (componente js/anexos.js; 04d2 passo 5) ----------
+  let anexos = null;
+  async function carregarAnexos() {
+    if (!anexos) anexos = Anexos.criar($('anexos'), {
+      item: 'CAD_PESSOA', tabela: 'CAD.Pessoa', id: idPessoa,
+      podeAnexar: acoes.has('ALTERAR') && !naLixeira,
+      aoMudar: (qtd) => { $('aba-anexos').textContent = 'Anexos' + (qtd ? ' (' + qtd + ')' : ''); }
+    });
+    if (await anexos.carregar()) anexosCarregados = true;
+  }
+
   // ---------- Histórico ----------
   let historico = null;
   async function carregarHistorico() {
@@ -414,6 +427,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     vinculos = (p.VINCULOS || []).map((v) => ({ ...v }));
     atualizarCabecalho(p);
     $('aba-historico').hidden = false;
+    $('aba-anexos').hidden = false;
     naLixeira = !!p.NA_LIXEIRA;
     if (naLixeira) {
       const aviso = $('aviso-lixeira');
@@ -559,6 +573,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     location.replace('/cad/pessoas.html');
   });
   if (idPessoa && location.hash === '#historico') abrirAba($('aba-historico'));
+  if (idPessoa && location.hash === '#anexos') abrirAba($('aba-anexos'));
 
   async function sair(destino) {
     if (sujo && podeEditar && !(await Mensagens.confirmar('Descartar alterações?', 'Há alterações que ainda não foram gravadas. Elas serão perdidas.', 'Descartar'))) return;

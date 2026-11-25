@@ -30,7 +30,9 @@ const Api = (() => {
       credentials: 'same-origin',
       headers: { 'X-CMJ': '1', 'X-Tela': document.body.dataset.tela || '' }
     };
-    if (corpo !== undefined) {
+    if (corpo instanceof FormData) {
+      opcoes.body = corpo; // envio de arquivo (anexos): o navegador monta o multipart
+    } else if (corpo !== undefined) {
       opcoes.headers['Content-Type'] = 'application/json';
       opcoes.body = JSON.stringify(corpo);
     }
@@ -67,6 +69,7 @@ const Api = (() => {
   return {
     get: (url, parametros) => chamar('GET', montarUrl(url, parametros)),
     post: (url, corpo) => chamar('POST', url, corpo ?? {}),
+    enviarArquivo: (url, formulario) => chamar('POST', url, formulario),
     irParaLogin
   };
 })();
