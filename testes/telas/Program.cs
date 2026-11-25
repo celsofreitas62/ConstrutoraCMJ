@@ -12,6 +12,7 @@
 //                3) gravar um registro de teste de verdade, pelo caminho do
 //                   usuário (usuário "teste.automatico", inativo, só LOCAL):
 //                   Gravar -> "Gravar?" -> Confirmar -> "Concluído";
+//                1b) aviso "O que há de novo" (Entendi) e versão no topo (04c2);
 //                4) desfazer essa gravação pela aba Histórico (04b2, 23/11/2026):
 //                   "Desfazer esta operação" -> prévia -> motivo -> "Concluído"
 //                   e o nome volta a ser o de antes.
@@ -96,6 +97,31 @@ catch (Exception erro)
     Console.WriteLine(new string('=', 70));
     Console.WriteLine("RESULTADO: FALHAS (" + falhas + ")");
     return falhas;
+}
+
+// ---------------------------------------------------------------- 1b) "O que há de novo" e versão no topo (04c2, 25/11/2026)
+// Depois de uma versão nova o aviso aparece uma vez: confere o conteúdo e clica em Entendi
+// (fica marcado no banco; nas rodadas seguintes não aparece mais, e tudo bem).
+try
+{
+    var aviso = pagina.Locator("dialog.janela-novidades");
+    try { await aviso.WaitForAsync(new() { Timeout = 4000 }); } catch (TimeoutException) { }
+    if (await aviso.CountAsync() > 0)
+    {
+        var titulo = (await aviso.Locator("h2").First.InnerTextAsync()).Trim();
+        var itens = await aviso.Locator("li").CountAsync();
+        await aviso.Locator(".botao-principal").ClickAsync();
+        await aviso.WaitForAsync(new() { State = WaitForSelectorState.Detached, Timeout = 10000 });
+        Linha(titulo == "O que há de novo" && itens > 0, "aviso O que ha de novo (Entendi)", titulo + ", " + itens + " itens");
+    }
+    else Linha(true, "aviso O que ha de novo", "nenhuma novidade pendente para o usuario de teste");
+    var versao = (await pagina.Locator("a.topo-versao").First.InnerTextAsync(new() { Timeout = 5000 })).Trim();
+    Linha(versao.StartsWith("v"), "versao no topo (atalho para Versoes)", versao);
+}
+catch (Exception erro)
+{
+    Linha(false, "aviso O que ha de novo / versao no topo", erro.Message.Split('\n')[0]);
+    await Foto("novidades");
 }
 
 // ---------------------------------------------------------------- 2) Abrir cada tela
