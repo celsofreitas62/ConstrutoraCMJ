@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await Mensagens.tratar(r, { foco: senha });
       return;
     }
+    sessionStorage.removeItem('cmj.novidades.conferidas');  // login novo confere o aviso "O que há de novo" (04c2)
     if (r.dados && r.dados.trocarSenha) { location.href = '/trocar-senha.html'; return; }
 
     const volta = Util.parametro('volta') || '/';

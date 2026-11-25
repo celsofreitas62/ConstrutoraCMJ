@@ -358,3 +358,6 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .versao-titulo { font-size: 16px; margin: 0 0 6px; }
 .versao-itens { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .versao-itens li { line-height: 1.5; }
+.topo-versao { font-variant-numeric: tabular-nums; }
+.janela-novidades { max-width: 640px; width: calc(100% - 32px); }
+.novidades-corpo { max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 8px 0 16px; }

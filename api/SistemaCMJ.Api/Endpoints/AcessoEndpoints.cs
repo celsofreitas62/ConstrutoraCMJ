@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 //  SistemaCMJ.Api - Endpoints/AcessoEndpoints.cs
 //  Autor     : Celso de Freitas
 //  Refatorado: Claude
@@ -101,7 +101,8 @@ public static class AcessoEndpoints
                 nome = usuario.Nome,
                 trocarSenha = usuario.TrocarSenha,
                 nivelAdmin = nivel,
-                nivelNome = nivel switch { 2 => "Administrador geral", 1 => "Administrador", _ => "" }
+                nivelNome = nivel switch { 2 => "Administrador geral", 1 => "Administrador", _ => "" },
+                versao = VersaoBanco.VersaoExigida   // versão do sistema no topo (04c2, atalho para Sistema › Versões)
             });
         });
 

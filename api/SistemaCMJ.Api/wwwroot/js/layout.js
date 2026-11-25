@@ -72,12 +72,20 @@ const Layout = (() => {
     linkSenha.href = '/trocar-senha.html';
     const detalhe = Util.el('span', null, sessao.nivelNome ? sessao.nivelNome + ' · ' : '');
     detalhe.append(linkSenha);
+    if (sessao.versao) {
+      // Versão do sistema: atalho para Sistema › Versões (04c2, P22).
+      const linkVersao = Util.el('a', 'topo-versao', 'v' + sessao.versao);
+      linkVersao.href = '/sis/versoes.html';
+      linkVersao.dataset.dica = 'Versão do sistema. Clique para ver o que mudou em cada versão.';
+      detalhe.append(' · ', linkVersao);
+    }
     nome.append(Util.el('strong', null, sessao.nome || sessao.login), detalhe);
     const sair = Util.el('button', 'botao', 'Sair');
     sair.type = 'button';
     sair.addEventListener('click', async () => {
       await Api.post('/api/logout');
       sessionStorage.removeItem(CHAVE_ABERTOS);
+      sessionStorage.removeItem('cmj.novidades.conferidas');
       location.href = '/login.html';
     });
     usuario.append(nome, sair);
@@ -207,6 +215,62 @@ const Layout = (() => {
     });
   }
 
+  /** Aviso "O que há de novo" (04c2, P22): uma vez por usuário e versão, depois do login.
+      Confere só uma vez por sessão do navegador; Entendi marca como visto no banco. */
+  async function verNovidades() {
+    const CHAVE = 'cmj.novidades.conferidas';
+    if (sessionStorage.getItem(CHAVE)) return;
+    const r = await Api.get('/api/sis/novidades');
+    if (!r.sucesso) return;           // aviso nunca atrapalha o uso da tela
+    sessionStorage.setItem(CHAVE, '1');
+    const itens = r.dados || [];
+    if (!itens.length) return;
+
+    const janela = document.createElement('dialog');
+    janela.className = 'janela janela-novidades';
+    janela.setAttribute('aria-labelledby', 'novidades-titulo');
+    const topo = Util.el('div', 'janela-topo');
+    const h2 = Util.el('h2', null, 'O que há de novo');
+    h2.id = 'novidades-titulo';
+    topo.append(h2);
+    const corpo = Util.el('div', 'novidades-corpo');
+    let lista = null;
+    let versao = null;
+    for (const n of itens) {
+      if (n.VERSAO !== versao) {
+        versao = n.VERSAO;
+        corpo.append(Util.el('h3', 'versao-titulo', 'Versão ' + n.VERSAO + (n.DT_VERSAO ? ' (' + n.DT_VERSAO + ')' : '')));
+        lista = Util.el('ul', 'versao-itens');
+        corpo.append(lista);
+      }
+      const li = Util.el('li');
+      li.append(Util.el('span', 'etiqueta etiqueta-' + String(n.TIPO || '').toLowerCase(), n.TIPO_NOME), ' ', n.TEXTO || '');
+      lista.append(li);
+    }
+    const omitidas = itens[0].VERSOES_OMITIDAS || 0;
+    if (omitidas > 0) corpo.append(Util.el('p', 'suave', 'Mais ' + omitidas + (omitidas === 1 ? ' versão anterior' : ' versões anteriores') + ' em Sistema › Versões.'));
+
+    const barra = Util.el('div', 'janela-botoes');
+    const fechar = async (destino) => {
+      await Api.post('/api/sis/novidades/vista');
+      janela.close();
+      janela.remove();
+      if (destino) location.href = destino;
+    };
+    const todas = Util.el('button', 'botao', 'Ver todas as versões');
+    todas.type = 'button';
+    todas.addEventListener('click', () => fechar('/sis/versoes.html'));
+    const entendi = Util.el('button', 'botao botao-principal', 'Entendi');
+    entendi.type = 'button';
+    entendi.addEventListener('click', () => fechar(null));
+    barra.append(todas, entendi);
+    janela.addEventListener('cancel', (e) => e.preventDefault());
+    janela.append(topo, corpo, barra);
+    document.body.append(janela);
+    janela.showModal();
+    entendi.focus();
+  }
+
   /** Monta a moldura. Devolve { sessao, acoes } ou não volta (vai ao login). */
   async function iniciar() {
     telaMenu = document.body.dataset.menu || document.body.dataset.tela || '';
@@ -233,6 +297,7 @@ const Layout = (() => {
     }
 
     ligarAjuda();
+    verNovidades();
 
     if (telaMenu && document.body.dataset.exigeTela !== undefined && !acoes.has('VER')) {
       await Mensagens.alerta('Você não tem acesso a esta tela ou ela não está liberada.');
