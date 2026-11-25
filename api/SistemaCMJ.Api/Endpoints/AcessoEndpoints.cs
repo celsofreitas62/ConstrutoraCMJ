@@ -89,6 +89,8 @@ public static class AcessoEndpoints
             return Resposta.Ok();
         });
 
+    private static string Rotulo(string valor, string padrao) => string.IsNullOrWhiteSpace(valor) ? padrao : valor.Trim();
+
     private static Task<IResult> Sessao(HttpContext http, Banco banco, ILogger<Program> logger) =>
         Resposta.Rodar(http, banco, logger, async () =>
         {
@@ -102,7 +104,9 @@ public static class AcessoEndpoints
                 trocarSenha = usuario.TrocarSenha,
                 nivelAdmin = nivel,
                 nivelNome = nivel switch { 2 => "Administrador geral", 1 => "Administrador", _ => "" },
-                versao = VersaoBanco.VersaoExigida   // versão do sistema no topo (04c2, atalho para Sistema › Versões)
+                versao = VersaoBanco.VersaoExigida,  // versão do sistema no topo (04c2, atalho para Sistema › Versões)
+                parceiroRotulo = Rotulo(await banco.ParametroAsync("PARCEIRO_ROTULO", http.RequestAborted), "Parceiro"),            // 04d2
+                parceiroRotuloPlural = Rotulo(await banco.ParametroAsync("PARCEIRO_ROTULO_PLURAL", http.RequestAborted), "Parceiros") // 04d2
             });
         });
 

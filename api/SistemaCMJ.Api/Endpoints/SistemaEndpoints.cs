@@ -97,6 +97,11 @@ public static partial class SistemaEndpoints
             var usuario = http.Usuario();
             var linhas = await banco.ExecutarAsync("SIS.SIS_Menu_Listar",
                 new Dictionary<string, object?> { ["IdUsuario"] = usuario.IdUsuario }, usuario, http.RequestAborted);
+            // 04d2 (25/11/2026): a tela de Pessoas aparece com o rótulo do parâmetro (ex.: "Parceiros").
+            var rotulo = (await banco.ParametroAsync("PARCEIRO_ROTULO_PLURAL", http.RequestAborted)).Trim();
+            if (rotulo.Length > 0)
+                foreach (var l in linhas.Where(l => l.Texto("CODIGO") == "CAD_PESSOA"))
+                    l["NOME"] = rotulo;
             return Resposta.Ok(SoTelasProntas(linhas, ambiente));
         });
 

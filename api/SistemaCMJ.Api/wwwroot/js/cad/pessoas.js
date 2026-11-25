@@ -3,18 +3,26 @@
    Autor     : Celso de Freitas
    Refatorado: Claude
    Criação   : 16/11/2026 (fase 3b)
-   Descrição : Lista de Pessoas (CAD_PESSOA): busca por parte do nome, CPF/CNPJ
-               ou código, filtros de papel e situação, exportação e abertura da
+   Descrição : Lista de Parceiros (CAD_PESSOA): busca por parte do nome, CPF/CNPJ
+               ou código, filtros de tipo, situação e pendências, exportação e abertura da
                ficha. Os filtros ficam guardados enquanto a aba do navegador
                estiver aberta (voltar da ficha mantém a busca).
+               04d2 (25/11/2026): rótulo pelo parâmetro (PARCEIRO_ROTULO_PLURAL,
+               vindo da sessão), filtro por tipo de parceiro no lugar do papel,
+               "Pendências de cadastro" e coluna Cobrança (P10: o que falta).
    ========================================================================== */
 'use strict';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const { acoes } = await Layout.iniciar();
+  const { sessao, acoes } = await Layout.iniciar();
+  const ROTULO = (sessao && sessao.parceiroRotuloPlural) || 'Parceiros';
+  document.title = 'SistemaCMJ – ' + ROTULO;
+  document.getElementById('titulo').textContent = ROTULO;
+  document.getElementById('caminho').textContent = 'Cadastros › ' + ROTULO;
 
   const busca = document.getElementById('busca');
-  const papel = document.getElementById('papel');
+  const tipo = document.getElementById('tipo');
+  const pendencias = document.getElementById('pendencias');
   const situacao = document.getElementById('situacao');
   const corpo = document.getElementById('linhas');
   const contagem = document.getElementById('contagem');
@@ -30,11 +38,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const salvos = JSON.parse(sessionStorage.getItem(CHAVE_FILTROS) || '{}');
     busca.value = salvos.busca || '';
-    papel.value = salvos.papel || '';
+    tipo.dataset.salvo = salvos.idParceiroTipo || '';
+    pendencias.checked = salvos.pendenciaCobranca === true;
     situacao.value = salvos.situacao || 'ATIVOS';
   } catch { /* filtros guardados inválidos: usa o padrão */ }
 
-  const PAPEIS = [['CLIENTE', 'Cliente'], ['FORNECEDOR', 'Fornecedor'], ['FUNCIONARIO', 'Funcionário'], ['CORRETOR', 'Corretor']];
+  async function carregarTipos() {
+    const r = await Api.get('/api/cad/parceiro-tipos', { somenteAtivos: true });
+    if (!r.sucesso) return; // sem a lista de tipos o filtro fica só com "Todos"
+    for (const t of r.dados || []) {
+      const op = Util.el('option', null, t.DESCRICAO);
+      op.value = t.ID_PARCEIRO_TIPO;
+      tipo.append(op);
+    }
+    tipo.value = tipo.dataset.salvo || '';
+    if (tipo.value !== (tipo.dataset.salvo || '')) tipo.value = '';
+  }
+
+  const separar = (texto, sep) => (texto || '').split(sep).map((t) => t.trim()).filter(Boolean);
 
   function abrir(id) { location.href = '/cad/pessoa.html?id=' + encodeURIComponent(id); }
 
@@ -42,8 +63,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     corpo.replaceChildren();
     if (linhas.length === 0) {
       const tr = Util.el('tr');
-      const td = Util.el('td', 'vazio', 'Nenhuma pessoa encontrada com esses filtros.');
-      td.colSpan = 8;
+      const td = Util.el('td', 'vazio', 'Nenhum parceiro encontrado com esses filtros.');
+      td.colSpan = 9;
       tr.append(td);
       corpo.append(tr);
     }
@@ -59,10 +80,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       nome.append(link);
       if (p.NOME_FANTASIA) nome.append(Util.el('div', 'suave', p.NOME_FANTASIA));
 
-      const papeis = Util.el('td');
+      const tipos = Util.el('td');
       const etiquetas = Util.el('div', 'etiquetas');
-      for (const [coluna, texto] of PAPEIS) if (p[coluna]) etiquetas.append(Util.el('span', 'etiqueta', texto));
-      papeis.append(etiquetas);
+      for (const t of separar(p.TIPOS, ',')) etiquetas.append(Util.el('span', 'etiqueta', t));
+      tipos.append(etiquetas);
+
+      // P10: só clientes têm a conferência (APTO_COBRANCA vem nulo para os demais).
+      const cobranca = Util.el('td');
+      if (p.APTO_COBRANCA === true) cobranca.append(Util.el('span', 'etiqueta etiqueta-novo', 'Apto'));
+      else if (p.APTO_COBRANCA === false) {
+        const falta = Util.el('div', 'etiquetas');
+        for (const f of separar(p.PENDENCIA_COBRANCA, ';')) falta.append(Util.el('span', 'etiqueta etiqueta-correcao', f));
+        cobranca.append(falta);
+        if (p.TITULO_ABERTO) cobranca.append(Util.el('div', 'suave', 'tem parcela em aberto'));
+      }
 
       const contato = Util.el('td');
       if (p.EMAIL_PRINCIPAL) contato.append(Util.el('div', null, p.EMAIL_PRINCIPAL));
@@ -76,19 +107,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         nome,
         Util.el('td', 'numero', p.DOCUMENTO || ''),
         Util.el('td', null, p.TIPO_PESSOA === 'J' ? 'PJ' : 'PF'),
-        papeis,
+        tipos,
         contato,
         Util.el('td', null, [p.CIDADE, p.UF].filter(Boolean).join('/')),
+        cobranca,
         sit
       );
       corpo.append(tr);
     }
-    contagem.textContent = linhas.length === 1 ? '1 pessoa encontrada' : linhas.length + ' pessoas encontradas'
+    contagem.textContent = linhas.length === 1 ? '1 parceiro encontrado' : linhas.length + ' parceiros encontrados'
       + (linhas.length >= 500 ? ' (mostrando as 500 primeiras: refine a busca)' : '');
   }
 
   async function carregar() {
-    const filtros = { busca: busca.value.trim(), papel: papel.value, situacao: situacao.value };
+    const filtros = { busca: busca.value.trim(), idParceiroTipo: tipo.value, situacao: situacao.value, pendenciaCobranca: pendencias.checked };
     sessionStorage.setItem(CHAVE_FILTROS, JSON.stringify(filtros));
     const meu = ++pedido;
     contagem.textContent = 'Buscando…';
@@ -100,21 +132,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function exportarCsv() {
-    const cab = ['Código', 'Nome', 'Nome fantasia', 'CPF/CNPJ', 'Tipo', 'Cliente', 'Fornecedor', 'Funcionário', 'Corretor', 'E-mail', 'Telefone', 'Cidade', 'UF', 'Situação'];
+    const cab = ['Código', 'Nome', 'Nome fantasia', 'CPF/CNPJ', 'PF/PJ', 'Tipos', 'E-mail', 'Telefone', 'Cidade', 'UF', 'Cobrança', 'Parcela em aberto', 'Situação'];
     const campo = (v) => {
       const t = v === null || v === undefined ? '' : String(v);
       return /[";\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
     };
     const linhas = ultima.map((p) => [
       p.ID_PESSOA, p.NOME, p.NOME_FANTASIA, p.DOCUMENTO, p.TIPO_PESSOA === 'J' ? 'PJ' : 'PF',
-      p.CLIENTE ? 'Sim' : 'Não', p.FORNECEDOR ? 'Sim' : 'Não', p.FUNCIONARIO ? 'Sim' : 'Não', p.CORRETOR ? 'Sim' : 'Não',
-      p.EMAIL_PRINCIPAL, p.TELEFONE_PRINCIPAL, p.CIDADE, p.UF, p.ATIVO ? 'Ativo' : 'Inativo'
+      p.TIPOS, p.EMAIL_PRINCIPAL, p.TELEFONE_PRINCIPAL, p.CIDADE, p.UF,
+      p.APTO_COBRANCA === true ? 'Apto' : (p.APTO_COBRANCA === false ? 'Falta: ' + p.PENDENCIA_COBRANCA : ''),
+      p.TITULO_ABERTO ? 'Sim' : 'Não', p.ATIVO ? 'Ativo' : 'Inativo'
     ].map(campo).join(';'));
     const texto = '﻿' + [cab.join(';'), ...linhas].join('\r\n');
     const url = URL.createObjectURL(new Blob([texto], { type: 'text/csv;charset=utf-8' }));
     const a = Util.el('a');
     a.href = url;
-    a.download = 'Pessoas_' + new Date().toISOString().substring(0, 10) + '.csv';
+    a.download = ROTULO.replace(/\s+/g, '_') + '_' + new Date().toISOString().substring(0, 10) + '.csv';
     document.body.append(a);
     a.click();
     a.remove();
@@ -123,10 +156,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('filtros').addEventListener('submit', (e) => { e.preventDefault(); carregar(); });
   busca.addEventListener('input', Util.atrasar(carregar, 350));
-  papel.addEventListener('change', carregar);
+  tipo.addEventListener('change', carregar);
+  pendencias.addEventListener('change', carregar);
   situacao.addEventListener('change', carregar);
   exportar.addEventListener('click', exportarCsv);
 
   busca.focus();
+  await carregarTipos();
   carregar();
 });

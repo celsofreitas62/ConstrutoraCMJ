@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SistemaCMJ – Pessoas</title>
+  <title>SistemaCMJ – Parceiros</title>
   <link rel="stylesheet" href="/css/app.css">
   <script src="/js/api.js" defer></script>
   <script src="/js/mensagens.js" defer></script>
@@ -18,26 +18,22 @@
     <main class="conteudo">
       <div class="cabecalho">
         <div class="cabecalho-titulo">
-          <div class="caminho">Cadastros › Pessoas</div>
-          <h1>Pessoas</h1>
+          <div class="caminho" id="caminho">Cadastros › Parceiros</div>
+          <h1 id="titulo">Parceiros</h1>
         </div>
-        <a data-dica="Abre a Lixeira já filtrada nas pessoas excluídas (recuperar ou ver quando serão apagadas de vez)." class="link-lixeira" href="/sis/lixeira.html?item=CAD_PESSOA" id="link-lixeira" hidden>Lixeira de Pessoas</a>
+        <a data-dica="Abre a Lixeira já filtrada nos parceiros excluídos (recuperar ou ver quando serão apagadas de vez)." class="link-lixeira" href="/sis/lixeira.html?item=CAD_PESSOA" id="link-lixeira" hidden>Lixeira</a>
         <button data-dica="Baixa a lista que está na tela num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
-        <a data-dica="Abre a ficha em branco para cadastrar uma pessoa nova." class="botao botao-principal" href="/cad/pessoa.html" id="botao-incluir" hidden>+ Incluir</a>
+        <a data-dica="Abre a ficha em branco para cadastrar um parceiro novo." class="botao botao-principal" href="/cad/pessoa.html" id="botao-incluir" hidden>+ Incluir</a>
         <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
       </div>
 
       <form class="cartao filtros" id="filtros" role="search">
-        <label data-dica="Digite parte do nome ou do nome fantasia, o início do CPF/CNPJ (com ou sem pontos) ou o código da pessoa. A lista atualiza sozinha." class="campo f-3">Nome, parte do nome, CPF/CNPJ ou código
+        <label data-dica="Digite parte do nome ou do nome fantasia, o início do CPF/CNPJ (com ou sem pontos) ou o código do parceiro. A lista atualiza sozinha." class="campo f-3">Nome, parte do nome, CPF/CNPJ ou código
           <input type="search" id="busca" maxlength="100" placeholder="Ex.: ribeiro" autocomplete="off">
         </label>
-        <label data-dica="Mostra só clientes, fornecedores, funcionários ou corretores." class="campo f-1">Papel
-          <select id="papel">
+        <label data-dica="Mostra só os parceiros de um tipo (cliente, fornecedor, corretor ou os tipos criados em Cadastros › Tipos de parceiro)." class="campo f-1">Tipo de parceiro
+          <select id="tipo">
             <option value="">Todos</option>
-            <option value="CLIENTE">Clientes</option>
-            <option value="FORNECEDOR">Fornecedores</option>
-            <option value="FUNCIONARIO">Funcionários</option>
-            <option value="CORRETOR">Corretores</option>
           </select>
         </label>
         <label data-dica="Ativos, inativos (desativados) ou todos. As pessoas excluídas ficam na Lixeira." class="campo f-1">Situação
@@ -46,6 +42,9 @@
             <option value="INATIVOS">Inativos</option>
             <option value="TODOS">Todos</option>
           </select>
+        </label>
+        <label data-dica="Mostra só os clientes com parcela a receber em aberto cujo cadastro ainda não serve para boleto (falta CPF/CNPJ, endereço, e-mail…). A coluna Cobrança diz o que falta." class="marcacao">
+          <input type="checkbox" id="pendencias"> Pendências de cadastro
         </label>
       </form>
 
@@ -58,10 +57,11 @@
                   <th scope="col">Código</th>
                   <th scope="col">Nome</th>
                   <th scope="col">CPF/CNPJ</th>
-                  <th scope="col">Tipo</th>
-                  <th scope="col">Papéis</th>
+                  <th scope="col">PF/PJ</th>
+                  <th scope="col">Tipos</th>
                   <th scope="col">Contato</th>
                   <th scope="col">Cidade/UF</th>
+                  <th scope="col">Cobrança</th>
                   <th scope="col">Situação</th>
                 </tr>
               </thead>
