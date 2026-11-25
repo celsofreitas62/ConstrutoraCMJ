@@ -8,6 +8,8 @@
                e histórico. Tudo é gravado de uma vez pelo CAD_Pessoa_Gravar
                (tudo ou nada); validações de verdade ficam na procedure.
                Botões e edição seguem as ações do usuário na tela.
+               04e (25/11/2026): conta do plano e centro de custo padrão pela
+               escolha com busca (js/seletor.js).
    ========================================================================== */
 'use strict';
 
@@ -402,6 +404,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       : 'Atenção: existem ' + repetido + ' outros parceiros cadastrados com este mesmo documento.';
   }
 
+  // ---------- Conta do plano e centro de custo padrão (04e; escolha com busca) ----------
+  const seletorPlano = Seletor.criar($('seletor-plano'), { tipo: 'PLANO', rotulo: 'Conta do plano padrão', placeholder: '(nenhuma)', aoMudar: () => { sujo = true; } });
+  const seletorCentro = Seletor.criar($('seletor-centro'), { tipo: 'CENTRO', rotulo: 'Centro de custo padrão', placeholder: '(nenhum)', aoMudar: () => { sujo = true; } });
+
   // ---------- Carga ----------
   const rBancos = await Api.get('/api/banco/bancos');
   if (rBancos.sucesso) bancos = rBancos.dados || [];
@@ -422,6 +428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('dtNascimento').value = Util.dataIso(p.DT_NASCIMENTO);
     tiposMarcados = new Set((p.TIPOS || []).filter((t) => t.codigo !== 'NA').map((t) => t.id));
     await desenharTipos(p.TIPOS || []);
+    await Promise.all([seletorPlano.definir(p.ID_PLANO_CONTA_PADRAO), seletorCentro.definir(p.ID_CENTRO_CUSTO_PADRAO)]);
     contatos = (p.CONTATOS || []).map((c) => ({ ...c, nome: c.nome ?? '', finalidade: c.finalidade ?? '' }));
     bancarios = (p.DADOS_BANCARIOS || []).map((d) => ({ ...d }));
     vinculos = (p.VINCULOS || []).map((v) => ({ ...v }));
@@ -455,6 +462,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   desenharBancarios();
   desenharVinculos();
   aplicarEdicao();
+  if (!podeEditar) { seletorPlano.habilitar(false); seletorCentro.habilitar(false); }
   $('ficha').addEventListener('input', () => { sujo = true; });
   $('ficha').addEventListener('change', () => { sujo = true; });
   if (podeEditar) $('nome').focus();
@@ -521,6 +529,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const corpo = { idPessoa, tipoPessoa: tipo };
     for (const c of CAMPOS) corpo[c] = $(c).value;
     corpo.tipos = [...tiposMarcados];
+    // conta/centro padrão: 0 = limpa (só na alteração); na inclusão, vazio = nenhum
+    corpo.idPlanoContaPadrao = seletorPlano.valor() ?? (idPessoa ? 0 : null);
+    corpo.idCentroCustoPadrao = seletorCentro.valor() ?? (idPessoa ? 0 : null);
     if (tipo === 'F') { corpo.nomeFantasia = ''; corpo.inscricaoEstadual = ''; corpo.inscricaoMunicipal = ''; }
     else { corpo.rg = ''; corpo.orgaoEmissor = ''; corpo.dtNascimento = ''; corpo.estadoCivil = ''; corpo.regimeBens = ''; }
     corpo.contatos = contatos.map((c) => ({ id: c.id ?? null, tipo: c.tipo, valor: (c.valor || '').trim(), nome: (c.nome || '').trim(), finalidade: c.finalidade || '', principal: !!c.principal, recebeCobranca: !!c.recebeCobranca }));

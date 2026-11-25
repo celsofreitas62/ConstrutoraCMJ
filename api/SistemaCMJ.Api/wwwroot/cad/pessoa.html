@@ -11,6 +11,7 @@
   <script src="/js/layout.js" defer></script>
   <script src="/js/historico.js" defer></script>
   <script src="/js/anexos.js" defer></script>
+  <script src="/js/seletor.js" defer></script>
   <script src="/js/cad/pessoa.js" defer></script>
 </head>
 <body data-tela="cad/pessoa.html" data-menu="cad/pessoas.html" data-ajuda="cad-pessoa" data-exige-tela>
@@ -111,6 +112,14 @@
                   <option value="PARTICIPACAO_AQUESTOS">Participação final nos aquestos</option>
                 </select>
               </label>
+              <div class="campo s-2" data-dica="Conta do plano que já vem escolhida nos lançamentos deste parceiro (ex.: Cimento para uma loja de material). Digite parte do nome ou o número e escolha. Em branco: nenhuma.">
+                <span>Conta do plano padrão</span>
+                <div id="seletor-plano"></div>
+              </div>
+              <div class="campo s-2" data-dica="Centro de custo que já vem escolhido nos lançamentos deste parceiro (ex.: a obra em que ele trabalha). Digite parte do nome ou o código e escolha. Em branco: nenhum.">
+                <span>Centro de custo padrão</span>
+                <div id="seletor-centro"></div>
+              </div>
               <label data-dica="Anotações livres sobre a pessoa (até 2.000 caracteres)." class="campo s-4">Observação
                 <textarea id="observacao" rows="3" maxlength="2000"></textarea>
               </label>
