@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'Nome do contato': 'Opcional: com quem falar nesse contato (ex.: secretária).',
     'Principal': 'Marque o principal de cada tipo: é o que aparece nas listas e nos documentos.',
     'Recebe cobrança': 'Marque o e-mail que recebe boletos e avisos de cobrança.',
+    'Finalidade do contato': 'Opcional: para que serve o contato (cobrança, compras ou financeiro). Cobrança já marca "Recebe cobrança".',
     'Forma': 'TED (banco, agência e conta) ou PIX (chave).',
     'Tipo da chave PIX': 'Obrigatório no PIX: CPF/CNPJ, e-mail, celular ou chave aleatória.',
     'Chave PIX': 'Obrigatório no PIX: a chave, do jeito que o banco informou.',
@@ -175,18 +176,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ---------- Contatos ----------
   const TIPOS_CONTATO = [['EMAIL', 'E-mail'], ['CELULAR', 'Celular'], ['WHATSAPP', 'WhatsApp'], ['TELEFONE', 'Telefone']];
+  const FINALIDADES_CONTATO = [['', '—'], ['COBRANCA', 'Cobrança'], ['COMPRAS', 'Compras'], ['FINANCEIRO', 'Financeiro']];
   function desenharContatos() {
     const corpo = $('linhas-contatos');
     corpo.replaceChildren();
-    if (!contatos.length) linhaVazia(corpo, 6, 'Nenhum contato cadastrado.');
+    if (!contatos.length) linhaVazia(corpo, 7, 'Nenhum contato cadastrado.');
     contatos.forEach((c, i) => {
       const tr = Util.el('tr');
+      const marcaCobranca = campoMarca(c.recebeCobranca, 'Recebe cobrança', (v) => { c.recebeCobranca = v; });
       tr.append(
         celula(campoLista(c.tipo, TIPOS_CONTATO, 'Tipo do contato', (v) => { c.tipo = v; })),
         celula(campoTexto(c.valor, 256, 'Contato (e-mail ou número)', (v) => { c.valor = v; })),
         celula(campoTexto(c.nome, 80, 'Nome do contato', (v) => { c.nome = v; })),
+        celula(campoLista(c.finalidade, FINALIDADES_CONTATO, 'Finalidade do contato', (v) => {
+          c.finalidade = v;
+          // Finalidade Cobrança já marca "Recebe cobrança" (decisão do Celso, 25/11/2026, 04d2 passo 3c)
+          if (v === 'COBRANCA' && !c.recebeCobranca) {
+            c.recebeCobranca = true;
+            marcaCobranca.querySelector('input').checked = true;
+          }
+        })),
         celula(campoMarca(c.principal, 'Principal', (v) => { c.principal = v; })),
-        celula(campoMarca(c.recebeCobranca, 'Recebe cobrança', (v) => { c.recebeCobranca = v; })),
+        celula(marcaCobranca),
         celula(botaoRemover('Remover contato', () => { contatos.splice(i, 1); desenharContatos(); }))
       );
       corpo.append(tr);
@@ -195,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     aplicarEdicao();
   }
   $('incluir-contato').addEventListener('click', () => {
-    contatos.push({ id: null, tipo: 'EMAIL', valor: '', nome: '', principal: contatos.length === 0, recebeCobranca: false });
+    contatos.push({ id: null, tipo: 'EMAIL', valor: '', nome: '', finalidade: '', principal: contatos.length === 0, recebeCobranca: false });
     sujo = true;
     desenharContatos();
     $('linhas-contatos').lastElementChild?.querySelector('input')?.focus();
@@ -398,7 +409,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('dtNascimento').value = Util.dataIso(p.DT_NASCIMENTO);
     tiposMarcados = new Set((p.TIPOS || []).filter((t) => t.codigo !== 'NA').map((t) => t.id));
     await desenharTipos(p.TIPOS || []);
-    contatos = (p.CONTATOS || []).map((c) => ({ ...c, nome: c.nome ?? '' }));
+    contatos = (p.CONTATOS || []).map((c) => ({ ...c, nome: c.nome ?? '', finalidade: c.finalidade ?? '' }));
     bancarios = (p.DADOS_BANCARIOS || []).map((d) => ({ ...d }));
     vinculos = (p.VINCULOS || []).map((v) => ({ ...v }));
     atualizarCabecalho(p);
@@ -498,7 +509,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     corpo.tipos = [...tiposMarcados];
     if (tipo === 'F') { corpo.nomeFantasia = ''; corpo.inscricaoEstadual = ''; corpo.inscricaoMunicipal = ''; }
     else { corpo.rg = ''; corpo.orgaoEmissor = ''; corpo.dtNascimento = ''; corpo.estadoCivil = ''; corpo.regimeBens = ''; }
-    corpo.contatos = contatos.map((c) => ({ id: c.id ?? null, tipo: c.tipo, valor: (c.valor || '').trim(), nome: (c.nome || '').trim(), principal: !!c.principal, recebeCobranca: !!c.recebeCobranca }));
+    corpo.contatos = contatos.map((c) => ({ id: c.id ?? null, tipo: c.tipo, valor: (c.valor || '').trim(), nome: (c.nome || '').trim(), finalidade: c.finalidade || '', principal: !!c.principal, recebeCobranca: !!c.recebeCobranca }));
     corpo.dadosBancarios = bancarios.map((d) => d.tipo === 'PIX'
       ? { id: d.id ?? null, tipo: 'PIX', pixTipo: d.pixTipo, pixChave: (d.pixChave || '').trim(), titularNome: d.titularNome || '', titularDocumento: d.titularDocumento || '', principal: !!d.principal }
       : { id: d.id ?? null, tipo: 'TED', idBanco: d.idBanco ?? null, agencia: d.agencia || '', agenciaDv: d.agenciaDv || '', conta: d.conta || '', contaDv: d.contaDv || '',
