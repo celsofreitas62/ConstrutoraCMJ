@@ -132,6 +132,7 @@ SistemaEndpoints.Mapear(app);
 PessoaEndpoints.Mapear(app);
 UsuarioEndpoints.Mapear(app);
 HistoricoEndpoints.Mapear(app);
+VersaoEndpoints.Mapear(app);
 ComunicadoEndpoints.Mapear(app);
 ComunicadoEndpoints.MapearLogo(app);
 MigracaoEndpoints.Mapear(app);
