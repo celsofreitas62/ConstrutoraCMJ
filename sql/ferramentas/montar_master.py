@@ -10,6 +10,7 @@
 # v1.5 (22/11/2026) - Etapa 04b: pacote 04b (desfazer e lixeira, P20; banco 2.0).
 # v1.6 (23/11/2026) - Etapa 04b2: pacote 04b2 (historico padrao das fichas; banco 2.1).
 # v1.8 (25/11/2026) - Etapa 04c2: pacote 04c2 (banco 2.2).
+# v1.9 (25/11/2026) - Etapa 04d2: pacotes 04d e 04d2 (Parceiros; banco 2.3).
 # v1.7 (23/11/2026) - Etapa 04c: pacote 04c (versoes e notas, P22); gera antes a carga das notas (montar_notas.py).
 # Uso: python3 sql/ferramentas/montar_master.py   (SISTEMACMJ_SQL = pasta sql)
 import os, re, datetime
@@ -21,7 +22,7 @@ subprocess.run([_sys.executable, os.path.join(BASE, 'ferramentas', 'montar_notas
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)
-PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2', 'ORDEM_04C', 'ORDEM_04C2']
+PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2', 'ORDEM_04C', 'ORDEM_04C2', 'ORDEM_04D', 'ORDEM_04D2']
 ordem = []
 for k in PACOTES:
     for f in ns[k]:

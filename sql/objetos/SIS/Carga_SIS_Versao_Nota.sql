@@ -9,7 +9,7 @@
                 Sincroniza a tabela com o .md (as notas são do sistema, não da
                 CMJ): inclui o que falta, acerta o texto do que mudou e tira o
                 item que saiu do .md. Idempotente.
-                Versões no arquivo: 2.2, 2.1, 2.0, 1.9, 1.8.
+                Versões no arquivo: 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
   Changelog:
     v1.0 (23/11/2026) - Criação (etapa 04c, P22).
 *******************************************************************************/
@@ -21,8 +21,29 @@ DROP TABLE IF EXISTS #CargaNota;
 SELECT v.VERSAO, SIS.fn_SIS_Versao_Numero(v.VERSAO) AS VERSAO_NUMERO, v.DT_VERSAO, v.ORDEM, v.TIPO, v.PUBLICO, v.TEXTO, v.TEXTO_HTML
 INTO #CargaNota
 FROM (VALUES
-       (CAST('2.2' AS VARCHAR(20)), CAST('2026-11-25' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
-         CAST(N'tela Versões (Sistema › Monitoramento). A aba Notas mostra, versão por versão, o que é novo, o que melhorou e o que foi corrigido, com busca e exportação; a aba Histórico (só administrador) mostra quando cada atualização foi feita, de qual versão para qual e quanto tempo o sistema ficou fora do ar.' AS NVARCHAR(2000)), CAST(N'tela <b>Versões</b> (Sistema › Monitoramento). A aba <b>Notas</b> mostra, versão por versão, o que é novo, o que melhorou e o que foi corrigido, com busca e exportação; a aba <b>Histórico</b> (só administrador) mostra quando cada atualização foi feita, de qual versão para qual e quanto tempo o sistema ficou fora do ar.' AS NVARCHAR(4000)))
+       (CAST('2.3' AS VARCHAR(20)), CAST('2026-11-25' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
+         CAST(N'o cadastro de Pessoas passa a se chamar Parceiros (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários tipos ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).' AS NVARCHAR(2000)), CAST(N'o cadastro de Pessoas passa a se chamar <b>Parceiros</b> (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários <b>tipos</b> ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).' AS NVARCHAR(4000)))
+      ,('2.3', '2026-11-25', 2, 'NOVO', 'TODOS',
+         N'tela Tipos de parceiro (Cadastros), para criar e organizar os tipos.',
+         N'tela <b>Tipos de parceiro</b> (Cadastros), para criar e organizar os tipos.')
+      ,('2.3', '2026-11-25', 3, 'NOVO', 'TODOS',
+         N'na lista de Parceiros, o filtro por tipo, a marcação Pendências de cadastro (clientes com parcela em aberto cujo cadastro ainda não serve para boleto) e a coluna Cobrança, que diz o que falta.',
+         N'na lista de Parceiros, o filtro por tipo, a marcação <b>Pendências de cadastro</b> (clientes com parcela em aberto cujo cadastro ainda não serve para boleto) e a coluna <b>Cobrança</b>, que diz o que falta.')
+      ,('2.3', '2026-11-25', 4, 'NOVO', 'TODOS',
+         N'na ficha, o CEP preenche o endereço e o CNPJ preenche razão social, nome fantasia e endereço (pela internet; pergunta antes de trocar o que já foi digitado).',
+         N'na ficha, o <b>CEP preenche o endereço</b> e o <b>CNPJ preenche razão social, nome fantasia e endereço</b> (pela internet; pergunta antes de trocar o que já foi digitado).')
+      ,('2.3', '2026-11-25', 5, 'NOVO', 'TODOS',
+         N'aba Anexos na ficha do parceiro (contratos, documentos, certidões), com validade e aviso de vencido.',
+         N'aba <b>Anexos</b> na ficha do parceiro (contratos, documentos, certidões), com validade e aviso de vencido.')
+      ,('2.3', '2026-11-25', 6, 'MELHORIA', 'TODOS',
+         N'nos contatos, a finalidade (cobrança, compras ou financeiro); escolher cobrança já marca o contato para receber boletos.',
+         N'nos contatos, a <b>finalidade</b> (cobrança, compras ou financeiro); escolher cobrança já marca o contato para receber boletos.')
+      ,('2.3', '2026-11-25', 7, 'MELHORIA', 'TODOS',
+         N'endereço com número e complemento em campos próprios, como o banco exige no boleto.',
+         N'endereço com <b>número e complemento</b> em campos próprios, como o banco exige no boleto.')
+      ,('2.2', '2026-11-25', 1, 'NOVO', 'TODOS',
+         N'tela Versões (Sistema › Monitoramento). A aba Notas mostra, versão por versão, o que é novo, o que melhorou e o que foi corrigido, com busca e exportação; a aba Histórico (só administrador) mostra quando cada atualização foi feita, de qual versão para qual e quanto tempo o sistema ficou fora do ar.',
+         N'tela <b>Versões</b> (Sistema › Monitoramento). A aba <b>Notas</b> mostra, versão por versão, o que é novo, o que melhorou e o que foi corrigido, com busca e exportação; a aba <b>Histórico</b> (só administrador) mostra quando cada atualização foi feita, de qual versão para qual e quanto tempo o sistema ficou fora do ar.')
       ,('2.2', '2026-11-25', 2, 'NOVO', 'TODOS',
          N'aviso O que há de novo. Depois de uma atualização, cada usuário vê uma vez, logo depois de entrar, o resumo das novidades, com os botões Entendi e Ver todas as versões.',
          N'aviso <b>O que há de novo</b>. Depois de uma atualização, cada usuário vê uma vez, logo depois de entrar, o resumo das novidades, com os botões <b>Entendi</b> e <b>Ver todas as versões</b>.')

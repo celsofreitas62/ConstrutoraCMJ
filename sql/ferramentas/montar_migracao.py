@@ -15,18 +15,25 @@
 # v1.3 (23/11/2026) - 03f2: Sala 113 com a vaga 15 (Carga_MIG_Classificacao v1.2)
 #                     e abatimento de parcela (MIG.Tabelas_Transformacao v1.5,
 #                     MIG_Caso_Gravar v1.4, MIG_Movimento_Transformar v1.6).
+# v1.4 (25/11/2026) - 04d2: numero e complemento separados do endereco
+#                     (MIG.fn_MIG_Endereco_Separar, MIG_Cadastros_Processar v1.2).
 # Uso: python3 sql/ferramentas/montar_migracao.py   (SISTEMACMJ_SQL = pasta sql)
 import os, datetime
 BASE = os.environ.get('SISTEMACMJ_SQL', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-VERSAO = '1.3'
+VERSAO = '1.4'
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)
 ordem = []
-for k in ['ORDEM_03C_MIG', 'ORDEM_03C2', 'ORDEM_03C2B']:
+for k in ['ORDEM_03C_MIG', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_04D2']:
     for f in ns[k]:
         if '/MIG/' in f and f not in ordem:
             ordem.append(f)
+# a function de endereco (04d2) vem antes da procedure que a usa
+FN_END = 'objetos/MIG/MIG.fn_MIG_Endereco_Separar.sql'
+if FN_END in ordem:
+    ordem.remove(FN_END)
+    ordem.insert(ordem.index('objetos/MIG/MIG.MIG_Cadastros_Processar.sql'), FN_END)
 def ler(p):
     return open(os.path.join(BASE, p), encoding='utf-8-sig').read().replace('\r\n', '\n')
 hoje = datetime.date.today().strftime('%d/%m/%Y')

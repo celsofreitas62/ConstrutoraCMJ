@@ -4,6 +4,15 @@ Fonte única das notas de cada versão (o que foi corrigido e o que é novo), em
 O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.txt`; o `atualizar.cmd` mostra e grava no banco (`SIS.Atualizacao`), base da futura tela **Sistema › Versões** (pedido P22).
 **Regra**: toda versão nova ganha a sua seção aqui **antes** de publicar (o publicar recusa pacote sem nota). Título da seção = versão do banco (`## 1.8 (22/11/2026)`). Itens começam por **Novo:**, **Melhoria:** ou **Correção:**.
 
+## 2.3 (25/11/2026)
+- Novo: o cadastro de Pessoas passa a se chamar **Parceiros** (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários **tipos** ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).
+- Novo: tela **Tipos de parceiro** (Cadastros), para criar e organizar os tipos.
+- Novo: na lista de Parceiros, o filtro por tipo, a marcação **Pendências de cadastro** (clientes com parcela em aberto cujo cadastro ainda não serve para boleto) e a coluna **Cobrança**, que diz o que falta.
+- Novo: na ficha, o **CEP preenche o endereço** e o **CNPJ preenche razão social, nome fantasia e endereço** (pela internet; pergunta antes de trocar o que já foi digitado).
+- Novo: aba **Anexos** na ficha do parceiro (contratos, documentos, certidões), com validade e aviso de vencido.
+- Melhoria: nos contatos, a **finalidade** (cobrança, compras ou financeiro); escolher cobrança já marca o contato para receber boletos.
+- Melhoria: endereço com **número e complemento** em campos próprios, como o banco exige no boleto.
+
 ## 2.2 (25/11/2026)
 - Novo: tela **Versões** (Sistema › Monitoramento). A aba **Notas** mostra, versão por versão, o que é novo, o que melhorou e o que foi corrigido, com busca e exportação; a aba **Histórico** (só administrador) mostra quando cada atualização foi feita, de qual versão para qual e quanto tempo o sistema ficou fora do ar.
 - Novo: aviso **O que há de novo**. Depois de uma atualização, cada usuário vê uma vez, logo depois de entrar, o resumo das novidades, com os botões **Entendi** e **Ver todas as versões**.

@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v2.2)
+  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v2.3)
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : 25/11/2026 por sql/ferramentas/montar_master.py, juntando os
@@ -18,7 +18,7 @@
                 rl_sistemacmj_api (roteiro de instalacao; a senha nao fica em
                 arquivo).
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > conferir o banco > F5.
-  Objetos     : 245 arquivos.
+  Objetos     : 255 arquivos.
 *******************************************************************************/
 -- =============================================================================
 -- 1. CONFERENCIA DO BANCO
@@ -29,7 +29,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MASTER v2.2: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MASTER v2.3: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- =============================================================================
@@ -1109,6 +1109,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (25/11/2026) - Etapa 04d (P12): DT_VALIDADE opcional (certidões, contratos).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1149,6 +1150,10 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Anexo]') AND i.name = N'IX_Anexo_REFERENCIA')
     CREATE NONCLUSTERED INDEX IX_Anexo_REFERENCIA ON [SIS].[Anexo] (TABELA_REFERENCIA, ID_REFERENCIA, SITUACAO);
+GO
+
+IF COL_LENGTH(N'SIS.Anexo', N'DT_VALIDADE') IS NULL
+    ALTER TABLE [SIS].[Anexo] ADD DT_VALIDADE DATE NULL;
 GO
 GO
 
@@ -1937,6 +1942,7 @@ GO
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
                         (lixeira: preenchidas = registro na lixeira).
+    v1.2 (25/11/2026) - Etapa 04d: ID_PLANO_CONTA_PADRAO e ID_CENTRO_CUSTO_PADRAO (P17, vêm no lançamento).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -2002,6 +2008,19 @@ GO
 IF COL_LENGTH(N'CAD.Pessoa', N'USUARIO_EXCLUSAO') IS NULL
     ALTER TABLE [CAD].[Pessoa] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
 GO
+
+IF COL_LENGTH(N'CAD.Pessoa', N'ID_PLANO_CONTA_PADRAO') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD ID_PLANO_CONTA_PADRAO INT NULL;
+GO
+IF COL_LENGTH(N'CAD.Pessoa', N'ID_CENTRO_CUSTO_PADRAO') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD ID_CENTRO_CUSTO_PADRAO INT NULL;
+GO
+IF OBJECT_ID(N'[CAD].[FK_Pessoa_Plano_Conta_Padrao]', N'F') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD CONSTRAINT FK_Pessoa_Plano_Conta_Padrao FOREIGN KEY (ID_PLANO_CONTA_PADRAO) REFERENCES [CAD].[Plano_Conta] (ID_PLANO_CONTA);
+GO
+IF OBJECT_ID(N'[CAD].[FK_Pessoa_Centro_Custo_Padrao]', N'F') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD CONSTRAINT FK_Pessoa_Centro_Custo_Padrao FOREIGN KEY (ID_CENTRO_CUSTO_PADRAO) REFERENCES [CAD].[Centro_Custo] (ID_CENTRO_CUSTO);
+GO
 GO
 
 -- -----------------------------------------------------------------------------
@@ -2018,6 +2037,9 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (25/11/2026) - Etapa 04d (P12): FINALIDADE (COBRANCA, COMPRAS, FINANCEIRO ou vazio)
+                        e um só PRINCIPAL ativo por pessoa e tipo (índice único filtrado;
+                        duplicados antigos: fica principal o de menor código).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -2049,6 +2071,21 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Pessoa_Contato_Pessoa' AND object_id = OBJECT_ID(N'[CAD].[Pessoa_Contato]'))
     CREATE NONCLUSTERED INDEX IX_Pessoa_Contato_Pessoa ON [CAD].[Pessoa_Contato] (ID_PESSOA);
+GO
+
+IF COL_LENGTH(N'CAD.Pessoa_Contato', N'FINALIDADE') IS NULL
+    ALTER TABLE [CAD].[Pessoa_Contato] ADD FINALIDADE VARCHAR(15) NOT NULL CONSTRAINT DF_Pessoa_Contato_FINALIDADE DEFAULT ('');
+GO
+IF OBJECT_ID(N'[CAD].[CK_Pessoa_Contato_FINALIDADE]', N'C') IS NULL
+    ALTER TABLE [CAD].[Pessoa_Contato] ADD CONSTRAINT CK_Pessoa_Contato_FINALIDADE CHECK (FINALIDADE IN ('', 'COBRANCA', 'COMPRAS', 'FINANCEIRO'));
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_Pessoa_Contato_Principal' AND object_id = OBJECT_ID(N'[CAD].[Pessoa_Contato]'))
+BEGIN
+    WITH d AS (SELECT c.PRINCIPAL, ROW_NUMBER() OVER (PARTITION BY c.ID_PESSOA, c.TIPO ORDER BY c.ID_PESSOA_CONTATO) AS N
+               FROM CAD.Pessoa_Contato c WHERE c.PRINCIPAL = 1 AND c.ATIVO = 1)
+    UPDATE d SET PRINCIPAL = 0 WHERE N > 1;
+    CREATE UNIQUE NONCLUSTERED INDEX UX_Pessoa_Contato_Principal ON [CAD].[Pessoa_Contato] (ID_PESSOA, TIPO) WHERE PRINCIPAL = 1 AND ATIVO = 1;
+END;
 GO
 GO
 
@@ -3543,6 +3580,138 @@ IF OBJECT_ID(N'[SIS].[Usuario_Novidade]', N'U') IS NULL
         CONSTRAINT PK_Usuario_Novidade          PRIMARY KEY CLUSTERED (ID_USUARIO),
         CONSTRAINT FK_Usuario_Novidade_Usuario  FOREIGN KEY (ID_USUARIO) REFERENCES [SIS].[Usuario] (ID_USUARIO)
     );
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.Parceiro_Tipo.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[Parceiro_Tipo]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Tipos de parceiro (P12). Um parceiro pode ter vários tipos
+                (CAD.Pessoa_Tipo). SISTEMA = 1: tipo de fábrica usado pelas
+                regras (NA, CLIENTE, FORNECEDOR, FUNCIONARIO, CORRETOR); não
+                pode ser excluído nem ter o código mudado. Os demais são
+                criados pela CMJ (empreiteiro, imobiliária etc.).
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[CAD].[Parceiro_Tipo]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [CAD].[Parceiro_Tipo]
+    (
+        ID_PARCEIRO_TIPO   INT            IDENTITY(1,1) NOT NULL,
+        CODIGO             VARCHAR(20)    NOT NULL,
+        DESCRICAO          NVARCHAR(60)   NOT NULL,
+        SISTEMA            BIT            NOT NULL CONSTRAINT DF_Parceiro_Tipo_SISTEMA         DEFAULT (0),
+        ORDEM              INT            NOT NULL CONSTRAINT DF_Parceiro_Tipo_ORDEM           DEFAULT (100),
+        ATIVO              BIT            NOT NULL CONSTRAINT DF_Parceiro_Tipo_ATIVO           DEFAULT (1),
+        DT_EXCLUSAO        DATETIME2(0)   NULL,
+        USUARIO_EXCLUSAO   NVARCHAR(100)  NULL,
+        DT_CRIACAO         DATETIME2(0)   NOT NULL CONSTRAINT DF_Parceiro_Tipo_DT_CRIACAO      DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO    NVARCHAR(100)  NOT NULL CONSTRAINT DF_Parceiro_Tipo_USUARIO_CRIACAO DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
+        DT_ALTERACAO       DATETIME2(0)   NULL,
+        USUARIO_ALTERACAO  NVARCHAR(100)  NULL,
+        CONSTRAINT PK_Parceiro_Tipo        PRIMARY KEY CLUSTERED (ID_PARCEIRO_TIPO),
+        CONSTRAINT UQ_Parceiro_Tipo_CODIGO UNIQUE (CODIGO),
+        CONSTRAINT CK_Parceiro_Tipo_CODIGO CHECK (CODIGO <> ''),
+        CONSTRAINT CK_Parceiro_Tipo_DESC   CHECK (DESCRICAO <> N'')
+    );
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.Pessoa_Tipo.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[Pessoa_Tipo]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Tipos de cada parceiro (P12; vários por parceiro). Tipo
+                retirado na tela é desativado (não apagado), como os contatos.
+                As marcas CLIENTE/FORNECEDOR/FUNCIONARIO/CORRETOR de CAD.Pessoa
+                continuam e são acertadas pelo CAD_Pessoa_Gravar a partir dos
+                tipos do sistema (compatibilidade com as regras e a migração).
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[CAD].[Pessoa_Tipo]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [CAD].[Pessoa_Tipo]
+    (
+        ID_PESSOA_TIPO     INT            IDENTITY(1,1) NOT NULL,
+        ID_PESSOA          INT            NOT NULL,
+        ID_PARCEIRO_TIPO   INT            NOT NULL,
+        ATIVO              BIT            NOT NULL CONSTRAINT DF_Pessoa_Tipo_ATIVO           DEFAULT (1),
+        DT_CRIACAO         DATETIME2(0)   NOT NULL CONSTRAINT DF_Pessoa_Tipo_DT_CRIACAO      DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO    NVARCHAR(100)  NOT NULL CONSTRAINT DF_Pessoa_Tipo_USUARIO_CRIACAO DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
+        DT_ALTERACAO       DATETIME2(0)   NULL,
+        USUARIO_ALTERACAO  NVARCHAR(100)  NULL,
+        CONSTRAINT PK_Pessoa_Tipo          PRIMARY KEY CLUSTERED (ID_PESSOA_TIPO),
+        CONSTRAINT FK_Pessoa_Tipo_Pessoa   FOREIGN KEY (ID_PESSOA)        REFERENCES [CAD].[Pessoa] (ID_PESSOA),
+        CONSTRAINT FK_Pessoa_Tipo_Tipo     FOREIGN KEY (ID_PARCEIRO_TIPO) REFERENCES [CAD].[Parceiro_Tipo] (ID_PARCEIRO_TIPO),
+        CONSTRAINT UQ_Pessoa_Tipo          UNIQUE (ID_PESSOA, ID_PARCEIRO_TIPO)
+    );
+END;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Pessoa_Tipo_Tipo' AND object_id = OBJECT_ID(N'[CAD].[Pessoa_Tipo]'))
+    CREATE NONCLUSTERED INDEX IX_Pessoa_Tipo_Tipo ON [CAD].[Pessoa_Tipo] (ID_PARCEIRO_TIPO, ATIVO) INCLUDE (ID_PESSOA);
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.Cep_Cache.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[Cep_Cache]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Endereços já consultados pelo CEP (ViaCEP / BrasilAPI), para
+                não repetir a consulta na internet. Gravado pela API depois de
+                uma consulta bem-sucedida; validade em parâmetro (CEP_CACHE_DIAS).
+                Dado público (Correios): não é dado pessoal.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[CAD].[Cep_Cache]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [CAD].[Cep_Cache]
+    (
+        CEP                VARCHAR(8)     NOT NULL,
+        LOGRADOURO         NVARCHAR(150)  NOT NULL CONSTRAINT DF_Cep_Cache_LOGRADOURO DEFAULT (N''),
+        COMPLEMENTO        NVARCHAR(60)   NOT NULL CONSTRAINT DF_Cep_Cache_COMPLEMENTO DEFAULT (N''),
+        BAIRRO             NVARCHAR(60)   NOT NULL CONSTRAINT DF_Cep_Cache_BAIRRO     DEFAULT (N''),
+        CIDADE             NVARCHAR(60)   NOT NULL,
+        UF                 CHAR(2)        NOT NULL,
+        CODIGO_IBGE        VARCHAR(7)     NOT NULL CONSTRAINT DF_Cep_Cache_IBGE       DEFAULT (''),
+        FONTE              VARCHAR(20)    NOT NULL,
+        DT_CONSULTA        DATETIME2(0)   NOT NULL CONSTRAINT DF_Cep_Cache_DT         DEFAULT (SYSDATETIME()),
+        CONSTRAINT PK_Cep_Cache     PRIMARY KEY CLUSTERED (CEP),
+        CONSTRAINT CK_Cep_Cache_CEP CHECK (LEN(CEP) = 8 AND CEP NOT LIKE '%[^0-9]%')
+    );
+END;
 GO
 GO
 
@@ -5151,6 +5320,66 @@ BEGIN
     IF @P1 > 2000 OR @P2 > 999 OR @P3 > 999 RETURN 0;
     RETURN @P1 * 1000000 + @P2 * 1000 + @P3;
 END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.fn_CAD_Pessoa_Pendencia_Cobranca.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[fn_CAD_Pessoa_Pendencia_Cobranca]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : P10 - cadastro apto para cobrança (boleto). Devolve uma linha
+                com APTO (1/0) e PENDENCIA (texto do que falta, separado por
+                "; "; vazio = apto). Exigências em parâmetros
+                COBRANCA_APTO_EXIGE_DOCUMENTO / _ENDERECO / _EMAIL / _TELEFONE.
+                E-mail: contato ativo principal ou de finalidade COBRANCA, com
+                formato válido. Usada pela lista e ficha de Parceiros (aviso)
+                e, na fase 6, pela trava da emissão do boleto.
+                Função em linha (sem custo por linha nas listas).
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+
+  Homologação (LOCAL):
+    -- SELECT p.ID_PESSOA, f.* FROM CAD.Pessoa p CROSS APPLY CAD.fn_CAD_Pessoa_Pendencia_Cobranca(p.ID_PESSOA) f WHERE f.APTO = 0;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [CAD].[fn_CAD_Pessoa_Pendencia_Cobranca] (@IdPessoa INT)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT CASE WHEN x.PENDENCIA = N'' THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS APTO,
+           x.PENDENCIA
+    FROM (
+        SELECT CONCAT_WS(N'; ',
+                 CASE WHEN SIS.fn_SIS_Parametro_SN('COBRANCA_APTO_EXIGE_DOCUMENTO') = 1
+                           AND (p.CPF_CNPJ = '' OR CAD.fn_CAD_Documento_Valido(p.CPF_CNPJ) = 0
+                                OR LEN(p.CPF_CNPJ) <> CASE p.TIPO_PESSOA WHEN 'F' THEN 11 ELSE 14 END)
+                      THEN CASE p.TIPO_PESSOA WHEN 'F' THEN N'CPF ausente ou inválido' ELSE N'CNPJ ausente ou inválido' END END,
+                 CASE WHEN SIS.fn_SIS_Parametro_SN('COBRANCA_APTO_EXIGE_ENDERECO') = 1
+                           AND (LEN(p.CEP) <> 8 OR p.LOGRADOURO = N'' OR p.NUMERO = N'' OR p.BAIRRO = N'' OR p.CIDADE = N'' OR LEN(p.UF) <> 2)
+                      THEN N'endereço incompleto (CEP, logradouro, número, bairro, cidade e UF)' END,
+                 CASE WHEN SIS.fn_SIS_Parametro_SN('COBRANCA_APTO_EXIGE_EMAIL') = 1
+                           AND NOT EXISTS (SELECT 1 FROM CAD.Pessoa_Contato c
+                                           WHERE c.ID_PESSOA = p.ID_PESSOA AND c.ATIVO = 1 AND c.TIPO = 'EMAIL'
+                                             AND (c.PRINCIPAL = 1 OR c.FINALIDADE = 'COBRANCA')
+                                             AND c.VALOR LIKE N'_%@_%._%' AND c.VALOR NOT LIKE N'% %' AND c.VALOR NOT LIKE N'%@%@%')
+                      THEN N'sem e-mail principal ou de cobrança válido' END,
+                 CASE WHEN SIS.fn_SIS_Parametro_SN('COBRANCA_APTO_EXIGE_TELEFONE') = 1
+                           AND NOT EXISTS (SELECT 1 FROM CAD.Pessoa_Contato c
+                                           WHERE c.ID_PESSOA = p.ID_PESSOA AND c.ATIVO = 1 AND c.TIPO IN ('CELULAR', 'TELEFONE', 'WHATSAPP'))
+                      THEN N'sem telefone' END) AS PENDENCIA
+        FROM CAD.Pessoa p
+        WHERE p.ID_PESSOA = @IdPessoa
+    ) x
+);
 GO
 GO
 
@@ -8643,6 +8872,7 @@ GO
     v1.0 (16/11/2026) - Criação (etapa 02c).
     v1.1 (20/11/2026) - Etapa 03d: conferência do registro pelo SIS_Registro_Existe
                         (o SELECT dinâmico falhava com o login da API no servidor).
+    v1.2 (25/11/2026) - Etapa 04d (P12): @DtValidade opcional (certidões, contratos).
 
   Homologação (LOCAL): ver sql/testes/SIS/02c_Homologacao_SIS.sql.
 *******************************************************************************/
@@ -8661,7 +8891,8 @@ CREATE OR ALTER PROCEDURE [SIS].[SIS_Anexo_Gravar]
     @PastaRelativa  VARCHAR(50),
     @TamanhoBytes   BIGINT,
     @HashSha256     VARBINARY(32),
-    @Descricao      NVARCHAR(400) = NULL
+    @Descricao      NVARCHAR(400) = NULL,
+    @DtValidade     DATE          = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -8736,9 +8967,9 @@ BEGIN
         SET @EtapaAtual = 'Gravação';
 
         INSERT INTO SIS.Anexo (TABELA_REFERENCIA, ID_REFERENCIA, ID_ANEXO_TIPO, NOME_ORIGINAL, NOME_ARQUIVO, PASTA_RELATIVA,
-                               EXTENSAO, TAMANHO_BYTES, HASH_SHA256, DESCRICAO, USUARIO_CRIACAO)
+                               EXTENSAO, TAMANHO_BYTES, HASH_SHA256, DESCRICAO, DT_VALIDADE, USUARIO_CRIACAO)
         VALUES (@Tabela, @IdRegistro, @IdTipo, @NomeOriginal, @NomeArquivo, @PastaRelativa,
-                @Extensao, @TamanhoBytes, @HashSha256, LTRIM(RTRIM(ISNULL(@Descricao, N''))), ISNULL(@Usuario, N''));
+                @Extensao, @TamanhoBytes, @HashSha256, LTRIM(RTRIM(ISNULL(@Descricao, N''))), @DtValidade, ISNULL(@Usuario, N''));
         SET @IdAnexo = CAST(SCOPE_IDENTITY() AS BIGINT);
 
         SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Arquivo anexado.' AS NVARCHAR(400)) AS MENSAGEM, @IdAnexo AS ID_ANEXO;
@@ -8772,6 +9003,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (25/11/2026) - Etapa 04d (P12): DT_VALIDADE e VENCIDO (validade antes de hoje).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Anexo_Listar @IdUsuario = 2, @Item = 'SIS_USUARIO', @Tabela = N'SIS.Usuario', @IdRegistro = 3;
@@ -8810,6 +9042,8 @@ BEGIN
                a.EXTENSAO,
                a.TAMANHO_BYTES,
                a.DESCRICAO,
+               a.DT_VALIDADE,
+               CAST(CASE WHEN a.DT_VALIDADE < CONVERT(DATE, SYSDATETIME()) THEN 1 ELSE 0 END AS BIT) AS VENCIDO,
                a.SITUACAO,
                a.DT_CRIACAO,
                a.USUARIO_CRIACAO,
@@ -12301,6 +12535,10 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04d (P12, P10): filtro @IdParceiroTipo, @PendenciaCobranca (clientes
+                        com parcela a receber em aberto e cadastro não apto), colunas TIPOS,
+                        APTO_COBRANCA, PENDENCIA_COBRANCA e TITULO_ABERTO.
+
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Pessoa_Listar @IdUsuario = 2, @Busca = N'silva';
@@ -12314,7 +12552,9 @@ CREATE OR ALTER PROCEDURE [CAD].[CAD_Pessoa_Listar]
     @Busca         NVARCHAR(100) = NULL,
     @Papel         VARCHAR(12)   = NULL,
     @SomenteAtivos BIT           = 1,
-    @Limite        INT           = 500
+    @Limite        INT           = 500,
+    @IdParceiroTipo INT          = NULL,
+    @PendenciaCobranca BIT       = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -12351,10 +12591,29 @@ BEGIN
                ISNULL((SELECT TOP 1 pc.VALOR FROM CAD.Pessoa_Contato pc WITH (NOLOCK)
                        WHERE pc.ID_PESSOA = p.ID_PESSOA AND pc.ATIVO = 1 AND pc.TIPO <> 'EMAIL'
                        ORDER BY pc.PRINCIPAL DESC, pc.ID_PESSOA_CONTATO), N'') AS TELEFONE_PRINCIPAL,
-               p.ATIVO, p.DT_ALTERACAO, ISNULL(p.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
+               p.ATIVO, p.DT_ALTERACAO, ISNULL(p.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO,
+               ISNULL((SELECT STRING_AGG(t.DESCRICAO, N', ') WITHIN GROUP (ORDER BY t.ORDEM, t.DESCRICAO)
+                       FROM CAD.Pessoa_Tipo x WITH (NOLOCK)
+                       INNER JOIN CAD.Parceiro_Tipo t WITH (NOLOCK) ON t.ID_PARCEIRO_TIPO = x.ID_PARCEIRO_TIPO
+                       WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ATIVO = 1), N'') AS TIPOS,
+               CASE WHEN p.CLIENTE = 1 THEN f.APTO END AS APTO_COBRANCA,
+               CASE WHEN p.CLIENTE = 1 THEN f.PENDENCIA ELSE N'' END AS PENDENCIA_COBRANCA,
+               CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.Lancamento l WITH (NOLOCK)
+                                      INNER JOIN FIN.Parcela pa WITH (NOLOCK) ON pa.ID_LANCAMENTO = l.ID_LANCAMENTO
+                                      WHERE l.ID_PESSOA = p.ID_PESSOA AND l.TIPO = 'R' AND l.SITUACAO = 'ATIVO'
+                                        AND pa.SITUACAO IN ('ABERTA', 'PARCIAL')) THEN 1 ELSE 0 END AS BIT) AS TITULO_ABERTO
         FROM CAD.Pessoa p WITH (NOLOCK)
+        CROSS APPLY CAD.fn_CAD_Pessoa_Pendencia_Cobranca(p.ID_PESSOA) f
         WHERE (ISNULL(@SomenteAtivos, 1) = 0 OR p.ATIVO = 1)
           AND p.DT_EXCLUSAO IS NULL
+          AND (@IdParceiroTipo IS NULL
+               OR EXISTS (SELECT 1 FROM CAD.Pessoa_Tipo x WITH (NOLOCK) WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ID_PARCEIRO_TIPO = @IdParceiroTipo AND x.ATIVO = 1))
+          AND (ISNULL(@PendenciaCobranca, 0) = 0
+               OR (p.CLIENTE = 1 AND f.APTO = 0
+                   AND EXISTS (SELECT 1 FROM FIN.Lancamento l WITH (NOLOCK)
+                               INNER JOIN FIN.Parcela pa WITH (NOLOCK) ON pa.ID_LANCAMENTO = l.ID_LANCAMENTO
+                               WHERE l.ID_PESSOA = p.ID_PESSOA AND l.TIPO = 'R' AND l.SITUACAO = 'ATIVO'
+                                 AND pa.SITUACAO IN ('ABERTA', 'PARCIAL'))))
           AND (   @Papel = ''
                OR (@Papel = 'CLIENTE' AND p.CLIENTE = 1) OR (@Papel = 'FORNECEDOR' AND p.FORNECEDOR = 1)
                OR (@Papel = 'FUNCIONARIO' AND p.FUNCIONARIO = 1) OR (@Papel = 'CORRETOR' AND p.CORRETOR = 1))
@@ -12379,6 +12638,112 @@ GO
 GO
 
 -- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Consulta_Config_Obter.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Consulta_Config_Obter]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Configuração das consultas de CEP e CNPJ na internet (lidas
+                pela API antes de consultar) e, quando @Cep é informado, o
+                endereço guardado em CAD.Cep_Cache se ainda estiver no prazo
+                (CEP_CACHE_DIAS). Permissão: INCLUIR ou ALTERAR em CAD_PESSOA
+                ou em CAD_EMPRESA (quem preenche cadastros).
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Consulta_Config_Obter]
+    @IdUsuario INT,
+    @Cep       VARCHAR(10) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Pode BIT = CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'INCLUIR') = 1
+                               OR SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'ALTERAR') = 1
+                               OR SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'INCLUIR') = 1
+                               OR SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'ALTERAR') = 1 THEN 1 ELSE 0 END;
+    SET @Cep = CAD.fn_CAD_Somente_Digitos(@Cep);
+
+    SELECT @Pode AS PODE,
+           SIS.fn_SIS_Parametro_SN('CEP_CONSULTA_ATIVA')  AS CEP_ATIVA,
+           SIS.fn_SIS_Parametro('CEP_URL_PRINCIPAL')      AS CEP_URL_PRINCIPAL,
+           SIS.fn_SIS_Parametro('CEP_URL_RESERVA')        AS CEP_URL_RESERVA,
+           SIS.fn_SIS_Parametro_SN('CNPJ_CONSULTA_ATIVA') AS CNPJ_ATIVA,
+           SIS.fn_SIS_Parametro('CNPJ_URL')               AS CNPJ_URL,
+           ISNULL(SIS.fn_SIS_Parametro_Inteiro('CONSULTA_TEMPO_LIMITE_SEG'), 8) AS TEMPO_LIMITE_SEG,
+           c.LOGRADOURO, c.COMPLEMENTO, c.BAIRRO, c.CIDADE, c.UF, c.CODIGO_IBGE, c.FONTE,
+           CAST(CASE WHEN c.CEP IS NULL THEN 0 ELSE 1 END AS BIT) AS CEP_EM_CACHE
+    FROM (SELECT 1 AS X) x
+    LEFT JOIN CAD.Cep_Cache c
+           ON @Pode = 1 AND c.CEP = @Cep
+          AND c.DT_CONSULTA >= DATEADD(DAY, -ISNULL(SIS.fn_SIS_Parametro_Inteiro('CEP_CACHE_DIAS'), 180), SYSDATETIME());
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Cep_Cache_Gravar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Cep_Cache_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Guarda (ou renova) o endereço de um CEP consultado na internet
+                pela API. Dado público dos Correios. Só grava com cidade e UF.
+                Permissão: a mesma do CAD_Consulta_Config_Obter.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Cep_Cache_Gravar]
+    @IdUsuario   INT,
+    @Cep         VARCHAR(10),
+    @Logradouro  NVARCHAR(150) = NULL,
+    @Complemento NVARCHAR(60)  = NULL,
+    @Bairro      NVARCHAR(60)  = NULL,
+    @Cidade      NVARCHAR(60),
+    @Uf          CHAR(2),
+    @CodigoIbge  VARCHAR(7)    = NULL,
+    @Fonte       VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    SET @Cep = CAD.fn_CAD_Somente_Digitos(@Cep);
+    SET @Uf  = UPPER(LTRIM(RTRIM(ISNULL(@Uf, ''))));
+
+    IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'INCLUIR') = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'ALTERAR') = 0
+       AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'INCLUIR') = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'ALTERAR') = 0
+        RETURN;
+    IF LEN(@Cep) <> 8 OR LTRIM(RTRIM(ISNULL(@Cidade, N''))) = N'' OR LEN(@Uf) <> 2
+        RETURN;
+
+    MERGE CAD.Cep_Cache AS d
+    USING (SELECT @Cep AS CEP) s ON d.CEP = s.CEP
+    WHEN MATCHED THEN UPDATE SET LOGRADOURO = LEFT(ISNULL(@Logradouro, N''), 150), COMPLEMENTO = LEFT(ISNULL(@Complemento, N''), 60),
+                                 BAIRRO = LEFT(ISNULL(@Bairro, N''), 60), CIDADE = LEFT(@Cidade, 60), UF = @Uf,
+                                 CODIGO_IBGE = LEFT(ISNULL(@CodigoIbge, ''), 7), FONTE = LEFT(@Fonte, 20), DT_CONSULTA = SYSDATETIME()
+    WHEN NOT MATCHED THEN INSERT (CEP, LOGRADOURO, COMPLEMENTO, BAIRRO, CIDADE, UF, CODIGO_IBGE, FONTE)
+                          VALUES (@Cep, LEFT(ISNULL(@Logradouro, N''), 150), LEFT(ISNULL(@Complemento, N''), 60), LEFT(ISNULL(@Bairro, N''), 60),
+                                  LEFT(@Cidade, 60), @Uf, LEFT(ISNULL(@CodigoIbge, ''), 7), LEFT(@Fonte, 20));
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
 -- Arquivo: sql/objetos/CAD/CAD.CAD_Pessoa_Obter.sql
 -- -----------------------------------------------------------------------------
 /*******************************************************************************
@@ -12396,6 +12761,8 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): coluna NA_LIXEIRA (registro na lixeira: a ficha abre só para consulta).
+    v1.2 (25/11/2026) - Etapa 04d (P12, P10, P17): TIPOS (JSON com id, código, descrição, sistema),
+                        finalidade nos contatos, conta/centro padrão e APTO_COBRANCA/PENDENCIA_COBRANCA.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Pessoa_Obter @IdUsuario = 2, @IdPessoa = 1;
@@ -12430,10 +12797,20 @@ BEGIN
                p.CLIENTE, p.FORNECEDOR, p.FUNCIONARIO, p.CORRETOR, p.OBSERVACAO, p.ATIVO, p.CODIGO_ACCESS,
                p.DT_CRIACAO, p.USUARIO_CRIACAO, p.DT_ALTERACAO, ISNULL(p.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO,
                CAST(CASE WHEN p.DT_EXCLUSAO IS NULL THEN 0 ELSE 1 END AS BIT) AS NA_LIXEIRA,
+               p.ID_PLANO_CONTA_PADRAO, p.ID_CENTRO_CUSTO_PADRAO,
+               ISNULL((SELECT CONVERT(NVARCHAR(12), c.CODIGO) + N' - ' + c.DESCRICAO FROM CAD.vw_CAD_Plano_Conta c WHERE c.ID_PLANO_CONTA = p.ID_PLANO_CONTA_PADRAO), N'') AS PLANO_CONTA_PADRAO,
+               ISNULL((SELECT CONVERT(NVARCHAR(30), cc.CODIGO) + N' - ' + cc.DESCRICAO FROM CAD.Centro_Custo cc WHERE cc.ID_CENTRO_CUSTO = p.ID_CENTRO_CUSTO_PADRAO), N'') AS CENTRO_CUSTO_PADRAO,
+               f.APTO AS APTO_COBRANCA, f.PENDENCIA AS PENDENCIA_COBRANCA,
+               ISNULL((SELECT t.ID_PARCEIRO_TIPO AS id, t.CODIGO AS codigo, t.DESCRICAO AS descricao, t.SISTEMA AS sistema
+                       FROM CAD.Pessoa_Tipo x WITH (NOLOCK)
+                       INNER JOIN CAD.Parceiro_Tipo t WITH (NOLOCK) ON t.ID_PARCEIRO_TIPO = x.ID_PARCEIRO_TIPO
+                       WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ATIVO = 1
+                       ORDER BY t.ORDEM, t.DESCRICAO
+                       FOR JSON PATH), N'[]') AS TIPOS,
                CASE WHEN p.CPF_CNPJ = '' THEN 0
                     ELSE (SELECT COUNT(*) FROM CAD.Pessoa o WITH (NOLOCK) WHERE o.CPF_CNPJ = p.CPF_CNPJ AND o.ID_PESSOA <> p.ID_PESSOA) END AS DOCUMENTO_REPETIDO,
                ISNULL((SELECT pc.ID_PESSOA_CONTATO AS id, pc.TIPO AS tipo, pc.VALOR AS valor, pc.NOME_CONTATO AS nome,
-                              pc.PRINCIPAL AS principal, pc.RECEBE_COBRANCA AS recebeCobranca
+                              pc.PRINCIPAL AS principal, pc.RECEBE_COBRANCA AS recebeCobranca, pc.FINALIDADE AS finalidade
                        FROM CAD.Pessoa_Contato pc WITH (NOLOCK)
                        WHERE pc.ID_PESSOA = p.ID_PESSOA AND pc.ATIVO = 1
                        ORDER BY pc.TIPO, pc.PRINCIPAL DESC, pc.ID_PESSOA_CONTATO
@@ -12454,6 +12831,7 @@ BEGIN
                        ORDER BY d.PRINCIPAL DESC, d.ID_PESSOA_DADO_BANCARIO
                        FOR JSON PATH), N'[]') AS DADOS_BANCARIOS
         FROM CAD.Pessoa p WITH (NOLOCK)
+        CROSS APPLY CAD.fn_CAD_Pessoa_Pendencia_Cobranca(p.ID_PESSOA) f
         WHERE p.ID_PESSOA = @IdPessoa;
     END TRY
     BEGIN CATCH
@@ -12498,6 +12876,13 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04d (P12, P17): @Tipos (JSON [2,6] com os ID_PARCEIRO_TIPO; NULL = tipos
+                        do sistema pelas marcas @Cliente.. + os outros tipos que o parceiro já tem);
+                        sem tipo = N/A; N/A some quando há outro tipo; as marcas CLIENTE/FORNECEDOR/
+                        FUNCIONARIO/CORRETOR são acertadas pelos tipos do sistema. Contato com
+                        "finalidade" (COBRANCA, COMPRAS, FINANCEIRO); contatos retirados são desativados
+                        antes de gravar os demais (um só principal ativo por tipo). @IdPlanoContaPadrao e
+                        @IdCentroCustoPadrao (NULL = não mexe, 0 = limpa).
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Pessoa_Gravar @IdUsuario = 2, @TipoPessoa = 'F', @Nome = N'Maria Teste', @CpfCnpj = '529.982.247-25', @Cliente = 1;
@@ -12536,7 +12921,10 @@ CREATE OR ALTER PROCEDURE [CAD].[CAD_Pessoa_Gravar]
     @Observacao          NVARCHAR(2000) = NULL,
     @Contatos            NVARCHAR(MAX)  = NULL,
     @Vinculos            NVARCHAR(MAX)  = NULL,
-    @DadosBancarios      NVARCHAR(MAX)  = NULL
+    @DadosBancarios      NVARCHAR(MAX)  = NULL,
+    @Tipos               NVARCHAR(MAX)  = NULL,
+    @IdPlanoContaPadrao  INT            = NULL,
+    @IdCentroCustoPadrao INT            = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -12549,7 +12937,9 @@ BEGIN
     DECLARE @Agora      DATETIME2(0)  = SYSDATETIME();
     DECLARE @Repetidos  INT           = 0;
     DECLARE @Mensagem   NVARCHAR(400);
-    DECLARE @Cont  TABLE (LINHA INT, ID INT, TIPO VARCHAR(20), VALOR NVARCHAR(256), NOME NVARCHAR(80), PRINCIPAL BIT, RECEBE BIT);
+    DECLARE @Cont  TABLE (LINHA INT, ID INT, TIPO VARCHAR(20), VALOR NVARCHAR(256), NOME NVARCHAR(80), PRINCIPAL BIT, RECEBE BIT, FINALIDADE VARCHAR(20));
+    DECLARE @Tip   TABLE (ID INT PRIMARY KEY, CODIGO VARCHAR(20), SISTEMA BIT);
+    DECLARE @IdNA  INT = (SELECT t.ID_PARCEIRO_TIPO FROM CAD.Parceiro_Tipo t WHERE t.CODIGO = 'NA');
     DECLARE @Vinc  TABLE (LINHA INT, ID_VINCULADA INT, TIPO VARCHAR(20), OBSERVACAO NVARCHAR(200));
     DECLARE @Banc  TABLE (LINHA INT, ID INT, TIPO VARCHAR(10), ID_BANCO INT, AGENCIA VARCHAR(20), AGENCIA_DV VARCHAR(5), CONTA VARCHAR(30),
                           CONTA_DV VARCHAR(5), TIPO_CONTA VARCHAR(20), TITULAR_NOME NVARCHAR(150), TITULAR_DOC VARCHAR(30),
@@ -12596,8 +12986,52 @@ BEGIN
             SET @Recusa = N'CPF inválido. Confira os números.';
         IF @Recusa = N'' AND @CpfCnpj <> '' AND @TipoPessoa = 'J' AND (LEN(@CpfCnpj) <> 14 OR CAD.fn_CAD_Documento_Valido(@CpfCnpj) = 0)
             SET @Recusa = N'CNPJ inválido. Confira os números (o CNPJ alfanumérico também é aceito).';
-        IF @Recusa = N'' AND @Cliente = 0 AND @Fornecedor = 0 AND @Funcionario = 0 AND @Corretor = 0
-            SET @Recusa = N'Marque pelo menos um papel: cliente, fornecedor, funcionário ou corretor.';
+        IF @Recusa = N'' AND @Tipos IS NOT NULL AND ISJSON(@Tipos) = 0
+            SET @Recusa = N'Lista de tipos de parceiro em formato inválido.';
+        IF @Recusa = N'' AND ISNULL(@IdPlanoContaPadrao, 0) > 0
+           AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Conta c WHERE c.ID_PLANO_CONTA = @IdPlanoContaPadrao AND c.ATIVO = 1)
+            SET @Recusa = N'Conta do plano padrão não encontrada ou inativa.';
+        IF @Recusa = N'' AND ISNULL(@IdCentroCustoPadrao, 0) > 0
+           AND NOT EXISTS (SELECT 1 FROM CAD.Centro_Custo c WHERE c.ID_CENTRO_CUSTO = @IdCentroCustoPadrao AND c.ATIVO = 1)
+            SET @Recusa = N'Centro de custo padrão não encontrado ou inativo.';
+
+        -- Tipos de parceiro (P12): lista informada, ou marcas antigas + outros tipos que já tem
+        IF @Recusa = N''
+        BEGIN
+            IF @Tipos IS NOT NULL
+                INSERT INTO @Tip (ID, CODIGO, SISTEMA)
+                SELECT DISTINCT t.ID_PARCEIRO_TIPO, t.CODIGO, t.SISTEMA
+                FROM OPENJSON(@Tipos) k
+                INNER JOIN CAD.Parceiro_Tipo t ON t.ID_PARCEIRO_TIPO = TRY_CONVERT(INT, k.value)
+                WHERE t.DT_EXCLUSAO IS NULL
+                  AND (t.ATIVO = 1 OR EXISTS (SELECT 1 FROM CAD.Pessoa_Tipo x WHERE x.ID_PESSOA = ISNULL(@IdPessoa, 0)
+                                                AND x.ID_PARCEIRO_TIPO = t.ID_PARCEIRO_TIPO AND x.ATIVO = 1));
+            ELSE
+            BEGIN
+                INSERT INTO @Tip (ID, CODIGO, SISTEMA)
+                SELECT t.ID_PARCEIRO_TIPO, t.CODIGO, t.SISTEMA
+                FROM (VALUES ('CLIENTE', @Cliente), ('FORNECEDOR', @Fornecedor), ('FUNCIONARIO', @Funcionario), ('CORRETOR', @Corretor)) m (CODIGO, MARCA)
+                INNER JOIN CAD.Parceiro_Tipo t ON t.CODIGO = m.CODIGO
+                WHERE m.MARCA = 1;
+                INSERT INTO @Tip (ID, CODIGO, SISTEMA)
+                SELECT t.ID_PARCEIRO_TIPO, t.CODIGO, t.SISTEMA
+                FROM CAD.Pessoa_Tipo x
+                INNER JOIN CAD.Parceiro_Tipo t ON t.ID_PARCEIRO_TIPO = x.ID_PARCEIRO_TIPO
+                WHERE x.ID_PESSOA = ISNULL(@IdPessoa, 0) AND x.ATIVO = 1
+                  AND t.CODIGO NOT IN ('CLIENTE', 'FORNECEDOR', 'FUNCIONARIO', 'CORRETOR', 'NA');
+            END;
+
+            IF @Tipos IS NOT NULL AND (SELECT COUNT(*) FROM @Tip) <> (SELECT COUNT(DISTINCT k.value) FROM OPENJSON(@Tipos) k)
+                SET @Recusa = N'Tipo de parceiro não encontrado, inativo ou na lixeira. Atualize a tela e marque de novo.';
+
+            IF EXISTS (SELECT 1 FROM @Tip WHERE CODIGO <> 'NA') DELETE FROM @Tip WHERE CODIGO = 'NA';
+            IF NOT EXISTS (SELECT 1 FROM @Tip) INSERT INTO @Tip (ID, CODIGO, SISTEMA) VALUES (@IdNA, 'NA', 1);
+
+            SELECT @Cliente     = CASE WHEN EXISTS (SELECT 1 FROM @Tip WHERE CODIGO = 'CLIENTE')     THEN 1 ELSE 0 END,
+                   @Fornecedor  = CASE WHEN EXISTS (SELECT 1 FROM @Tip WHERE CODIGO = 'FORNECEDOR')  THEN 1 ELSE 0 END,
+                   @Funcionario = CASE WHEN EXISTS (SELECT 1 FROM @Tip WHERE CODIGO = 'FUNCIONARIO') THEN 1 ELSE 0 END,
+                   @Corretor    = CASE WHEN EXISTS (SELECT 1 FROM @Tip WHERE CODIGO = 'CORRETOR')    THEN 1 ELSE 0 END;
+        END;
         IF @Recusa = N'' AND @EstadoCivil NOT IN ('', 'SOLTEIRO', 'CASADO', 'DIVORCIADO', 'VIUVO', 'SEPARADO', 'UNIAO_ESTAVEL')
             SET @Recusa = N'Estado civil inválido.';
         IF @Recusa = N'' AND @RegimeBens NOT IN ('', 'COMUNHAO_PARCIAL', 'COMUNHAO_UNIVERSAL', 'SEPARACAO_TOTAL', 'PARTICIPACAO_AQUESTOS')
@@ -12616,12 +13050,13 @@ BEGIN
         -- Contatos
         IF @Recusa = N'' AND @Contatos IS NOT NULL
         BEGIN
-            INSERT INTO @Cont (LINHA, ID, TIPO, VALOR, NOME, PRINCIPAL, RECEBE)
+            INSERT INTO @Cont (LINHA, ID, TIPO, VALOR, NOME, PRINCIPAL, RECEBE, FINALIDADE)
             SELECT CONVERT(INT, k.[key]) + 1, j.id, UPPER(LTRIM(RTRIM(ISNULL(j.tipo, '')))), LTRIM(RTRIM(ISNULL(j.valor, N''))),
-                   LTRIM(RTRIM(ISNULL(j.nome, N''))), ISNULL(j.principal, 0), ISNULL(j.recebeCobranca, 0)
+                   LTRIM(RTRIM(ISNULL(j.nome, N''))), ISNULL(j.principal, 0), ISNULL(j.recebeCobranca, 0), UPPER(LTRIM(RTRIM(ISNULL(j.finalidade, ''))))
             FROM OPENJSON(@Contatos) k
             CROSS APPLY OPENJSON(k.value) WITH (id INT '$.id', tipo VARCHAR(20) '$.tipo', valor NVARCHAR(256) '$.valor',
-                                               nome NVARCHAR(80) '$.nome', principal BIT '$.principal', recebeCobranca BIT '$.recebeCobranca') j
+                                               nome NVARCHAR(80) '$.nome', principal BIT '$.principal', recebeCobranca BIT '$.recebeCobranca',
+                                               finalidade VARCHAR(20) '$.finalidade') j
             WHERE k.[type] = 5;
 
             UPDATE c SET c.VALOR = CASE WHEN c.TIPO = 'EMAIL' THEN LOWER(c.VALOR) ELSE CONVERT(NVARCHAR(256), CAD.fn_CAD_Somente_Digitos(c.VALOR)) END
@@ -12631,11 +13066,13 @@ BEGIN
                    CASE WHEN c.TIPO NOT IN ('EMAIL', 'CELULAR', 'TELEFONE', 'WHATSAPP') THEN N'tipo inválido (e-mail, celular, telefone ou WhatsApp).'
                         WHEN c.TIPO = 'EMAIL' AND SIS.fn_SIS_Email_Valido(c.VALOR) = 0 THEN N'e-mail inválido.'
                         WHEN c.TIPO <> 'EMAIL' AND LEN(c.VALOR) NOT BETWEEN 10 AND 13 THEN N'telefone inválido (informe DDD + número).'
+                        WHEN c.FINALIDADE NOT IN ('', 'COBRANCA', 'COMPRAS', 'FINANCEIRO') THEN N'finalidade inválida (cobrança, compras ou financeiro).'
                         ELSE N'não pertence a esta pessoa.' END
             FROM @Cont c
             WHERE c.TIPO NOT IN ('EMAIL', 'CELULAR', 'TELEFONE', 'WHATSAPP')
                OR (c.TIPO = 'EMAIL' AND SIS.fn_SIS_Email_Valido(c.VALOR) = 0)
                OR (c.TIPO <> 'EMAIL' AND LEN(c.VALOR) NOT BETWEEN 10 AND 13)
+               OR c.FINALIDADE NOT IN ('', 'COBRANCA', 'COMPRAS', 'FINANCEIRO')
                OR (c.ID IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Pessoa_Contato pc WHERE pc.ID_PESSOA_CONTATO = c.ID AND pc.ID_PESSOA = ISNULL(@IdPessoa, 0)))
             ORDER BY c.LINHA;
 
@@ -12746,10 +13183,12 @@ BEGIN
         BEGIN
             INSERT INTO CAD.Pessoa (TIPO_PESSOA, NOME, NOME_FANTASIA, CPF_CNPJ, RG, ORGAO_EMISSOR, INSCRICAO_ESTADUAL, INSCRICAO_MUNICIPAL,
                                     DT_NASCIMENTO, NACIONALIDADE, PROFISSAO, ESTADO_CIVIL, REGIME_BENS, CEP, LOGRADOURO, NUMERO, COMPLEMENTO,
-                                    BAIRRO, CIDADE, UF, CLIENTE, FORNECEDOR, FUNCIONARIO, CORRETOR, OBSERVACAO, USUARIO_CRIACAO)
+                                    BAIRRO, CIDADE, UF, CLIENTE, FORNECEDOR, FUNCIONARIO, CORRETOR, OBSERVACAO,
+                                    ID_PLANO_CONTA_PADRAO, ID_CENTRO_CUSTO_PADRAO, USUARIO_CRIACAO)
             VALUES (@TipoPessoa, @Nome, @NomeFantasia, @CpfCnpj, @Rg, @OrgaoEmissor, @InscricaoEstadual, @InscricaoMunicipal,
                     @DtNascimento, @Nacionalidade, @Profissao, @EstadoCivil, @RegimeBens, @Cep, @Logradouro, @Numero, @Complemento,
-                    @Bairro, @Cidade, @Uf, @Cliente, @Fornecedor, @Funcionario, @Corretor, @Observacao, @Usuario);
+                    @Bairro, @Cidade, @Uf, @Cliente, @Fornecedor, @Funcionario, @Corretor, @Observacao,
+                    NULLIF(@IdPlanoContaPadrao, 0), NULLIF(@IdCentroCustoPadrao, 0), @Usuario);
             SET @IdPessoa = SCOPE_IDENTITY();
         END
         ELSE
@@ -12760,16 +13199,37 @@ BEGIN
                    p.REGIME_BENS = @RegimeBens, p.CEP = @Cep, p.LOGRADOURO = @Logradouro, p.NUMERO = @Numero, p.COMPLEMENTO = @Complemento,
                    p.BAIRRO = @Bairro, p.CIDADE = @Cidade, p.UF = @Uf, p.CLIENTE = @Cliente, p.FORNECEDOR = @Fornecedor,
                    p.FUNCIONARIO = @Funcionario, p.CORRETOR = @Corretor, p.OBSERVACAO = @Observacao,
+                   p.ID_PLANO_CONTA_PADRAO  = CASE WHEN @IdPlanoContaPadrao  IS NULL THEN p.ID_PLANO_CONTA_PADRAO  ELSE NULLIF(@IdPlanoContaPadrao, 0)  END,
+                   p.ID_CENTRO_CUSTO_PADRAO = CASE WHEN @IdCentroCustoPadrao IS NULL THEN p.ID_CENTRO_CUSTO_PADRAO ELSE NULLIF(@IdCentroCustoPadrao, 0) END,
                    p.DT_ALTERACAO = @Agora, p.USUARIO_ALTERACAO = @Usuario
             FROM CAD.Pessoa p
             WHERE p.ID_PESSOA = @IdPessoa;
+
+        SET @EtapaAtual = 'Gravação dos tipos';
+        UPDATE x SET x.ATIVO = 0, x.DT_ALTERACAO = @Agora, x.USUARIO_ALTERACAO = @Usuario
+        FROM CAD.Pessoa_Tipo x
+        WHERE x.ID_PESSOA = @IdPessoa AND x.ATIVO = 1 AND NOT EXISTS (SELECT 1 FROM @Tip t WHERE t.ID = x.ID_PARCEIRO_TIPO);
+        UPDATE x SET x.ATIVO = 1, x.DT_ALTERACAO = @Agora, x.USUARIO_ALTERACAO = @Usuario
+        FROM CAD.Pessoa_Tipo x
+        INNER JOIN @Tip t ON t.ID = x.ID_PARCEIRO_TIPO
+        WHERE x.ID_PESSOA = @IdPessoa AND x.ATIVO = 0;
+        INSERT INTO CAD.Pessoa_Tipo (ID_PESSOA, ID_PARCEIRO_TIPO, USUARIO_CRIACAO)
+        SELECT @IdPessoa, t.ID, @Usuario
+        FROM @Tip t
+        WHERE NOT EXISTS (SELECT 1 FROM CAD.Pessoa_Tipo x WHERE x.ID_PESSOA = @IdPessoa AND x.ID_PARCEIRO_TIPO = t.ID);
 
         -- Listas: NULL = não mexe; informada = fica igual à lista (o que saiu é desativado, não apagado)
         IF @Contatos IS NOT NULL
         BEGIN
             SET @EtapaAtual = 'Gravação dos contatos';
+            -- primeiro os retirados (um só principal ativo por tipo: índice único)
             UPDATE pc
-               SET pc.TIPO = c.TIPO, pc.VALOR = c.VALOR, pc.NOME_CONTATO = c.NOME, pc.PRINCIPAL = c.PRINCIPAL, pc.RECEBE_COBRANCA = c.RECEBE,
+               SET pc.ATIVO = 0, pc.PRINCIPAL = 0, pc.DT_ALTERACAO = @Agora, pc.USUARIO_ALTERACAO = @Usuario
+            FROM CAD.Pessoa_Contato pc
+            WHERE pc.ID_PESSOA = @IdPessoa AND pc.ATIVO = 1
+              AND NOT EXISTS (SELECT 1 FROM @Cont c WHERE c.ID = pc.ID_PESSOA_CONTATO);
+            UPDATE pc
+               SET pc.TIPO = c.TIPO, pc.VALOR = c.VALOR, pc.NOME_CONTATO = c.NOME, pc.PRINCIPAL = c.PRINCIPAL, pc.RECEBE_COBRANCA = c.RECEBE, pc.FINALIDADE = c.FINALIDADE,
                    pc.ATIVO = 1, pc.DT_ALTERACAO = @Agora, pc.USUARIO_ALTERACAO = @Usuario
             FROM CAD.Pessoa_Contato pc
             INNER JOIN @Cont c ON c.ID = pc.ID_PESSOA_CONTATO
@@ -12781,8 +13241,8 @@ BEGIN
             WHERE pc.ID_PESSOA = @IdPessoa AND pc.ATIVO = 1
               AND NOT EXISTS (SELECT 1 FROM @Cont c WHERE c.ID = pc.ID_PESSOA_CONTATO);
 
-            INSERT INTO CAD.Pessoa_Contato (ID_PESSOA, TIPO, VALOR, NOME_CONTATO, PRINCIPAL, RECEBE_COBRANCA, USUARIO_CRIACAO)
-            SELECT @IdPessoa, c.TIPO, c.VALOR, c.NOME, c.PRINCIPAL, c.RECEBE, @Usuario
+            INSERT INTO CAD.Pessoa_Contato (ID_PESSOA, TIPO, VALOR, NOME_CONTATO, PRINCIPAL, RECEBE_COBRANCA, FINALIDADE, USUARIO_CRIACAO)
+            SELECT @IdPessoa, c.TIPO, c.VALOR, c.NOME, c.PRINCIPAL, c.RECEBE, c.FINALIDADE, @Usuario
             FROM @Cont c
             WHERE c.ID IS NULL
             ORDER BY c.LINHA;
@@ -18012,6 +18472,245 @@ END;
 GO
 GO
 
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Parceiro_Tipo_Listar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Parceiro_Tipo_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Lista os tipos de parceiro (tela Tipos de parceiro e filtros
+                das telas de Parceiros), com a quantidade de parceiros ativos
+                de cada tipo. Não mostra o que está na lixeira.
+                Permissão: VER em CAD_PARCEIRO_TIPO ou em CAD_PESSOA (a ficha do
+                parceiro precisa da lista para marcar os tipos).
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+
+  Homologação (LOCAL):
+    -- EXEC CAD.CAD_Parceiro_Tipo_Listar @IdUsuario = 2;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Parceiro_Tipo_Listar]
+    @IdUsuario      INT,
+    @Busca          NVARCHAR(60) = NULL,
+    @SomenteAtivos  BIT          = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PARCEIRO_TIPO', 'VER') = 0
+       AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'VER') = 0
+    BEGIN
+        SELECT TOP (0) CAST(NULL AS INT) AS ID_PARCEIRO_TIPO;
+        RETURN;
+    END;
+
+    SET @Busca = NULLIF(LTRIM(RTRIM(ISNULL(@Busca, N''))), N'');
+
+    SELECT t.ID_PARCEIRO_TIPO, t.CODIGO, t.DESCRICAO, t.SISTEMA, t.ORDEM, t.ATIVO,
+           ISNULL(q.QTD, 0) AS QTD_PARCEIROS
+    FROM CAD.Parceiro_Tipo t
+    OUTER APPLY (SELECT COUNT(*) AS QTD
+                 FROM CAD.Pessoa_Tipo x
+                 INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = x.ID_PESSOA AND p.ATIVO = 1
+                 WHERE x.ID_PARCEIRO_TIPO = t.ID_PARCEIRO_TIPO AND x.ATIVO = 1) q
+    WHERE t.DT_EXCLUSAO IS NULL
+      AND (@SomenteAtivos = 0 OR t.ATIVO = 1)
+      AND (@Busca IS NULL OR t.DESCRICAO LIKE N'%' + @Busca + N'%' OR t.CODIGO LIKE @Busca + '%')
+    ORDER BY t.ORDEM, t.DESCRICAO;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Parceiro_Tipo_Gravar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Parceiro_Tipo_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Inclui (@IdParceiroTipo NULL) ou altera um tipo de parceiro.
+                Código: letras, números e "_" (maiúsculas), único. Tipos do
+                sistema (SISTEMA = 1): só a descrição e a ordem mudam (código e
+                situação não). Desativar um tipo em uso: avisa quantos
+                parceiros têm o tipo (eles continuam com ele).
+                Permissão: INCLUIR ou ALTERAR em CAD_PARCEIRO_TIPO (desativar
+                ou reativar: DESATIVAR). Devolve SUCESSO, MENSAGEM, ID.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+
+  Homologação (LOCAL):
+    -- EXEC CAD.CAD_Parceiro_Tipo_Gravar @IdUsuario = 2, @Codigo = 'EMPREITEIRO', @Descricao = N'Empreiteiro';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Parceiro_Tipo_Gravar]
+    @IdUsuario        INT,
+    @IdParceiroTipo   INT           = NULL,
+    @Codigo           VARCHAR(20),
+    @Descricao        NVARCHAR(60),
+    @Ordem            INT           = NULL,
+    @Ativo            BIT           = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[CAD].[CAD_Parceiro_Tipo_Gravar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa     NVARCHAR(400) = N'';
+    DECLARE @Usuario    NVARCHAR(100) = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+    DECLARE @Sistema    BIT           = 0;
+    DECLARE @CodigoAtual VARCHAR(20);
+    DECLARE @AtivoAtual BIT;
+    DECLARE @EmUso      INT           = 0;
+
+    BEGIN TRY
+        SET @Codigo    = UPPER(LTRIM(RTRIM(ISNULL(@Codigo, ''))));
+        SET @Descricao = LTRIM(RTRIM(ISNULL(@Descricao, N'')));
+        SET @Ativo     = ISNULL(@Ativo, 1);
+
+        SELECT @Sistema = t.SISTEMA, @CodigoAtual = t.CODIGO, @AtivoAtual = t.ATIVO
+        FROM CAD.Parceiro_Tipo t WHERE t.ID_PARCEIRO_TIPO = @IdParceiroTipo;
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PARCEIRO_TIPO', CASE WHEN @IdParceiroTipo IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
+            SET @Recusa = N'Você não tem permissão para gravar tipos de parceiro.';
+        IF @Recusa = N'' AND @IdParceiroTipo IS NOT NULL AND @CodigoAtual IS NULL
+            SET @Recusa = N'Tipo de parceiro não encontrado.';
+        IF @Recusa = N'' AND @IdParceiroTipo IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Parceiro_Tipo', @IdParceiroTipo) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
+        IF @Recusa = N'' AND @Sistema = 1 AND @Codigo <> @CodigoAtual
+            SET @Recusa = N'O código de um tipo do sistema não pode ser mudado (só a descrição e a ordem).';
+        IF @Recusa = N'' AND @Sistema = 1 AND @Ativo = 0
+            SET @Recusa = N'Um tipo do sistema não pode ser desativado.';
+        IF @Recusa = N'' AND (@Codigo = '' OR @Codigo LIKE '%[^A-Z0-9_]%' COLLATE Latin1_General_BIN2)
+            SET @Recusa = N'Código inválido: use letras sem acento, números e "_" (ex.: EMPREITEIRO).';
+        IF @Recusa = N'' AND @Descricao = N''
+            SET @Recusa = N'Informe a descrição.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Parceiro_Tipo t WHERE t.CODIGO = @Codigo AND t.ID_PARCEIRO_TIPO <> ISNULL(@IdParceiroTipo, 0))
+            SET @Recusa = N'Já existe um tipo de parceiro com este código (confira também a lixeira).';
+        IF @Recusa = N'' AND @IdParceiroTipo IS NOT NULL AND @Ativo <> @AtivoAtual
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PARCEIRO_TIPO', 'DESATIVAR') = 0
+            SET @Recusa = N'Você não tem permissão para desativar ou reativar tipos de parceiro.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdParceiroTipo AS ID;
+            RETURN;
+        END;
+
+        IF @IdParceiroTipo IS NOT NULL AND @Ativo = 0 AND @AtivoAtual = 1
+            SELECT @EmUso = COUNT(*) FROM CAD.Pessoa_Tipo x WHERE x.ID_PARCEIRO_TIPO = @IdParceiroTipo AND x.ATIVO = 1;
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        IF @IdParceiroTipo IS NULL
+        BEGIN
+            INSERT INTO CAD.Parceiro_Tipo (CODIGO, DESCRICAO, SISTEMA, ORDEM, ATIVO, USUARIO_CRIACAO)
+            VALUES (@Codigo, @Descricao, 0, ISNULL(@Ordem, 100), @Ativo, @Usuario);
+            SET @IdParceiroTipo = SCOPE_IDENTITY();
+        END
+        ELSE
+            UPDATE CAD.Parceiro_Tipo
+               SET CODIGO = @Codigo, DESCRICAO = @Descricao, ORDEM = ISNULL(@Ordem, ORDEM), ATIVO = @Ativo,
+                   DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+             WHERE ID_PARCEIRO_TIPO = @IdParceiroTipo;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(N'Tipo de parceiro gravado.'
+                    + CASE WHEN @EmUso > 0 THEN N' Atenção: ' + CONVERT(NVARCHAR(10), @EmUso)
+                                + N' parceiro(s) continuam com este tipo; ele só não aparece mais para novas marcações.' ELSE N'' END
+                    AS NVARCHAR(400)) AS MENSAGEM,
+               @IdParceiroTipo AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar o tipo de parceiro. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, @IdParceiroTipo AS ID;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Anexo_Tipo_Listar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Anexo_Tipo_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Tipos de anexo ativos para a janela "Anexar" das telas, com as
+                extensões aceitas e o tamanho máximo (ANEXO_TAMANHO_MAX_MB), para
+                a tela avisar antes de enviar. A conferência que vale continua
+                no SIS_Anexo_Gravar.
+                Permissão: VER na tela (@Item).
+                Padrão "Listar": THROW 50001 com mensagem amigável.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d2, passo 5: aba Anexos).
+
+  Homologação (LOCAL): ver sql/testes/CAD/04d2_Homologacao_Anexos.sql.
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Anexo_Tipo_Listar]
+    @IdUsuario  INT,
+    @Item       VARCHAR(40)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Anexo_Tipo_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver estes anexos.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+
+        SELECT t.CODIGO,
+               t.NOME,
+               t.EXTENSOES,
+               SIS.fn_SIS_Parametro_Inteiro('ANEXO_TAMANHO_MAX_MB') AS TAMANHO_MAX_MB
+        FROM SIS.Anexo_Tipo t WITH (NOLOCK)
+        WHERE t.ATIVO = 1
+        ORDER BY t.NOME;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar os tipos de anexo. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
 -- =============================================================================
 -- 8. TRIGGERS
 -- =============================================================================
@@ -18280,6 +18979,10 @@ GO
     v2.1 (23/11/2026) - Etapa 04c (P22): NOVIDADES_AVISO_ATIVO,
                         NOVIDADES_VERSOES_MAX (3), VERSAO_AVISO_EMAIL_ATIVO e
                         VERSAO_AVISO_GRUPO.
+    v2.2 (25/11/2026) - Etapa 04d (P12, P10): PARCEIRO_ROTULO, PARCEIRO_ROTULO_PLURAL,
+                        CEP_CONSULTA_ATIVA, CEP_URL_PRINCIPAL, CEP_URL_RESERVA,
+                        CEP_CACHE_DIAS, CNPJ_CONSULTA_ATIVA, CNPJ_URL,
+                        CONSULTA_TEMPO_LIMITE_SEG e COBRANCA_APTO_EXIGE_*.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -18387,7 +19090,33 @@ FROM (VALUES
         ('VERSAO_AVISO_EMAIL_ATIVO', N'S', 'SN',
          N'S = cada atualização concluída manda a nota da versão por e-mail ao grupo do parâmetro VERSAO_AVISO_GRUPO. N = não manda.', 'SIS', 1),
         ('VERSAO_AVISO_GRUPO', N'VERSAO_AVISO', 'TEXTO',
-         N'Grupo de e-mail que recebe a nota da versão depois de cada atualização (tela Grupos de e-mail).', 'SIS', 1)
+         N'Grupo de e-mail que recebe a nota da versão depois de cada atualização (tela Grupos de e-mail).', 'SIS', 1),
+        ('PARCEIRO_ROTULO', N'Parceiro', 'TEXTO',
+         N'Nome do cadastro de pessoas nas telas e menus (singular). Ex.: Parceiro.', 'CAD', 0),
+        ('PARCEIRO_ROTULO_PLURAL', N'Parceiros', 'TEXTO',
+         N'Nome do cadastro de pessoas nas telas e menus (plural). Ex.: Parceiros.', 'CAD', 0),
+        ('CEP_CONSULTA_ATIVA', N'S', 'SN',
+         N'S = ao digitar o CEP, o servidor consulta o endereço na internet (ViaCEP; reserva BrasilAPI). N = digitação manual.', 'CAD', 1),
+        ('CEP_URL_PRINCIPAL', N'https://viacep.com.br/ws/{cep}/json/', 'TEXTO',
+         N'Endereço da consulta principal de CEP ({cep} = 8 dígitos). Formato de resposta do ViaCEP.', 'CAD', 0),
+        ('CEP_URL_RESERVA', N'https://brasilapi.com.br/api/cep/v1/{cep}', 'TEXTO',
+         N'Endereço da consulta de CEP usada quando a principal falha ({cep} = 8 dígitos). Formato da BrasilAPI. Vazio = sem reserva.', 'CAD', 0),
+        ('CEP_CACHE_DIAS', N'180', 'INTEIRO',
+         N'Dias que um endereço consultado fica guardado antes de consultar de novo na internet.', 'CAD', 1),
+        ('CNPJ_CONSULTA_ATIVA', N'S', 'SN',
+         N'S = ao digitar o CNPJ, o servidor consulta razão social, nome fantasia, endereço e situação na Receita (BrasilAPI). N = digitação manual.', 'CAD', 1),
+        ('CNPJ_URL', N'https://brasilapi.com.br/api/cnpj/v1/{cnpj}', 'TEXTO',
+         N'Endereço da consulta de CNPJ ({cnpj} = 14 caracteres). Formato da BrasilAPI.', 'CAD', 0),
+        ('CONSULTA_TEMPO_LIMITE_SEG', N'8', 'INTEIRO',
+         N'Segundos de espera de cada consulta na internet (CEP, CNPJ) antes de desistir e deixar digitar à mão.', 'CAD', 0),
+        ('COBRANCA_APTO_EXIGE_DOCUMENTO', N'S', 'SN',
+         N'Cadastro apto para cobrança (boleto): exige CPF ou CNPJ válido.', 'CAD', 1),
+        ('COBRANCA_APTO_EXIGE_ENDERECO', N'S', 'SN',
+         N'Cadastro apto para cobrança (boleto): exige CEP, logradouro, número, bairro, cidade e UF.', 'CAD', 1),
+        ('COBRANCA_APTO_EXIGE_EMAIL', N'S', 'SN',
+         N'Cadastro apto para cobrança (boleto): exige e-mail principal (ou de cobrança) válido.', 'CAD', 1),
+        ('COBRANCA_APTO_EXIGE_TELEFONE', N'N', 'SN',
+         N'Cadastro apto para cobrança (boleto): exige celular ou telefone.', 'CAD', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Parametro p WHERE p.CHAVE = v.CHAVE);
@@ -18950,6 +19679,8 @@ GO
                         DESFAZER nas telas de cadastro; DESATIVAR nasce com
                         quem já tinha EXCLUIR (perfil e exceção do usuário),
                         porque até aqui o Excluir só desativava.
+    v1.2 (25/11/2026) - Etapa 04d (P12): tela CAD_PARCEIRO_TIPO (Tipos de
+                        parceiro) e CAD.Pessoa_Tipo nas tabelas da tela CAD_PESSOA.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -18962,7 +19693,8 @@ INTO #CargaItem
 FROM (VALUES
         (CAST('CAD' AS VARCHAR(10)), CAST('CAD_EMPRESA' AS VARCHAR(40)), CAST(N'Empresas' AS NVARCHAR(80)), CAST('cad/empresas.html' AS VARCHAR(200)),
          CAST(10 AS SMALLINT), CAST('CAD.Empresa' AS VARCHAR(500))),
-        ('CAD',   'CAD_PESSOA',       N'Pessoas',          'cad/pessoas.html',        20, 'CAD.Pessoa,CAD.Pessoa_Contato,CAD.Pessoa_Vinculo,CAD.Pessoa_Dado_Bancario'),
+        ('CAD',   'CAD_PESSOA',       N'Pessoas',          'cad/pessoas.html',        20, 'CAD.Pessoa,CAD.Pessoa_Contato,CAD.Pessoa_Vinculo,CAD.Pessoa_Dado_Bancario,CAD.Pessoa_Tipo'),
+        ('CAD',   'CAD_PARCEIRO_TIPO', N'Tipos de parceiro', 'cad/parceiro-tipos.html', 25, 'CAD.Parceiro_Tipo'),
         ('CAD',   'CAD_CENTRO_CUSTO', N'Centros de custo', 'cad/centros-custo.html',  30, 'CAD.Centro_Custo'),
         ('CAD',   'CAD_PLANO_CONTA',  N'Plano de contas',  'cad/plano-contas.html',   40, 'CAD.Plano_Grupo,CAD.Plano_Subgrupo,CAD.Plano_Conta'),
         ('BANCO', 'BANCO_CONTA',      N'Contas bancárias', 'banco/contas.html',       10, 'BANCO.Conta'),
@@ -18993,7 +19725,9 @@ FROM (VALUES
         ('CAD_CENTRO_CUSTO', 'VER'), ('CAD_CENTRO_CUSTO', 'INCLUIR'), ('CAD_CENTRO_CUSTO', 'ALTERAR'), ('CAD_CENTRO_CUSTO', 'EXCLUIR'), ('CAD_CENTRO_CUSTO', 'EXPORTAR'),
         ('CAD_PLANO_CONTA', 'VER'), ('CAD_PLANO_CONTA', 'INCLUIR'), ('CAD_PLANO_CONTA', 'ALTERAR'), ('CAD_PLANO_CONTA', 'EXCLUIR'), ('CAD_PLANO_CONTA', 'EXPORTAR'),
         ('BANCO_CONTA', 'VER'), ('BANCO_CONTA', 'INCLUIR'), ('BANCO_CONTA', 'ALTERAR'), ('BANCO_CONTA', 'EXCLUIR'), ('BANCO_CONTA', 'EXPORTAR'),
-        ('BANCO_BANCO', 'VER'), ('BANCO_BANCO', 'INCLUIR'), ('BANCO_BANCO', 'ALTERAR'), ('BANCO_BANCO', 'EXPORTAR')
+        ('BANCO_BANCO', 'VER'), ('BANCO_BANCO', 'INCLUIR'), ('BANCO_BANCO', 'ALTERAR'), ('BANCO_BANCO', 'EXPORTAR'),
+        ('CAD_PARCEIRO_TIPO', 'VER'), ('CAD_PARCEIRO_TIPO', 'INCLUIR'), ('CAD_PARCEIRO_TIPO', 'ALTERAR'), ('CAD_PARCEIRO_TIPO', 'EXCLUIR'),
+        ('CAD_PARCEIRO_TIPO', 'DESATIVAR'), ('CAD_PARCEIRO_TIPO', 'EXPORTAR'), ('CAD_PARCEIRO_TIPO', 'DESFAZER')
      ) v (ITEM, ACAO)
 INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
 INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
@@ -19063,6 +19797,8 @@ EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'CAD.Pessoa',                @Cr
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'CAD.Pessoa_Contato',        @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'CAD.Pessoa_Vinculo',        @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'CAD.Pessoa_Dado_Bancario',  @Criar = 1;
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'CAD.Pessoa_Tipo',           @Criar = 1;
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'CAD.Parceiro_Tipo',         @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'CAD.Plano_Grupo',           @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'CAD.Plano_Subgrupo',        @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'CAD.Plano_Conta',           @Criar = 1;
@@ -19430,6 +20166,7 @@ GO
                 Idempotente.
   Changelog:
     v1.0 (22/11/2026) - Criação (etapa 04b).
+    v1.1 (25/11/2026) - Etapa 04d: CAD.Pessoa_Tipo (filha da Pessoa) e CAD.Parceiro_Tipo.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -19441,10 +20178,12 @@ SELECT v.TABELA, v.DESFAZER, v.LIXEIRA, v.BLOQUEADOS, v.UNICOS, v.FILHAS, v.INCL
 INTO #CargaConfig
 FROM (VALUES
         (CAST(N'CAD.Pessoa' AS NVARCHAR(256)), CAST(1 AS BIT), CAST(1 AS BIT), CAST(N'' AS NVARCHAR(1000)), CAST(N'CPF_CNPJ' AS NVARCHAR(400)),
-         CAST(N'CAD.Pessoa_Contato.ID_PESSOA,CAD.Pessoa_Vinculo.ID_PESSOA,CAD.Pessoa_Dado_Bancario.ID_PESSOA' AS NVARCHAR(1000)),
+         CAST(N'CAD.Pessoa_Contato.ID_PESSOA,CAD.Pessoa_Vinculo.ID_PESSOA,CAD.Pessoa_Dado_Bancario.ID_PESSOA,CAD.Pessoa_Tipo.ID_PESSOA' AS NVARCHAR(1000)),
          CAST('LIXEIRA' AS VARCHAR(10)), CAST('RECUSAR' AS VARCHAR(10)),
          CAST(N't.NOME + CASE WHEN t.CPF_CNPJ <> '''' THEN N'' ('' + CONVERT(NVARCHAR(20), t.CPF_CNPJ) + N'')'' ELSE N'''' END' AS NVARCHAR(1000))),
         (N'CAD.Pessoa_Contato',       1, 0, N'', N'', N'', 'DESATIVAR', 'RECUSAR', N'CONVERT(NVARCHAR(20), t.TIPO) + N'': '' + t.VALOR'),
+        (N'CAD.Pessoa_Tipo',          1, 0, N'', N'', N'', 'DESATIVAR', 'RECUSAR', N'N''Tipo '' + CAST(t.ID_PARCEIRO_TIPO AS NVARCHAR(10))'),
+        (N'CAD.Parceiro_Tipo',        1, 1, N'SISTEMA', N'CODIGO', N'', 'LIXEIRA', 'RECUSAR', N't.DESCRICAO'),
         (N'CAD.Pessoa_Vinculo',       1, 0, N'', N'', N'', 'DESATIVAR', 'RECUSAR', N'N''Vínculo '' + CONVERT(NVARCHAR(30), t.TIPO)'),
         (N'CAD.Pessoa_Dado_Bancario', 1, 0, N'', N'', N'', 'DESATIVAR', 'RECUSAR', N'N''Conta '' + CONVERT(NVARCHAR(20), t.AGENCIA) + N'' / '' + CONVERT(NVARCHAR(30), t.CONTA)'),
         (N'CAD.Empresa',              1, 1, N'', N'CNPJ', N'', 'LIXEIRA', 'RECUSAR', N't.RAZAO_SOCIAL'),
@@ -19505,7 +20244,7 @@ GO
                 Sincroniza a tabela com o .md (as notas são do sistema, não da
                 CMJ): inclui o que falta, acerta o texto do que mudou e tira o
                 item que saiu do .md. Idempotente.
-                Versões no arquivo: 2.2, 2.1, 2.0, 1.9, 1.8.
+                Versões no arquivo: 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
   Changelog:
     v1.0 (23/11/2026) - Criação (etapa 04c, P22).
 *******************************************************************************/
@@ -19517,8 +20256,29 @@ DROP TABLE IF EXISTS #CargaNota;
 SELECT v.VERSAO, SIS.fn_SIS_Versao_Numero(v.VERSAO) AS VERSAO_NUMERO, v.DT_VERSAO, v.ORDEM, v.TIPO, v.PUBLICO, v.TEXTO, v.TEXTO_HTML
 INTO #CargaNota
 FROM (VALUES
-       (CAST('2.2' AS VARCHAR(20)), CAST('2026-11-25' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
-         CAST(N'tela Versões (Sistema › Monitoramento). A aba Notas mostra, versão por versão, o que é novo, o que melhorou e o que foi corrigido, com busca e exportação; a aba Histórico (só administrador) mostra quando cada atualização foi feita, de qual versão para qual e quanto tempo o sistema ficou fora do ar.' AS NVARCHAR(2000)), CAST(N'tela <b>Versões</b> (Sistema › Monitoramento). A aba <b>Notas</b> mostra, versão por versão, o que é novo, o que melhorou e o que foi corrigido, com busca e exportação; a aba <b>Histórico</b> (só administrador) mostra quando cada atualização foi feita, de qual versão para qual e quanto tempo o sistema ficou fora do ar.' AS NVARCHAR(4000)))
+       (CAST('2.3' AS VARCHAR(20)), CAST('2026-11-25' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
+         CAST(N'o cadastro de Pessoas passa a se chamar Parceiros (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários tipos ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).' AS NVARCHAR(2000)), CAST(N'o cadastro de Pessoas passa a se chamar <b>Parceiros</b> (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários <b>tipos</b> ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).' AS NVARCHAR(4000)))
+      ,('2.3', '2026-11-25', 2, 'NOVO', 'TODOS',
+         N'tela Tipos de parceiro (Cadastros), para criar e organizar os tipos.',
+         N'tela <b>Tipos de parceiro</b> (Cadastros), para criar e organizar os tipos.')
+      ,('2.3', '2026-11-25', 3, 'NOVO', 'TODOS',
+         N'na lista de Parceiros, o filtro por tipo, a marcação Pendências de cadastro (clientes com parcela em aberto cujo cadastro ainda não serve para boleto) e a coluna Cobrança, que diz o que falta.',
+         N'na lista de Parceiros, o filtro por tipo, a marcação <b>Pendências de cadastro</b> (clientes com parcela em aberto cujo cadastro ainda não serve para boleto) e a coluna <b>Cobrança</b>, que diz o que falta.')
+      ,('2.3', '2026-11-25', 4, 'NOVO', 'TODOS',
+         N'na ficha, o CEP preenche o endereço e o CNPJ preenche razão social, nome fantasia e endereço (pela internet; pergunta antes de trocar o que já foi digitado).',
+         N'na ficha, o <b>CEP preenche o endereço</b> e o <b>CNPJ preenche razão social, nome fantasia e endereço</b> (pela internet; pergunta antes de trocar o que já foi digitado).')
+      ,('2.3', '2026-11-25', 5, 'NOVO', 'TODOS',
+         N'aba Anexos na ficha do parceiro (contratos, documentos, certidões), com validade e aviso de vencido.',
+         N'aba <b>Anexos</b> na ficha do parceiro (contratos, documentos, certidões), com validade e aviso de vencido.')
+      ,('2.3', '2026-11-25', 6, 'MELHORIA', 'TODOS',
+         N'nos contatos, a finalidade (cobrança, compras ou financeiro); escolher cobrança já marca o contato para receber boletos.',
+         N'nos contatos, a <b>finalidade</b> (cobrança, compras ou financeiro); escolher cobrança já marca o contato para receber boletos.')
+      ,('2.3', '2026-11-25', 7, 'MELHORIA', 'TODOS',
+         N'endereço com número e complemento em campos próprios, como o banco exige no boleto.',
+         N'endereço com <b>número e complemento</b> em campos próprios, como o banco exige no boleto.')
+      ,('2.2', '2026-11-25', 1, 'NOVO', 'TODOS',
+         N'tela Versões (Sistema › Monitoramento). A aba Notas mostra, versão por versão, o que é novo, o que melhorou e o que foi corrigido, com busca e exportação; a aba Histórico (só administrador) mostra quando cada atualização foi feita, de qual versão para qual e quanto tempo o sistema ficou fora do ar.',
+         N'tela <b>Versões</b> (Sistema › Monitoramento). A aba <b>Notas</b> mostra, versão por versão, o que é novo, o que melhorou e o que foi corrigido, com busca e exportação; a aba <b>Histórico</b> (só administrador) mostra quando cada atualização foi feita, de qual versão para qual e quanto tempo o sistema ficou fora do ar.')
       ,('2.2', '2026-11-25', 2, 'NOVO', 'TODOS',
          N'aviso O que há de novo. Depois de uma atualização, cada usuário vê uma vez, logo depois de entrar, o resumo das novidades, com os botões Entendi e Ver todas as versões.',
          N'aviso <b>O que há de novo</b>. Depois de uma atualização, cada usuário vê uma vez, logo depois de entrar, o resumo das novidades, com os botões <b>Entendi</b> e <b>Ver todas as versões</b>.')
@@ -19642,6 +20402,57 @@ WHERE u.ATIVO = 1
 GO
 GO
 
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/Carga_CAD_Parceiro_Tipo.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : carga de [CAD].[Parceiro_Tipo] e [CAD].[Pessoa_Tipo]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Tipos de fábrica (SISTEMA = 1): NA ("N/A", para classificar
+                depois), CLIENTE, FORNECEDOR, FUNCIONARIO e CORRETOR. Nunca
+                muda a descrição que a CMJ editou.
+                Completa os tipos de cada parceiro a partir das marcas antigas
+                de CAD.Pessoa (só o que falta) e põe N/A em quem ficou sem tipo
+                ativo. Idempotente.
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d, P12).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+INSERT INTO CAD.Parceiro_Tipo (CODIGO, DESCRICAO, SISTEMA, ORDEM, USUARIO_CRIACAO)
+SELECT v.CODIGO, v.DESCRICAO, 1, v.ORDEM, N'instalacao'
+FROM (VALUES ('NA', N'N/A (a classificar)', 1),
+             ('CLIENTE', N'Cliente', 10),
+             ('FORNECEDOR', N'Fornecedor', 20),
+             ('FUNCIONARIO', N'Funcionário', 30),
+             ('CORRETOR', N'Corretor', 40)) v (CODIGO, DESCRICAO, ORDEM)
+WHERE NOT EXISTS (SELECT 1 FROM CAD.Parceiro_Tipo t WHERE t.CODIGO = v.CODIGO);
+
+UPDATE CAD.Parceiro_Tipo SET SISTEMA = 1, ATIVO = 1
+WHERE CODIGO IN ('NA', 'CLIENTE', 'FORNECEDOR', 'FUNCIONARIO', 'CORRETOR') AND (SISTEMA = 0 OR ATIVO = 0);
+GO
+
+INSERT INTO CAD.Pessoa_Tipo (ID_PESSOA, ID_PARCEIRO_TIPO, USUARIO_CRIACAO)
+SELECT p.ID_PESSOA, t.ID_PARCEIRO_TIPO, N'instalacao'
+FROM CAD.Pessoa p
+CROSS APPLY (VALUES ('CLIENTE', p.CLIENTE), ('FORNECEDOR', p.FORNECEDOR), ('FUNCIONARIO', p.FUNCIONARIO), ('CORRETOR', p.CORRETOR)) m (CODIGO, MARCA)
+INNER JOIN CAD.Parceiro_Tipo t ON t.CODIGO = m.CODIGO
+WHERE m.MARCA = 1
+  AND NOT EXISTS (SELECT 1 FROM CAD.Pessoa_Tipo x WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ID_PARCEIRO_TIPO = t.ID_PARCEIRO_TIPO);
+
+INSERT INTO CAD.Pessoa_Tipo (ID_PESSOA, ID_PARCEIRO_TIPO, USUARIO_CRIACAO)
+SELECT p.ID_PESSOA, t.ID_PARCEIRO_TIPO, N'instalacao'
+FROM CAD.Pessoa p
+INNER JOIN CAD.Parceiro_Tipo t ON t.CODIGO = 'NA'
+WHERE NOT EXISTS (SELECT 1 FROM CAD.Pessoa_Tipo x WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ATIVO = 1)
+  AND NOT EXISTS (SELECT 1 FROM CAD.Pessoa_Tipo x WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ID_PARCEIRO_TIPO = t.ID_PARCEIRO_TIPO);
+GO
+GO
+
 -- =============================================================================
 -- 9. (fim) FINALIZACAO DA INSTALACAO
 -- =============================================================================
@@ -19710,19 +20521,20 @@ GO
                       2.0 (22/11/2026) histórico padrão: desfazer pela auditoria e lixeira (P20, etapa 04b).
                       2.1 (23/11/2026) telas da lixeira, do histórico e da auditoria (P20, etapa 04b2).
                       2.2 (25/11/2026) versões e aviso O que há de novo (P22, etapas 04c e 04c2).
+                      2.3 (25/11/2026) Parceiros: tipos, CEP/CNPJ, pendências de cobrança e anexos (P10, P12; etapas 04d e 04d2).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '2.2';
+DECLARE @Versao VARCHAR(20) = '2.3';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;
 GO
 GO
 
-PRINT N'MASTER v2.2 concluido sem erro.';
+PRINT N'MASTER v2.3 concluido sem erro.';
 GO
 
 SET NOEXEC OFF;

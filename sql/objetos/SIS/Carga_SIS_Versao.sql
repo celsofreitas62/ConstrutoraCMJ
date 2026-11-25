@@ -27,12 +27,13 @@
                       2.0 (22/11/2026) histórico padrão: desfazer pela auditoria e lixeira (P20, etapa 04b).
                       2.1 (23/11/2026) telas da lixeira, do histórico e da auditoria (P20, etapa 04b2).
                       2.2 (25/11/2026) versões e aviso O que há de novo (P22, etapas 04c e 04c2).
+                      2.3 (25/11/2026) Parceiros: tipos, CEP/CNPJ, pendências de cobrança e anexos (P10, P12; etapas 04d e 04d2).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '2.2';
+DECLARE @Versao VARCHAR(20) = '2.3';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;

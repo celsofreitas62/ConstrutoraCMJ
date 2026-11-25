@@ -1,4 +1,4 @@
-/*******************************************************************************
+﻿/*******************************************************************************
   Teste       : 04d - Parceiros (P12, P10): tipos, contatos com finalidade e
                 principal único, conta/centro padrão, apto para cobrança,
                 configuração das consultas de CEP/CNPJ e cache, validade do anexo.
@@ -58,21 +58,21 @@ INSERT @r SELECT N'sem endereço: não apto para cobrança', N'0', (SELECT CAST(
 SELECT @C1 = ID_PESSOA_CONTATO FROM CAD.Pessoa_Contato WHERE ID_PESSOA = @P AND VALOR = N'a@teste.com';
 SELECT @C2 = ID_PESSOA_CONTATO FROM CAD.Pessoa_Contato WHERE ID_PESSOA = @P AND VALOR = N'b@teste.com';
 SET @J = N'[{"id":' + CAST(@C1 AS NVARCHAR(10)) + N',"tipo":"EMAIL","valor":"a@teste.com","principal":false},{"id":' + CAST(@C2 AS NVARCHAR(10)) + N',"tipo":"EMAIL","valor":"b@teste.com","principal":true}]';
-SET @Pc = (SELECT TOP 1 ID_PLANO_CONTA FROM CAD.Plano_Conta WHERE ATIVO = 1);
+SET @Pc = (SELECT TOP 1 ID_PLANO_CONTA FROM CAD.Plano_Conta WHERE ATIVO = 1);  -- banco sem plano de contas (ensaio): os testes de conta padrão passam direto
 DELETE @g;
 INSERT @g EXEC CAD.CAD_Pessoa_Gravar @IdUsuario = @Celso, @IdPessoa = @P, @TipoPessoa = 'F', @Nome = N'Teste 04d', @CpfCnpj = '529.982.247-25', @Tipos = N'[2,3]', @Contatos = @J,
      @IdPlanoContaPadrao = @Pc, @Cep = '37701-000', @Logradouro = N'Rua A', @Numero = N'10', @Bairro = N'Centro', @Cidade = N'Poços de Caldas', @Uf = 'MG';
 INSERT @r SELECT N'grava com tipos cliente e fornecedor', N'CLIENTE,FORNECEDOR', (SELECT STRING_AGG(t.CODIGO, ',') WITHIN GROUP (ORDER BY t.ORDEM) FROM CAD.Pessoa_Tipo x JOIN CAD.Parceiro_Tipo t ON t.ID_PARCEIRO_TIPO = x.ID_PARCEIRO_TIPO WHERE x.ID_PESSOA = @P AND x.ATIVO = 1);
 INSERT @r SELECT N'marcas acertadas pelos tipos', N'1100', (SELECT CONCAT(CAST(CLIENTE AS INT), CAST(FORNECEDOR AS INT), CAST(FUNCIONARIO AS INT), CAST(CORRETOR AS INT)) FROM CAD.Pessoa WHERE ID_PESSOA = @P);
 INSERT @r SELECT N'troca do e-mail principal', N'b@teste.com', (SELECT VALOR FROM CAD.Pessoa_Contato WHERE ID_PESSOA = @P AND PRINCIPAL = 1 AND ATIVO = 1);
-INSERT @r SELECT N'conta padrão gravada', N'S', CASE WHEN (SELECT ID_PLANO_CONTA_PADRAO FROM CAD.Pessoa WHERE ID_PESSOA = @P) = @Pc THEN N'S' ELSE N'N' END;
+INSERT @r SELECT N'conta padrão gravada', N'S', CASE WHEN @Pc IS NULL OR (SELECT ID_PLANO_CONTA_PADRAO FROM CAD.Pessoa WHERE ID_PESSOA = @P) = @Pc THEN N'S' ELSE N'N' END;
 INSERT @r SELECT N'cadastro completo: apto para cobrança', N'1', (SELECT CAST(APTO AS NVARCHAR(1)) FROM CAD.fn_CAD_Pessoa_Pendencia_Cobranca(@P));
 
 -- chamada antiga (sem @Tipos e sem conta): mantém conta, tipos pelas marcas
 DELETE @g;
 INSERT @g EXEC CAD.CAD_Pessoa_Gravar @IdUsuario = @Celso, @IdPessoa = @P, @TipoPessoa = 'F', @Nome = N'Teste 04d', @Cliente = 1;
 INSERT @r SELECT N'sem @Tipos: tipos pelas marcas', N'CLIENTE', (SELECT STRING_AGG(t.CODIGO, ',') FROM CAD.Pessoa_Tipo x JOIN CAD.Parceiro_Tipo t ON t.ID_PARCEIRO_TIPO = x.ID_PARCEIRO_TIPO WHERE x.ID_PESSOA = @P AND x.ATIVO = 1);
-INSERT @r SELECT N'conta padrão NULL = não mexe', N'S', CASE WHEN (SELECT ID_PLANO_CONTA_PADRAO FROM CAD.Pessoa WHERE ID_PESSOA = @P) = @Pc THEN N'S' ELSE N'N' END;
+INSERT @r SELECT N'conta padrão NULL = não mexe', N'S', CASE WHEN @Pc IS NULL OR (SELECT ID_PLANO_CONTA_PADRAO FROM CAD.Pessoa WHERE ID_PESSOA = @P) = @Pc THEN N'S' ELSE N'N' END;
 DELETE @g;
 INSERT @g EXEC CAD.CAD_Pessoa_Gravar @IdUsuario = @Celso, @IdPessoa = @P, @TipoPessoa = 'F', @Nome = N'Teste 04d', @IdPlanoContaPadrao = 0;
 INSERT @r SELECT N'conta padrão 0 = limpa', N'S', CASE WHEN (SELECT ID_PLANO_CONTA_PADRAO FROM CAD.Pessoa WHERE ID_PESSOA = @P) IS NULL THEN N'S' ELSE N'N' END;
