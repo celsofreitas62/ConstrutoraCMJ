@@ -20,7 +20,7 @@ public static class FiltroSalvoEndpoints
     {
         app.MapGet("/api/sis/filtros", Listar);
         app.MapPost("/api/sis/filtros", Gravar);
-        app.MapDelete("/api/sis/filtros/{id:int}", Excluir);
+        app.MapPost("/api/sis/filtros/{id:int}/excluir", Excluir);
     }
 
     private static Task<IResult> Listar(string item, HttpContext http, Banco banco, ILogger<Program> logger) =>

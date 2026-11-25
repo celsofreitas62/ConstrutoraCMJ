@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Contas a pagar e a receber</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/seletor.js" defer></script>
+  <script src="/js/fin/lancamentos.js" defer></script>
+</head>
+<body data-tela="fin/lancamentos.html" data-ajuda="fin-lancamentos" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho" id="caminho">Financeiro › Contas</div>
+          <h1 id="titulo">Contas</h1>
+        </div>
+        <a data-dica="Abre a Lixeira já filtrada nos lançamentos excluídos desta tela." class="link-lixeira" href="/sis/lixeira.html" id="link-lixeira" hidden>Lixeira</a>
+        <button data-dica="Baixa num arquivo que o Excel abre todas as linhas do filtro (não só a página que está na tela)." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="contadores" id="contadores" aria-live="polite">
+        <button type="button" class="contador contador-vencidas" data-situacao="VENCIDA" data-dica="Parcelas em aberto com vencimento antes de hoje. Clique para ver só elas.">
+          <span class="contador-rotulo">Vencidas</span><span class="contador-valor" id="valor-vencidas">–</span><span class="contador-qtd" id="qtd-vencidas"></span>
+        </button>
+        <button type="button" class="contador contador-hoje" data-situacao="HOJE" data-dica="Parcelas em aberto que vencem hoje. Clique para ver só elas.">
+          <span class="contador-rotulo">Vencem hoje</span><span class="contador-valor" id="valor-hoje">–</span><span class="contador-qtd" id="qtd-hoje"></span>
+        </button>
+        <button type="button" class="contador contador-a-vencer" data-situacao="A_VENCER" data-dica="Parcelas em aberto que vencem nos próximos dias (quantidade de dias no parâmetro FIN_LISTA_DIAS_A_VENCER). Clique para ver só elas.">
+          <span class="contador-rotulo" id="rotulo-a-vencer">A vencer</span><span class="contador-valor" id="valor-a-vencer">–</span><span class="contador-qtd" id="qtd-a-vencer"></span>
+        </button>
+        <button type="button" class="contador contador-aberto" data-situacao="EM_ABERTO" data-dica="Todas as parcelas em aberto (vencidas e a vencer). Clique para ver todas elas.">
+          <span class="contador-rotulo">Total em aberto</span><span class="contador-valor" id="valor-aberto">–</span><span class="contador-qtd" id="qtd-aberto"></span>
+        </button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Digite parte do histórico, do documento, da observação, do nome do parceiro, o CPF/CNPJ (5 dígitos ou mais) ou o número do lançamento. A lista atualiza sozinha." class="campo f-3">Buscar
+          <input type="search" id="texto" maxlength="100" placeholder="Ex.: cimento, NF 123, Silva" autocomplete="off">
+        </label>
+        <label data-dica="Em aberto = aberta ou paga em parte. Vencida = em aberto com vencimento antes de hoje. A vencer = em aberto nos próximos dias." class="campo f-1">Situação
+          <select id="situacao">
+            <option value="EM_ABERTO">Em aberto</option>
+            <option value="VENCIDA">Vencida</option>
+            <option value="HOJE">Vence hoje</option>
+            <option value="A_VENCER">A vencer</option>
+            <option value="ABERTA">Aberta (nada pago)</option>
+            <option value="PARCIAL">Paga em parte</option>
+            <option value="PAGA">Quitada</option>
+            <option value="CANCELADA">Cancelada</option>
+            <option value="">Todas</option>
+          </select>
+        </label>
+        <label data-dica="Qual data o período usa: vencimento da parcela, emissão do documento ou mês de competência." class="campo f-1">Período por
+          <select id="campo-data">
+            <option value="VENCIMENTO">Vencimento</option>
+            <option value="EMISSAO">Emissão</option>
+            <option value="COMPETENCIA">Competência</option>
+          </select>
+        </label>
+        <label data-dica="Começo do período (pode deixar em branco)." class="campo f-1">De
+          <input type="date" id="de">
+        </label>
+        <label data-dica="Fim do período (pode deixar em branco)." class="campo f-1">Até
+          <input type="date" id="ate">
+        </label>
+        <label data-dica="Mostra só os lançamentos de uma empresa." class="campo f-1">Empresa
+          <select id="empresa"><option value="">Todas</option></select>
+        </label>
+        <div class="campo f-2"><span id="rotulo-parceiro">Parceiro</span><div id="seletor-pessoa"></div></div>
+        <div class="campo f-2">Centro de custo<div id="seletor-centro"></div></div>
+        <div class="campo f-2">Conta do plano<div id="seletor-plano"></div></div>
+        <label data-dica="Início do número do documento (nota, boleto, contrato)." class="campo f-1">Documento
+          <input type="text" id="documento" maxlength="40" autocomplete="off">
+        </label>
+        <label data-dica="Por parcela: uma linha por vencimento. Por lançamento: uma linha por lançamento, somando as parcelas." class="campo f-1">Visão
+          <select id="visao">
+            <option value="PARCELA">Por parcela</option>
+            <option value="LANCAMENTO">Por lançamento</option>
+          </select>
+        </label>
+        <label data-dica="Ordem das linhas." class="campo f-1">Ordem
+          <select id="ordem">
+            <option value="VENCIMENTO">Vencimento</option>
+            <option value="VALOR">Maior valor</option>
+            <option value="PARCEIRO">Parceiro</option>
+            <option value="EMISSAO">Emissão mais recente</option>
+          </select>
+        </label>
+        <div class="filtros-salvos f-3">
+          <label data-dica="Seus filtros salvos (cada usuário tem os seus). Escolha um para aplicar. O marcado com ★ abre sozinho com a tela." class="campo">Meus filtros
+            <select id="filtro-salvo"><option value="">(nenhum)</option></select>
+          </label>
+          <button type="button" class="botao" id="botao-salvar-filtro" data-dica="Guarda os filtros da tela com um nome, para usar de novo (ex.: Vencidos da CMJ). Com o mesmo nome, substitui.">Salvar filtro</button>
+          <button type="button" class="botao" id="botao-apagar-filtro" data-dica="Apaga o filtro salvo escolhido." hidden>Apagar filtro</button>
+          <button type="button" class="botao" id="botao-limpar" data-dica="Volta os filtros para o começo (situação e visão dos parâmetros da tela).">Limpar filtros</button>
+        </div>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div class="rolagem">
+            <table class="tabela tabela-larga tabela-lancamentos">
+              <thead>
+                <tr>
+                  <th scope="col">Vencimento</th>
+                  <th scope="col" id="coluna-parceiro">Parceiro</th>
+                  <th scope="col">Histórico / documento</th>
+                  <th scope="col">Parcela</th>
+                  <th scope="col">Centro / conta do plano</th>
+                  <th scope="col" class="numero">Valor</th>
+                  <th scope="col" class="numero" id="coluna-baixado">Pago</th>
+                  <th scope="col" class="numero">Saldo</th>
+                  <th scope="col">Situação</th>
+                </tr>
+              </thead>
+              <tbody id="linhas"></tbody>
+              <tfoot id="totais" hidden>
+                <tr>
+                  <td colspan="5" class="forte">Total do filtro</td>
+                  <td class="numero forte" id="total-valor"></td>
+                  <td class="numero forte" id="total-baixado"></td>
+                  <td class="numero forte" id="total-saldo"></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="rodape-lista">
+            <span id="contagem" aria-live="polite"></span>
+            <span class="paginacao" id="paginacao" hidden>
+              <button type="button" class="botao" id="pagina-anterior" data-dica="Página anterior.">‹ Anterior</button>
+              <span id="pagina-texto"></span>
+              <button type="button" class="botao" id="pagina-proxima" data-dica="Próxima página.">Próxima ›</button>
+            </span>
+          </div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -19,7 +19,9 @@
 //                5) consultas de CEP e CNPJ (04d2); 6) anexar e excluir um
 //                   arquivo de teste na ficha do parceiro (04d2);
 //                7) fichas de empresa, conta e centro; escolha com busca e
-//                   plano de contas em árvore (04e, só leitura).
+//                   plano de contas em árvore (04e, só leitura);
+//                8) contas a pagar e a receber: contadores, filtro e filtro
+//                   salvo (04f2a).
 //              Resultado: uma linha por conferência, "RESULTADO: OK" ou
 //              "RESULTADO: FALHAS (n)" no fim; código de saída = falhas.
 //              Foto da tela em cada falha em %LOCALAPPDATA%\SistemaCMJ\testes_telas.
@@ -358,6 +360,52 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     catch (Exception erro) { motivo7 = erro.Message.Split('\n')[0]; }
     Linha(motivo7.Length == 0, "fichas de empresa, conta e centro; escolha com busca; plano de contas (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo7);
     if (motivo7.Length > 0) await Foto("cadastros_base");
+}
+
+// ---------------------------------------------------------------- 8) Contas a pagar e a receber (04f2a, 25/11/2026)
+// Nas duas telas: contadores carregados; clicar em "Vencidas" marca a situação; salvar um filtro de
+// teste (nome "teste automatico", sem abrir com ele), escolher, conferir que voltou, e apagar.
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    relogio.Restart();
+    var motivo8 = "";
+    try
+    {
+        foreach (var tipo in new[] { "P", "R" })
+        {
+            await pagina.GotoAsync(endereco + "/fin/lancamentos.html?tipo=" + tipo, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            if (await JanelaAberta() is { } j) { motivo8 = tipo + ": janela \"" + j.Titulo + "\": " + j.Texto; break; }
+            if ((await pagina.Locator("#valor-aberto").InnerTextAsync()).Trim() == "–") { motivo8 = tipo + ": contadores nao carregaram"; break; }
+            await pagina.Locator(".contador-vencidas").ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            if (await pagina.Locator("#situacao").InputValueAsync() != "VENCIDA") { motivo8 = tipo + ": clicar em Vencidas nao filtrou"; break; }
+            await pagina.Locator("#botao-salvar-filtro").ClickAsync();
+            await pagina.Locator("dialog.janela input").First.FillAsync("teste automatico");
+            await pagina.Locator("dialog.janela .botao-principal").First.ClickAsync();
+            await pagina.Locator("dialog.janela .botao:not(.botao-principal)").First.ClickAsync(); // nao abrir com ele
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            if (await JanelaAberta() is { } j2) { motivo8 = tipo + ": salvar filtro abriu \"" + j2.Titulo + "\": " + j2.Texto; break; }
+            await pagina.Locator("#botao-limpar").ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            var opcao = await pagina.Locator("#filtro-salvo option", new() { HasText = "teste automatico" }).GetAttributeAsync("value");
+            if (string.IsNullOrEmpty(opcao)) { motivo8 = tipo + ": filtro salvo nao apareceu em Meus filtros"; break; }
+            await pagina.Locator("#filtro-salvo").SelectOptionAsync(opcao);
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            if (await pagina.Locator("#situacao").InputValueAsync() != "VENCIDA") { motivo8 = tipo + ": aplicar o filtro salvo nao voltou a situacao"; break; }
+            await pagina.Locator("#botao-apagar-filtro").ClickAsync();
+            await pagina.Locator("dialog.janela .botao-principal").First.ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            if (await pagina.Locator("#filtro-salvo option", new() { HasText = "teste automatico" }).CountAsync() > 0) { motivo8 = tipo + ": filtro nao foi apagado"; break; }
+            await pagina.Locator("#botao-limpar").ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        }
+        if (motivo8.Length == 0 && errosJs.Count > 0) motivo8 = "erro de JavaScript: " + errosJs[0];
+        if (motivo8.Length == 0 && errosApi.Count > 0) motivo8 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo8 = erro.Message.Split('\n')[0]; }
+    Linha(motivo8.Length == 0, "contas a pagar e a receber: contadores, filtro pela situacao, filtro salvo (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo8);
+    if (motivo8.Length > 0) await Foto("fin_lancamentos");
 }
 
 // ---------------------------------------------------------------- Fim

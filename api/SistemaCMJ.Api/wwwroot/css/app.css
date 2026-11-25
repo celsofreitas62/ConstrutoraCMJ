@@ -402,3 +402,32 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 /* Ficha da empresa (04e): logomarca e prévia do rodapé dos e-mails (sem estilo na linha, por causa da CSP) */
 .logomarca-ficha { max-height: 72px; max-width: 240px; object-fit: contain; margin-top: 6px; }
 .rodape-previa { margin-top: 6px; padding: 10px 14px; font-size: 12px; color: #555; border-top: 2px solid #A8A8A8; text-align: justify; min-height: 3em; }
+
+/* Contas a pagar e a receber (04f2a): contadores do topo, linhas vencidas, situações das parcelas, paginação, filtros salvos */
+.contadores { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.contador { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; background: var(--branco); border: 1px solid var(--borda); border-left: 4px solid var(--cor-secundaria); border-radius: var(--raio); cursor: pointer; text-align: left; font: inherit; color: var(--texto); }
+.contador:hover, .contador:focus-visible { background: #FAFAF9; }
+.contador.ativo { box-shadow: 0 0 0 2px var(--cor-principal) inset; }
+.contador-rotulo { font-size: 12px; color: var(--texto-suave); }
+.contador-valor { font-size: 20px; font-weight: 600; }
+.contador-qtd { font-size: 12px; color: var(--texto-suave); }
+.contador-vencidas { border-left-color: var(--erro); }
+.contador-vencidas .contador-valor { color: var(--erro); }
+.contador-hoje { border-left-color: var(--atencao); }
+.contador-a-vencer { border-left-color: #C9A400; }
+.contador-aberto { border-left-color: var(--cor-principal); }
+@media (max-width: 800px) { .contadores { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.f-2 { flex: 2 1 220px; }
+.filtros-salvos { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.filtros-salvos .campo { flex: 1 1 200px; }
+.tabela-lancamentos td.numero, .tabela-lancamentos th.numero { text-align: right; white-space: nowrap; }
+.tabela-lancamentos .sub { display: block; font-size: 11px; color: var(--texto-suave); margin-top: 2px; }
+.tabela-lancamentos tr.linha-vencida td:first-child { box-shadow: inset 3px 0 0 var(--erro); color: var(--erro); font-weight: 600; }
+.tabela-lancamentos tfoot td { border-top: 2px solid var(--borda); background: #FAFAF9; }
+.situacao-aberta { background: #EEF3FB; color: #1F4E8C; }
+.situacao-parcial { background: #FFF8D6; color: #6B5300; }
+.situacao-paga { background: #E7F3E8; color: #1E6B22; }
+.situacao-cancelada { background: #EFEFED; color: #555555; text-decoration: line-through; }
+.situacao-vencida { background: #FDE7E4; color: #9B1C12; }
+.paginacao { display: inline-flex; align-items: center; gap: 8px; }
+.paginacao .botao { padding: 4px 10px; font-size: 12px; }

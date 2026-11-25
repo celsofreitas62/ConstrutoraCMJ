@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 //  SistemaCMJ.Api - Endpoints/SistemaEndpoints.cs
 //  Autor     : Celso de Freitas
 //  Refatorado: Claude
@@ -109,11 +109,12 @@ public static partial class SistemaEndpoints
     /// Tira do menu as telas cujo arquivo ainda não existe neste programa (cadastradas
     /// no banco antes de serem construídas) e os menus e módulos que ficarem vazios. A tela
     /// aparece sozinha quando for construída. Aprovado pelo Celso em 22/11/2026 (03g).
+    /// O que vem depois de "?" no caminho (ex.: fin/lancamentos.html?tipo=P) não conta (04f2a).
     /// </summary>
     private static List<Linha> SoTelasProntas(List<Linha> linhas, IWebHostEnvironment ambiente)
     {
         var prontas = linhas.Where(l => l.Texto("TIPO") != "TELA"
-            || (l.Texto("CAMINHO").Length > 0 && ambiente.WebRootFileProvider.GetFileInfo(l.Texto("CAMINHO").TrimStart('/')).Exists)).ToList();
+            || (l.Texto("CAMINHO").Length > 0 && ambiente.WebRootFileProvider.GetFileInfo(l.Texto("CAMINHO").Split('?')[0].TrimStart('/')).Exists)).ToList();
         while (true)
         {
             var pais = prontas.Select(l => l.Texto("CHAVE_PAI")).Where(c => c.Length > 0).ToHashSet();
