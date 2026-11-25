@@ -3,6 +3,8 @@
 //  Autor     : Celso de Freitas
 //  Refatorado: Claude
 //  Criação   : 25/11/2026 (etapa 04f)
+//  04f2a     : contadores do topo (/resumo) e período por emissão ou
+//              competência (campoData).
 //  Descrição : Telas "Contas a pagar" (FIN_PAGAR) e "Contas a receber"
 //              (FIN_RECEBER), ficha do lançamento e aba Movimentação do
 //              Parceiro. A API só repassa: permissão, regras, proteções contra
@@ -49,13 +51,14 @@ public static class LancamentoEndpoints
     {
         app.MapGet("/api/fin/lancamentos", Listar);
         app.MapGet("/api/fin/lancamentos/padroes", Padroes);
+        app.MapGet("/api/fin/lancamentos/resumo", Resumo);
         app.MapGet("/api/fin/lancamentos/{id:long}", Obter);
         app.MapPost("/api/fin/lancamentos", Gravar);
         app.MapPost("/api/fin/lancamentos/conferir", Conferir);
         app.MapPost("/api/fin/lancamentos/{id:long}/cancelar", Cancelar);
     }
 
-    private static Task<IResult> Listar(string? tipo, string? visao, string? situacao, DateOnly? vencDe, DateOnly? vencAte,
+    private static Task<IResult> Listar(string? tipo, string? visao, string? situacao, DateOnly? vencDe, DateOnly? vencAte, string? campoData,
                                         int? idEmpresa, int? idCentroCusto, int? idPessoa, int? idPlanoConta, long? idLote,
                                         long? idLancamento, string? documento, string? texto, decimal? valorDe, decimal? valorAte,
                                         string? ordem, int? pagina, int? porPagina,
@@ -71,6 +74,7 @@ public static class LancamentoEndpoints
                 ["Situacao"] = Banco.Cortar(situacao?.Trim().ToUpperInvariant(), 12),
                 ["VencDe"] = vencDe,
                 ["VencAte"] = vencAte,
+                ["CampoData"] = Banco.Cortar(campoData?.Trim().ToUpperInvariant(), 12),
                 ["IdEmpresa"] = idEmpresa is > 0 ? idEmpresa : null,
                 ["IdCentroCusto"] = idCentroCusto is > 0 ? idCentroCusto : null,
                 ["IdPessoa"] = idPessoa is > 0 ? idPessoa : null,
@@ -86,6 +90,24 @@ public static class LancamentoEndpoints
                 ["PorPagina"] = porPagina is > 0 ? porPagina : null
             }, usuario, http.RequestAborted);
             return Resposta.Ok(linhas);
+        });
+
+    /// <summary>Contadores do topo da lista (vencidas, hoje, a vencer, em aberto) e parâmetros da tela.</summary>
+    private static Task<IResult> Resumo(string tipo, int? idEmpresa, int? idCentroCusto, int? idPessoa, int? idPlanoConta,
+                                        HttpContext http, Banco banco, ILogger<Program> logger) =>
+        Resposta.Rodar(http, banco, logger, async () =>
+        {
+            var usuario = http.Usuario();
+            var linha = await banco.ExecutarUmaLinhaAsync("FIN.FIN_Lancamento_Resumo", new Dictionary<string, object?>
+            {
+                ["IdUsuario"] = usuario.IdUsuario,
+                ["Tipo"] = Banco.Cortar(tipo?.Trim().ToUpperInvariant(), 1),
+                ["IdEmpresa"] = idEmpresa is > 0 ? idEmpresa : null,
+                ["IdCentroCusto"] = idCentroCusto is > 0 ? idCentroCusto : null,
+                ["IdPessoa"] = idPessoa is > 0 ? idPessoa : null,
+                ["IdPlanoConta"] = idPlanoConta is > 0 ? idPlanoConta : null
+            }, usuario, http.RequestAborted);
+            return Resposta.Ok(linha);
         });
 
     private static Task<IResult> Obter(long id, HttpContext http, Banco banco, ILogger<Program> logger) =>
