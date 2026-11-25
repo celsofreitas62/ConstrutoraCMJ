@@ -9,7 +9,7 @@
                 Sincroniza a tabela com o .md (as notas são do sistema, não da
                 CMJ): inclui o que falta, acerta o texto do que mudou e tira o
                 item que saiu do .md. Idempotente.
-                Versões no arquivo: 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
+                Versões no arquivo: 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
   Changelog:
     v1.0 (23/11/2026) - Criação (etapa 04c, P22).
 *******************************************************************************/
@@ -21,8 +21,29 @@ DROP TABLE IF EXISTS #CargaNota;
 SELECT v.VERSAO, SIS.fn_SIS_Versao_Numero(v.VERSAO) AS VERSAO_NUMERO, v.DT_VERSAO, v.ORDEM, v.TIPO, v.PUBLICO, v.TEXTO, v.TEXTO_HTML
 INTO #CargaNota
 FROM (VALUES
-       (CAST('2.3' AS VARCHAR(20)), CAST('2026-11-25' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
-         CAST(N'o cadastro de Pessoas passa a se chamar Parceiros (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários tipos ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).' AS NVARCHAR(2000)), CAST(N'o cadastro de Pessoas passa a se chamar <b>Parceiros</b> (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários <b>tipos</b> ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).' AS NVARCHAR(4000)))
+       (CAST('2.4' AS VARCHAR(20)), CAST('2026-11-25' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
+         CAST(N'telas de Empresas (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.' AS NVARCHAR(2000)), CAST(N'telas de <b>Empresas</b> (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.' AS NVARCHAR(4000)))
+      ,('2.4', '2026-11-25', 2, 'NOVO', 'TODOS',
+         N'rodapé dos e-mails por empresa: um texto livre com os contatos (e-mails, telefones, site), com prévia de como vai aparecer.',
+         N'<b>rodapé dos e-mails por empresa</b>: um texto livre com os contatos (e-mails, telefones, site), com prévia de como vai aparecer.')
+      ,('2.4', '2026-11-25', 3, 'NOVO', 'TODOS',
+         N'telas de Contas bancárias e de Bancos (Bancos). Depois que a conta tem movimento, a empresa, o tipo e o saldo inicial não mudam mais; o saldo inicial também não muda em mês fechado.',
+         N'telas de <b>Contas bancárias</b> e de <b>Bancos</b> (Bancos). Depois que a conta tem movimento, a empresa, o tipo e o saldo inicial não mudam mais; o saldo inicial também não muda em mês fechado.')
+      ,('2.4', '2026-11-25', 4, 'NOVO', 'TODOS',
+         N'tela de Centros de custo (Cadastros), com a data de encerramento (obra entregue): depois dela, lançamento novo no centro é bloqueado ou avisado, conforme a configuração.',
+         N'tela de <b>Centros de custo</b> (Cadastros), com a <b>data de encerramento</b> (obra entregue): depois dela, lançamento novo no centro é bloqueado ou avisado, conforme a configuração.')
+      ,('2.4', '2026-11-25', 5, 'NOVO', 'TODOS',
+         N'Plano de contas em árvore (grupo › subgrupo › conta), com busca, quantidade de lançamentos em cada item e a ficha ao lado para incluir, alterar, desativar e ver o histórico.',
+         N'<b>Plano de contas em árvore</b> (grupo › subgrupo › conta), com busca, quantidade de lançamentos em cada item e a ficha ao lado para incluir, alterar, desativar e ver o histórico.')
+      ,('2.4', '2026-11-25', 6, 'NOVO', 'TODOS',
+         N'escolha com busca de conta do plano, centro de custo e conta bancária: digite parte do nome ou o número e escolha na lista.',
+         N'<b>escolha com busca</b> de conta do plano, centro de custo e conta bancária: digite parte do nome ou o número e escolha na lista.')
+      ,('2.4', '2026-11-25', 7, 'NOVO', 'TODOS',
+         N'na ficha do Parceiro, a conta do plano e o centro de custo padrão, que já vão vir escolhidos nos lançamentos dele.',
+         N'na ficha do Parceiro, a <b>conta do plano</b> e o <b>centro de custo padrão</b>, que já vão vir escolhidos nos lançamentos dele.')
+      ,('2.3', '2026-11-25', 1, 'NOVO', 'TODOS',
+         N'o cadastro de Pessoas passa a se chamar Parceiros (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários tipos ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).',
+         N'o cadastro de Pessoas passa a se chamar <b>Parceiros</b> (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários <b>tipos</b> ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).')
       ,('2.3', '2026-11-25', 2, 'NOVO', 'TODOS',
          N'tela Tipos de parceiro (Cadastros), para criar e organizar os tipos.',
          N'tela <b>Tipos de parceiro</b> (Cadastros), para criar e organizar os tipos.')

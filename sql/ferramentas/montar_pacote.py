@@ -207,7 +207,7 @@ ORDEM_04E = ['objetos/CAD/CAD.Empresa.sql', 'objetos/CAD/CAD.Centro_Custo.sql', 
              'objetos/CAD/CAD.CAD_Plano_Conta_Gravar.sql',
              'objetos/CAD/CAD.CAD_Empresa_Listar.sql', 'objetos/CAD/CAD.CAD_Empresa_Obter.sql', 'objetos/CAD/CAD.CAD_Empresa_Gravar.sql',
              'objetos/BANCO/BANCO.BANCO_Conta_Listar.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Obter.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Gravar.sql',
-             'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql']
+             'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql', 'objetos/SIS/Carga_SIS_Versao_Nota.sql', 'objetos/SIS/Carga_SIS_Versao.sql']
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B, '03d': ORDEM_03D, '03g': ORDEM_03G, '03h': ORDEM_03H, '04a': ORDEM_04A, '04b': ORDEM_04B, '04b2': ORDEM_04B2, '04c': ORDEM_04C, '04c2': ORDEM_04C2, '04d': ORDEM_04D, '04d2': ORDEM_04D2, '04e': ORDEM_04E}[PARTE]
 TITULO = {'04e': '04e - empresas, centros de custo, plano de contas e contas bancarias (telas): rodape dos e-mails (P11), fichas de empresa e conta, travas; banco 2.4',

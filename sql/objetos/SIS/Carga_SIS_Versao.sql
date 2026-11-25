@@ -28,12 +28,13 @@
                       2.1 (23/11/2026) telas da lixeira, do histórico e da auditoria (P20, etapa 04b2).
                       2.2 (25/11/2026) versões e aviso O que há de novo (P22, etapas 04c e 04c2).
                       2.3 (25/11/2026) Parceiros: tipos, CEP/CNPJ, pendências de cobrança e anexos (P10, P12; etapas 04d e 04d2).
+                      2.4 (25/11/2026) empresas, contas bancárias, bancos, centros de custo, plano de contas em árvore e escolha com busca (P11; etapa 04e).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '2.3';
+DECLARE @Versao VARCHAR(20) = '2.4';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;

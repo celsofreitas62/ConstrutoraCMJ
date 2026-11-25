@@ -4,6 +4,15 @@ Fonte única das notas de cada versão (o que foi corrigido e o que é novo), em
 O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.txt`; o `atualizar.cmd` mostra e grava no banco (`SIS.Atualizacao`), base da futura tela **Sistema › Versões** (pedido P22).
 **Regra**: toda versão nova ganha a sua seção aqui **antes** de publicar (o publicar recusa pacote sem nota). Título da seção = versão do banco (`## 1.8 (22/11/2026)`). Itens começam por **Novo:**, **Melhoria:** ou **Correção:**.
 
+## 2.4 (25/11/2026)
+- Novo: telas de **Empresas** (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.
+- Novo: **rodapé dos e-mails por empresa**: um texto livre com os contatos (e-mails, telefones, site), com prévia de como vai aparecer.
+- Novo: telas de **Contas bancárias** e de **Bancos** (Bancos). Depois que a conta tem movimento, a empresa, o tipo e o saldo inicial não mudam mais; o saldo inicial também não muda em mês fechado.
+- Novo: tela de **Centros de custo** (Cadastros), com a **data de encerramento** (obra entregue): depois dela, lançamento novo no centro é bloqueado ou avisado, conforme a configuração.
+- Novo: **Plano de contas em árvore** (grupo › subgrupo › conta), com busca, quantidade de lançamentos em cada item e a ficha ao lado para incluir, alterar, desativar e ver o histórico.
+- Novo: **escolha com busca** de conta do plano, centro de custo e conta bancária: digite parte do nome ou o número e escolha na lista.
+- Novo: na ficha do Parceiro, a **conta do plano** e o **centro de custo padrão**, que já vão vir escolhidos nos lançamentos dele.
+
 ## 2.3 (25/11/2026)
 - Novo: o cadastro de Pessoas passa a se chamar **Parceiros** (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários **tipos** ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).
 - Novo: tela **Tipos de parceiro** (Cadastros), para criar e organizar os tipos.

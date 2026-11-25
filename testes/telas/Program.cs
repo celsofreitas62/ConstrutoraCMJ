@@ -17,7 +17,9 @@
 //                   "Desfazer esta operação" -> prévia -> motivo -> "Concluído"
 //                   e o nome volta a ser o de antes;
 //                5) consultas de CEP e CNPJ (04d2); 6) anexar e excluir um
-//                   arquivo de teste na ficha do parceiro (04d2).
+//                   arquivo de teste na ficha do parceiro (04d2);
+//                7) fichas de empresa, conta e centro; escolha com busca e
+//                   plano de contas em árvore (04e, só leitura).
 //              Resultado: uma linha por conferência, "RESULTADO: OK" ou
 //              "RESULTADO: FALHAS (n)" no fim; código de saída = falhas.
 //              Foto da tela em cada falha em %LOCALAPPDATA%\SistemaCMJ\testes_telas.
@@ -299,6 +301,63 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     catch (Exception erro) { motivoAnexo = erro.Message.Split('\n')[0]; }
     Linha(motivoAnexo.Length == 0, "anexar e excluir arquivo de teste na ficha do parceiro (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivoAnexo);
     if (motivoAnexo.Length > 0) await Foto("anexos");
+}
+
+// ---------------------------------------------------------------- 7) Escolha com busca e plano de contas (04e, 25/11/2026)
+// Só leitura: na ficha do primeiro parceiro ativo, digita no centro de custo padrão e confere que a lista
+// aparece e que escolher preenche o campo (sai sem gravar); no plano de contas, busca, abre e escolhe uma conta.
+// Também abre a ficha da primeira empresa, conta bancária e centro de custo pelo id.
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    relogio.Restart();
+    var motivo7 = "";
+    try
+    {
+        foreach (var (lista, coluna, ficha) in new[] { ("/api/cad/empresas", "ID_EMPRESA", "cad/empresa.html"), ("/api/banco/contas", "ID_CONTA", "banco/conta.html"), ("/api/cad/centros-custo", "ID_CENTRO_CUSTO", "cad/centro-custo.html") })
+        {
+            var r = await Api(lista);
+            var id = r.GetProperty("dados").EnumerateArray().Select(x => x.GetProperty(coluna).GetInt32()).FirstOrDefault();
+            if (id == 0) continue;
+            await pagina.GotoAsync(endereco + "/" + ficha + "?id=" + id, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            if (await JanelaAberta() is { } j) { motivo7 = ficha + "?id=" + id + ": janela \"" + j.Titulo + "\": " + j.Texto; break; }
+            if ((await pagina.Locator("#titulo").InnerTextAsync()).Trim().StartsWith("Nov")) { motivo7 = ficha + "?id=" + id + " abriu como ficha nova"; break; }
+        }
+        if (motivo7.Length == 0)
+        {
+            var parceiros = await Api("/api/cad/pessoas?situacao=ATIVOS");
+            var idParceiro = parceiros.GetProperty("dados").EnumerateArray().Select(p => p.GetProperty("ID_PESSOA").GetInt32()).FirstOrDefault();
+            await pagina.GotoAsync(endereco + "/cad/pessoa.html?id=" + idParceiro, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            var campo = pagina.Locator("#seletor-centro input.seletor-campo");
+            await campo.ClickAsync();
+            await campo.FillAsync("a");
+            var opcao = pagina.Locator("#seletor-centro .seletor-opcao").First;
+            await opcao.WaitForAsync(new() { Timeout = 10000 });
+            var texto = (await opcao.Locator(".seletor-descricao").InnerTextAsync()).Trim();
+            await opcao.DispatchEventAsync("mousedown");
+            if ((await campo.InputValueAsync()).Trim() != texto) motivo7 = "escolher na lista nao preencheu o centro de custo";
+            await pagina.Locator("#botao-cancelar").ClickAsync();
+            if (await JanelaAberta() is not null) await pagina.Locator("dialog.janela .botao-principal").First.ClickAsync(); // descartar
+        }
+        if (motivo7.Length == 0)
+        {
+            await pagina.GotoAsync(endereco + "/cad/plano-contas.html", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.Locator("#abrir-tudo").ClickAsync();
+            var conta = pagina.Locator("#arvore .plano-n3").First;
+            await conta.WaitForAsync(new() { Timeout = 10000 });
+            var codigo = (await conta.Locator(".plano-codigo").InnerTextAsync()).Trim();
+            await pagina.Locator("#busca").FillAsync(codigo);
+            await pagina.WaitForTimeoutAsync(500);
+            await pagina.Locator("#arvore .plano-n3").First.ClickAsync();
+            var titulo = (await pagina.Locator("#ficha-titulo").InnerTextAsync()).Trim();
+            if (!titulo.StartsWith(codigo)) motivo7 = "plano: a ficha mostrou \"" + titulo + "\" em vez da conta " + codigo;
+        }
+        if (motivo7.Length == 0 && errosJs.Count > 0) motivo7 = "erro de JavaScript: " + errosJs[0];
+        if (motivo7.Length == 0 && errosApi.Count > 0) motivo7 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo7 = erro.Message.Split('\n')[0]; }
+    Linha(motivo7.Length == 0, "fichas de empresa, conta e centro; escolha com busca; plano de contas (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo7);
+    if (motivo7.Length > 0) await Foto("cadastros_base");
 }
 
 // ---------------------------------------------------------------- Fim

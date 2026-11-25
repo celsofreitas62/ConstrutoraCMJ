@@ -22,6 +22,7 @@
     v1.1 (17/11/2026) - Contagens de tabelas e triggers sem as tabelas do BANCO
                         criadas na 03c (movimento e extrato).
     v1.3 (25/11/2026) - Etapa 04d: colunas novas do CAD_Pessoa_Obter/Listar e limpeza de CAD.Pessoa_Tipo.
+    v1.4 (25/11/2026) - Etapa 04e: colunas novas do CAD_Centro_Custo_Listar (encerramento) e do CAD_Plano_Conta_Listar (QTD_LANCAMENTOS).
     v1.2 (22/11/2026) - Etapa 04b: coluna NA_LIXEIRA do CAD_Pessoa_Obter e ações
                         DESATIVAR (5 telas) e DESFAZER (6 telas): 40.
 
@@ -81,10 +82,11 @@ CREATE TABLE #PesObter (ID_PESSOA INT, TIPO_PESSOA CHAR(1), NOME NVARCHAR(150), 
                         DOCUMENTO_REPETIDO INT, CONTATOS NVARCHAR(MAX), VINCULOS NVARCHAR(MAX), DADOS_BANCARIOS NVARCHAR(MAX));
 CREATE TABLE #CcLista  (ID_CENTRO_CUSTO INT, CODIGO VARCHAR(20), DESCRICAO NVARCHAR(100), TIPO VARCHAR(15), CONTABIL BIT, ID_EMPRESA INT,
                         EMPRESA_RAZAO_SOCIAL NVARCHAR(150), EMPRESA_NOME_FANTASIA NVARCHAR(100), ID_CONTA_BANCARIA_PADRAO INT, CONTA_PADRAO_DESCRICAO NVARCHAR(60),
-                        ID_CONTA_EFETIVA INT, CONTA_EFETIVA_DESCRICAO NVARCHAR(60), ATIVO BIT, CODIGO_ACCESS INT, DT_ALTERACAO DATETIME2(0), USUARIO_ALTERACAO NVARCHAR(100));
+                        ID_CONTA_EFETIVA INT, CONTA_EFETIVA_DESCRICAO NVARCHAR(60), DT_ENCERRAMENTO DATE, ENCERRADO BIT,
+                        ATIVO BIT, CODIGO_ACCESS INT, DT_ALTERACAO DATETIME2(0), USUARIO_ALTERACAO NVARCHAR(100));
 CREATE TABLE #Plano    (NIVEL TINYINT, ID INT, ID_PAI INT, NUMERO SMALLINT, CODIGO VARCHAR(12), DESCRICAO NVARCHAR(80), TIPO VARCHAR(15), CUSTO_OBRA BIT,
                         CONTABIL BIT, CONTA_CONTABIL_REF VARCHAR(30), ORDEM SMALLINT, ATIVO BIT, ATIVO_EFETIVO BIT, ORDEM_ARVORE VARCHAR(12),
-                        DT_ALTERACAO DATETIME2(0), USUARIO_ALTERACAO NVARCHAR(100));
+                        DT_ALTERACAO DATETIME2(0), USUARIO_ALTERACAO NVARCHAR(100), QTD_LANCAMENTOS INT);
 
 DECLARE @IdCelso    INT = (SELECT u.ID_USUARIO FROM SIS.Usuario u WHERE u.LOGIN = 'celso');
 DECLARE @AudInicio  BIGINT = ISNULL((SELECT MAX(a.ID_AUDITORIA) FROM SIS.Auditoria a), 0);
@@ -118,7 +120,7 @@ EXEC SIS.SIS_Contexto_Gravar @IdUsuario = @IdCelso, @Estacao = N'HOMOLOGACAO-03A
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
  (N'Tabelas CAD + BANCO (14 desde a 04d)', N'14', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.tables t WHERE SCHEMA_NAME(t.schema_id) IN ('CAD', 'BANCO')
                                                     AND t.name NOT IN ('Movimento', 'Extrato_Arquivo', 'Extrato_Linha')))),
- (N'Procedures CAD + BANCO (24 desde a 04d)', N'24', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.procedures p WHERE SCHEMA_NAME(p.schema_id) IN ('CAD', 'BANCO')))),
+ (N'Procedures CAD + BANCO (28 desde a 04e)', N'28', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.procedures p WHERE SCHEMA_NAME(p.schema_id) IN ('CAD', 'BANCO')))),
  (N'Functions + view do CAD', N'3|1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.objects o WHERE SCHEMA_NAME(o.schema_id) = 'CAD' AND o.type = 'FN')) + N'|'
                                     + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.views v WHERE SCHEMA_NAME(v.schema_id) = 'CAD'))),
  (N'Triggers de auditoria CAD + BANCO (13 desde a 04d)', N'13', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t INNER JOIN sys.tables b ON b.object_id = t.parent_id

@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v2.3)
+  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v2.4)
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : 25/11/2026 por sql/ferramentas/montar_master.py, juntando os
@@ -18,7 +18,7 @@
                 rl_sistemacmj_api (roteiro de instalacao; a senha nao fica em
                 arquivo).
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > conferir o banco > F5.
-  Objetos     : 255 arquivos.
+  Objetos     : 259 arquivos.
 *******************************************************************************/
 -- =============================================================================
 -- 1. CONFERENCIA DO BANCO
@@ -29,7 +29,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MASTER v2.3: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MASTER v2.4: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- =============================================================================
@@ -1705,6 +1705,8 @@ GO
     v1.1 (17/11/2026) - CNPJ_COMPRAS (CNPJ para notas de compra e DDA), etapa 03c2.
     v1.2 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
                         (lixeira: preenchidas = registro na lixeira).
+    v1.3 (25/11/2026) - Etapa 04e (P11): RODAPE_EMAIL, texto livre com os
+                        contatos da empresa para o rodapé dos e-mails.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1768,6 +1770,11 @@ IF COL_LENGTH(N'CAD.Empresa', N'DT_EXCLUSAO') IS NULL
 GO
 IF COL_LENGTH(N'CAD.Empresa', N'USUARIO_EXCLUSAO') IS NULL
     ALTER TABLE [CAD].[Empresa] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
+
+-- v1.3: rodapé dos e-mails da empresa (P11)
+IF COL_LENGTH(N'CAD.Empresa', N'RODAPE_EMAIL') IS NULL
+    ALTER TABLE [CAD].[Empresa] ADD RODAPE_EMAIL NVARCHAR(1000) NOT NULL CONSTRAINT DF_Empresa_RODAPE_EMAIL DEFAULT (N'');
 GO
 GO
 
@@ -1883,6 +1890,10 @@ GO
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
                         (lixeira: preenchidas = registro na lixeira).
+    v1.2 (25/11/2026) - Etapa 04e: DT_ENCERRAMENTO (obra entregue/centro
+                        encerrado: depois dessa data, lançamento novo é bloqueado
+                        ou avisado, parâmetro CENTRO_ENCERRADO_BLOQUEIA, regra
+                        aplicada no FIN na 04f).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -1920,6 +1931,11 @@ IF COL_LENGTH(N'CAD.Centro_Custo', N'DT_EXCLUSAO') IS NULL
 GO
 IF COL_LENGTH(N'CAD.Centro_Custo', N'USUARIO_EXCLUSAO') IS NULL
     ALTER TABLE [CAD].[Centro_Custo] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
+
+-- v1.2: data de encerramento do centro (04e)
+IF COL_LENGTH(N'CAD.Centro_Custo', N'DT_ENCERRAMENTO') IS NULL
+    ALTER TABLE [CAD].[Centro_Custo] ADD DT_ENCERRAMENTO DATE NULL;
 GO
 GO
 
@@ -11660,6 +11676,7 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: coluna PADRAO_DA_EMPRESA.
 
   Homologação (LOCAL):
     -- EXEC BANCO.BANCO_Conta_Listar @IdUsuario = 2;
@@ -11691,6 +11708,7 @@ BEGIN
                c.DESCRICAO, c.TIPO, c.ID_BANCO, ISNULL(b.CODIGO, '') AS BANCO_CODIGO, ISNULL(b.NOME, N'') AS BANCO_NOME,
                c.AGENCIA, c.AGENCIA_DV, c.NUMERO, c.NUMERO_DV, c.LIMITE_CREDITO, c.SALDO_INICIAL, c.DT_SALDO_INICIAL,
                c.CONCILIA, c.MOSTRA_SALDO, c.CONTA_CONTABIL_REF, c.ORDEM, c.ATIVO, c.CODIGO_ACCESS,
+               CAST(CASE WHEN e.ID_CONTA_BANCARIA_PADRAO = c.ID_CONTA THEN 1 ELSE 0 END AS BIT) AS PADRAO_DA_EMPRESA,
                c.DT_ALTERACAO, ISNULL(c.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
         FROM BANCO.Conta c WITH (NOLOCK)
         INNER JOIN CAD.Empresa e WITH (NOLOCK) ON e.ID_EMPRESA = c.ID_EMPRESA
@@ -11730,6 +11748,10 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: conta com movimento ou baixa não muda de
+                        empresa nem de tipo, e o saldo inicial (valor e data)
+                        fica travado; saldo inicial também não muda quando a data
+                        (atual ou nova) cai em mês fechado da empresa.
 
   Homologação (LOCAL):
     -- EXEC BANCO.BANCO_Conta_Gravar @IdUsuario = 2, @IdEmpresa = 1, @Descricao = N'Caixa Construtora', @Tipo = 'CAIXA';
@@ -11803,6 +11825,27 @@ BEGIN
             SET @Recusa = N'Informe a data do saldo inicial.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM BANCO.Conta c WHERE c.ID_EMPRESA = @IdEmpresa AND c.DESCRICAO = @Descricao AND c.ID_CONTA <> ISNULL(@IdConta, 0))
             SET @Recusa = N'Esta empresa já tem uma conta com esta descrição.';
+        IF @Recusa = N'' AND @IdConta IS NOT NULL
+        BEGIN
+            DECLARE @EmpresaAtual INT, @TipoAtual VARCHAR(10), @SaldoAtual DECIMAL(18,2), @DtSaldoAtual DATE, @TemMovimento BIT = 0;
+            SELECT @EmpresaAtual = c.ID_EMPRESA, @TipoAtual = c.TIPO, @SaldoAtual = c.SALDO_INICIAL, @DtSaldoAtual = c.DT_SALDO_INICIAL
+            FROM BANCO.Conta c WHERE c.ID_CONTA = @IdConta;
+            IF EXISTS (SELECT 1 FROM BANCO.Movimento m WHERE m.ID_CONTA = @IdConta)
+               OR EXISTS (SELECT 1 FROM FIN.Baixa x WHERE x.ID_CONTA = @IdConta)
+                SET @TemMovimento = 1;
+            IF @TemMovimento = 1 AND @EmpresaAtual <> @IdEmpresa
+                SET @Recusa = N'A conta já tem movimento: não pode mudar de empresa. Desative-a e crie uma conta nova na outra empresa.';
+            ELSE IF @TemMovimento = 1 AND @TipoAtual <> @Tipo
+                SET @Recusa = N'A conta já tem movimento: o tipo não pode mudar.';
+            ELSE IF @TemMovimento = 1 AND (@SaldoAtual <> @SaldoInicial OR ISNULL(@DtSaldoAtual, '19000101') <> ISNULL(@DtSaldoInicial, '19000101'))
+                SET @Recusa = N'A conta já tem movimento: o saldo inicial não pode mudar. Para acertar o saldo, faça um lançamento de ajuste.';
+            ELSE IF (@SaldoAtual <> @SaldoInicial OR ISNULL(@DtSaldoAtual, '19000101') <> ISNULL(@DtSaldoInicial, '19000101'))
+                 AND EXISTS (SELECT 1 FROM FIN.Mes_Fechado f
+                             WHERE f.ID_EMPRESA = @EmpresaAtual AND f.FECHADO = 1
+                               AND f.MES IN (DATEFROMPARTS(YEAR(@DtSaldoAtual), MONTH(@DtSaldoAtual), 1),
+                                             DATEFROMPARTS(YEAR(@DtSaldoInicial), MONTH(@DtSaldoInicial), 1)))
+                SET @Recusa = N'O saldo inicial cai num mês fechado: não pode mudar.';
+        END;
         IF @Recusa <> N''
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdConta AS ID;
@@ -11955,6 +11998,7 @@ GO
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - Colunas CNPJ_COMPRAS e CNPJ_COMPRAS_FORMATADO, etapa 03c2.
     v1.2 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
+    v1.3 (25/11/2026) - Etapa 04e: colunas QTD_CONTAS e QTD_CENTROS.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Listar @IdUsuario = 2;
@@ -11987,6 +12031,8 @@ BEGIN
                e.TIPO, e.INSCRICAO_ESTADUAL, e.INSCRICAO_MUNICIPAL, e.REGIME_TRIBUTARIO,
                e.CEP, e.LOGRADOURO, e.NUMERO, e.COMPLEMENTO, e.BAIRRO, e.CIDADE, e.UF, e.EMAIL, e.TELEFONE,
                e.ID_CONTA_BANCARIA_PADRAO, ISNULL(c.DESCRICAO, N'') AS CONTA_PADRAO_DESCRICAO,
+               (SELECT COUNT(*) FROM BANCO.Conta x WITH (NOLOCK) WHERE x.ID_EMPRESA = e.ID_EMPRESA AND x.ATIVO = 1 AND x.DT_EXCLUSAO IS NULL) AS QTD_CONTAS,
+               (SELECT COUNT(*) FROM CAD.Centro_Custo x WITH (NOLOCK) WHERE x.ID_EMPRESA = e.ID_EMPRESA AND x.ATIVO = 1 AND x.DT_EXCLUSAO IS NULL) AS QTD_CENTROS,
                e.ATIVO, e.CODIGO_ACCESS, e.DT_ALTERACAO, ISNULL(e.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
         FROM CAD.Empresa e WITH (NOLOCK)
         LEFT JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = e.ID_CONTA_BANCARIA_PADRAO
@@ -12028,6 +12074,9 @@ GO
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - @CnpjCompras (CNPJ para notas de compra e DDA), etapa 03c2.
     v1.2 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
+    v1.3 (25/11/2026) - Etapa 04e: @RodapeEmail (P11) e @PastaOfx (só
+                        administrador); NULL nos dois = não mexe. Conta padrão
+                        precisa ser da própria empresa.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Gravar @IdUsuario = 2, @RazaoSocial = N'Construtora Teste Ltda', @Cnpj = '11.222.333/0001-81', @Tipo = 'CONSTRUTORA';
@@ -12056,7 +12105,9 @@ CREATE OR ALTER PROCEDURE [CAD].[CAD_Empresa_Gravar]
     @Email                   NVARCHAR(256) = NULL,
     @Telefone                VARCHAR(30)   = NULL,
     @IdContaBancariaPadrao   INT           = NULL,
-    @CnpjCompras             VARCHAR(20)   = NULL
+    @CnpjCompras             VARCHAR(20)   = NULL,
+    @RodapeEmail             NVARCHAR(1000) = NULL,
+    @PastaOfx                NVARCHAR(260) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -12085,6 +12136,8 @@ BEGIN
         SET @Email              = LOWER(LTRIM(RTRIM(ISNULL(@Email, N''))));
         SET @Telefone           = CAD.fn_CAD_Somente_Digitos(@Telefone);
         IF @CnpjCompras IS NOT NULL SET @CnpjCompras = CAD.fn_CAD_Documento_Limpo(@CnpjCompras);
+        IF @RodapeEmail IS NOT NULL SET @RodapeEmail = LTRIM(RTRIM(@RodapeEmail));
+        IF @PastaOfx IS NOT NULL SET @PastaOfx = LTRIM(RTRIM(@PastaOfx));
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', CASE WHEN @IdEmpresa IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar empresas.';
@@ -12115,6 +12168,13 @@ BEGIN
         IF @Recusa = N'' AND @IdContaBancariaPadrao IS NOT NULL
            AND NOT EXISTS (SELECT 1 FROM BANCO.Conta c WHERE c.ID_CONTA = @IdContaBancariaPadrao AND c.ATIVO = 1)
             SET @Recusa = N'A conta padrão escolhida não existe ou está desativada.';
+        IF @Recusa = N'' AND @IdContaBancariaPadrao IS NOT NULL AND @IdEmpresa IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM BANCO.Conta c WHERE c.ID_CONTA = @IdContaBancariaPadrao AND c.ID_EMPRESA = @IdEmpresa)
+            SET @Recusa = N'A conta padrão precisa ser uma conta desta empresa.';
+        IF @Recusa = N'' AND @IdContaBancariaPadrao IS NOT NULL AND @IdEmpresa IS NULL
+            SET @Recusa = N'Grave a empresa primeiro; a conta padrão é escolhida depois de cadastrar as contas dela.';
+        IF @Recusa = N'' AND @PastaOfx IS NOT NULL AND SIS.fn_SIS_Usuario_Nivel_Admin(@IdUsuario) < 1
+            SET @PastaOfx = NULL; -- só o administrador mexe na pasta do OFX: dos demais, ignora
         IF @Recusa <> N''
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdEmpresa AS ID;
@@ -12127,9 +12187,11 @@ BEGIN
         IF @IdEmpresa IS NULL
         BEGIN
             INSERT INTO CAD.Empresa (RAZAO_SOCIAL, NOME_FANTASIA, CNPJ, CNPJ_COMPRAS, TIPO, INSCRICAO_ESTADUAL, INSCRICAO_MUNICIPAL, REGIME_TRIBUTARIO,
-                                     CEP, LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE, UF, EMAIL, TELEFONE, ID_CONTA_BANCARIA_PADRAO, USUARIO_CRIACAO)
+                                     CEP, LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE, UF, EMAIL, TELEFONE, ID_CONTA_BANCARIA_PADRAO,
+                                     RODAPE_EMAIL, PASTA_OFX, USUARIO_CRIACAO)
             VALUES (@RazaoSocial, @NomeFantasia, @Cnpj, ISNULL(@CnpjCompras, ''), @Tipo, @InscricaoEstadual, @InscricaoMunicipal, @RegimeTributario,
-                    @Cep, @Logradouro, @Numero, @Complemento, @Bairro, @Cidade, @Uf, @Email, @Telefone, @IdContaBancariaPadrao, @Usuario);
+                    @Cep, @Logradouro, @Numero, @Complemento, @Bairro, @Cidade, @Uf, @Email, @Telefone, @IdContaBancariaPadrao,
+                    ISNULL(@RodapeEmail, N''), ISNULL(@PastaOfx, N''), @Usuario);
             SET @IdEmpresa = SCOPE_IDENTITY();
         END
         ELSE
@@ -12138,6 +12200,7 @@ BEGIN
                    e.INSCRICAO_ESTADUAL = @InscricaoEstadual, e.INSCRICAO_MUNICIPAL = @InscricaoMunicipal, e.REGIME_TRIBUTARIO = @RegimeTributario,
                    e.CEP = @Cep, e.LOGRADOURO = @Logradouro, e.NUMERO = @Numero, e.COMPLEMENTO = @Complemento, e.BAIRRO = @Bairro,
                    e.CIDADE = @Cidade, e.UF = @Uf, e.EMAIL = @Email, e.TELEFONE = @Telefone, e.ID_CONTA_BANCARIA_PADRAO = @IdContaBancariaPadrao,
+                   e.RODAPE_EMAIL = ISNULL(@RodapeEmail, e.RODAPE_EMAIL), e.PASTA_OFX = ISNULL(@PastaOfx, e.PASTA_OFX),
                    e.DT_ALTERACAO = SYSDATETIME(), e.USUARIO_ALTERACAO = @Usuario
             FROM CAD.Empresa e
             WHERE e.ID_EMPRESA = @IdEmpresa;
@@ -12266,6 +12329,8 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: DT_ENCERRAMENTO e ENCERRADO; quem vê
+                        empresas também vê os centros (aba da ficha da empresa).
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Centro_Custo_Listar @IdUsuario = 2;
@@ -12288,6 +12353,7 @@ BEGIN
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', 'VER') = 0
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'VER') = 0
             THROW 50001, N'Você não tem permissão para ver os centros de custo.', 1;
 
         SET @EtapaAtual = 'Consulta';
@@ -12296,6 +12362,8 @@ BEGIN
                cc.ID_CONTA_BANCARIA_PADRAO, ISNULL(c.DESCRICAO, N'') AS CONTA_PADRAO_DESCRICAO,
                ISNULL(cc.ID_CONTA_BANCARIA_PADRAO, e.ID_CONTA_BANCARIA_PADRAO) AS ID_CONTA_EFETIVA,
                ISNULL(c.DESCRICAO, ISNULL(ce.DESCRICAO, N'')) AS CONTA_EFETIVA_DESCRICAO,
+               cc.DT_ENCERRAMENTO,
+               CAST(CASE WHEN cc.DT_ENCERRAMENTO <= CONVERT(DATE, SYSDATETIME()) THEN 1 ELSE 0 END AS BIT) AS ENCERRADO,
                cc.ATIVO, cc.CODIGO_ACCESS, cc.DT_ALTERACAO, ISNULL(cc.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
         FROM CAD.Centro_Custo cc WITH (NOLOCK)
         INNER JOIN CAD.Empresa e WITH (NOLOCK) ON e.ID_EMPRESA = cc.ID_EMPRESA
@@ -12335,6 +12403,10 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: @DtEncerramento (só grava com
+                        @MexerEncerramento = 1; sem ele, não mexe); conta padrão
+                        precisa ser da mesma empresa; centro com lançamento não
+                        muda de empresa.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Centro_Custo_Gravar @IdUsuario = 2, @IdEmpresa = 1, @Codigo = 'ESC', @Descricao = N'Escritório', @Tipo = 'ADMINISTRATIVO';
@@ -12351,7 +12423,9 @@ CREATE OR ALTER PROCEDURE [CAD].[CAD_Centro_Custo_Gravar]
     @Descricao              NVARCHAR(100),
     @Tipo                   VARCHAR(15),
     @Contabil               BIT           = 1,
-    @IdContaBancariaPadrao  INT           = NULL
+    @IdContaBancariaPadrao  INT           = NULL,
+    @DtEncerramento         DATE          = NULL,
+    @MexerEncerramento      BIT           = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -12387,6 +12461,13 @@ BEGIN
             SET @Recusa = N'A conta padrão escolhida não existe ou está desativada.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Centro_Custo cc WHERE cc.CODIGO = @Codigo AND cc.ID_CENTRO_CUSTO <> ISNULL(@IdCentroCusto, 0))
             SET @Recusa = N'Já existe um centro de custo com este código.';
+        IF @Recusa = N'' AND @IdContaBancariaPadrao IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM BANCO.Conta c WHERE c.ID_CONTA = @IdContaBancariaPadrao AND c.ID_EMPRESA = @IdEmpresa)
+            SET @Recusa = N'A conta padrão precisa ser uma conta da mesma empresa do centro de custo.';
+        IF @Recusa = N'' AND @IdCentroCusto IS NOT NULL
+           AND EXISTS (SELECT 1 FROM CAD.Centro_Custo cc WHERE cc.ID_CENTRO_CUSTO = @IdCentroCusto AND cc.ID_EMPRESA <> @IdEmpresa)
+           AND EXISTS (SELECT 1 FROM FIN.Lancamento l WHERE l.ID_CENTRO_CUSTO = @IdCentroCusto)
+            SET @Recusa = N'O centro de custo já tem lançamentos: não pode mudar de empresa.';
         IF @Recusa <> N''
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdCentroCusto AS ID;
@@ -12398,14 +12479,16 @@ BEGIN
         SET @EtapaAtual = 'Gravação';
         IF @IdCentroCusto IS NULL
         BEGIN
-            INSERT INTO CAD.Centro_Custo (ID_EMPRESA, CODIGO, DESCRICAO, TIPO, CONTABIL, ID_CONTA_BANCARIA_PADRAO, USUARIO_CRIACAO)
-            VALUES (@IdEmpresa, @Codigo, @Descricao, @Tipo, @Contabil, @IdContaBancariaPadrao, @Usuario);
+            INSERT INTO CAD.Centro_Custo (ID_EMPRESA, CODIGO, DESCRICAO, TIPO, CONTABIL, ID_CONTA_BANCARIA_PADRAO, DT_ENCERRAMENTO, USUARIO_CRIACAO)
+            VALUES (@IdEmpresa, @Codigo, @Descricao, @Tipo, @Contabil, @IdContaBancariaPadrao, CASE WHEN @MexerEncerramento = 1 THEN @DtEncerramento END, @Usuario);
             SET @IdCentroCusto = SCOPE_IDENTITY();
         END
         ELSE
             UPDATE cc
                SET cc.ID_EMPRESA = @IdEmpresa, cc.CODIGO = @Codigo, cc.DESCRICAO = @Descricao, cc.TIPO = @Tipo, cc.CONTABIL = @Contabil,
-                   cc.ID_CONTA_BANCARIA_PADRAO = @IdContaBancariaPadrao, cc.DT_ALTERACAO = SYSDATETIME(), cc.USUARIO_ALTERACAO = @Usuario
+                   cc.ID_CONTA_BANCARIA_PADRAO = @IdContaBancariaPadrao,
+                   cc.DT_ENCERRAMENTO = CASE WHEN ISNULL(@MexerEncerramento, 0) = 1 THEN @DtEncerramento ELSE cc.DT_ENCERRAMENTO END,
+                   cc.DT_ALTERACAO = SYSDATETIME(), cc.USUARIO_ALTERACAO = @Usuario
             FROM CAD.Centro_Custo cc
             WHERE cc.ID_CENTRO_CUSTO = @IdCentroCusto;
 
@@ -13425,6 +13508,8 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: QTD_LANCAMENTOS (na conta: lançamentos que a
+                        usam; no subgrupo e no grupo: soma das contas abaixo).
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Plano_Conta_Listar @IdUsuario = 2;
@@ -13448,9 +13533,20 @@ BEGIN
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', 'VER') = 0
             THROW 50001, N'Você não tem permissão para ver o plano de contas.', 1;
 
+        SET @EtapaAtual = 'Uso';
+        SELECT l.ID_PLANO_CONTA, c.ID_PLANO_SUBGRUPO, s.ID_PLANO_GRUPO, COUNT(*) AS QTD
+        INTO #Uso
+        FROM FIN.Lancamento l WITH (NOLOCK)
+        INNER JOIN CAD.Plano_Conta c    WITH (NOLOCK) ON c.ID_PLANO_CONTA = l.ID_PLANO_CONTA
+        INNER JOIN CAD.Plano_Subgrupo s WITH (NOLOCK) ON s.ID_PLANO_SUBGRUPO = c.ID_PLANO_SUBGRUPO
+        GROUP BY l.ID_PLANO_CONTA, c.ID_PLANO_SUBGRUPO, s.ID_PLANO_GRUPO;
+
         SET @EtapaAtual = 'Consulta';
         SELECT x.NIVEL, x.ID, x.ID_PAI, x.NUMERO, x.CODIGO, x.DESCRICAO, x.TIPO, x.CUSTO_OBRA, x.CONTABIL, x.CONTA_CONTABIL_REF,
-               x.ORDEM, x.ATIVO, x.ATIVO_EFETIVO, x.ORDEM_ARVORE, x.DT_ALTERACAO, x.USUARIO_ALTERACAO
+               x.ORDEM, x.ATIVO, x.ATIVO_EFETIVO, x.ORDEM_ARVORE, x.DT_ALTERACAO, x.USUARIO_ALTERACAO,
+               ISNULL(CASE x.NIVEL WHEN 3 THEN q.QTD
+                                   WHEN 2 THEN (SELECT SUM(q2.QTD) FROM #Uso q2 WHERE q2.ID_PLANO_SUBGRUPO = x.ID)
+                                   ELSE (SELECT SUM(q2.QTD) FROM #Uso q2 WHERE q2.ID_PLANO_GRUPO = x.ID) END, 0) AS QTD_LANCAMENTOS
         FROM (
             SELECT CAST(1 AS TINYINT) AS NIVEL, g.ID_PLANO_GRUPO AS ID, CAST(NULL AS INT) AS ID_PAI, g.NUMERO,
                    CONVERT(VARCHAR(12), RIGHT('0' + CONVERT(VARCHAR(3), g.NUMERO), 2)) AS CODIGO,
@@ -13479,6 +13575,7 @@ BEGIN
             INNER JOIN CAD.Plano_Conta c WITH (NOLOCK) ON c.ID_PLANO_CONTA = v.ID_PLANO_CONTA
             WHERE c.DT_EXCLUSAO IS NULL
         ) x
+        LEFT JOIN #Uso q ON x.NIVEL = 3 AND q.ID_PLANO_CONTA = x.ID
         WHERE (ISNULL(@SomenteAtivos, 0) = 0 OR x.ATIVO_EFETIVO = 1)
         ORDER BY x.ORDEM_ARVORE;
     END TRY
@@ -13625,6 +13722,8 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: subgrupo com conta que tem lançamentos não
+                        muda de grupo (mudaria o tipo dos lançamentos já feitos).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -13661,6 +13760,10 @@ BEGIN
             SET @Recusa = N'Informe a descrição.';
         IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Grupo g WHERE g.ID_PLANO_GRUPO = @IdPlanoGrupo AND g.DT_EXCLUSAO IS NULL)
             SET @Recusa = N'Escolha o grupo do subgrupo.';
+        IF @Recusa = N'' AND @IdPlanoSubgrupo IS NOT NULL
+           AND EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo x WHERE x.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND x.ID_PLANO_GRUPO <> @IdPlanoGrupo)
+           AND EXISTS (SELECT 1 FROM FIN.Lancamento l INNER JOIN CAD.Plano_Conta c ON c.ID_PLANO_CONTA = l.ID_PLANO_CONTA WHERE c.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo)
+            SET @Recusa = N'O subgrupo tem contas com lançamentos: não pode mudar de grupo.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo s WHERE s.ID_PLANO_GRUPO = @IdPlanoGrupo AND s.DESCRICAO = @Descricao
                                      AND s.ID_PLANO_SUBGRUPO <> ISNULL(@IdPlanoSubgrupo, 0))
             SET @Recusa = N'Já existe um subgrupo com esta descrição neste grupo.';
@@ -13738,6 +13841,8 @@ GO
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: conta com lançamentos não muda de subgrupo
+                        (mudaria o grupo e o tipo dos lançamentos já feitos).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -13776,6 +13881,10 @@ BEGIN
             SET @Recusa = N'Informe a descrição.';
         IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo s WHERE s.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND s.DT_EXCLUSAO IS NULL)
             SET @Recusa = N'Escolha o subgrupo da conta.';
+        IF @Recusa = N'' AND @IdPlanoConta IS NOT NULL
+           AND EXISTS (SELECT 1 FROM CAD.Plano_Conta x WHERE x.ID_PLANO_CONTA = @IdPlanoConta AND x.ID_PLANO_SUBGRUPO <> @IdPlanoSubgrupo)
+           AND EXISTS (SELECT 1 FROM FIN.Lancamento l WHERE l.ID_PLANO_CONTA = @IdPlanoConta)
+            SET @Recusa = N'A conta já tem lançamentos: não pode mudar de subgrupo. Crie uma conta nova no subgrupo certo e desative esta.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Conta c WHERE c.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND c.DESCRICAO = @Descricao
                                      AND c.ID_PLANO_CONTA <> ISNULL(@IdPlanoConta, 0))
             SET @Recusa = N'Já existe uma conta com esta descrição neste subgrupo.';
@@ -18711,6 +18820,332 @@ END;
 GO
 GO
 
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Centro_Custo_Obter.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Centro_Custo_Obter]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Ficha de um centro de custo (tela CAD_CENTRO_CUSTO): todos os
+                campos, empresa, conta padrão (a própria ou, se vazia, a da
+                empresa), data de encerramento, quantos lançamentos usam o centro
+                (QTD_LANCAMENTOS: com lançamento, a empresa não muda) e NA_LIXEIRA.
+                Permissão: VER em CAD_CENTRO_CUSTO. Padrão "Listar": THROW 50001.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04e).
+
+  Homologação (LOCAL):
+    -- EXEC CAD.CAD_Centro_Custo_Obter @IdUsuario = 2, @IdCentroCusto = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Centro_Custo_Obter]
+    @IdUsuario      INT,
+    @IdCentroCusto  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[CAD].[CAD_Centro_Custo_Obter]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os centros de custo.', 1;
+        IF NOT EXISTS (SELECT 1 FROM CAD.Centro_Custo cc WITH (NOLOCK) WHERE cc.ID_CENTRO_CUSTO = @IdCentroCusto)
+            THROW 50001, N'Centro de custo não encontrado.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT cc.ID_CENTRO_CUSTO, cc.CODIGO, cc.DESCRICAO, cc.TIPO, cc.CONTABIL,
+               cc.ID_EMPRESA, e.RAZAO_SOCIAL AS EMPRESA_RAZAO_SOCIAL, e.NOME_FANTASIA AS EMPRESA_NOME_FANTASIA,
+               cc.ID_CONTA_BANCARIA_PADRAO, ISNULL(c.DESCRICAO, N'') AS CONTA_PADRAO_DESCRICAO,
+               ISNULL(ce.DESCRICAO, N'') AS CONTA_PADRAO_EMPRESA_DESCRICAO,
+               cc.DT_ENCERRAMENTO,
+               CAST(CASE WHEN cc.DT_ENCERRAMENTO <= CONVERT(DATE, SYSDATETIME()) THEN 1 ELSE 0 END AS BIT) AS ENCERRADO,
+               (SELECT COUNT(*) FROM FIN.Lancamento l WITH (NOLOCK) WHERE l.ID_CENTRO_CUSTO = cc.ID_CENTRO_CUSTO) AS QTD_LANCAMENTOS,
+               cc.ATIVO, CAST(CASE WHEN cc.DT_EXCLUSAO IS NULL THEN 0 ELSE 1 END AS BIT) AS NA_LIXEIRA,
+               cc.CODIGO_ACCESS, cc.DT_CRIACAO, cc.USUARIO_CRIACAO, cc.DT_ALTERACAO, ISNULL(cc.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
+        FROM CAD.Centro_Custo cc WITH (NOLOCK)
+        INNER JOIN CAD.Empresa e WITH (NOLOCK) ON e.ID_EMPRESA = cc.ID_EMPRESA
+        LEFT  JOIN BANCO.Conta c  WITH (NOLOCK) ON c.ID_CONTA  = cc.ID_CONTA_BANCARIA_PADRAO
+        LEFT  JOIN BANCO.Conta ce WITH (NOLOCK) ON ce.ID_CONTA = e.ID_CONTA_BANCARIA_PADRAO
+        WHERE cc.ID_CENTRO_CUSTO = @IdCentroCusto;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar o centro de custo. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Seletor_Listar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Seletor_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Fonte única das escolhas com busca (componente js/seletor.js) de
+                conta do plano (@Tipo = 'PLANO'), centro de custo ('CENTRO') e
+                conta bancária ('CONTA'). Só registros ativos e fora da lixeira;
+                a busca olha código/número e descrição (sem acento, qualquer parte)
+                e, no plano, também o grupo e o subgrupo. @IdEmpresa filtra centros
+                e contas; @IdAtual sempre volta (mesmo inativo), para a ficha mostrar
+                o valor já gravado. No máximo SELETOR_LIMITE linhas.
+                Permissão: VER em qualquer tela que usa essas escolhas (cadastros
+                de parceiro, empresa, centro, plano, conta; o FIN entra na 04f).
+                Padrão "Listar": THROW 50001.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04e, seletor com busca aprovado pelo Celso).
+
+  Homologação (LOCAL):
+    -- EXEC CAD.CAD_Seletor_Listar @IdUsuario = 2, @Tipo = 'PLANO', @Busca = N'cimento';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Seletor_Listar]
+    @IdUsuario  INT,
+    @Tipo       VARCHAR(10),
+    @Busca      NVARCHAR(100) = NULL,
+    @IdEmpresa  INT           = NULL,
+    @IdAtual    INT           = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[CAD].[CAD_Seletor_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+    DECLARE @Limite     INT;
+    DECLARE @Termo      NVARCHAR(102);
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'VER') = 0
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'VER') = 0
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', 'VER') = 0
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', 'VER') = 0
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CONTA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver estas escolhas.', 1;
+        SET @Tipo = UPPER(LTRIM(RTRIM(ISNULL(@Tipo, ''))));
+        IF @Tipo NOT IN ('PLANO', 'CENTRO', 'CONTA')
+            THROW 50001, N'Escolha inválida.', 1;
+
+        SET @Limite = ISNULL(SIS.fn_SIS_Parametro_Inteiro('SELETOR_LIMITE'), 50);
+        IF @Limite NOT BETWEEN 10 AND 500 SET @Limite = 50;
+        SET @Busca = LTRIM(RTRIM(ISNULL(@Busca, N'')));
+        SET @Termo = N'%' + REPLACE(REPLACE(REPLACE(@Busca, N'[', N'[[]'), N'%', N'[%]'), N'_', N'[_]') + N'%';
+
+        SET @EtapaAtual = 'Consulta';
+        IF @Tipo = 'PLANO'
+            SELECT TOP (@Limite) v.ID, v.CODIGO, v.DESCRICAO, v.COMPLEMENTO, v.ATIVO
+            FROM (SELECT v.ID_PLANO_CONTA AS ID, v.CODIGO, v.DESCRICAO, v.GRUPO_DESCRICAO + N' › ' + v.SUBGRUPO_DESCRICAO AS COMPLEMENTO,
+                         v.ATIVO_EFETIVO AS ATIVO, v.ORDEM_ARVORE
+                  FROM CAD.vw_CAD_Plano_Conta v WITH (NOLOCK)
+                  INNER JOIN CAD.Plano_Conta pc WITH (NOLOCK) ON pc.ID_PLANO_CONTA = v.ID_PLANO_CONTA
+                  WHERE pc.DT_EXCLUSAO IS NULL
+                    AND (v.ID_PLANO_CONTA = @IdAtual
+                         OR (v.ATIVO_EFETIVO = 1
+                             AND (@Busca = N'' OR v.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
+                                  OR v.SUBGRUPO_DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo OR v.GRUPO_DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
+                                  OR v.CODIGO LIKE @Busca + '%')))
+                 ) v
+            ORDER BY CASE WHEN v.ID = @IdAtual THEN 0 ELSE 1 END, v.ORDEM_ARVORE;
+        ELSE IF @Tipo = 'CENTRO'
+            SELECT TOP (@Limite) cc.ID_CENTRO_CUSTO AS ID, cc.CODIGO, cc.DESCRICAO,
+                   ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL)
+                     + CASE WHEN cc.DT_ENCERRAMENTO <= CONVERT(DATE, SYSDATETIME()) THEN N' · encerrado em ' + CONVERT(NVARCHAR(10), cc.DT_ENCERRAMENTO, 103) ELSE N'' END AS COMPLEMENTO,
+                   cc.ATIVO
+            FROM CAD.Centro_Custo cc WITH (NOLOCK)
+            INNER JOIN CAD.Empresa e WITH (NOLOCK) ON e.ID_EMPRESA = cc.ID_EMPRESA
+            WHERE cc.DT_EXCLUSAO IS NULL
+              AND (cc.ID_CENTRO_CUSTO = @IdAtual
+                   OR (cc.ATIVO = 1 AND (@IdEmpresa IS NULL OR cc.ID_EMPRESA = @IdEmpresa)
+                       AND (@Busca = N'' OR cc.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo OR cc.CODIGO LIKE @Busca + '%')))
+            ORDER BY CASE WHEN cc.ID_CENTRO_CUSTO = @IdAtual THEN 0 ELSE 1 END, cc.CODIGO;
+        ELSE
+            SELECT TOP (@Limite) c.ID_CONTA AS ID, CAST(c.ID_CONTA AS VARCHAR(20)) AS CODIGO, c.DESCRICAO,
+                   ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL)
+                     + CASE WHEN c.NUMERO <> '' THEN N' · ag. ' + c.AGENCIA + N' c/c ' + c.NUMERO + CASE WHEN c.NUMERO_DV <> '' THEN N'-' + c.NUMERO_DV ELSE N'' END ELSE N'' END AS COMPLEMENTO,
+                   c.ATIVO
+            FROM BANCO.Conta c WITH (NOLOCK)
+            INNER JOIN CAD.Empresa e WITH (NOLOCK) ON e.ID_EMPRESA = c.ID_EMPRESA
+            WHERE c.DT_EXCLUSAO IS NULL
+              AND (c.ID_CONTA = @IdAtual
+                   OR (c.ATIVO = 1 AND (@IdEmpresa IS NULL OR c.ID_EMPRESA = @IdEmpresa)
+                       AND (@Busca = N'' OR c.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo OR c.NUMERO LIKE @Busca + '%')))
+            ORDER BY CASE WHEN c.ID_CONTA = @IdAtual THEN 0 ELSE 1 END, e.RAZAO_SOCIAL, c.ORDEM, c.DESCRICAO;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar a lista. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Empresa_Obter.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Empresa_Obter]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Ficha de uma empresa (tela CAD_EMPRESA): todos os campos, o
+                rodapé dos e-mails (P11), a pasta do OFX (PODE_PASTA_OFX = 1 só
+                para administrador), a conta padrão, quantas contas e centros de
+                custo ativos ela tem e NA_LIXEIRA (ficha só para consulta).
+                Permissão: VER em CAD_EMPRESA. Padrão "Listar": THROW 50001.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04e).
+
+  Homologação (LOCAL):
+    -- EXEC CAD.CAD_Empresa_Obter @IdUsuario = 2, @IdEmpresa = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Empresa_Obter]
+    @IdUsuario  INT,
+    @IdEmpresa  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[CAD].[CAD_Empresa_Obter]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver as empresas.', 1;
+        IF NOT EXISTS (SELECT 1 FROM CAD.Empresa e WITH (NOLOCK) WHERE e.ID_EMPRESA = @IdEmpresa)
+            THROW 50001, N'Empresa não encontrada.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT e.ID_EMPRESA, e.RAZAO_SOCIAL, e.NOME_FANTASIA, e.CNPJ,
+               SIS.fn_SIS_Mascarar_CPF_CNPJ(e.CNPJ, 0) AS CNPJ_FORMATADO,
+               e.CNPJ_COMPRAS, SIS.fn_SIS_Mascarar_CPF_CNPJ(e.CNPJ_COMPRAS, 0) AS CNPJ_COMPRAS_FORMATADO,
+               e.TIPO, e.INSCRICAO_ESTADUAL, e.INSCRICAO_MUNICIPAL, e.REGIME_TRIBUTARIO,
+               e.CEP, e.LOGRADOURO, e.NUMERO, e.COMPLEMENTO, e.BAIRRO, e.CIDADE, e.UF, e.EMAIL, e.TELEFONE,
+               e.RODAPE_EMAIL,
+               CASE WHEN SIS.fn_SIS_Usuario_Nivel_Admin(@IdUsuario) >= 1 THEN e.PASTA_OFX ELSE N'' END AS PASTA_OFX,
+               CAST(CASE WHEN SIS.fn_SIS_Usuario_Nivel_Admin(@IdUsuario) >= 1 THEN 1 ELSE 0 END AS BIT) AS PODE_PASTA_OFX,
+               e.ID_CONTA_BANCARIA_PADRAO, ISNULL(c.DESCRICAO, N'') AS CONTA_PADRAO_DESCRICAO,
+               (SELECT COUNT(*) FROM BANCO.Conta x WITH (NOLOCK) WHERE x.ID_EMPRESA = e.ID_EMPRESA AND x.ATIVO = 1 AND x.DT_EXCLUSAO IS NULL) AS QTD_CONTAS,
+               (SELECT COUNT(*) FROM CAD.Centro_Custo x WITH (NOLOCK) WHERE x.ID_EMPRESA = e.ID_EMPRESA AND x.ATIVO = 1 AND x.DT_EXCLUSAO IS NULL) AS QTD_CENTROS,
+               e.ATIVO, CAST(CASE WHEN e.DT_EXCLUSAO IS NULL THEN 0 ELSE 1 END AS BIT) AS NA_LIXEIRA,
+               e.CODIGO_ACCESS, e.DT_CRIACAO, e.USUARIO_CRIACAO, e.DT_ALTERACAO, ISNULL(e.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
+        FROM CAD.Empresa e WITH (NOLOCK)
+        LEFT JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = e.ID_CONTA_BANCARIA_PADRAO
+        WHERE e.ID_EMPRESA = @IdEmpresa;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar a empresa. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/BANCO/BANCO.BANCO_Conta_Obter.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [BANCO].[BANCO_Conta_Obter]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Ficha de uma conta bancária, caixa ou conta de permuta (tela
+                BANCO_CONTA): todos os campos, empresa e banco, se é a conta
+                padrão da empresa, TEM_MOVIMENTO (já há movimento ou baixa: a
+                tela trava empresa, tipo e saldo inicial) e NA_LIXEIRA.
+                Permissão: VER em BANCO_CONTA. Padrão "Listar": THROW 50001.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04e).
+
+  Homologação (LOCAL):
+    -- EXEC BANCO.BANCO_Conta_Obter @IdUsuario = 2, @IdConta = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Conta_Obter]
+    @IdUsuario  INT,
+    @IdConta    INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[BANCO].[BANCO_Conta_Obter]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CONTA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver as contas bancárias.', 1;
+        IF NOT EXISTS (SELECT 1 FROM BANCO.Conta c WITH (NOLOCK) WHERE c.ID_CONTA = @IdConta)
+            THROW 50001, N'Conta não encontrada.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT c.ID_CONTA, c.ID_EMPRESA, e.RAZAO_SOCIAL AS EMPRESA_RAZAO_SOCIAL, e.NOME_FANTASIA AS EMPRESA_NOME_FANTASIA,
+               c.DESCRICAO, c.TIPO, c.ID_BANCO, ISNULL(b.CODIGO, '') AS BANCO_CODIGO, ISNULL(b.NOME, N'') AS BANCO_NOME,
+               c.AGENCIA, c.AGENCIA_DV, c.NUMERO, c.NUMERO_DV, c.LIMITE_CREDITO, c.SALDO_INICIAL, c.DT_SALDO_INICIAL,
+               c.CONCILIA, c.MOSTRA_SALDO, c.CONTA_CONTABIL_REF, c.ORDEM,
+               CAST(CASE WHEN e.ID_CONTA_BANCARIA_PADRAO = c.ID_CONTA THEN 1 ELSE 0 END AS BIT) AS PADRAO_DA_EMPRESA,
+               CAST(CASE WHEN EXISTS (SELECT 1 FROM BANCO.Movimento m WITH (NOLOCK) WHERE m.ID_CONTA = c.ID_CONTA)
+                           OR EXISTS (SELECT 1 FROM FIN.Baixa x WITH (NOLOCK) WHERE x.ID_CONTA = c.ID_CONTA)
+                         THEN 1 ELSE 0 END AS BIT) AS TEM_MOVIMENTO,
+               c.ATIVO, CAST(CASE WHEN c.DT_EXCLUSAO IS NULL THEN 0 ELSE 1 END AS BIT) AS NA_LIXEIRA,
+               c.CODIGO_ACCESS, c.DT_CRIACAO, c.USUARIO_CRIACAO, c.DT_ALTERACAO, ISNULL(c.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
+        FROM BANCO.Conta c WITH (NOLOCK)
+        INNER JOIN CAD.Empresa e WITH (NOLOCK) ON e.ID_EMPRESA = c.ID_EMPRESA
+        LEFT  JOIN BANCO.Banco b WITH (NOLOCK) ON b.ID_BANCO = c.ID_BANCO
+        WHERE c.ID_CONTA = @IdConta;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar a conta. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
 -- =============================================================================
 -- 8. TRIGGERS
 -- =============================================================================
@@ -18983,6 +19418,9 @@ GO
                         CEP_CONSULTA_ATIVA, CEP_URL_PRINCIPAL, CEP_URL_RESERVA,
                         CEP_CACHE_DIAS, CNPJ_CONSULTA_ATIVA, CNPJ_URL,
                         CONSULTA_TEMPO_LIMITE_SEG e COBRANCA_APTO_EXIGE_*.
+    v2.3 (25/11/2026) - Etapa 04e: CENTRO_ENCERRADO_BLOQUEIA (lançamento novo em
+                        centro de custo encerrado: S = bloqueia, N = só avisa) e
+                        SELETOR_LIMITE (máximo de linhas nas escolhas com busca).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -19116,7 +19554,11 @@ FROM (VALUES
         ('COBRANCA_APTO_EXIGE_EMAIL', N'S', 'SN',
          N'Cadastro apto para cobrança (boleto): exige e-mail principal (ou de cobrança) válido.', 'CAD', 1),
         ('COBRANCA_APTO_EXIGE_TELEFONE', N'N', 'SN',
-         N'Cadastro apto para cobrança (boleto): exige celular ou telefone.', 'CAD', 1)
+         N'Cadastro apto para cobrança (boleto): exige celular ou telefone.', 'CAD', 1),
+        ('CENTRO_ENCERRADO_BLOQUEIA', N'S', 'SN',
+         N'Lançamento novo com data depois do encerramento do centro de custo (obra entregue): S = bloqueia; N = só avisa.', 'CAD', 1),
+        ('SELETOR_LIMITE', N'50', 'INTEIRO',
+         N'Máximo de linhas mostradas nas escolhas com busca (conta do plano, centro de custo, conta bancária).', 'CAD', 0)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Parametro p WHERE p.CHAVE = v.CHAVE);
@@ -19407,6 +19849,7 @@ GO
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (25/11/2026) - Etapa 04e: CERTIDAO (certidões negativas, com validade).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -19422,6 +19865,7 @@ FROM (VALUES
         ('BOLETO',       N'Boleto',                     'pdf'),
         ('MEDICAO',      N'Boletim de medição',         'pdf,xlsx,xls,jpg,jpeg,png'),
         ('DOCUMENTO',    N'Documento pessoal / da empresa', 'pdf,jpg,jpeg,png'),
+        ('CERTIDAO',     N'Certidão',                   'pdf,jpg,jpeg,png'),
         ('LOGOMARCA',    N'Logomarca',                  'png,jpg,jpeg,svg'),
         ('OUTRO',        N'Outro',                      'pdf,doc,docx,xls,xlsx,jpg,jpeg,png,txt,zip')
      ) v (CODIGO, NOME, EXTENSOES)
@@ -20244,7 +20688,7 @@ GO
                 Sincroniza a tabela com o .md (as notas são do sistema, não da
                 CMJ): inclui o que falta, acerta o texto do que mudou e tira o
                 item que saiu do .md. Idempotente.
-                Versões no arquivo: 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
+                Versões no arquivo: 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
   Changelog:
     v1.0 (23/11/2026) - Criação (etapa 04c, P22).
 *******************************************************************************/
@@ -20256,8 +20700,29 @@ DROP TABLE IF EXISTS #CargaNota;
 SELECT v.VERSAO, SIS.fn_SIS_Versao_Numero(v.VERSAO) AS VERSAO_NUMERO, v.DT_VERSAO, v.ORDEM, v.TIPO, v.PUBLICO, v.TEXTO, v.TEXTO_HTML
 INTO #CargaNota
 FROM (VALUES
-       (CAST('2.3' AS VARCHAR(20)), CAST('2026-11-25' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
-         CAST(N'o cadastro de Pessoas passa a se chamar Parceiros (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários tipos ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).' AS NVARCHAR(2000)), CAST(N'o cadastro de Pessoas passa a se chamar <b>Parceiros</b> (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários <b>tipos</b> ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).' AS NVARCHAR(4000)))
+       (CAST('2.4' AS VARCHAR(20)), CAST('2026-11-25' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
+         CAST(N'telas de Empresas (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.' AS NVARCHAR(2000)), CAST(N'telas de <b>Empresas</b> (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.' AS NVARCHAR(4000)))
+      ,('2.4', '2026-11-25', 2, 'NOVO', 'TODOS',
+         N'rodapé dos e-mails por empresa: um texto livre com os contatos (e-mails, telefones, site), com prévia de como vai aparecer.',
+         N'<b>rodapé dos e-mails por empresa</b>: um texto livre com os contatos (e-mails, telefones, site), com prévia de como vai aparecer.')
+      ,('2.4', '2026-11-25', 3, 'NOVO', 'TODOS',
+         N'telas de Contas bancárias e de Bancos (Bancos). Depois que a conta tem movimento, a empresa, o tipo e o saldo inicial não mudam mais; o saldo inicial também não muda em mês fechado.',
+         N'telas de <b>Contas bancárias</b> e de <b>Bancos</b> (Bancos). Depois que a conta tem movimento, a empresa, o tipo e o saldo inicial não mudam mais; o saldo inicial também não muda em mês fechado.')
+      ,('2.4', '2026-11-25', 4, 'NOVO', 'TODOS',
+         N'tela de Centros de custo (Cadastros), com a data de encerramento (obra entregue): depois dela, lançamento novo no centro é bloqueado ou avisado, conforme a configuração.',
+         N'tela de <b>Centros de custo</b> (Cadastros), com a <b>data de encerramento</b> (obra entregue): depois dela, lançamento novo no centro é bloqueado ou avisado, conforme a configuração.')
+      ,('2.4', '2026-11-25', 5, 'NOVO', 'TODOS',
+         N'Plano de contas em árvore (grupo › subgrupo › conta), com busca, quantidade de lançamentos em cada item e a ficha ao lado para incluir, alterar, desativar e ver o histórico.',
+         N'<b>Plano de contas em árvore</b> (grupo › subgrupo › conta), com busca, quantidade de lançamentos em cada item e a ficha ao lado para incluir, alterar, desativar e ver o histórico.')
+      ,('2.4', '2026-11-25', 6, 'NOVO', 'TODOS',
+         N'escolha com busca de conta do plano, centro de custo e conta bancária: digite parte do nome ou o número e escolha na lista.',
+         N'<b>escolha com busca</b> de conta do plano, centro de custo e conta bancária: digite parte do nome ou o número e escolha na lista.')
+      ,('2.4', '2026-11-25', 7, 'NOVO', 'TODOS',
+         N'na ficha do Parceiro, a conta do plano e o centro de custo padrão, que já vão vir escolhidos nos lançamentos dele.',
+         N'na ficha do Parceiro, a <b>conta do plano</b> e o <b>centro de custo padrão</b>, que já vão vir escolhidos nos lançamentos dele.')
+      ,('2.3', '2026-11-25', 1, 'NOVO', 'TODOS',
+         N'o cadastro de Pessoas passa a se chamar Parceiros (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários tipos ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).',
+         N'o cadastro de Pessoas passa a se chamar <b>Parceiros</b> (o nome pode ser trocado em parâmetro). Cada parceiro pode ter vários <b>tipos</b> ao mesmo tempo (cliente, fornecedor, funcionário, corretor e outros que a empresa criar).')
       ,('2.3', '2026-11-25', 2, 'NOVO', 'TODOS',
          N'tela Tipos de parceiro (Cadastros), para criar e organizar os tipos.',
          N'tela <b>Tipos de parceiro</b> (Cadastros), para criar e organizar os tipos.')
@@ -20522,19 +20987,20 @@ GO
                       2.1 (23/11/2026) telas da lixeira, do histórico e da auditoria (P20, etapa 04b2).
                       2.2 (25/11/2026) versões e aviso O que há de novo (P22, etapas 04c e 04c2).
                       2.3 (25/11/2026) Parceiros: tipos, CEP/CNPJ, pendências de cobrança e anexos (P10, P12; etapas 04d e 04d2).
+                      2.4 (25/11/2026) empresas, contas bancárias, bancos, centros de custo, plano de contas em árvore e escolha com busca (P11; etapa 04e).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '2.3';
+DECLARE @Versao VARCHAR(20) = '2.4';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;
 GO
 GO
 
-PRINT N'MASTER v2.3 concluido sem erro.';
+PRINT N'MASTER v2.4 concluido sem erro.';
 GO
 
 SET NOEXEC OFF;
