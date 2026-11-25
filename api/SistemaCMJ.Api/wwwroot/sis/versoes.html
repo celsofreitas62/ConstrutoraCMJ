@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Versões</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/sis/versoes.js" defer></script>
+</head>
+<!-- Sem data-exige-tela: as notas são para todos os usuários (a versão no topo abre esta tela);
+     a aba Histórico só aparece para quem tem VER em SIS_VERSOES (a procedure confere de novo). -->
+<body data-tela="sis/versoes.html" data-ajuda="sis-versoes">
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Sistema › Monitoramento › Versões</div>
+          <h1>Versões</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button data-dica="Baixa as notas que estão na tela num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <button data-dica="Busca de novo a lista." type="button" class="botao" id="botao-atualizar">Atualizar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="abas" role="tablist" aria-label="Partes da tela">
+        <button type="button" class="aba" role="tab" id="aba-notas" aria-controls="painel-notas" aria-selected="true">Notas</button>
+        <button type="button" class="aba" role="tab" id="aba-historico" aria-controls="painel-historico" aria-selected="false" hidden>Histórico de atualizações</button>
+      </div>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <section class="painel-aba" role="tabpanel" id="painel-notas" aria-labelledby="aba-notas">
+            <form class="filtros" id="filtros" role="search">
+              <label data-dica="Mostra só uma versão. Opcional." class="campo f-1">Versão
+                <select id="versao"><option value="">Todas</option></select>
+              </label>
+              <label data-dica="Mostra só o que é novo, o que melhorou ou o que foi corrigido." class="campo f-1">Tipo
+                <select id="tipo">
+                  <option value="">Todos</option>
+                  <option value="NOVO">Novo</option>
+                  <option value="MELHORIA">Melhoria</option>
+                  <option value="CORRECAO">Correção</option>
+                </select>
+              </label>
+              <label data-dica="Parte do texto da nota (ex.: lixeira). A lista atualiza sozinha." class="campo f-2">Buscar
+                <input type="search" id="busca" maxlength="100" autocomplete="off" placeholder="Ex.: lixeira">
+              </label>
+            </form>
+            <div id="notas" class="lista-versoes" aria-live="polite"></div>
+            <div class="rodape-lista"><span id="contagem"></span></div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-historico" aria-labelledby="aba-historico" hidden>
+            <form class="filtros" id="filtros-historico" role="search">
+              <label data-dica="Mostra só as atualizações a partir desta data. Opcional." class="campo f-1">De
+                <input type="date" id="inicio">
+              </label>
+              <label data-dica="Mostra só as atualizações até esta data. Opcional." class="campo f-1">até
+                <input type="date" id="fim">
+              </label>
+            </form>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead>
+                  <tr>
+                    <th scope="col">Quando</th>
+                    <th scope="col">Origem</th>
+                    <th scope="col">Versão</th>
+                    <th scope="col">Fora do ar</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col">Quem / computador</th>
+                    <th scope="col">Mensagem</th>
+                  </tr>
+                </thead>
+                <tbody id="linhas-historico"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

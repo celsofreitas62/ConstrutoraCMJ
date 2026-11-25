@@ -348,3 +348,13 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .situacao-recuperado { background: #E7F3E8; color: #1E6B22; }
 .situacao-apagado { background: #EFEFED; color: #555555; }
 .link-lixeira { font-size: 13px; align-self: center; }
+
+/* Tela Versões e aviso "O que há de novo" (04c2, P22) */
+.etiqueta-novo { background: #E3F1E4; color: var(--sucesso); font-weight: 600; }
+.etiqueta-melhoria { background: #E5EEF8; color: #1F4E8C; font-weight: 600; }
+.etiqueta-correcao { background: #FBEDE0; color: #8A4B0F; font-weight: 600; }
+.etiqueta-atual { background: #3D3D3D; color: #FFFFFF; }
+.lista-versoes { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
+.versao-titulo { font-size: 16px; margin: 0 0 6px; }
+.versao-itens { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.versao-itens li { line-height: 1.5; }
