@@ -26,6 +26,8 @@
     v1.1 (22/11/2026) - DENY em SIS_Atualizacao_Registrar (etapa 03h).
     v1.2 (22/11/2026) - Etapa 04b (P20): DENY nas procedures internas da
                         lixeira e do desfazer.
+    v1.3 (25/11/2026) - Etapa 04f: DENY na trava própria do lançamento
+                        (FIN_Lancamento_Trava_Conferir).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -55,6 +57,7 @@ SELECT @Internas = @Internas + N'DENY EXECUTE ON ' + QUOTENAME(OBJECT_SCHEMA_NAM
 FROM sys.objects o
 WHERE o.type = 'P'
   AND o.object_id IN (OBJECT_ID(N'[SIS].[SIS_Lixeira_Marcar]'), OBJECT_ID(N'[SIS].[SIS_Lixeira_Apagar]'), OBJECT_ID(N'[SIS].[SIS_Lixeira_Referencias]'),
-                      OBJECT_ID(N'[SIS].[SIS_Tabela_Trava_Conferir]'), OBJECT_ID(N'[SIS].[SIS_Historico_Desfazer_Montar]'));
+                      OBJECT_ID(N'[SIS].[SIS_Tabela_Trava_Conferir]'), OBJECT_ID(N'[SIS].[SIS_Historico_Desfazer_Montar]'),
+                      OBJECT_ID(N'[FIN].[FIN_Lancamento_Trava_Conferir]'));
 EXEC sys.sp_executesql @Internas;
 GO

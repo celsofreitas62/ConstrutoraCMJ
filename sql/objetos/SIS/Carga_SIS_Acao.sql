@@ -14,6 +14,8 @@
                         desativava), DESFAZER (pelo histórico), RECUPERAR e
                         ESVAZIAR (lixeira); EXCLUIR passa a mandar para a
                         lixeira (nome acertado).
+    v1.4 (25/11/2026) - Etapa 04f: LANCAR_RETROATIVO (lançar fora da trava de
+                        datas do financeiro, com motivo; decisão de 18/11/2026).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -41,7 +43,8 @@ FROM (VALUES
         ('DESATIVAR',        N'Desativar / reativar',        45),
         ('DESFAZER',         N'Desfazer pelo histórico',    170),
         ('RECUPERAR',        N'Recuperar da lixeira',       180),
-        ('ESVAZIAR',         N'Esvaziar a lixeira (apagar de vez)', 190)
+        ('ESVAZIAR',         N'Esvaziar a lixeira (apagar de vez)', 190),
+        ('LANCAR_RETROATIVO', N'Lançar fora da trava de datas (com motivo)', 200)
      ) v (CODIGO, NOME, ORDEM)
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Acao a WHERE a.CODIGO = v.CODIGO);
 GO

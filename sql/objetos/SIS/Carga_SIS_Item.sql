@@ -30,6 +30,10 @@
     v1.5 (23/11/2026) - Etapa 04c (P22): tela "Versões" (Monitoramento). VER
                         libera o histórico de atualizações; as notas das
                         versões são para todos (não dependem de permissão).
+    v1.6 (25/11/2026) - Etapa 04f: tela "Parâmetros de uso" (SIS_PARAMETRO_USO,
+                        mesma tela de Parâmetros com ?uso=1): os dois
+                        administradores alteram os parâmetros de NIVEL_MINIMO 1
+                        (decisão do Celso de 18/11/2026). VER, ALTERAR e EXPORTAR.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -44,6 +48,7 @@ FROM (VALUES
          CAST('MENU' AS VARCHAR(10)), CAST('' AS VARCHAR(200)), CAST(10 AS SMALLINT), CAST(0 AS BIT), CAST(1 AS BIT), CAST('' AS VARCHAR(500))),
         ('SIS', 'SIS_CONFIGURACAO',  'SIS_LICENCA',       N'Licença',             'TELA', 'sis/licenca.html',     10, 1, 1, 'SIS.Licenca,SIS.Licenca_Empresa'),
         ('SIS', 'SIS_CONFIGURACAO',  'SIS_PARAMETRO',     N'Parâmetros',          'TELA', 'sis/parametros.html',  20, 1, 1, 'SIS.Parametro'),
+        ('SIS', 'SIS_CONFIGURACAO',  'SIS_PARAMETRO_USO', N'Parâmetros de uso',   'TELA', 'sis/parametros.html?uso=1', 25, 0, 1, 'SIS.Parametro'),
         ('SIS', 'SIS_CONFIGURACAO',  'SIS_MODULO',        N'Módulos e telas',     'TELA', 'sis/modulos.html',     30, 1, 1, 'SIS.Modulo,SIS.Item'),
         ('SIS', 'SIS_CONFIGURACAO',  'SIS_ROTINA',        N'Rotinas automáticas', 'TELA', 'sis/rotinas.html',     40, 1, 1, 'SIS.Rotina'),
         ('SIS', 'SIS_CONFIGURACAO',  'SIS_INSTALACAO',    N'Instalação e manutenção', 'TELA', 'sis/instalacao.html', 50, 1, 1, ''),
@@ -96,6 +101,9 @@ FROM (VALUES
         ('SIS_PARAMETRO', 'VER'),
         ('SIS_PARAMETRO', 'ALTERAR'),
         ('SIS_PARAMETRO', 'EXPORTAR'),
+        ('SIS_PARAMETRO_USO', 'VER'),
+        ('SIS_PARAMETRO_USO', 'ALTERAR'),
+        ('SIS_PARAMETRO_USO', 'EXPORTAR'),
         ('SIS_MODULO',    'VER'),
         ('SIS_MODULO',    'ALTERAR'),
         ('SIS_USUARIO',   'VER'),

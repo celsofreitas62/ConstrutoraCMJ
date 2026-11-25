@@ -19,6 +19,12 @@
     v1.0 (15/11/2026) - Criação (etapa 02a).
     v1.1 (15/11/2026) - Tipos ARQUIVO e COR (identidade visual por cliente:
                         logomarca e cores sem mexer no sistema).
+    v1.2 (25/11/2026) - Etapa 04f: NIVEL_MINIMO (1 = os dois administradores
+                        alteram pela tela "Parâmetros de uso"; 2 = só o
+                        administrador geral; decisão do Celso de 18/11/2026) e
+                        OPCOES (valores aceitos separados por ";", ex.:
+                        AVISO;BLOQUEIO;NAO; vazio = livre conforme o TIPO).
+                        As duas colunas só mudam pela carga da instalação.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -61,4 +67,12 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Parametro]') AND i.name = N'IX_Parametro_ID_MODULO')
     CREATE NONCLUSTERED INDEX IX_Parametro_ID_MODULO ON [SIS].[Parametro] (ID_MODULO);
+GO
+
+IF COL_LENGTH(N'SIS.Parametro', N'NIVEL_MINIMO') IS NULL
+    ALTER TABLE [SIS].[Parametro] ADD NIVEL_MINIMO TINYINT NOT NULL CONSTRAINT DF_Parametro_NIVEL_MINIMO DEFAULT (2)
+        CONSTRAINT CK_Parametro_NIVEL_MINIMO CHECK (NIVEL_MINIMO IN (1, 2));
+GO
+IF COL_LENGTH(N'SIS.Parametro', N'OPCOES') IS NULL
+    ALTER TABLE [SIS].[Parametro] ADD OPCOES NVARCHAR(200) NOT NULL CONSTRAINT DF_Parametro_OPCOES DEFAULT (N'');
 GO

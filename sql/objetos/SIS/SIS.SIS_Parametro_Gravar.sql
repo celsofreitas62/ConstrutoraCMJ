@@ -30,6 +30,9 @@
                         padrão "[^...._-]" do LIKE não funciona como
                         esperado); ". _ -" agora são retirados antes de
                         conferir se o resto é só letra e número.
+    v1.4 (25/11/2026) - Etapa 04f: administrador (nível 1 ou 2) com ALTERAR em
+                        SIS_PARAMETRO_USO altera os de NIVEL_MINIMO 1; com
+                        OPCOES preenchido, o valor tem de ser uma das opções.
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Parametro_Gravar @IdUsuario = 2, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'10';
@@ -59,9 +62,14 @@ BEGIN
     DECLARE @Data         DATE;
     DECLARE @Linhas       INT            = 0;
     DECLARE @Usuario      NVARCHAR(100);
+    DECLARE @NivelMinimo  TINYINT        = 2;
+    DECLARE @Opcoes       NVARCHAR(200)  = N'';
+    DECLARE @VeTodos      BIT            = 0;
 
     BEGIN TRY
-        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_PARAMETRO', 'ALTERAR') = 0
+        SET @VeTodos = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_PARAMETRO', 'ALTERAR');
+        IF @VeTodos = 0
+           AND (SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'SIS_PARAMETRO_USO', 'ALTERAR') = 0 OR SIS.fn_SIS_Usuario_Nivel_Admin(@IdUsuario) < 1)
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Você não tem permissão para alterar parâmetros.' AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS INT) AS ID_PARAMETRO;
             RETURN;
@@ -80,13 +88,21 @@ BEGIN
         SELECT @IdParametro = p.ID_PARAMETRO,
                @Tipo        = p.TIPO,
                @Editavel    = p.EDITAVEL_ADMIN,
-               @ValorAtual  = p.VALOR
+               @ValorAtual  = p.VALOR,
+               @NivelMinimo = p.NIVEL_MINIMO,
+               @Opcoes      = p.OPCOES
         FROM SIS.Parametro p
         WHERE p.CHAVE = @Chave;
 
         IF @IdParametro IS NULL
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Parâmetro não encontrado.' AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS INT) AS ID_PARAMETRO;
+            RETURN;
+        END;
+
+        IF @VeTodos = 0 AND @NivelMinimo <> 1
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Este parâmetro só pode ser alterado pelo administrador geral.' AS NVARCHAR(400)) AS MENSAGEM, @IdParametro AS ID_PARAMETRO;
             RETURN;
         END;
 
@@ -157,6 +173,13 @@ BEGIN
             SET @ValorNovo = UPPER(@ValorNovo);
             IF LEN(@ValorNovo) <> 7 OR @ValorNovo NOT LIKE N'#[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]' COLLATE Latin1_General_BIN2
                 SET @Recusa = N'Informe a cor no formato #RRGGBB (ex.: #D43414).';
+        END;
+
+        IF @Recusa = N'' AND ISNULL(@Opcoes, N'') <> N''
+        BEGIN
+            SET @ValorNovo = UPPER(@ValorNovo);
+            IF NOT EXISTS (SELECT 1 FROM STRING_SPLIT(@Opcoes, N';') s WHERE LTRIM(RTRIM(s.value)) = @ValorNovo)
+                SET @Recusa = N'Valor inválido: use ' + REPLACE(@Opcoes, N';', N', ') + N'.';
         END;
 
         IF @Recusa <> N''

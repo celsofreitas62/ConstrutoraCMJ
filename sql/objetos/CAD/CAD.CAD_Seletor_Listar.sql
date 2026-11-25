@@ -16,6 +16,11 @@
 
   Changelog:
     v1.0 (25/11/2026) - Criação (etapa 04e, seletor com busca aprovado pelo Celso).
+    v1.1 (25/11/2026) - Etapa 04f: escolhas PESSOA (parceiro; @Filtro =
+                        código do tipo, ex.: FORNECEDOR, que aparece primeiro,
+                        sem esconder os demais) e HISTORICO (histórico padrão
+                        do financeiro); quem vê Contas a pagar ou a receber
+                        também usa as escolhas.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Seletor_Listar @IdUsuario = 2, @Tipo = 'PLANO', @Busca = N'cimento';
@@ -29,7 +34,8 @@ CREATE OR ALTER PROCEDURE [CAD].[CAD_Seletor_Listar]
     @Tipo       VARCHAR(10),
     @Busca      NVARCHAR(100) = NULL,
     @IdEmpresa  INT           = NULL,
-    @IdAtual    INT           = NULL
+    @IdAtual    INT           = NULL,
+    @Filtro     VARCHAR(20)   = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -46,9 +52,11 @@ BEGIN
            AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_CENTRO_CUSTO', 'VER') = 0
            AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', 'VER') = 0
            AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CONTA', 'VER') = 0
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PAGAR', 'VER') = 0
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_RECEBER', 'VER') = 0
             THROW 50001, N'Você não tem permissão para ver estas escolhas.', 1;
         SET @Tipo = UPPER(LTRIM(RTRIM(ISNULL(@Tipo, ''))));
-        IF @Tipo NOT IN ('PLANO', 'CENTRO', 'CONTA')
+        IF @Tipo NOT IN ('PLANO', 'CENTRO', 'CONTA', 'PESSOA', 'HISTORICO')
             THROW 50001, N'Escolha inválida.', 1;
 
         SET @Limite = ISNULL(SIS.fn_SIS_Parametro_Inteiro('SELETOR_LIMITE'), 50);
@@ -83,6 +91,33 @@ BEGIN
                    OR (cc.ATIVO = 1 AND (@IdEmpresa IS NULL OR cc.ID_EMPRESA = @IdEmpresa)
                        AND (@Busca = N'' OR cc.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo OR cc.CODIGO LIKE @Busca + '%')))
             ORDER BY CASE WHEN cc.ID_CENTRO_CUSTO = @IdAtual THEN 0 ELSE 1 END, cc.CODIGO;
+        ELSE IF @Tipo = 'PESSOA'
+            SELECT TOP (@Limite) p.ID_PESSOA AS ID,
+                   CAST(CASE WHEN p.CPF_CNPJ = '' THEN '' ELSE SIS.fn_SIS_Mascarar_CPF_CNPJ(p.CPF_CNPJ, 0) END AS VARCHAR(20)) AS CODIGO,
+                   p.NOME AS DESCRICAO,
+                   ISNULL(STUFF((SELECT N', ' + t.DESCRICAO FROM CAD.Pessoa_Tipo x WITH (NOLOCK)
+                                 INNER JOIN CAD.Parceiro_Tipo t WITH (NOLOCK) ON t.ID_PARCEIRO_TIPO = x.ID_PARCEIRO_TIPO
+                                 WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ATIVO = 1 ORDER BY t.ORDEM FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(400)'), 1, 2, N''), N'')
+                     + CASE WHEN p.NOME_FANTASIA <> N'' AND p.NOME_FANTASIA <> p.NOME THEN N' · ' + p.NOME_FANTASIA ELSE N'' END AS COMPLEMENTO,
+                   p.ATIVO
+            FROM CAD.Pessoa p WITH (NOLOCK)
+            WHERE p.DT_EXCLUSAO IS NULL
+              AND (p.ID_PESSOA = @IdAtual
+                   OR (p.ATIVO = 1
+                       AND (@Busca = N'' OR p.NOME COLLATE Latin1_General_CI_AI LIKE @Termo OR p.NOME_FANTASIA COLLATE Latin1_General_CI_AI LIKE @Termo
+                            OR (LEN(CAD.fn_CAD_Somente_Digitos(@Busca)) >= 3 AND p.CPF_CNPJ LIKE CAD.fn_CAD_Somente_Digitos(@Busca) + '%'))))
+            ORDER BY CASE WHEN p.ID_PESSOA = @IdAtual THEN 0 ELSE 1 END,
+                     CASE WHEN ISNULL(@Filtro, '') <> '' AND EXISTS (SELECT 1 FROM CAD.Pessoa_Tipo x WITH (NOLOCK)
+                                                                    INNER JOIN CAD.Parceiro_Tipo t WITH (NOLOCK) ON t.ID_PARCEIRO_TIPO = x.ID_PARCEIRO_TIPO
+                                                                    WHERE x.ID_PESSOA = p.ID_PESSOA AND x.ATIVO = 1 AND t.CODIGO = @Filtro) THEN 0 ELSE 1 END,
+                     p.NOME;
+        ELSE IF @Tipo = 'HISTORICO'
+            SELECT TOP (@Limite) h.ID_HISTORICO_PADRAO AS ID, CAST(h.ID_HISTORICO_PADRAO AS VARCHAR(20)) AS CODIGO, h.DESCRICAO,
+                   CAST(N'' AS NVARCHAR(200)) AS COMPLEMENTO, h.ATIVO
+            FROM FIN.Historico_Padrao h WITH (NOLOCK)
+            WHERE h.ID_HISTORICO_PADRAO = @IdAtual
+               OR (h.ATIVO = 1 AND (@Busca = N'' OR h.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo))
+            ORDER BY CASE WHEN h.ID_HISTORICO_PADRAO = @IdAtual THEN 0 ELSE 1 END, h.DESCRICAO;
         ELSE
             SELECT TOP (@Limite) c.ID_CONTA AS ID, CAST(c.ID_CONTA AS VARCHAR(20)) AS CODIGO, c.DESCRICAO,
                    ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL)

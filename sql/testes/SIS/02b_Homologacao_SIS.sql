@@ -26,6 +26,9 @@
   Como rodar: SSMS > Arquivo > Abrir > este arquivo > F5.
   Copiar para o Claude: a grade "RESUMO" e, se houver falha, a grade "TESTES".
     v1.5 (22/11/2026) - Etapa 04b: ação DESFAZER em Usuários e Perfis (19 ações).
+    v1.6 (25/11/2026) - Etapa 04f: o admin passa a ver o menu Configuração
+                        (só "Parâmetros de uso"); continua sem Licença e
+                        sem Parâmetros do administrador geral.
 *******************************************************************************/
 USE [SISTEMACMJ_LOCAL];
 GO
@@ -262,7 +265,7 @@ DELETE FROM #Menu;
 
 INSERT INTO #Menu EXEC SIS.SIS_Menu_Listar @IdUsuario = @IdAdmin;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do admin, sem Configuração (1 módulo + 2 menus + 3 telas)', N'6', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu WHERE CODIGO IN ('SIS', 'SIS_SEGURANCA', 'SIS_USUARIO', 'SIS_PERFIL', 'SIS_MONITORAMENTO', 'SIS_LOG_ERRO');
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do admin não tem Licença nem Parâmetros', N'0', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu WHERE CODIGO IN ('SIS_CONFIGURACAO', 'SIS_LICENCA', 'SIS_PARAMETRO');
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Menu do admin não tem Licença nem Parâmetros', N'0', CONVERT(NVARCHAR(10), COUNT(*)) FROM #Menu WHERE CODIGO IN ('SIS_LICENCA', 'SIS_PARAMETRO');
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Ações de Usuários no menu do admin', N'VER,INCLUIR,ALTERAR,EXPORTAR,DESBLOQUEAR,REDEFINIR_SENHA,DESFAZER', ISNULL(MAX(m.ACOES), '') FROM #Menu m WHERE m.CODIGO = 'SIS_USUARIO';
 DELETE FROM #Menu;
 

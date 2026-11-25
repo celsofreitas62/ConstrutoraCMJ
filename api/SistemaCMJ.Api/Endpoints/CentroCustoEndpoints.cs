@@ -9,6 +9,8 @@
 //              permissão, validação e travas estão em CAD_Centro_Custo_Listar /
 //              _Obter / _Gravar / _Excluir e CAD_Seletor_Listar.
 //              Data de encerramento: a tela manda sempre (MexerEncerramento = 1).
+//              04f (25/11/2026): escolhas PESSOA e HISTORICO; filtro = código do
+//              tipo de parceiro que aparece primeiro (ex.: FORNECEDOR).
 // =============================================================================
 using System.Globalization;
 using SistemaCMJ.Api.Infra;
@@ -101,7 +103,7 @@ public static class CentroCustoEndpoints
             return Resposta.DeGravacao(resultado);
         });
 
-    private static Task<IResult> Seletor(string tipo, string? busca, int? idEmpresa, int? idAtual, HttpContext http, Banco banco, ILogger<Program> logger) =>
+    private static Task<IResult> Seletor(string tipo, string? busca, int? idEmpresa, int? idAtual, string? filtro, HttpContext http, Banco banco, ILogger<Program> logger) =>
         Resposta.Rodar(http, banco, logger, async () =>
         {
             var usuario = http.Usuario();
@@ -111,7 +113,8 @@ public static class CentroCustoEndpoints
                 ["Tipo"] = Banco.Cortar(tipo.Trim().ToUpperInvariant(), 10),
                 ["Busca"] = Banco.Cortar(busca?.Trim(), 100),
                 ["IdEmpresa"] = idEmpresa is > 0 ? idEmpresa : null,
-                ["IdAtual"] = idAtual is > 0 ? idAtual : null
+                ["IdAtual"] = idAtual is > 0 ? idAtual : null,
+                ["Filtro"] = string.IsNullOrWhiteSpace(filtro) ? null : Banco.Cortar(filtro.Trim().ToUpperInvariant(), 20)
             }, usuario, http.RequestAborted);
             return Resposta.Ok(linhas);
         });
