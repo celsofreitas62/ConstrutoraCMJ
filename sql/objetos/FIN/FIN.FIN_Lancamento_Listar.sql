@@ -10,8 +10,13 @@
                 @Visao LANCAMENTO: uma linha por lançamento (vencimento = o
                 primeiro das parcelas filtradas; valores = todas as parcelas).
                 @Situacao: EM_ABERTO (aberta + parcial), ABERTA, PARCIAL, PAGA,
-                CANCELADA, VENCIDA (em aberto e vencida) ou vazio (todas).
-                Filtros opcionais por período de vencimento, empresa, centro,
+                CANCELADA, VENCIDA (em aberto e vencida), HOJE (em aberto
+                vencendo hoje), A_VENCER (em aberto, de amanhã até
+                FIN_LISTA_DIAS_A_VENCER dias) ou vazio (todas; sem as
+                canceladas quando FIN_LISTA_OCULTA_CANCELADAS = S).
+                @CampoData escolhe a data do período (@VencDe/@VencAte):
+                VENCIMENTO (padrão), EMISSAO ou COMPETENCIA (mês).
+                Filtros opcionais por período, empresa, centro,
                 parceiro, conta do plano, lote, documento, texto e valor.
                 Paginação (@Pagina, @PorPagina; padrão FIN_LISTA_POR_PAGINA:
                 a página é escolhida antes de buscar os detalhes) e
@@ -20,10 +25,14 @@
                 Padrão "Listar": THROW 50001.
   Changelog:
     v1.0 (25/11/2026) - Criação (etapa 04f).
+    v1.1 (25/11/2026) - Etapa 04f2a: situações HOJE e A_VENCER, período por
+                        emissão ou competência (@CampoData) e canceladas fora
+                        de "todas" pelo parâmetro FIN_LISTA_OCULTA_CANCELADAS.
 
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'R', @Situacao = 'EM_ABERTO';
     -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'P', @Visao = 'LANCAMENTO', @Texto = N'cimento';
+    -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'R', @Situacao = 'A_VENCER', @CampoData = 'EMISSAO', @VencDe = '2026-01-01';
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -36,6 +45,7 @@ CREATE OR ALTER PROCEDURE [FIN].[FIN_Lancamento_Listar]
     @Situacao       VARCHAR(12)    = NULL,
     @VencDe         DATE           = NULL,
     @VencAte        DATE           = NULL,
+    @CampoData      VARCHAR(12)    = 'VENCIMENTO',
     @IdEmpresa      INT            = NULL,
     @IdCentroCusto  INT            = NULL,
     @IdPessoa       INT            = NULL,
@@ -65,6 +75,8 @@ BEGIN
     DECLARE @TotValor   DECIMAL(18,2) = 0;
     DECLARE @TotBaixado DECIMAL(18,2) = 0;
     DECLARE @TotSaldo   DECIMAL(18,2) = 0;
+    DECLARE @DiasAVencer INT;
+    DECLARE @OcultaCanc  BIT;
 
     DROP TABLE IF EXISTS #F;
     DROP TABLE IF EXISTS #G;
@@ -83,6 +95,10 @@ BEGIN
         SET @Visao     = CASE WHEN UPPER(ISNULL(@Visao, '')) = 'LANCAMENTO' THEN 'LANCAMENTO' ELSE 'PARCELA' END;
         SET @Situacao  = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@Situacao, '')))), '');
         SET @Ordem     = UPPER(ISNULL(@Ordem, 'VENCIMENTO'));
+        SET @CampoData = CASE UPPER(ISNULL(@CampoData, '')) WHEN 'EMISSAO' THEN 'EMISSAO' WHEN 'COMPETENCIA' THEN 'COMPETENCIA' ELSE 'VENCIMENTO' END;
+        SET @DiasAVencer = ISNULL(SIS.fn_SIS_Parametro_Inteiro('FIN_LISTA_DIAS_A_VENCER'), 7);
+        IF @DiasAVencer NOT BETWEEN 1 AND 365 SET @DiasAVencer = 7;
+        SET @OcultaCanc  = ISNULL(SIS.fn_SIS_Parametro_SN('FIN_LISTA_OCULTA_CANCELADAS'), 1);
         SET @Pagina    = CASE WHEN ISNULL(@Pagina, 1) < 1 THEN 1 ELSE @Pagina END;
         SET @PorPagina = ISNULL(@PorPagina, ISNULL(SIS.fn_SIS_Parametro_Inteiro('FIN_LISTA_POR_PAGINA'), 100));
         IF @PorPagina NOT BETWEEN 10 AND 1000 SET @PorPagina = 100;
@@ -101,12 +117,20 @@ BEGIN
         WHERE l.DT_EXCLUSAO IS NULL
           AND ((l.TIPO = 'P' AND @VeP = 1) OR (l.TIPO = 'R' AND @VeR = 1))
           AND (@Tipo IS NULL OR l.TIPO = @Tipo)
-          AND (@Situacao IS NULL
+          AND ((@Situacao IS NULL AND (@OcultaCanc = 0 OR p.SITUACAO <> 'CANCELADA'))
                OR (@Situacao = 'EM_ABERTO' AND p.SITUACAO IN ('ABERTA', 'PARCIAL'))
                OR (@Situacao = 'VENCIDA'   AND p.SITUACAO IN ('ABERTA', 'PARCIAL') AND p.DT_VENCIMENTO < @Hoje)
+               OR (@Situacao = 'HOJE'      AND p.SITUACAO IN ('ABERTA', 'PARCIAL') AND p.DT_VENCIMENTO = @Hoje)
+               OR (@Situacao = 'A_VENCER'  AND p.SITUACAO IN ('ABERTA', 'PARCIAL') AND p.DT_VENCIMENTO > @Hoje AND p.DT_VENCIMENTO <= DATEADD(DAY, @DiasAVencer, @Hoje))
                OR p.SITUACAO = @Situacao)
-          AND (@VencDe        IS NULL OR p.DT_VENCIMENTO >= @VencDe)
-          AND (@VencAte       IS NULL OR p.DT_VENCIMENTO <= @VencAte)
+          AND (@VencDe IS NULL
+               OR (@CampoData = 'VENCIMENTO'  AND p.DT_VENCIMENTO >= @VencDe)
+               OR (@CampoData = 'EMISSAO'     AND l.DT_EMISSAO >= @VencDe)
+               OR (@CampoData = 'COMPETENCIA' AND l.DT_COMPETENCIA >= DATEFROMPARTS(YEAR(@VencDe), MONTH(@VencDe), 1)))
+          AND (@VencAte IS NULL
+               OR (@CampoData = 'VENCIMENTO'  AND p.DT_VENCIMENTO <= @VencAte)
+               OR (@CampoData = 'EMISSAO'     AND l.DT_EMISSAO <= @VencAte)
+               OR (@CampoData = 'COMPETENCIA' AND l.DT_COMPETENCIA <= @VencAte))
           AND (@IdEmpresa     IS NULL OR l.ID_EMPRESA = @IdEmpresa)
           AND (@IdCentroCusto IS NULL OR l.ID_CENTRO_CUSTO = @IdCentroCusto)
           AND (@IdPessoa      IS NULL OR l.ID_PESSOA = @IdPessoa)

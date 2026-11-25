@@ -13,6 +13,8 @@
                 1 (os dois administradores alteram em "Parâmetros de uso").
   Changelog:
     v1.0 (25/11/2026) - Criação (etapa 04f).
+    v1.1 (25/11/2026) - Etapa 04f2a: parâmetros da lista (dias "a vencer",
+                        situação e visão ao abrir, canceladas em "todas").
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -61,7 +63,15 @@ FROM (VALUES
         ('FIN_REGRA_TIPO_CONTA', N'AVISO', 'TEXTO',
          N'Conta do plano de receita usada em contas a pagar, ou de despesa em contas a receber.', 1, N'AVISO;BLOQUEIO;NAO'),
         ('FIN_LISTA_POR_PAGINA', N'100', 'INTEIRO',
-         N'Quantas linhas por página nas listas de contas a pagar e a receber.', 1, N'')
+         N'Quantas linhas por página nas listas de contas a pagar e a receber.', 1, N''),
+        ('FIN_LISTA_DIAS_A_VENCER', N'7', 'INTEIRO',
+         N'Quantos dias à frente contam como "a vencer" no contador e no filtro das listas de contas a pagar e a receber.', 1, N''),
+        ('FIN_LISTA_SITUACAO_INICIAL', N'EM_ABERTO', 'TEXTO',
+         N'Situação já escolhida ao abrir as listas de contas a pagar e a receber (TODAS = sem filtro).', 1, N'EM_ABERTO;VENCIDA;HOJE;A_VENCER;TODAS'),
+        ('FIN_LISTA_VISAO_INICIAL', N'PARCELA', 'TEXTO',
+         N'Visão ao abrir as listas: PARCELA (uma linha por vencimento) ou LANCAMENTO (uma linha por lançamento).', 1, N'PARCELA;LANCAMENTO'),
+        ('FIN_LISTA_OCULTA_CANCELADAS', N'S', 'SN',
+         N'S = a situação "Todas" não mostra as parcelas canceladas (aparecem só escolhendo "Cancelada").', 1, N'')
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, NIVEL, OPCOES);
 
 INSERT INTO SIS.Parametro (CHAVE, VALOR, VALOR_PADRAO, TIPO, DESCRICAO, ID_MODULO, EDITAVEL_ADMIN, NIVEL_MINIMO, OPCOES)

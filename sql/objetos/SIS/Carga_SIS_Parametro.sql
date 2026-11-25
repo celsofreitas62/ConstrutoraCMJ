@@ -48,6 +48,8 @@
     v2.3 (25/11/2026) - Etapa 04e: CENTRO_ENCERRADO_BLOQUEIA (lançamento novo em
                         centro de custo encerrado: S = bloqueia, N = só avisa) e
                         SELETOR_LIMITE (máximo de linhas nas escolhas com busca).
+    v2.4 (25/11/2026) - Etapa 04f2a: FILTRO_SALVO_MAX (filtros salvos por
+                        usuário em cada lista).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -185,7 +187,9 @@ FROM (VALUES
         ('CENTRO_ENCERRADO_BLOQUEIA', N'S', 'SN',
          N'Lançamento novo com data depois do encerramento do centro de custo (obra entregue): S = bloqueia; N = só avisa.', 'CAD', 1),
         ('SELETOR_LIMITE', N'50', 'INTEIRO',
-         N'Máximo de linhas mostradas nas escolhas com busca (conta do plano, centro de custo, conta bancária).', 'CAD', 0)
+         N'Máximo de linhas mostradas nas escolhas com busca (conta do plano, centro de custo, conta bancária).', 'CAD', 0),
+        ('FILTRO_SALVO_MAX', N'20', 'INTEIRO',
+         N'Quantos filtros salvos cada usuário pode ter em cada lista (ex.: "Vencidos da CMJ" em Contas a receber).', 'SIS', 1)
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, MODULO, EDITAVEL_ADMIN)
 INNER JOIN SIS.Modulo m ON m.CODIGO = v.MODULO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Parametro p WHERE p.CHAVE = v.CHAVE);

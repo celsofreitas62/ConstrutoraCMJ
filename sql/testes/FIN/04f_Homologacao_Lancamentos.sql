@@ -5,7 +5,7 @@
                 lixeira, lista, ficha, sugestões, escolhas com busca e
                 parâmetros de uso (nível mínimo e opções).
   Autor       : Celso de Freitas / Refatorado: Claude
-  Criação     : 25/11/2026 (v1.0). Roda no SISTEMACMJ_LOCAL e no banco do MASTER
+  Criação     : 25/11/2026 (v1.0). v1.1 (25/11/2026, 04f2a): 23 parâmetros FIN; canceladas contadas na lista. Roda no SISTEMACMJ_LOCAL e no banco do MASTER
                 (no banco sem cadastros, os casos com dados passam direto).
   Observação  : não muda nada (tudo desfeito com ROLLBACK). Datas calculadas a
                 partir de hoje, para o teste valer em qualquer dia.
@@ -45,7 +45,7 @@ INSERT @r SELECT N'tabela SIS.Aviso_Confirmado', N'1', CAST(COUNT(*) AS NVARCHAR
 INSERT @r SELECT N'colunas novas de FIN.Lancamento', N'6', CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.columns WHERE object_id = OBJECT_ID('FIN.Lancamento')
          AND name IN ('ATIVO', 'DT_EXCLUSAO', 'USUARIO_EXCLUSAO', 'DT_CANCELAMENTO', 'USUARIO_CANCELAMENTO', 'MOTIVO_CANCELAMENTO');
 INSERT @r SELECT N'colunas NIVEL_MINIMO e OPCOES em SIS.Parametro', N'2', CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.columns WHERE object_id = OBJECT_ID('SIS.Parametro') AND name IN ('NIVEL_MINIMO', 'OPCOES');
-INSERT @r SELECT N'parâmetros FIN da 04f', N'19', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE CHAVE LIKE 'FIN[_]%' AND NIVEL_MINIMO = 1;
+INSERT @r SELECT N'parâmetros FIN da 04f e 04f2a', N'23', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE CHAVE LIKE 'FIN[_]%' AND NIVEL_MINIMO = 1;
 INSERT @r SELECT N'regras com opções AVISO;BLOQUEIO;NAO', N'7', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE OPCOES = N'AVISO;BLOQUEIO;NAO';
 INSERT @r SELECT N'telas FIN_PAGAR e FIN_RECEBER com 8 ações cada', N'16', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM WHERE i.CODIGO IN ('FIN_PAGAR', 'FIN_RECEBER');
 INSERT @r SELECT N'tela Parâmetros de uso (não exclusiva)', N'0', ISNULL((SELECT CAST(EXCLUSIVO_GERAL AS NVARCHAR(1)) FROM SIS.Item WHERE CODIGO = 'SIS_PARAMETRO_USO'), N'-');
@@ -59,6 +59,7 @@ INSERT @r SELECT N'nível de regra com valor estranho vale AVISO', N'AVISO', FIN
 BEGIN TRAN;
 UPDATE SIS.Modulo SET HABILITADO = 1 WHERE CODIGO IN ('CAD', 'BANCO', 'FIN') AND HABILITADO = 0;
 UPDATE SIS.Item SET HABILITADO = 1 WHERE CODIGO IN ('FIN_PAGAR', 'FIN_RECEBER', 'CAD_PESSOA') AND HABILITADO = 0;
+UPDATE SIS.Parametro SET VALOR = N'N' WHERE CHAVE = 'FIN_LISTA_OCULTA_CANCELADAS'; -- as listas deste teste contam também as canceladas (04f2a)
 -- o perfil Financeiro (usuário teste.tela04a) recebe as ações da tela, menos LANCAR_RETROATIVO
 INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO)
 SELECT u.ID_PERFIL, ia.ID_ITEM_ACAO
