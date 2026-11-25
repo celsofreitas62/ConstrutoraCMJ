@@ -682,6 +682,291 @@ RETURN
 GO
 
 -- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Parceiro_Tipo_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Parceiro_Tipo_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Lista os tipos de parceiro (tela Tipos de parceiro e filtros
+                das telas de Parceiros), com a quantidade de parceiros ativos
+                de cada tipo. Não mostra o que está na lixeira.
+                Permissão: VER em CAD_PARCEIRO_TIPO ou em CAD_PESSOA (a ficha do
+                parceiro precisa da lista para marcar os tipos).
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+
+  Homologação (LOCAL):
+    -- EXEC CAD.CAD_Parceiro_Tipo_Listar @IdUsuario = 2;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Parceiro_Tipo_Listar]
+    @IdUsuario      INT,
+    @Busca          NVARCHAR(60) = NULL,
+    @SomenteAtivos  BIT          = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PARCEIRO_TIPO', 'VER') = 0
+       AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PESSOA', 'VER') = 0
+    BEGIN
+        SELECT TOP (0) CAST(NULL AS INT) AS ID_PARCEIRO_TIPO;
+        RETURN;
+    END;
+
+    SET @Busca = NULLIF(LTRIM(RTRIM(ISNULL(@Busca, N''))), N'');
+
+    SELECT t.ID_PARCEIRO_TIPO, t.CODIGO, t.DESCRICAO, t.SISTEMA, t.ORDEM, t.ATIVO,
+           ISNULL(q.QTD, 0) AS QTD_PARCEIROS
+    FROM CAD.Parceiro_Tipo t
+    OUTER APPLY (SELECT COUNT(*) AS QTD
+                 FROM CAD.Pessoa_Tipo x
+                 INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = x.ID_PESSOA AND p.ATIVO = 1
+                 WHERE x.ID_PARCEIRO_TIPO = t.ID_PARCEIRO_TIPO AND x.ATIVO = 1) q
+    WHERE t.DT_EXCLUSAO IS NULL
+      AND (@SomenteAtivos = 0 OR t.ATIVO = 1)
+      AND (@Busca IS NULL OR t.DESCRICAO LIKE N'%' + @Busca + N'%' OR t.CODIGO LIKE @Busca + '%')
+    ORDER BY t.ORDEM, t.DESCRICAO;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Parceiro_Tipo_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Parceiro_Tipo_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Inclui (@IdParceiroTipo NULL) ou altera um tipo de parceiro.
+                Código: letras, números e "_" (maiúsculas), único. Tipos do
+                sistema (SISTEMA = 1): só a descrição e a ordem mudam (código e
+                situação não). Desativar um tipo em uso: avisa quantos
+                parceiros têm o tipo (eles continuam com ele).
+                Permissão: INCLUIR ou ALTERAR em CAD_PARCEIRO_TIPO (desativar
+                ou reativar: DESATIVAR). Devolve SUCESSO, MENSAGEM, ID.
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+
+  Homologação (LOCAL):
+    -- EXEC CAD.CAD_Parceiro_Tipo_Gravar @IdUsuario = 2, @Codigo = 'EMPREITEIRO', @Descricao = N'Empreiteiro';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Parceiro_Tipo_Gravar]
+    @IdUsuario        INT,
+    @IdParceiroTipo   INT           = NULL,
+    @Codigo           VARCHAR(20),
+    @Descricao        NVARCHAR(60),
+    @Ordem            INT           = NULL,
+    @Ativo            BIT           = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[CAD].[CAD_Parceiro_Tipo_Gravar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa     NVARCHAR(400) = N'';
+    DECLARE @Usuario    NVARCHAR(100) = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+    DECLARE @Sistema    BIT           = 0;
+    DECLARE @CodigoAtual VARCHAR(20);
+    DECLARE @AtivoAtual BIT;
+    DECLARE @EmUso      INT           = 0;
+
+    BEGIN TRY
+        SET @Codigo    = UPPER(LTRIM(RTRIM(ISNULL(@Codigo, ''))));
+        SET @Descricao = LTRIM(RTRIM(ISNULL(@Descricao, N'')));
+        SET @Ativo     = ISNULL(@Ativo, 1);
+
+        SELECT @Sistema = t.SISTEMA, @CodigoAtual = t.CODIGO, @AtivoAtual = t.ATIVO
+        FROM CAD.Parceiro_Tipo t WHERE t.ID_PARCEIRO_TIPO = @IdParceiroTipo;
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PARCEIRO_TIPO', CASE WHEN @IdParceiroTipo IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
+            SET @Recusa = N'Você não tem permissão para gravar tipos de parceiro.';
+        IF @Recusa = N'' AND @IdParceiroTipo IS NOT NULL AND @CodigoAtual IS NULL
+            SET @Recusa = N'Tipo de parceiro não encontrado.';
+        IF @Recusa = N'' AND @IdParceiroTipo IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Parceiro_Tipo', @IdParceiroTipo) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
+        IF @Recusa = N'' AND @Sistema = 1 AND @Codigo <> @CodigoAtual
+            SET @Recusa = N'O código de um tipo do sistema não pode ser mudado (só a descrição e a ordem).';
+        IF @Recusa = N'' AND @Sistema = 1 AND @Ativo = 0
+            SET @Recusa = N'Um tipo do sistema não pode ser desativado.';
+        IF @Recusa = N'' AND (@Codigo = '' OR @Codigo LIKE '%[^A-Z0-9_]%' COLLATE Latin1_General_BIN2)
+            SET @Recusa = N'Código inválido: use letras sem acento, números e "_" (ex.: EMPREITEIRO).';
+        IF @Recusa = N'' AND @Descricao = N''
+            SET @Recusa = N'Informe a descrição.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Parceiro_Tipo t WHERE t.CODIGO = @Codigo AND t.ID_PARCEIRO_TIPO <> ISNULL(@IdParceiroTipo, 0))
+            SET @Recusa = N'Já existe um tipo de parceiro com este código (confira também a lixeira).';
+        IF @Recusa = N'' AND @IdParceiroTipo IS NOT NULL AND @Ativo <> @AtivoAtual
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PARCEIRO_TIPO', 'DESATIVAR') = 0
+            SET @Recusa = N'Você não tem permissão para desativar ou reativar tipos de parceiro.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdParceiroTipo AS ID;
+            RETURN;
+        END;
+
+        IF @IdParceiroTipo IS NOT NULL AND @Ativo = 0 AND @AtivoAtual = 1
+            SELECT @EmUso = COUNT(*) FROM CAD.Pessoa_Tipo x WHERE x.ID_PARCEIRO_TIPO = @IdParceiroTipo AND x.ATIVO = 1;
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        IF @IdParceiroTipo IS NULL
+        BEGIN
+            INSERT INTO CAD.Parceiro_Tipo (CODIGO, DESCRICAO, SISTEMA, ORDEM, ATIVO, USUARIO_CRIACAO)
+            VALUES (@Codigo, @Descricao, 0, ISNULL(@Ordem, 100), @Ativo, @Usuario);
+            SET @IdParceiroTipo = SCOPE_IDENTITY();
+        END
+        ELSE
+            UPDATE CAD.Parceiro_Tipo
+               SET CODIGO = @Codigo, DESCRICAO = @Descricao, ORDEM = ISNULL(@Ordem, ORDEM), ATIVO = @Ativo,
+                   DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+             WHERE ID_PARCEIRO_TIPO = @IdParceiroTipo;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(N'Tipo de parceiro gravado.'
+                    + CASE WHEN @EmUso > 0 THEN N' Atenção: ' + CONVERT(NVARCHAR(10), @EmUso)
+                                + N' parceiro(s) continuam com este tipo; ele só não aparece mais para novas marcações.' ELSE N'' END
+                    AS NVARCHAR(400)) AS MENSAGEM,
+               @IdParceiroTipo AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar o tipo de parceiro. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, @IdParceiroTipo AS ID;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/CAD/Carga_CAD_Item.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : carga de [SIS].[Item] e [SIS].[Item_Acao] dos módulos CAD e BANCO
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Telas da etapa 03a no menu: Cadastros (Empresas, Pessoas, Centros de
+                custo, Plano de contas) e Bancos (Contas bancárias, Bancos), com as
+                ações de cada tela. Só insere o que falta (regra 39). Telas de módulo
+                novo nascem DESABILITADAS (HABILITADO = 0): o administrador geral liga
+                na tela "Módulos e telas" quando quiser liberar. Acertado também em
+                item já existente: TABELAS_DA_TELA (itens só mudam por carga).
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): ações DESATIVAR (o antigo Excluir) e
+                        DESFAZER nas telas de cadastro; DESATIVAR nasce com
+                        quem já tinha EXCLUIR (perfil e exceção do usuário),
+                        porque até aqui o Excluir só desativava.
+    v1.2 (25/11/2026) - Etapa 04d (P12): tela CAD_PARCEIRO_TIPO (Tipos de
+                        parceiro) e CAD.Pessoa_Tipo nas tabelas da tela CAD_PESSOA.
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+DROP TABLE IF EXISTS #CargaItem;
+
+SELECT v.MODULO, v.CODIGO, v.NOME, v.CAMINHO, v.ORDEM, v.TABELAS
+INTO #CargaItem
+FROM (VALUES
+        (CAST('CAD' AS VARCHAR(10)), CAST('CAD_EMPRESA' AS VARCHAR(40)), CAST(N'Empresas' AS NVARCHAR(80)), CAST('cad/empresas.html' AS VARCHAR(200)),
+         CAST(10 AS SMALLINT), CAST('CAD.Empresa' AS VARCHAR(500))),
+        ('CAD',   'CAD_PESSOA',       N'Pessoas',          'cad/pessoas.html',        20, 'CAD.Pessoa,CAD.Pessoa_Contato,CAD.Pessoa_Vinculo,CAD.Pessoa_Dado_Bancario,CAD.Pessoa_Tipo'),
+        ('CAD',   'CAD_PARCEIRO_TIPO', N'Tipos de parceiro', 'cad/parceiro-tipos.html', 25, 'CAD.Parceiro_Tipo'),
+        ('CAD',   'CAD_CENTRO_CUSTO', N'Centros de custo', 'cad/centros-custo.html',  30, 'CAD.Centro_Custo'),
+        ('CAD',   'CAD_PLANO_CONTA',  N'Plano de contas',  'cad/plano-contas.html',   40, 'CAD.Plano_Grupo,CAD.Plano_Subgrupo,CAD.Plano_Conta'),
+        ('BANCO', 'BANCO_CONTA',      N'Contas bancárias', 'banco/contas.html',       10, 'BANCO.Conta'),
+        ('BANCO', 'BANCO_BANCO',      N'Bancos',           'banco/bancos.html',       20, 'BANCO.Banco')
+     ) v (MODULO, CODIGO, NOME, CAMINHO, ORDEM, TABELAS);
+
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, NULL, c.CODIGO, c.NOME, 'TELA', c.CAMINHO, c.ORDEM, 0, 0, c.TABELAS
+FROM #CargaItem c
+INNER JOIN SIS.Modulo m ON m.CODIGO = c.MODULO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = c.CODIGO);
+
+UPDATE i
+   SET i.TABELAS_DA_TELA = c.TABELAS, i.DT_ALTERACAO = SYSDATETIME(), i.USUARIO_ALTERACAO = N'instalacao'
+FROM SIS.Item i
+INNER JOIN #CargaItem c ON c.CODIGO = i.CODIGO
+WHERE i.TABELAS_DA_TELA <> c.TABELAS;
+
+DROP TABLE IF EXISTS #CargaItem;
+GO
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES
+        (CAST('CAD_EMPRESA' AS VARCHAR(40)), CAST('VER' AS VARCHAR(20))),
+        ('CAD_EMPRESA', 'INCLUIR'), ('CAD_EMPRESA', 'ALTERAR'), ('CAD_EMPRESA', 'EXCLUIR'), ('CAD_EMPRESA', 'EXPORTAR'),
+        ('CAD_PESSOA', 'VER'), ('CAD_PESSOA', 'INCLUIR'), ('CAD_PESSOA', 'ALTERAR'), ('CAD_PESSOA', 'EXCLUIR'), ('CAD_PESSOA', 'EXPORTAR'),
+        ('CAD_CENTRO_CUSTO', 'VER'), ('CAD_CENTRO_CUSTO', 'INCLUIR'), ('CAD_CENTRO_CUSTO', 'ALTERAR'), ('CAD_CENTRO_CUSTO', 'EXCLUIR'), ('CAD_CENTRO_CUSTO', 'EXPORTAR'),
+        ('CAD_PLANO_CONTA', 'VER'), ('CAD_PLANO_CONTA', 'INCLUIR'), ('CAD_PLANO_CONTA', 'ALTERAR'), ('CAD_PLANO_CONTA', 'EXCLUIR'), ('CAD_PLANO_CONTA', 'EXPORTAR'),
+        ('BANCO_CONTA', 'VER'), ('BANCO_CONTA', 'INCLUIR'), ('BANCO_CONTA', 'ALTERAR'), ('BANCO_CONTA', 'EXCLUIR'), ('BANCO_CONTA', 'EXPORTAR'),
+        ('BANCO_BANCO', 'VER'), ('BANCO_BANCO', 'INCLUIR'), ('BANCO_BANCO', 'ALTERAR'), ('BANCO_BANCO', 'EXPORTAR'),
+        ('CAD_PARCEIRO_TIPO', 'VER'), ('CAD_PARCEIRO_TIPO', 'INCLUIR'), ('CAD_PARCEIRO_TIPO', 'ALTERAR'), ('CAD_PARCEIRO_TIPO', 'EXCLUIR'),
+        ('CAD_PARCEIRO_TIPO', 'DESATIVAR'), ('CAD_PARCEIRO_TIPO', 'EXPORTAR'), ('CAD_PARCEIRO_TIPO', 'DESFAZER')
+     ) v (ITEM, ACAO)
+INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
+INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+GO
+
+DECLARE @NovosDesativar TABLE (ID_ITEM_ACAO INT NOT NULL, ID_ITEM INT NOT NULL);
+DECLARE @IdExcluir INT = (SELECT a.ID_ACAO FROM SIS.Acao a WHERE a.CODIGO = 'EXCLUIR');
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+OUTPUT inserted.ID_ITEM_ACAO, inserted.ID_ITEM INTO @NovosDesativar (ID_ITEM_ACAO, ID_ITEM)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('CAD_EMPRESA' AS VARCHAR(40))), ('CAD_PESSOA'), ('CAD_CENTRO_CUSTO'), ('CAD_PLANO_CONTA'), ('BANCO_CONTA')) v (ITEM)
+INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
+INNER JOIN SIS.Acao a ON a.CODIGO = 'DESATIVAR'
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+
+-- quem tinha EXCLUIR (que desativava) recebe DESATIVAR, só quando a ação nasce
+INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO, USUARIO_CRIACAO)
+SELECT pp.ID_PERFIL, n.ID_ITEM_ACAO, N'instalacao'
+FROM @NovosDesativar n
+INNER JOIN SIS.Item_Acao ie ON ie.ID_ITEM = n.ID_ITEM AND ie.ID_ACAO = @IdExcluir
+INNER JOIN SIS.Perfil_Permissao pp ON pp.ID_ITEM_ACAO = ie.ID_ITEM_ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao x WHERE x.ID_PERFIL = pp.ID_PERFIL AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+
+INSERT INTO SIS.Usuario_Permissao (ID_USUARIO, ID_ITEM_ACAO, TIPO, USUARIO_CRIACAO)
+SELECT up.ID_USUARIO, n.ID_ITEM_ACAO, up.TIPO, N'instalacao'
+FROM @NovosDesativar n
+INNER JOIN SIS.Item_Acao ie ON ie.ID_ITEM = n.ID_ITEM AND ie.ID_ACAO = @IdExcluir
+INNER JOIN SIS.Usuario_Permissao up ON up.ID_ITEM_ACAO = ie.ID_ITEM_ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Usuario_Permissao x WHERE x.ID_USUARIO = up.ID_USUARIO AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('CAD_EMPRESA' AS VARCHAR(40))), ('CAD_PESSOA'), ('CAD_CENTRO_CUSTO'), ('CAD_PLANO_CONTA'), ('BANCO_CONTA'), ('BANCO_BANCO')) v (ITEM)
+INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
+INNER JOIN SIS.Acao a ON a.CODIGO = 'DESFAZER'
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+GO
+
+-- =============================================================================
 -- Arquivo: sql/objetos/CAD/Carga_CAD_Auditoria_Triggers.sql
 -- =============================================================================
 /*******************************************************************************

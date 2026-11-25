@@ -16,6 +16,8 @@
                         DESFAZER nas telas de cadastro; DESATIVAR nasce com
                         quem já tinha EXCLUIR (perfil e exceção do usuário),
                         porque até aqui o Excluir só desativava.
+    v1.2 (25/11/2026) - Etapa 04d (P12): tela CAD_PARCEIRO_TIPO (Tipos de
+                        parceiro) e CAD.Pessoa_Tipo nas tabelas da tela CAD_PESSOA.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -28,7 +30,8 @@ INTO #CargaItem
 FROM (VALUES
         (CAST('CAD' AS VARCHAR(10)), CAST('CAD_EMPRESA' AS VARCHAR(40)), CAST(N'Empresas' AS NVARCHAR(80)), CAST('cad/empresas.html' AS VARCHAR(200)),
          CAST(10 AS SMALLINT), CAST('CAD.Empresa' AS VARCHAR(500))),
-        ('CAD',   'CAD_PESSOA',       N'Pessoas',          'cad/pessoas.html',        20, 'CAD.Pessoa,CAD.Pessoa_Contato,CAD.Pessoa_Vinculo,CAD.Pessoa_Dado_Bancario'),
+        ('CAD',   'CAD_PESSOA',       N'Pessoas',          'cad/pessoas.html',        20, 'CAD.Pessoa,CAD.Pessoa_Contato,CAD.Pessoa_Vinculo,CAD.Pessoa_Dado_Bancario,CAD.Pessoa_Tipo'),
+        ('CAD',   'CAD_PARCEIRO_TIPO', N'Tipos de parceiro', 'cad/parceiro-tipos.html', 25, 'CAD.Parceiro_Tipo'),
         ('CAD',   'CAD_CENTRO_CUSTO', N'Centros de custo', 'cad/centros-custo.html',  30, 'CAD.Centro_Custo'),
         ('CAD',   'CAD_PLANO_CONTA',  N'Plano de contas',  'cad/plano-contas.html',   40, 'CAD.Plano_Grupo,CAD.Plano_Subgrupo,CAD.Plano_Conta'),
         ('BANCO', 'BANCO_CONTA',      N'Contas bancárias', 'banco/contas.html',       10, 'BANCO.Conta'),
@@ -59,7 +62,9 @@ FROM (VALUES
         ('CAD_CENTRO_CUSTO', 'VER'), ('CAD_CENTRO_CUSTO', 'INCLUIR'), ('CAD_CENTRO_CUSTO', 'ALTERAR'), ('CAD_CENTRO_CUSTO', 'EXCLUIR'), ('CAD_CENTRO_CUSTO', 'EXPORTAR'),
         ('CAD_PLANO_CONTA', 'VER'), ('CAD_PLANO_CONTA', 'INCLUIR'), ('CAD_PLANO_CONTA', 'ALTERAR'), ('CAD_PLANO_CONTA', 'EXCLUIR'), ('CAD_PLANO_CONTA', 'EXPORTAR'),
         ('BANCO_CONTA', 'VER'), ('BANCO_CONTA', 'INCLUIR'), ('BANCO_CONTA', 'ALTERAR'), ('BANCO_CONTA', 'EXCLUIR'), ('BANCO_CONTA', 'EXPORTAR'),
-        ('BANCO_BANCO', 'VER'), ('BANCO_BANCO', 'INCLUIR'), ('BANCO_BANCO', 'ALTERAR'), ('BANCO_BANCO', 'EXPORTAR')
+        ('BANCO_BANCO', 'VER'), ('BANCO_BANCO', 'INCLUIR'), ('BANCO_BANCO', 'ALTERAR'), ('BANCO_BANCO', 'EXPORTAR'),
+        ('CAD_PARCEIRO_TIPO', 'VER'), ('CAD_PARCEIRO_TIPO', 'INCLUIR'), ('CAD_PARCEIRO_TIPO', 'ALTERAR'), ('CAD_PARCEIRO_TIPO', 'EXCLUIR'),
+        ('CAD_PARCEIRO_TIPO', 'DESATIVAR'), ('CAD_PARCEIRO_TIPO', 'EXPORTAR'), ('CAD_PARCEIRO_TIPO', 'DESFAZER')
      ) v (ITEM, ACAO)
 INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
 INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
