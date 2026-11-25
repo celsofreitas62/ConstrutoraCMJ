@@ -21,6 +21,7 @@
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - Contagens de tabelas e triggers sem as tabelas do BANCO
                         criadas na 03c (movimento e extrato).
+    v1.3 (25/11/2026) - Etapa 04d: colunas novas do CAD_Pessoa_Obter/Listar e limpeza de CAD.Pessoa_Tipo.
     v1.2 (22/11/2026) - Etapa 04b: coluna NA_LIXEIRA do CAD_Pessoa_Obter e ações
                         DESATIVAR (5 telas) e DESFAZER (6 telas): 40.
 
@@ -44,6 +45,7 @@ UPDATE CAD.Empresa SET ID_CONTA_BANCARIA_PADRAO = NULL WHERE RAZAO_SOCIAL LIKE N
 DELETE d FROM CAD.Pessoa_Dado_Bancario d INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = d.ID_PESSOA WHERE p.NOME LIKE N'HML 03a%';
 DELETE c FROM CAD.Pessoa_Contato c INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = c.ID_PESSOA WHERE p.NOME LIKE N'HML 03a%';
 DELETE v FROM CAD.Pessoa_Vinculo v INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = v.ID_PESSOA OR p.ID_PESSOA = v.ID_PESSOA_VINCULADA WHERE p.NOME LIKE N'HML 03a%';
+DELETE x FROM CAD.Pessoa_Tipo x INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = x.ID_PESSOA WHERE p.NOME LIKE N'HML 03a%';
 DELETE FROM CAD.Pessoa WHERE NOME LIKE N'HML 03a%';
 DELETE FROM CAD.Centro_Custo WHERE CODIGO LIKE 'HML-%';
 DELETE c FROM BANCO.Conta c INNER JOIN CAD.Empresa e ON e.ID_EMPRESA = c.ID_EMPRESA WHERE e.RAZAO_SOCIAL LIKE N'HML 03a%';
@@ -66,13 +68,16 @@ CREATE TABLE #Ret      (SUCESSO BIT, MENSAGEM NVARCHAR(400), ID INT);
 CREATE TABLE #Hab      (TIPO CHAR(1), CODIGO VARCHAR(40), HABILITADO BIT);
 CREATE TABLE #PesLista (ID_PESSOA INT, TIPO_PESSOA CHAR(1), NOME NVARCHAR(150), NOME_FANTASIA NVARCHAR(100), DOCUMENTO VARCHAR(20),
                         CLIENTE BIT, FORNECEDOR BIT, FUNCIONARIO BIT, CORRETOR BIT, CIDADE NVARCHAR(60), UF CHAR(2),
-                        EMAIL_PRINCIPAL NVARCHAR(256), TELEFONE_PRINCIPAL NVARCHAR(256), ATIVO BIT, DT_ALTERACAO DATETIME2(0), USUARIO_ALTERACAO NVARCHAR(100));
+                        EMAIL_PRINCIPAL NVARCHAR(256), TELEFONE_PRINCIPAL NVARCHAR(256), ATIVO BIT, DT_ALTERACAO DATETIME2(0), USUARIO_ALTERACAO NVARCHAR(100),
+                        TIPOS NVARCHAR(1000), APTO_COBRANCA BIT, PENDENCIA_COBRANCA NVARCHAR(400), TITULO_ABERTO BIT);
 CREATE TABLE #PesObter (ID_PESSOA INT, TIPO_PESSOA CHAR(1), NOME NVARCHAR(150), NOME_FANTASIA NVARCHAR(100), CPF_CNPJ VARCHAR(14), DOCUMENTO_FORMATADO VARCHAR(20),
                         RG VARCHAR(20), ORGAO_EMISSOR VARCHAR(20), INSCRICAO_ESTADUAL VARCHAR(20), INSCRICAO_MUNICIPAL VARCHAR(20), DT_NASCIMENTO DATE,
                         NACIONALIDADE NVARCHAR(40), PROFISSAO NVARCHAR(60), ESTADO_CIVIL VARCHAR(15), REGIME_BENS VARCHAR(25), CEP VARCHAR(8),
                         LOGRADOURO NVARCHAR(150), NUMERO NVARCHAR(20), COMPLEMENTO NVARCHAR(60), BAIRRO NVARCHAR(60), CIDADE NVARCHAR(60), UF CHAR(2),
                         CLIENTE BIT, FORNECEDOR BIT, FUNCIONARIO BIT, CORRETOR BIT, OBSERVACAO NVARCHAR(2000), ATIVO BIT, CODIGO_ACCESS INT,
                         DT_CRIACAO DATETIME2(0), USUARIO_CRIACAO NVARCHAR(100), DT_ALTERACAO DATETIME2(0), USUARIO_ALTERACAO NVARCHAR(100), NA_LIXEIRA BIT,
+                        ID_PLANO_CONTA_PADRAO INT, ID_CENTRO_CUSTO_PADRAO INT, PLANO_CONTA_PADRAO NVARCHAR(200), CENTRO_CUSTO_PADRAO NVARCHAR(200),
+                        APTO_COBRANCA BIT, PENDENCIA_COBRANCA NVARCHAR(400), TIPOS NVARCHAR(MAX),
                         DOCUMENTO_REPETIDO INT, CONTATOS NVARCHAR(MAX), VINCULOS NVARCHAR(MAX), DADOS_BANCARIOS NVARCHAR(MAX));
 CREATE TABLE #CcLista  (ID_CENTRO_CUSTO INT, CODIGO VARCHAR(20), DESCRICAO NVARCHAR(100), TIPO VARCHAR(15), CONTABIL BIT, ID_EMPRESA INT,
                         EMPRESA_RAZAO_SOCIAL NVARCHAR(150), EMPRESA_NOME_FANTASIA NVARCHAR(100), ID_CONTA_BANCARIA_PADRAO INT, CONTA_PADRAO_DESCRICAO NVARCHAR(60),
@@ -111,17 +116,17 @@ EXEC SIS.SIS_Contexto_Gravar @IdUsuario = @IdCelso, @Estacao = N'HOMOLOGACAO-03A
 
 -- 1) Objetos e cargas
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
- (N'Tabelas CAD + BANCO', N'11', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.tables t WHERE SCHEMA_NAME(t.schema_id) IN ('CAD', 'BANCO')
+ (N'Tabelas CAD + BANCO (14 desde a 04d)', N'14', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.tables t WHERE SCHEMA_NAME(t.schema_id) IN ('CAD', 'BANCO')
                                                     AND t.name NOT IN ('Movimento', 'Extrato_Arquivo', 'Extrato_Linha')))),
- (N'Procedures CAD + BANCO', N'20', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.procedures p WHERE SCHEMA_NAME(p.schema_id) IN ('CAD', 'BANCO')))),
+ (N'Procedures CAD + BANCO (24 desde a 04d)', N'24', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.procedures p WHERE SCHEMA_NAME(p.schema_id) IN ('CAD', 'BANCO')))),
  (N'Functions + view do CAD', N'3|1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.objects o WHERE SCHEMA_NAME(o.schema_id) = 'CAD' AND o.type = 'FN')) + N'|'
                                     + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.views v WHERE SCHEMA_NAME(v.schema_id) = 'CAD'))),
- (N'Triggers de auditoria CAD + BANCO', N'11', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t INNER JOIN sys.tables b ON b.object_id = t.parent_id
+ (N'Triggers de auditoria CAD + BANCO (13 desde a 04d)', N'13', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t INNER JOIN sys.tables b ON b.object_id = t.parent_id
                                                                       WHERE SCHEMA_NAME(b.schema_id) IN ('CAD', 'BANCO')
                                                                         AND b.name NOT IN ('Movimento', 'Extrato_Arquivo', 'Extrato_Linha')))),
  (N'FK da conta padrão da empresa', N'1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.foreign_keys f WHERE f.name = 'FK_Empresa_Conta_Padrao'))),
  (N'Carga de bancos (Sicredi 748 e Itaú 341)', N'Sicredi|Itaú Unibanco', (SELECT b.NOME FROM BANCO.Banco b WHERE b.CODIGO = '748') + N'|' + (SELECT b.NOME FROM BANCO.Banco b WHERE b.CODIGO = '341')),
- (N'Telas novas no menu (CAD 4, BANCO 2)', N'4|2', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Item i INNER JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO WHERE m.CODIGO = 'CAD' AND i.TIPO = 'TELA')) + N'|'
+ (N'Telas no menu (CAD 5 desde a 04d, BANCO 2)', N'5|2', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Item i INNER JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO WHERE m.CODIGO = 'CAD' AND i.TIPO = 'TELA')) + N'|'
                                                 + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Item i INNER JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO WHERE m.CODIGO = 'BANCO' AND i.TIPO = 'TELA'))),
  (N'Ações das 6 telas (29 + DESATIVAR e DESFAZER da 04b)', N'40', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM
                                                       WHERE i.CODIGO IN ('CAD_EMPRESA', 'CAD_PESSOA', 'CAD_CENTRO_CUSTO', 'CAD_PLANO_CONTA', 'BANCO_CONTA', 'BANCO_BANCO'))));
@@ -228,7 +233,8 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Reativar o centro de custo
 INSERT INTO #Ret EXEC CAD.CAD_Pessoa_Gravar @IdUsuario = @IdCelso, @TipoPessoa = 'F', @Nome = N'HML 03a Maria', @CpfCnpj = '529.982.247-24', @Cliente = 1;
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Pessoa com CPF inválido', N'0|CPF inválido. Confira os números.', CONVERT(NVARCHAR(1), SUCESSO) + N'|' + MENSAGEM FROM #Ret; DELETE FROM #Ret;
 INSERT INTO #Ret EXEC CAD.CAD_Pessoa_Gravar @IdUsuario = @IdCelso, @TipoPessoa = 'F', @Nome = N'HML 03a Maria', @CpfCnpj = '529.982.247-25';
-INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Pessoa sem nenhum papel', N'0', CONVERT(NVARCHAR(1), SUCESSO) FROM #Ret; DELETE FROM #Ret;
+INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Pessoa sem nenhum papel nasce N/A (04d)', N'1|NA', CONVERT(NVARCHAR(1), r.SUCESSO) + N'|' + ISNULL((SELECT STRING_AGG(t.CODIGO, ',') FROM CAD.Pessoa_Tipo x JOIN CAD.Parceiro_Tipo t ON t.ID_PARCEIRO_TIPO = x.ID_PARCEIRO_TIPO WHERE x.ID_PESSOA = r.ID AND x.ATIVO = 1), N'') FROM #Ret r;
+DELETE x FROM CAD.Pessoa_Tipo x INNER JOIN #Ret r ON r.ID = x.ID_PESSOA; DELETE p FROM CAD.Pessoa p INNER JOIN #Ret r ON r.ID = p.ID_PESSOA; DELETE FROM #Ret;
 
 SET @QtdAntes = (SELECT COUNT(*) FROM CAD.Pessoa p WHERE p.NOME LIKE N'HML 03a%');
 INSERT INTO #Ret EXEC CAD.CAD_Pessoa_Gravar @IdUsuario = @IdCelso, @TipoPessoa = 'F', @Nome = N'HML 03a Maria', @CpfCnpj = '529.982.247-25', @Cliente = 1,
@@ -372,7 +378,7 @@ INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) SELECT N'Nível inválido', N'0', C
 
 -- 11) Auditoria e log de erros
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO)
-SELECT N'Auditoria: inclusão das pessoas e alteração do celular (ATIVO)', N'2|S|S',
+SELECT N'Auditoria: inclusão das pessoas (3 desde a 04d: a do caso 41 também) e alteração do celular (ATIVO)', N'3|S|S',
        CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Auditoria a WHERE a.ID_AUDITORIA > @AudInicio AND a.TABELA = N'CAD.Pessoa' AND a.OPERACAO = 'I')) + N'|'
      + CASE WHEN EXISTS (SELECT 1 FROM SIS.Auditoria a WHERE a.ID_AUDITORIA > @AudInicio AND a.TABELA = N'CAD.Pessoa_Contato' AND a.OPERACAO = 'A' AND a.CAMPO = N'ATIVO') THEN N'S' ELSE N'N' END + N'|'
      + CASE WHEN EXISTS (SELECT 1 FROM SIS.Auditoria a WHERE a.ID_AUDITORIA > @AudInicio AND a.TABELA = N'CAD.Empresa' AND a.USUARIO = N'celso') THEN N'S' ELSE N'N' END;
@@ -384,6 +390,7 @@ UPDATE CAD.Empresa SET ID_CONTA_BANCARIA_PADRAO = NULL WHERE RAZAO_SOCIAL LIKE N
 DELETE d FROM CAD.Pessoa_Dado_Bancario d INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = d.ID_PESSOA WHERE p.NOME LIKE N'HML 03a%';
 DELETE c FROM CAD.Pessoa_Contato c INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = c.ID_PESSOA WHERE p.NOME LIKE N'HML 03a%';
 DELETE v FROM CAD.Pessoa_Vinculo v INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = v.ID_PESSOA OR p.ID_PESSOA = v.ID_PESSOA_VINCULADA WHERE p.NOME LIKE N'HML 03a%';
+DELETE x FROM CAD.Pessoa_Tipo x INNER JOIN CAD.Pessoa p ON p.ID_PESSOA = x.ID_PESSOA WHERE p.NOME LIKE N'HML 03a%';
 DELETE FROM CAD.Pessoa WHERE NOME LIKE N'HML 03a%';
 DELETE FROM CAD.Centro_Custo WHERE CODIGO LIKE 'HML-%';
 DELETE c FROM BANCO.Conta c INNER JOIN CAD.Empresa e ON e.ID_EMPRESA = c.ID_EMPRESA WHERE e.RAZAO_SOCIAL LIKE N'HML 03a%';

@@ -32,7 +32,7 @@ DECLARE @Hoje DATE = CAST(SYSDATETIME() AS DATE);
 INSERT @r SELECT N'parâmetro LIXEIRA_DIAS_GUARDA (padrão 90)', N'90', SIS.fn_SIS_Parametro('LIXEIRA_DIAS_GUARDA');
 INSERT @r SELECT N'parâmetros da lixeira (5)', N'5', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE CHAVE LIKE 'LIXEIRA[_]%';
 INSERT @r SELECT N'prazo que vale para Pessoas', N'90', CAST(SIS.fn_SIS_Lixeira_Dias(N'CAD.Pessoa') AS NVARCHAR(5));
-INSERT @r SELECT N'tabelas configuradas para a lixeira', N'7', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Tabela_Config WHERE PERMITE_LIXEIRA = 1;
+INSERT @r SELECT N'tabelas configuradas para a lixeira (8 desde a 04d)', N'8', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Tabela_Config WHERE PERMITE_LIXEIRA = 1;
 INSERT @r SELECT N'tela da tabela CAD.Plano_Grupo', N'CAD_PLANO_CONTA', SIS.fn_SIS_Item_Da_Tabela(N'CAD.Plano_Grupo');
 INSERT @r SELECT N'tela Lixeira cadastrada', N'1', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Item WHERE CODIGO = 'SIS_LIXEIRA';
 INSERT @r SELECT N'rotina LIXEIRA_LIMPEZA cadastrada e ativa', N'1', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Rotina WHERE CODIGO = 'LIXEIRA_LIMPEZA' AND ATIVA = 1;

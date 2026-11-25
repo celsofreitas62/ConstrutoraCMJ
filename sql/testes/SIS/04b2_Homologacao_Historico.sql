@@ -16,7 +16,7 @@ DECLARE @Claude INT = (SELECT ID_USUARIO FROM SIS.Usuario WHERE LOGIN = 'claude'
 DECLARE @Celso INT = (SELECT ID_USUARIO FROM SIS.Usuario WHERE LOGIN = 'celso');
 DECLARE @P INT;
 
-INSERT @r SELECT N'versão do banco', N'2.1', (SELECT TOP 1 VERSAO FROM SIS.Versao_Banco ORDER BY ID_VERSAO_BANCO DESC);
+INSERT @r SELECT N'versão do banco 2.1 ou mais nova', N'S', CASE WHEN (SELECT TOP 1 VERSAO FROM SIS.Versao_Banco ORDER BY ID_VERSAO_BANCO DESC) >= '2.1' THEN N'S' ELSE N'N' END;
 INSERT @r SELECT N'Registro_Listar devolve TRANSACAO', N'1', CAST(COUNT(*) AS NVARCHAR(5))
        FROM sys.dm_exec_describe_first_result_set(N'EXEC SIS.SIS_Auditoria_Registro_Listar @IdUsuario = 1, @Item = ''CAD_PESSOA'', @Tabela = N''CAD.Pessoa'', @IdRegistro = 1', NULL, 0)
        WHERE name = 'TRANSACAO';
