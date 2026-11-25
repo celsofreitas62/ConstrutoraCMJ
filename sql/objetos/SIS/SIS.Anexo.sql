@@ -19,6 +19,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (25/11/2026) - Etapa 04d (P12): DT_VALIDADE opcional (certidões, contratos).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -59,4 +60,8 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[SIS].[Anexo]') AND i.name = N'IX_Anexo_REFERENCIA')
     CREATE NONCLUSTERED INDEX IX_Anexo_REFERENCIA ON [SIS].[Anexo] (TABELA_REFERENCIA, ID_REFERENCIA, SITUACAO);
+GO
+
+IF COL_LENGTH(N'SIS.Anexo', N'DT_VALIDADE') IS NULL
+    ALTER TABLE [SIS].[Anexo] ADD DT_VALIDADE DATE NULL;
 GO

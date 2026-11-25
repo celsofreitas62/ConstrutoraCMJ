@@ -14,6 +14,7 @@
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
                         (lixeira: preenchidas = registro na lixeira).
+    v1.2 (25/11/2026) - Etapa 04d: ID_PLANO_CONTA_PADRAO e ID_CENTRO_CUSTO_PADRAO (P17, vêm no lançamento).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -78,4 +79,17 @@ IF COL_LENGTH(N'CAD.Pessoa', N'DT_EXCLUSAO') IS NULL
 GO
 IF COL_LENGTH(N'CAD.Pessoa', N'USUARIO_EXCLUSAO') IS NULL
     ALTER TABLE [CAD].[Pessoa] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
+
+IF COL_LENGTH(N'CAD.Pessoa', N'ID_PLANO_CONTA_PADRAO') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD ID_PLANO_CONTA_PADRAO INT NULL;
+GO
+IF COL_LENGTH(N'CAD.Pessoa', N'ID_CENTRO_CUSTO_PADRAO') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD ID_CENTRO_CUSTO_PADRAO INT NULL;
+GO
+IF OBJECT_ID(N'[CAD].[FK_Pessoa_Plano_Conta_Padrao]', N'F') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD CONSTRAINT FK_Pessoa_Plano_Conta_Padrao FOREIGN KEY (ID_PLANO_CONTA_PADRAO) REFERENCES [CAD].[Plano_Conta] (ID_PLANO_CONTA);
+GO
+IF OBJECT_ID(N'[CAD].[FK_Pessoa_Centro_Custo_Padrao]', N'F') IS NULL
+    ALTER TABLE [CAD].[Pessoa] ADD CONSTRAINT FK_Pessoa_Centro_Custo_Padrao FOREIGN KEY (ID_CENTRO_CUSTO_PADRAO) REFERENCES [CAD].[Centro_Custo] (ID_CENTRO_CUSTO);
 GO
