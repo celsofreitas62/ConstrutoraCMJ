@@ -20,6 +20,8 @@
     v1.1 (17/11/2026) - CNPJ_COMPRAS (CNPJ para notas de compra e DDA), etapa 03c2.
     v1.2 (22/11/2026) - Etapa 04b (P20): DT_EXCLUSAO e USUARIO_EXCLUSAO
                         (lixeira: preenchidas = registro na lixeira).
+    v1.3 (25/11/2026) - Etapa 04e (P11): RODAPE_EMAIL, texto livre com os
+                        contatos da empresa para o rodapé dos e-mails.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -83,4 +85,9 @@ IF COL_LENGTH(N'CAD.Empresa', N'DT_EXCLUSAO') IS NULL
 GO
 IF COL_LENGTH(N'CAD.Empresa', N'USUARIO_EXCLUSAO') IS NULL
     ALTER TABLE [CAD].[Empresa] ADD USUARIO_EXCLUSAO NVARCHAR(100) NULL;
+GO
+
+-- v1.3: rodapé dos e-mails da empresa (P11)
+IF COL_LENGTH(N'CAD.Empresa', N'RODAPE_EMAIL') IS NULL
+    ALTER TABLE [CAD].[Empresa] ADD RODAPE_EMAIL NVARCHAR(1000) NOT NULL CONSTRAINT DF_Empresa_RODAPE_EMAIL DEFAULT (N'');
 GO

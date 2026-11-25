@@ -9,6 +9,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (25/11/2026) - Etapa 04e: CERTIDAO (certidões negativas, com validade).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -24,6 +25,7 @@ FROM (VALUES
         ('BOLETO',       N'Boleto',                     'pdf'),
         ('MEDICAO',      N'Boletim de medição',         'pdf,xlsx,xls,jpg,jpeg,png'),
         ('DOCUMENTO',    N'Documento pessoal / da empresa', 'pdf,jpg,jpeg,png'),
+        ('CERTIDAO',     N'Certidão',                   'pdf,jpg,jpeg,png'),
         ('LOGOMARCA',    N'Logomarca',                  'png,jpg,jpeg,svg'),
         ('OUTRO',        N'Outro',                      'pdf,doc,docx,xls,xlsx,jpg,jpeg,png,txt,zip')
      ) v (CODIGO, NOME, EXTENSOES)

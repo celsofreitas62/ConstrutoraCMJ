@@ -12,6 +12,10 @@
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: conta com movimento ou baixa não muda de
+                        empresa nem de tipo, e o saldo inicial (valor e data)
+                        fica travado; saldo inicial também não muda quando a data
+                        (atual ou nova) cai em mês fechado da empresa.
 
   Homologação (LOCAL):
     -- EXEC BANCO.BANCO_Conta_Gravar @IdUsuario = 2, @IdEmpresa = 1, @Descricao = N'Caixa Construtora', @Tipo = 'CAIXA';
@@ -85,6 +89,27 @@ BEGIN
             SET @Recusa = N'Informe a data do saldo inicial.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM BANCO.Conta c WHERE c.ID_EMPRESA = @IdEmpresa AND c.DESCRICAO = @Descricao AND c.ID_CONTA <> ISNULL(@IdConta, 0))
             SET @Recusa = N'Esta empresa já tem uma conta com esta descrição.';
+        IF @Recusa = N'' AND @IdConta IS NOT NULL
+        BEGIN
+            DECLARE @EmpresaAtual INT, @TipoAtual VARCHAR(10), @SaldoAtual DECIMAL(18,2), @DtSaldoAtual DATE, @TemMovimento BIT = 0;
+            SELECT @EmpresaAtual = c.ID_EMPRESA, @TipoAtual = c.TIPO, @SaldoAtual = c.SALDO_INICIAL, @DtSaldoAtual = c.DT_SALDO_INICIAL
+            FROM BANCO.Conta c WHERE c.ID_CONTA = @IdConta;
+            IF EXISTS (SELECT 1 FROM BANCO.Movimento m WHERE m.ID_CONTA = @IdConta)
+               OR EXISTS (SELECT 1 FROM FIN.Baixa x WHERE x.ID_CONTA = @IdConta)
+                SET @TemMovimento = 1;
+            IF @TemMovimento = 1 AND @EmpresaAtual <> @IdEmpresa
+                SET @Recusa = N'A conta já tem movimento: não pode mudar de empresa. Desative-a e crie uma conta nova na outra empresa.';
+            ELSE IF @TemMovimento = 1 AND @TipoAtual <> @Tipo
+                SET @Recusa = N'A conta já tem movimento: o tipo não pode mudar.';
+            ELSE IF @TemMovimento = 1 AND (@SaldoAtual <> @SaldoInicial OR ISNULL(@DtSaldoAtual, '19000101') <> ISNULL(@DtSaldoInicial, '19000101'))
+                SET @Recusa = N'A conta já tem movimento: o saldo inicial não pode mudar. Para acertar o saldo, faça um lançamento de ajuste.';
+            ELSE IF (@SaldoAtual <> @SaldoInicial OR ISNULL(@DtSaldoAtual, '19000101') <> ISNULL(@DtSaldoInicial, '19000101'))
+                 AND EXISTS (SELECT 1 FROM FIN.Mes_Fechado f
+                             WHERE f.ID_EMPRESA = @EmpresaAtual AND f.FECHADO = 1
+                               AND f.MES IN (DATEFROMPARTS(YEAR(@DtSaldoAtual), MONTH(@DtSaldoAtual), 1),
+                                             DATEFROMPARTS(YEAR(@DtSaldoInicial), MONTH(@DtSaldoInicial), 1)))
+                SET @Recusa = N'O saldo inicial cai num mês fechado: não pode mudar.';
+        END;
         IF @Recusa <> N''
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdConta AS ID;

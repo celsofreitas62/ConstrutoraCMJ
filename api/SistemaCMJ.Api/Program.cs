@@ -131,6 +131,8 @@ AcessoEndpoints.Mapear(app);
 SistemaEndpoints.Mapear(app);
 PessoaEndpoints.Mapear(app);
 ParceiroTipoEndpoints.Mapear(app);
+EmpresaEndpoints.Mapear(app);
+ContaBancariaEndpoints.Mapear(app);
 AnexoEndpoints.Mapear(app);
 UsuarioEndpoints.Mapear(app);
 HistoricoEndpoints.Mapear(app);

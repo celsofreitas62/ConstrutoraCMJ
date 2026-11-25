@@ -16,6 +16,9 @@
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (17/11/2026) - @CnpjCompras (CNPJ para notas de compra e DDA), etapa 03c2.
     v1.2 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira.
+    v1.3 (25/11/2026) - Etapa 04e: @RodapeEmail (P11) e @PastaOfx (só
+                        administrador); NULL nos dois = não mexe. Conta padrão
+                        precisa ser da própria empresa.
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Empresa_Gravar @IdUsuario = 2, @RazaoSocial = N'Construtora Teste Ltda', @Cnpj = '11.222.333/0001-81', @Tipo = 'CONSTRUTORA';
@@ -44,7 +47,9 @@ CREATE OR ALTER PROCEDURE [CAD].[CAD_Empresa_Gravar]
     @Email                   NVARCHAR(256) = NULL,
     @Telefone                VARCHAR(30)   = NULL,
     @IdContaBancariaPadrao   INT           = NULL,
-    @CnpjCompras             VARCHAR(20)   = NULL
+    @CnpjCompras             VARCHAR(20)   = NULL,
+    @RodapeEmail             NVARCHAR(1000) = NULL,
+    @PastaOfx                NVARCHAR(260) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -73,6 +78,8 @@ BEGIN
         SET @Email              = LOWER(LTRIM(RTRIM(ISNULL(@Email, N''))));
         SET @Telefone           = CAD.fn_CAD_Somente_Digitos(@Telefone);
         IF @CnpjCompras IS NOT NULL SET @CnpjCompras = CAD.fn_CAD_Documento_Limpo(@CnpjCompras);
+        IF @RodapeEmail IS NOT NULL SET @RodapeEmail = LTRIM(RTRIM(@RodapeEmail));
+        IF @PastaOfx IS NOT NULL SET @PastaOfx = LTRIM(RTRIM(@PastaOfx));
 
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_EMPRESA', CASE WHEN @IdEmpresa IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
             SET @Recusa = N'Você não tem permissão para gravar empresas.';
@@ -103,6 +110,13 @@ BEGIN
         IF @Recusa = N'' AND @IdContaBancariaPadrao IS NOT NULL
            AND NOT EXISTS (SELECT 1 FROM BANCO.Conta c WHERE c.ID_CONTA = @IdContaBancariaPadrao AND c.ATIVO = 1)
             SET @Recusa = N'A conta padrão escolhida não existe ou está desativada.';
+        IF @Recusa = N'' AND @IdContaBancariaPadrao IS NOT NULL AND @IdEmpresa IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM BANCO.Conta c WHERE c.ID_CONTA = @IdContaBancariaPadrao AND c.ID_EMPRESA = @IdEmpresa)
+            SET @Recusa = N'A conta padrão precisa ser uma conta desta empresa.';
+        IF @Recusa = N'' AND @IdContaBancariaPadrao IS NOT NULL AND @IdEmpresa IS NULL
+            SET @Recusa = N'Grave a empresa primeiro; a conta padrão é escolhida depois de cadastrar as contas dela.';
+        IF @Recusa = N'' AND @PastaOfx IS NOT NULL AND SIS.fn_SIS_Usuario_Nivel_Admin(@IdUsuario) < 1
+            SET @PastaOfx = NULL; -- só o administrador mexe na pasta do OFX: dos demais, ignora
         IF @Recusa <> N''
         BEGIN
             SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdEmpresa AS ID;
@@ -115,9 +129,11 @@ BEGIN
         IF @IdEmpresa IS NULL
         BEGIN
             INSERT INTO CAD.Empresa (RAZAO_SOCIAL, NOME_FANTASIA, CNPJ, CNPJ_COMPRAS, TIPO, INSCRICAO_ESTADUAL, INSCRICAO_MUNICIPAL, REGIME_TRIBUTARIO,
-                                     CEP, LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE, UF, EMAIL, TELEFONE, ID_CONTA_BANCARIA_PADRAO, USUARIO_CRIACAO)
+                                     CEP, LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE, UF, EMAIL, TELEFONE, ID_CONTA_BANCARIA_PADRAO,
+                                     RODAPE_EMAIL, PASTA_OFX, USUARIO_CRIACAO)
             VALUES (@RazaoSocial, @NomeFantasia, @Cnpj, ISNULL(@CnpjCompras, ''), @Tipo, @InscricaoEstadual, @InscricaoMunicipal, @RegimeTributario,
-                    @Cep, @Logradouro, @Numero, @Complemento, @Bairro, @Cidade, @Uf, @Email, @Telefone, @IdContaBancariaPadrao, @Usuario);
+                    @Cep, @Logradouro, @Numero, @Complemento, @Bairro, @Cidade, @Uf, @Email, @Telefone, @IdContaBancariaPadrao,
+                    ISNULL(@RodapeEmail, N''), ISNULL(@PastaOfx, N''), @Usuario);
             SET @IdEmpresa = SCOPE_IDENTITY();
         END
         ELSE
@@ -126,6 +142,7 @@ BEGIN
                    e.INSCRICAO_ESTADUAL = @InscricaoEstadual, e.INSCRICAO_MUNICIPAL = @InscricaoMunicipal, e.REGIME_TRIBUTARIO = @RegimeTributario,
                    e.CEP = @Cep, e.LOGRADOURO = @Logradouro, e.NUMERO = @Numero, e.COMPLEMENTO = @Complemento, e.BAIRRO = @Bairro,
                    e.CIDADE = @Cidade, e.UF = @Uf, e.EMAIL = @Email, e.TELEFONE = @Telefone, e.ID_CONTA_BANCARIA_PADRAO = @IdContaBancariaPadrao,
+                   e.RODAPE_EMAIL = ISNULL(@RodapeEmail, e.RODAPE_EMAIL), e.PASTA_OFX = ISNULL(@PastaOfx, e.PASTA_OFX),
                    e.DT_ALTERACAO = SYSDATETIME(), e.USUARIO_ALTERACAO = @Usuario
             FROM CAD.Empresa e
             WHERE e.ID_EMPRESA = @IdEmpresa;
