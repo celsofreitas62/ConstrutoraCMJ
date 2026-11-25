@@ -11,6 +11,7 @@
 
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (25/11/2026) - Etapa 04d (P12): DT_VALIDADE e VENCIDO (validade antes de hoje).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Anexo_Listar @IdUsuario = 2, @Item = 'SIS_USUARIO', @Tabela = N'SIS.Usuario', @IdRegistro = 3;
@@ -49,6 +50,8 @@ BEGIN
                a.EXTENSAO,
                a.TAMANHO_BYTES,
                a.DESCRICAO,
+               a.DT_VALIDADE,
+               CAST(CASE WHEN a.DT_VALIDADE < CONVERT(DATE, SYSDATETIME()) THEN 1 ELSE 0 END AS BIT) AS VENCIDO,
                a.SITUACAO,
                a.DT_CRIACAO,
                a.USUARIO_CRIACAO,

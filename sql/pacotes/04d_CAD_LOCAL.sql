@@ -1654,6 +1654,228 @@ END;
 GO
 
 -- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Anexo_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Anexo_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Registra um anexo. A API recebe o arquivo, grava em disco com
+                nome gerado (GUID + extensão) em ANEXO_PASTA_RAIZ\ano\mês,
+                calcula o SHA-256 e então chama esta procedure. Se a procedure
+                recusar, a API apaga o arquivo que acabou de gravar.
+                Confere:
+                  - permissão ALTERAR na tela (@Item) e que a tela mantém a
+                    tabela (TABELAS_DA_TELA);
+                  - que o registro existe (pela chave primária da tabela);
+                  - tipo ativo e extensão aceita pelo tipo;
+                  - tamanho até ANEXO_TAMANHO_MAX_MB;
+                  - nome do arquivo gerado (só letras, números, "-" e ".");
+                  - o mesmo arquivo (hash) ainda não anexado ao registro.
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID_ANEXO.
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (20/11/2026) - Etapa 03d: conferência do registro pelo SIS_Registro_Existe
+                        (o SELECT dinâmico falhava com o login da API no servidor).
+    v1.2 (25/11/2026) - Etapa 04d (P12): @DtValidade opcional (certidões, contratos).
+
+  Homologação (LOCAL): ver sql/testes/SIS/02c_Homologacao_SIS.sql.
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Anexo_Gravar]
+    @IdUsuario      INT,
+    @Item           VARCHAR(40),
+    @Tabela         NVARCHAR(256),
+    @IdRegistro     BIGINT,
+    @CodigoTipo     VARCHAR(30),
+    @NomeOriginal   NVARCHAR(260),
+    @NomeArquivo    VARCHAR(100),
+    @PastaRelativa  VARCHAR(50),
+    @TamanhoBytes   BIGINT,
+    @HashSha256     VARBINARY(32),
+    @Descricao      NVARCHAR(400) = NULL,
+    @DtValidade     DATE          = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[SIS].[SIS_Anexo_Gravar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa      NVARCHAR(400) = N'';
+    DECLARE @Usuario     NVARCHAR(100);
+    DECLARE @IdTipo      INT;
+    DECLARE @Extensoes   VARCHAR(200);
+    DECLARE @Extensao    VARCHAR(10);
+    DECLARE @MaxMb       INT;
+    DECLARE @Existe      BIT           = 0;
+    DECLARE @IdAnexo     BIGINT;
+
+    BEGIN TRY
+        SET @Tabela        = LTRIM(RTRIM(ISNULL(@Tabela, N'')));
+        SET @CodigoTipo    = UPPER(LTRIM(RTRIM(ISNULL(@CodigoTipo, ''))));
+        SET @NomeOriginal  = LTRIM(RTRIM(ISNULL(@NomeOriginal, N'')));
+        SET @NomeArquivo   = LTRIM(RTRIM(ISNULL(@NomeArquivo, '')));
+        SET @PastaRelativa = LTRIM(RTRIM(ISNULL(@PastaRelativa, '')));
+        SET @Extensao      = LOWER(CASE WHEN CHARINDEX('.', REVERSE(@NomeArquivo)) > 1
+                                        THEN RIGHT(@NomeArquivo, CHARINDEX('.', REVERSE(@NomeArquivo)) - 1) ELSE '' END);
+        SET @MaxMb         = SIS.fn_SIS_Parametro_Inteiro('ANEXO_TAMANHO_MAX_MB');
+        IF @MaxMb < 1 SET @MaxMb = 1;
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'ALTERAR') = 0
+            SET @Recusa = N'Você não tem permissão para anexar arquivos nesta tela.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Item_Tem_Tabela(@Item, @Tabela) = 0
+            SET @Recusa = N'Esta tela não aceita anexos desse tipo de registro.';
+
+        SELECT @IdTipo = t.ID_ANEXO_TIPO, @Extensoes = t.EXTENSOES
+        FROM SIS.Anexo_Tipo t
+        WHERE t.CODIGO = @CodigoTipo AND t.ATIVO = 1;
+
+        IF @Recusa = N'' AND @IdTipo IS NULL
+            SET @Recusa = N'Escolha um tipo de anexo válido.';
+        IF @Recusa = N'' AND (@Extensao = '' OR NOT EXISTS (SELECT 1 FROM STRING_SPLIT(@Extensoes, ',') s WHERE LTRIM(RTRIM(s.value)) = @Extensao))
+            SET @Recusa = N'Este tipo de anexo aceita só: ' + CONVERT(NVARCHAR(200), REPLACE(@Extensoes, ',', ', ')) + N'.';
+        IF @Recusa = N'' AND (ISNULL(@TamanhoBytes, 0) <= 0 OR @TamanhoBytes > CAST(@MaxMb AS BIGINT) * 1048576)
+            SET @Recusa = N'O arquivo precisa ter até ' + CONVERT(NVARCHAR(10), @MaxMb) + N' MB.';
+        IF @Recusa = N'' AND (@NomeOriginal = N''
+                              OR @NomeArquivo = ''
+                              OR REPLACE(REPLACE(@NomeArquivo, '-', ''), '.', '') LIKE '%[^A-Za-z0-9]%' COLLATE Latin1_General_BIN2
+                              OR REPLACE(@PastaRelativa, '\', '') LIKE '%[^0-9]%' COLLATE Latin1_General_BIN2
+                              OR DATALENGTH(ISNULL(@HashSha256, 0x)) <> 32)
+            SET @Recusa = N'Falha técnica no envio do arquivo (nome, pasta ou hash inválido).';
+
+        IF @Recusa = N''
+        BEGIN
+            -- v1.1: conferência pelo SIS_Registro_Existe (SQL dinâmico com a permissão do dono:
+            -- no servidor o login da API só executa procedures)
+            SET @EtapaAtual = 'Registro de referência';
+            EXEC SIS.SIS_Registro_Existe @Item = @Item, @Tabela = @Tabela, @Id = @IdRegistro, @Existe = @Existe OUTPUT;
+            IF ISNULL(@Existe, 0) = 0
+                SET @Recusa = N'Registro não encontrado.';
+        END;
+
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM SIS.Anexo a
+                                     WHERE a.TABELA_REFERENCIA = @Tabela AND a.ID_REFERENCIA = @IdRegistro
+                                       AND a.HASH_SHA256 = @HashSha256 AND a.SITUACAO = 'ATIVO')
+            SET @Recusa = N'Este arquivo já está anexado a este registro.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID_ANEXO;
+            RETURN;
+        END;
+
+        SET @Usuario    = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+        SET @EtapaAtual = 'Gravação';
+
+        INSERT INTO SIS.Anexo (TABELA_REFERENCIA, ID_REFERENCIA, ID_ANEXO_TIPO, NOME_ORIGINAL, NOME_ARQUIVO, PASTA_RELATIVA,
+                               EXTENSAO, TAMANHO_BYTES, HASH_SHA256, DESCRICAO, DT_VALIDADE, USUARIO_CRIACAO)
+        VALUES (@Tabela, @IdRegistro, @IdTipo, @NomeOriginal, @NomeArquivo, @PastaRelativa,
+                @Extensao, @TamanhoBytes, @HashSha256, LTRIM(RTRIM(ISNULL(@Descricao, N''))), @DtValidade, ISNULL(@Usuario, N''));
+        SET @IdAnexo = CAST(SCOPE_IDENTITY() AS BIGINT);
+
+        SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Arquivo anexado.' AS NVARCHAR(400)) AS MENSAGEM, @IdAnexo AS ID_ANEXO;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO,
+               CAST(N'Não foi possível registrar o anexo. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS BIGINT) AS ID_ANEXO;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/SIS/SIS.SIS_Anexo_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [SIS].[SIS_Anexo_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Anexos de um registro (aba "Anexos" das telas), mais recente
+                primeiro. @IncluirExcluidos = 1 mostra também os excluídos
+                (com quem excluiu, quando e o motivo).
+                Permissão: VER na tela (@Item), que precisa manter a tabela.
+                Padrão "Listar": THROW 50001 com mensagem amigável.
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 02c).
+    v1.1 (25/11/2026) - Etapa 04d (P12): DT_VALIDADE e VENCIDO (validade antes de hoje).
+
+  Homologação (LOCAL):
+    -- EXEC SIS.SIS_Anexo_Listar @IdUsuario = 2, @Item = 'SIS_USUARIO', @Tabela = N'SIS.Usuario', @IdRegistro = 3;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [SIS].[SIS_Anexo_Listar]
+    @IdUsuario         INT,
+    @Item              VARCHAR(40),
+    @Tabela            NVARCHAR(256),
+    @IdRegistro        BIGINT,
+    @IncluirExcluidos  BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[SIS].[SIS_Anexo_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        SET @Tabela = LTRIM(RTRIM(ISNULL(@Tabela, N'')));
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver estes anexos.', 1;
+        IF SIS.fn_SIS_Item_Tem_Tabela(@Item, @Tabela) = 0
+            THROW 50001, N'Esta tela não mostra anexos desse tipo de registro.', 1;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT a.ID_ANEXO,
+               t.CODIGO                              AS TIPO_CODIGO,
+               t.NOME                                AS TIPO_NOME,
+               a.NOME_ORIGINAL,
+               a.EXTENSAO,
+               a.TAMANHO_BYTES,
+               a.DESCRICAO,
+               a.DT_VALIDADE,
+               CAST(CASE WHEN a.DT_VALIDADE < CONVERT(DATE, SYSDATETIME()) THEN 1 ELSE 0 END AS BIT) AS VENCIDO,
+               a.SITUACAO,
+               a.DT_CRIACAO,
+               a.USUARIO_CRIACAO,
+               a.DT_EXCLUSAO,
+               ISNULL(a.USUARIO_EXCLUSAO, N'')       AS USUARIO_EXCLUSAO,
+               ISNULL(a.MOTIVO_EXCLUSAO, N'')        AS MOTIVO_EXCLUSAO
+        FROM SIS.Anexo a WITH (NOLOCK)
+        INNER JOIN SIS.Anexo_Tipo t WITH (NOLOCK) ON t.ID_ANEXO_TIPO = a.ID_ANEXO_TIPO
+        WHERE a.TABELA_REFERENCIA = @Tabela
+          AND a.ID_REFERENCIA = @IdRegistro
+          AND (ISNULL(@IncluirExcluidos, 0) = 1 OR a.SITUACAO = 'ATIVO')
+        ORDER BY a.ID_ANEXO DESC;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar os anexos. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
 -- Arquivo: sql/objetos/CAD/Carga_CAD_Item.sql
 -- =============================================================================
 /*******************************************************************************

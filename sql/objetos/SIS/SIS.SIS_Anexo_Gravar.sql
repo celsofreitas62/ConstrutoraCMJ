@@ -21,6 +21,7 @@
     v1.0 (16/11/2026) - Criação (etapa 02c).
     v1.1 (20/11/2026) - Etapa 03d: conferência do registro pelo SIS_Registro_Existe
                         (o SELECT dinâmico falhava com o login da API no servidor).
+    v1.2 (25/11/2026) - Etapa 04d (P12): @DtValidade opcional (certidões, contratos).
 
   Homologação (LOCAL): ver sql/testes/SIS/02c_Homologacao_SIS.sql.
 *******************************************************************************/
@@ -39,7 +40,8 @@ CREATE OR ALTER PROCEDURE [SIS].[SIS_Anexo_Gravar]
     @PastaRelativa  VARCHAR(50),
     @TamanhoBytes   BIGINT,
     @HashSha256     VARBINARY(32),
-    @Descricao      NVARCHAR(400) = NULL
+    @Descricao      NVARCHAR(400) = NULL,
+    @DtValidade     DATE          = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -114,9 +116,9 @@ BEGIN
         SET @EtapaAtual = 'Gravação';
 
         INSERT INTO SIS.Anexo (TABELA_REFERENCIA, ID_REFERENCIA, ID_ANEXO_TIPO, NOME_ORIGINAL, NOME_ARQUIVO, PASTA_RELATIVA,
-                               EXTENSAO, TAMANHO_BYTES, HASH_SHA256, DESCRICAO, USUARIO_CRIACAO)
+                               EXTENSAO, TAMANHO_BYTES, HASH_SHA256, DESCRICAO, DT_VALIDADE, USUARIO_CRIACAO)
         VALUES (@Tabela, @IdRegistro, @IdTipo, @NomeOriginal, @NomeArquivo, @PastaRelativa,
-                @Extensao, @TamanhoBytes, @HashSha256, LTRIM(RTRIM(ISNULL(@Descricao, N''))), ISNULL(@Usuario, N''));
+                @Extensao, @TamanhoBytes, @HashSha256, LTRIM(RTRIM(ISNULL(@Descricao, N''))), @DtValidade, ISNULL(@Usuario, N''));
         SET @IdAnexo = CAST(SCOPE_IDENTITY() AS BIGINT);
 
         SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Arquivo anexado.' AS NVARCHAR(400)) AS MENSAGEM, @IdAnexo AS ID_ANEXO;
