@@ -203,7 +203,8 @@ ORDEM_04D2 = ['objetos/SIS/SIS.SIS_Anexo_Tipo_Listar.sql', 'objetos/MIG/MIG.fn_M
               'objetos/SIS/Carga_SIS_Versao_Nota.sql', 'objetos/SIS/Carga_SIS_Versao.sql']
 ORDEM_04E = ['objetos/CAD/CAD.Empresa.sql', 'objetos/CAD/CAD.Centro_Custo.sql', 'objetos/SIS/Carga_SIS_Anexo_Tipo.sql', 'objetos/SIS/Carga_SIS_Parametro.sql',
              'objetos/CAD/CAD.CAD_Centro_Custo_Listar.sql', 'objetos/CAD/CAD.CAD_Centro_Custo_Obter.sql', 'objetos/CAD/CAD.CAD_Centro_Custo_Gravar.sql',
-             'objetos/CAD/CAD.CAD_Seletor_Listar.sql',
+             'objetos/CAD/CAD.CAD_Seletor_Listar.sql', 'objetos/CAD/CAD.CAD_Plano_Conta_Listar.sql', 'objetos/CAD/CAD.CAD_Plano_Subgrupo_Gravar.sql',
+             'objetos/CAD/CAD.CAD_Plano_Conta_Gravar.sql',
              'objetos/CAD/CAD.CAD_Empresa_Listar.sql', 'objetos/CAD/CAD.CAD_Empresa_Obter.sql', 'objetos/CAD/CAD.CAD_Empresa_Gravar.sql',
              'objetos/BANCO/BANCO.BANCO_Conta_Listar.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Obter.sql', 'objetos/BANCO/BANCO.BANCO_Conta_Gravar.sql',
              'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql']

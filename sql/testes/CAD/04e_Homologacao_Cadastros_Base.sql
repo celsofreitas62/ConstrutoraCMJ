@@ -3,7 +3,7 @@
                 conta padrão da própria empresa), contas bancárias (travas com
                 movimento e mês fechado); depois centros de custo e plano de contas.
   Autor       : Celso de Freitas / Refatorado: Claude
-  Criação     : 25/11/2026 (v1.0, parte A; v1.1 parte B: centros e seletor). Roda no SISTEMACMJ_LOCAL e no banco do MASTER.
+  Criação     : 25/11/2026 (v1.0, parte A; v1.1 parte B: centros e seletor; v1.2 parte C: plano). Roda no SISTEMACMJ_LOCAL e no banco do MASTER.
   Observação  : não muda nada (tudo desfeito com ROLLBACK).
 *******************************************************************************/
 SET NOCOUNT ON;
@@ -149,9 +149,49 @@ DELETE @s;
 IF EXISTS (SELECT 1 FROM CAD.Plano_Conta WHERE ATIVO = 1)
 BEGIN
     INSERT @s EXEC CAD.CAD_Seletor_Listar @IdUsuario = @Celso, @Tipo = 'PLANO';
-    INSERT @r SELECT N'seletor do plano: código no formato 00.00.000', N'0', CAST(COUNT(*) AS NVARCHAR(5)) FROM @s WHERE CODIGO NOT LIKE '[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]';
+    INSERT @r SELECT N'seletor do plano: mesmo código da view do plano', N'0', CAST(COUNT(*) AS NVARCHAR(5))
+           FROM @s s INNER JOIN CAD.vw_CAD_Plano_Conta v ON v.ID_PLANO_CONTA = s.ID WHERE s.CODIGO <> v.CODIGO;
 END
-ELSE INSERT @r VALUES (N'seletor do plano: código no formato 00.00.000', N'0', N'0');
+ELSE INSERT @r VALUES (N'seletor do plano: mesmo código da view do plano', N'0', N'0');
+INSERT @r SELECT N'parâmetros novos da 04e', N'2', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE CHAVE IN ('CENTRO_ENCERRADO_BLOQUEIA', 'SELETOR_LIMITE');
+-- ---------- parte C: plano de contas ----------
+DECLARE @PcUso INT = (SELECT TOP 1 l.ID_PLANO_CONTA FROM FIN.Lancamento l);
+IF @PcUso IS NOT NULL
+BEGIN
+    DECLARE @SubAtual INT, @SubOutro INT, @DescPc NVARCHAR(80), @GrpAtual INT, @GrpOutro INT, @DescSub NVARCHAR(80);
+    SELECT @SubAtual = ID_PLANO_SUBGRUPO, @DescPc = DESCRICAO FROM CAD.Plano_Conta WHERE ID_PLANO_CONTA = @PcUso;
+    SELECT @GrpAtual = ID_PLANO_GRUPO, @DescSub = DESCRICAO FROM CAD.Plano_Subgrupo WHERE ID_PLANO_SUBGRUPO = @SubAtual;
+    SET @SubOutro = (SELECT TOP 1 ID_PLANO_SUBGRUPO FROM CAD.Plano_Subgrupo WHERE ID_PLANO_SUBGRUPO <> @SubAtual AND DT_EXCLUSAO IS NULL);
+    SET @GrpOutro = (SELECT TOP 1 ID_PLANO_GRUPO FROM CAD.Plano_Grupo WHERE ID_PLANO_GRUPO <> @GrpAtual AND DT_EXCLUSAO IS NULL);
+    DELETE @g;
+    INSERT @g EXEC CAD.CAD_Plano_Conta_Gravar @IdUsuario = @Celso, @IdPlanoConta = @PcUso, @IdPlanoSubgrupo = @SubOutro, @Descricao = @DescPc;
+    INSERT @r SELECT N'conta com lançamento não muda de subgrupo', N'0', (SELECT CAST(SUCESSO AS NVARCHAR(1)) FROM @g);
+    DELETE @g;
+    INSERT @g EXEC CAD.CAD_Plano_Subgrupo_Gravar @IdUsuario = @Celso, @IdPlanoSubgrupo = @SubAtual, @IdPlanoGrupo = @GrpOutro, @Descricao = @DescSub;
+    INSERT @r SELECT N'subgrupo com lançamento não muda de grupo', N'0', (SELECT CAST(SUCESSO AS NVARCHAR(1)) FROM @g);
+END
+ELSE
+    INSERT @r VALUES (N'conta com lançamento não muda de subgrupo', N'0', N'0'), (N'subgrupo com lançamento não muda de grupo', N'0', N'0');
+-- conta sem lançamento muda de subgrupo
+DECLARE @G1 INT, @S1 INT, @S2 INT, @P1 INT;
+DELETE @g; INSERT @g EXEC CAD.CAD_Plano_Grupo_Gravar @IdUsuario = @Celso, @Descricao = N'Grupo Teste 04e', @Tipo = 'DESPESA'; SET @G1 = (SELECT ID FROM @g);
+DELETE @g; INSERT @g EXEC CAD.CAD_Plano_Subgrupo_Gravar @IdUsuario = @Celso, @IdPlanoGrupo = @G1, @Descricao = N'Sub A 04e'; SET @S1 = (SELECT ID FROM @g);
+DELETE @g; INSERT @g EXEC CAD.CAD_Plano_Subgrupo_Gravar @IdUsuario = @Celso, @IdPlanoGrupo = @G1, @Descricao = N'Sub B 04e'; SET @S2 = (SELECT ID FROM @g);
+DELETE @g; INSERT @g EXEC CAD.CAD_Plano_Conta_Gravar @IdUsuario = @Celso, @IdPlanoSubgrupo = @S1, @Descricao = N'Conta Teste 04e'; SET @P1 = (SELECT ID FROM @g);
+DELETE @g; INSERT @g EXEC CAD.CAD_Plano_Conta_Gravar @IdUsuario = @Celso, @IdPlanoConta = @P1, @IdPlanoSubgrupo = @S2, @Descricao = N'Conta Teste 04e';
+INSERT @r SELECT N'conta sem lançamento muda de subgrupo', N'1', CASE WHEN (SELECT ID_PLANO_SUBGRUPO FROM CAD.Plano_Conta WHERE ID_PLANO_CONTA = @P1) = @S2 THEN N'1' ELSE N'0' END;
+DECLARE @pl TABLE (NIVEL TINYINT, ID INT, ID_PAI INT, NUMERO SMALLINT, CODIGO VARCHAR(12), DESCRICAO NVARCHAR(80), TIPO VARCHAR(15), CUSTO_OBRA BIT, CONTABIL BIT,
+                   CONTA_CONTABIL_REF VARCHAR(30), ORDEM SMALLINT, ATIVO BIT, ATIVO_EFETIVO BIT, ORDEM_ARVORE VARCHAR(12), DT_ALTERACAO DATETIME2(0),
+                   USUARIO_ALTERACAO NVARCHAR(100), QTD_LANCAMENTOS INT);
+INSERT @pl EXEC CAD.CAD_Plano_Conta_Listar @IdUsuario = @Celso;
+INSERT @r SELECT N'árvore: soma dos lançamentos do grupo = soma das contas', N'0', CAST(COUNT(*) AS NVARCHAR(5))
+       FROM @pl gr WHERE gr.NIVEL = 1
+        AND gr.QTD_LANCAMENTOS <> ISNULL((SELECT SUM(c.QTD_LANCAMENTOS) FROM @pl c INNER JOIN @pl s ON s.NIVEL = 2 AND c.ID_PAI = s.ID WHERE c.NIVEL = 3 AND s.ID_PAI = gr.ID), 0);
+INSERT @r SELECT N'árvore: total = lançamentos com conta do plano', CAST((SELECT COUNT(*) FROM FIN.Lancamento WHERE ID_PLANO_CONTA IS NOT NULL) AS NVARCHAR(10)),
+       CAST((SELECT SUM(QTD_LANCAMENTOS) FROM @pl WHERE NIVEL = 3) AS NVARCHAR(10));
+ROLLBACK;
+
+-- fora da transação: o erro do seletor desfaria a transação do teste
 BEGIN TRY
     DELETE @s;
     INSERT @s EXEC CAD.CAD_Seletor_Listar @IdUsuario = @Celso, @Tipo = 'X';
@@ -160,8 +200,6 @@ END TRY
 BEGIN CATCH
     INSERT @r VALUES (N'seletor recusa tipo inválido', N'erro', N'erro');
 END CATCH;
-INSERT @r SELECT N'parâmetros novos da 04e', N'2', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE CHAVE IN ('CENTRO_ENCERRADO_BLOQUEIA', 'SELETOR_LIMITE');
-ROLLBACK;
 
 SELECT CASO, ESPERADO, OBTIDO, CASE WHEN ESPERADO = OBTIDO THEN 'OK' ELSE 'FALHOU' END AS RESULTADO FROM @r;
 SELECT SUM(CASE WHEN ESPERADO = OBTIDO THEN 1 ELSE 0 END) AS OK, SUM(CASE WHEN ESPERADO = OBTIDO THEN 0 ELSE 1 END) AS FALHOU FROM @r;

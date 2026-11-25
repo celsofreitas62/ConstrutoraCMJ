@@ -19,7 +19,7 @@
 const Seletor = (() => {
   let contador = 0;
   const DICAS = {
-    PLANO: 'Digite parte do nome da conta, do grupo ou o número (ex.: 05.02) e escolha na lista. Só aparecem contas ativas.',
+    PLANO: 'Digite parte do nome da conta, do grupo ou o número (ex.: 05.2) e escolha na lista. Só aparecem contas ativas.',
     CENTRO: 'Digite parte do nome ou o código do centro de custo e escolha na lista. Só aparecem centros ativos.',
     CONTA: 'Digite parte da descrição ou o número da conta e escolha na lista. Só aparecem contas ativas.'
   };

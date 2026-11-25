@@ -742,22 +742,18 @@ BEGIN
         SET @EtapaAtual = 'Consulta';
         IF @Tipo = 'PLANO'
             SELECT TOP (@Limite) v.ID, v.CODIGO, v.DESCRICAO, v.COMPLEMENTO, v.ATIVO
-            FROM (SELECT pc.ID_PLANO_CONTA AS ID,
-                         RIGHT('0' + CAST(g.NUMERO AS VARCHAR(2)), 2) + '.' + RIGHT('0' + CAST(s.NUMERO AS VARCHAR(2)), 2) + '.' + RIGHT('00' + CAST(pc.NUMERO AS VARCHAR(3)), 3) AS CODIGO,
-                         pc.DESCRICAO, g.DESCRICAO + N' › ' + s.DESCRICAO AS COMPLEMENTO,
-                         CAST(CASE WHEN pc.ATIVO = 1 AND s.ATIVO = 1 AND g.ATIVO = 1 THEN 1 ELSE 0 END AS BIT) AS ATIVO,
-                         g.ORDEM AS O1, g.NUMERO AS O2, s.NUMERO AS O3, pc.NUMERO AS O4
-                  FROM CAD.Plano_Conta pc WITH (NOLOCK)
-                  INNER JOIN CAD.Plano_Subgrupo s WITH (NOLOCK) ON s.ID_PLANO_SUBGRUPO = pc.ID_PLANO_SUBGRUPO
-                  INNER JOIN CAD.Plano_Grupo g    WITH (NOLOCK) ON g.ID_PLANO_GRUPO = s.ID_PLANO_GRUPO
+            FROM (SELECT v.ID_PLANO_CONTA AS ID, v.CODIGO, v.DESCRICAO, v.GRUPO_DESCRICAO + N' › ' + v.SUBGRUPO_DESCRICAO AS COMPLEMENTO,
+                         v.ATIVO_EFETIVO AS ATIVO, v.ORDEM_ARVORE
+                  FROM CAD.vw_CAD_Plano_Conta v WITH (NOLOCK)
+                  INNER JOIN CAD.Plano_Conta pc WITH (NOLOCK) ON pc.ID_PLANO_CONTA = v.ID_PLANO_CONTA
                   WHERE pc.DT_EXCLUSAO IS NULL
-                    AND (pc.ID_PLANO_CONTA = @IdAtual
-                         OR (pc.ATIVO = 1 AND s.ATIVO = 1 AND g.ATIVO = 1
-                             AND (@Busca = N'' OR pc.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
-                                  OR s.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo OR g.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
-                                  OR RIGHT('0' + CAST(g.NUMERO AS VARCHAR(2)), 2) + '.' + RIGHT('0' + CAST(s.NUMERO AS VARCHAR(2)), 2) + '.' + RIGHT('00' + CAST(pc.NUMERO AS VARCHAR(3)), 3) LIKE @Busca + '%')))
+                    AND (v.ID_PLANO_CONTA = @IdAtual
+                         OR (v.ATIVO_EFETIVO = 1
+                             AND (@Busca = N'' OR v.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
+                                  OR v.SUBGRUPO_DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo OR v.GRUPO_DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
+                                  OR v.CODIGO LIKE @Busca + '%')))
                  ) v
-            ORDER BY CASE WHEN v.ID = @IdAtual THEN 0 ELSE 1 END, v.O1, v.O2, v.O3, v.O4;
+            ORDER BY CASE WHEN v.ID = @IdAtual THEN 0 ELSE 1 END, v.ORDEM_ARVORE;
         ELSE IF @Tipo = 'CENTRO'
             SELECT TOP (@Limite) cc.ID_CENTRO_CUSTO AS ID, cc.CODIGO, cc.DESCRICAO,
                    ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL)
@@ -791,6 +787,345 @@ BEGIN
             VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
 
         THROW 50001, N'Não foi possível carregar a lista. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Plano_Conta_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Plano_Conta_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Tela "Plano de contas": a árvore inteira, uma linha por nível
+                (NIVEL 1 grupo, 2 subgrupo, 3 conta), na ordem numérica (ORDEM_ARVORE),
+                com ID_PAI para montar a árvore. TIPO e CUSTO_OBRA vêm do grupo;
+                CONTABIL e CONTA_CONTABIL_REF só na conta. ATIVO_EFETIVO: o registro e
+                todos os de cima ativos. @SomenteAtivos = 1: só ATIVO_EFETIVO.
+                Permissão: VER em CAD_PLANO_CONTA. Padrão "Listar": THROW 50001.
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: QTD_LANCAMENTOS (na conta: lançamentos que a
+                        usam; no subgrupo e no grupo: soma das contas abaixo).
+
+  Homologação (LOCAL):
+    -- EXEC CAD.CAD_Plano_Conta_Listar @IdUsuario = 2;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Plano_Conta_Listar]
+    @IdUsuario     INT,
+    @SomenteAtivos BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[CAD].[CAD_Plano_Conta_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver o plano de contas.', 1;
+
+        SET @EtapaAtual = 'Uso';
+        SELECT l.ID_PLANO_CONTA, c.ID_PLANO_SUBGRUPO, s.ID_PLANO_GRUPO, COUNT(*) AS QTD
+        INTO #Uso
+        FROM FIN.Lancamento l WITH (NOLOCK)
+        INNER JOIN CAD.Plano_Conta c    WITH (NOLOCK) ON c.ID_PLANO_CONTA = l.ID_PLANO_CONTA
+        INNER JOIN CAD.Plano_Subgrupo s WITH (NOLOCK) ON s.ID_PLANO_SUBGRUPO = c.ID_PLANO_SUBGRUPO
+        GROUP BY l.ID_PLANO_CONTA, c.ID_PLANO_SUBGRUPO, s.ID_PLANO_GRUPO;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT x.NIVEL, x.ID, x.ID_PAI, x.NUMERO, x.CODIGO, x.DESCRICAO, x.TIPO, x.CUSTO_OBRA, x.CONTABIL, x.CONTA_CONTABIL_REF,
+               x.ORDEM, x.ATIVO, x.ATIVO_EFETIVO, x.ORDEM_ARVORE, x.DT_ALTERACAO, x.USUARIO_ALTERACAO,
+               ISNULL(CASE x.NIVEL WHEN 3 THEN q.QTD
+                                   WHEN 2 THEN (SELECT SUM(q2.QTD) FROM #Uso q2 WHERE q2.ID_PLANO_SUBGRUPO = x.ID)
+                                   ELSE (SELECT SUM(q2.QTD) FROM #Uso q2 WHERE q2.ID_PLANO_GRUPO = x.ID) END, 0) AS QTD_LANCAMENTOS
+        FROM (
+            SELECT CAST(1 AS TINYINT) AS NIVEL, g.ID_PLANO_GRUPO AS ID, CAST(NULL AS INT) AS ID_PAI, g.NUMERO,
+                   CONVERT(VARCHAR(12), RIGHT('0' + CONVERT(VARCHAR(3), g.NUMERO), 2)) AS CODIGO,
+                   g.DESCRICAO, g.TIPO, g.CUSTO_OBRA, CAST(0 AS BIT) AS CONTABIL, CONVERT(VARCHAR(30), '') AS CONTA_CONTABIL_REF,
+                   g.ORDEM, g.ATIVO, g.ATIVO AS ATIVO_EFETIVO,
+                   CONVERT(VARCHAR(12), RIGHT('00' + CONVERT(VARCHAR(3), g.NUMERO), 2) + '.00.000') AS ORDEM_ARVORE,
+                   g.DT_ALTERACAO, ISNULL(g.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO
+            FROM CAD.Plano_Grupo g WITH (NOLOCK)
+            WHERE g.DT_EXCLUSAO IS NULL
+            UNION ALL
+            SELECT CAST(2 AS TINYINT), s.ID_PLANO_SUBGRUPO, s.ID_PLANO_GRUPO, s.NUMERO,
+                   CONVERT(VARCHAR(12), RIGHT('0' + CONVERT(VARCHAR(3), g.NUMERO), 2) + '.' + CONVERT(VARCHAR(3), s.NUMERO)),
+                   s.DESCRICAO, g.TIPO, g.CUSTO_OBRA, CAST(0 AS BIT), CONVERT(VARCHAR(30), ''),
+                   s.ORDEM, s.ATIVO, CAST(CASE WHEN s.ATIVO = 1 AND g.ATIVO = 1 THEN 1 ELSE 0 END AS BIT),
+                   CONVERT(VARCHAR(12), RIGHT('00' + CONVERT(VARCHAR(3), g.NUMERO), 2) + '.' + RIGHT('00' + CONVERT(VARCHAR(3), s.NUMERO), 2) + '.000'),
+                   s.DT_ALTERACAO, ISNULL(s.USUARIO_ALTERACAO, N'')
+            FROM CAD.Plano_Subgrupo s WITH (NOLOCK)
+            INNER JOIN CAD.Plano_Grupo g WITH (NOLOCK) ON g.ID_PLANO_GRUPO = s.ID_PLANO_GRUPO
+            WHERE s.DT_EXCLUSAO IS NULL
+            UNION ALL
+            SELECT CAST(3 AS TINYINT), v.ID_PLANO_CONTA, v.ID_PLANO_SUBGRUPO, v.NUMERO_CONTA, v.CODIGO,
+                   v.DESCRICAO, v.TIPO, v.CUSTO_OBRA, v.CONTABIL, v.CONTA_CONTABIL_REF,
+                   CAST(0 AS SMALLINT), v.CONTA_ATIVA, v.ATIVO_EFETIVO, v.ORDEM_ARVORE,
+                   c.DT_ALTERACAO, ISNULL(c.USUARIO_ALTERACAO, N'')
+            FROM CAD.vw_CAD_Plano_Conta v WITH (NOLOCK)
+            INNER JOIN CAD.Plano_Conta c WITH (NOLOCK) ON c.ID_PLANO_CONTA = v.ID_PLANO_CONTA
+            WHERE c.DT_EXCLUSAO IS NULL
+        ) x
+        LEFT JOIN #Uso q ON x.NIVEL = 3 AND q.ID_PLANO_CONTA = x.ID
+        WHERE (ISNULL(@SomenteAtivos, 0) = 0 OR x.ATIVO_EFETIVO = 1)
+        ORDER BY x.ORDEM_ARVORE;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar o plano de contas. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Plano_Subgrupo_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Plano_Subgrupo_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Inclui (@IdPlanoSubgrupo NULL) ou altera um subgrupo (nível 2),
+                sempre dentro de um grupo. @Numero NULL = próximo livre no grupo.
+                Número (1 a 99) e descrição não repetem dentro do grupo. Mudar de grupo
+                é permitido (fica na auditoria).
+                Permissão: INCLUIR ou ALTERAR em CAD_PLANO_CONTA. Devolve SUCESSO, MENSAGEM, ID.
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: subgrupo com conta que tem lançamentos não
+                        muda de grupo (mudaria o tipo dos lançamentos já feitos).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Plano_Subgrupo_Gravar]
+    @IdUsuario     INT,
+    @IdPlanoSubgrupo  INT          = NULL,
+    @IdPlanoGrupo     INT,
+    @Numero           SMALLINT     = NULL,
+    @Descricao        NVARCHAR(80),
+    @Ordem            SMALLINT     = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[CAD].[CAD_Plano_Subgrupo_Gravar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa     NVARCHAR(400) = N'';
+    DECLARE @Usuario    NVARCHAR(100);
+
+    BEGIN TRY
+        SET @Descricao = LTRIM(RTRIM(ISNULL(@Descricao, N'')));
+
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', CASE WHEN @IdPlanoSubgrupo IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
+            SET @Recusa = N'Você não tem permissão para gravar o plano de contas.';
+        IF @Recusa = N'' AND @IdPlanoSubgrupo IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Plano_Subgrupo', @IdPlanoSubgrupo) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
+        IF @Recusa = N'' AND @IdPlanoSubgrupo IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo x WHERE x.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo)
+            SET @Recusa = N'Registro do plano de contas não encontrado.';
+        IF @Recusa = N'' AND @Descricao = N''
+            SET @Recusa = N'Informe a descrição.';
+        IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Grupo g WHERE g.ID_PLANO_GRUPO = @IdPlanoGrupo AND g.DT_EXCLUSAO IS NULL)
+            SET @Recusa = N'Escolha o grupo do subgrupo.';
+        IF @Recusa = N'' AND @IdPlanoSubgrupo IS NOT NULL
+           AND EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo x WHERE x.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND x.ID_PLANO_GRUPO <> @IdPlanoGrupo)
+           AND EXISTS (SELECT 1 FROM FIN.Lancamento l INNER JOIN CAD.Plano_Conta c ON c.ID_PLANO_CONTA = l.ID_PLANO_CONTA WHERE c.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo)
+            SET @Recusa = N'O subgrupo tem contas com lançamentos: não pode mudar de grupo.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo s WHERE s.ID_PLANO_GRUPO = @IdPlanoGrupo AND s.DESCRICAO = @Descricao
+                                     AND s.ID_PLANO_SUBGRUPO <> ISNULL(@IdPlanoSubgrupo, 0))
+            SET @Recusa = N'Já existe um subgrupo com esta descrição neste grupo.';
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdPlanoSubgrupo AS ID;
+            RETURN;
+        END;
+
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        -- Número: escolhido ou o próximo livre (leitura travada até o COMMIT)
+        IF @Numero IS NULL
+            SELECT @Numero = ISNULL(MAX(x.NUMERO), 0) + 1 FROM CAD.Plano_Subgrupo x WITH (UPDLOCK, HOLDLOCK) WHERE x.ID_PLANO_GRUPO = @IdPlanoGrupo;
+
+        IF @Numero NOT BETWEEN 1 AND 99
+            SET @Recusa = N'Número do subgrupo fora da faixa (1 a 99).';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo x WITH (UPDLOCK, HOLDLOCK) WHERE x.ID_PLANO_GRUPO = @IdPlanoGrupo AND x.NUMERO = @Numero AND x.ID_PLANO_SUBGRUPO <> ISNULL(@IdPlanoSubgrupo, 0))
+            SET @Recusa = N'Este número já está em uso. Escolha outro ou deixe em branco para usar o próximo livre.';
+
+        IF @Recusa <> N''
+        BEGIN
+            COMMIT TRANSACTION;   -- nada foi gravado (COMMIT em vez de ROLLBACK: funciona dentro de INSERT ... EXEC)
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdPlanoSubgrupo AS ID;
+            RETURN;
+        END;
+
+        IF @IdPlanoSubgrupo IS NULL
+        BEGIN
+            INSERT INTO CAD.Plano_Subgrupo (ID_PLANO_GRUPO, NUMERO, DESCRICAO, ORDEM, USUARIO_CRIACAO)
+            VALUES (@IdPlanoGrupo, @Numero, @Descricao, ISNULL(@Ordem, @Numero), @Usuario);
+            SET @IdPlanoSubgrupo = SCOPE_IDENTITY();
+        END
+        ELSE
+            UPDATE s
+               SET s.ID_PLANO_GRUPO = @IdPlanoGrupo, s.NUMERO = @Numero, s.DESCRICAO = @Descricao, s.ORDEM = ISNULL(@Ordem, s.ORDEM),
+                   s.DT_ALTERACAO = SYSDATETIME(), s.USUARIO_ALTERACAO = @Usuario
+            FROM CAD.Plano_Subgrupo s
+            WHERE s.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Plano de contas gravado.' AS NVARCHAR(400)) AS MENSAGEM, @IdPlanoSubgrupo AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar o plano de contas. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, @IdPlanoSubgrupo AS ID;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.CAD_Plano_Conta_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[CAD_Plano_Conta_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Inclui (@IdPlanoConta NULL) ou altera uma conta (nível 3, a que recebe
+                lançamento), sempre dentro de um subgrupo. @Numero NULL = próximo livre
+                no subgrupo. Número (1 a 999) e descrição não repetem dentro do
+                subgrupo. CONTABIL e CONTA_CONTABIL_REF: pedido 10 / contabilidade.
+                Permissão: INCLUIR ou ALTERAR em CAD_PLANO_CONTA. Devolve SUCESSO, MENSAGEM, ID.
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: conta com lançamentos não muda de subgrupo
+                        (mudaria o grupo e o tipo dos lançamentos já feitos).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [CAD].[CAD_Plano_Conta_Gravar]
+    @IdUsuario     INT,
+    @IdPlanoConta      INT          = NULL,
+    @IdPlanoSubgrupo   INT,
+    @Numero            SMALLINT     = NULL,
+    @Descricao         NVARCHAR(80),
+    @Contabil          BIT          = 0,
+    @ContaContabilRef  VARCHAR(30)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[CAD].[CAD_Plano_Conta_Gravar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa     NVARCHAR(400) = N'';
+    DECLARE @Usuario    NVARCHAR(100);
+
+    BEGIN TRY
+        SET @Descricao = LTRIM(RTRIM(ISNULL(@Descricao, N'')));
+        SET @Contabil         = ISNULL(@Contabil, 0);
+        SET @ContaContabilRef = LTRIM(RTRIM(ISNULL(@ContaContabilRef, '')));
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', CASE WHEN @IdPlanoConta IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
+            SET @Recusa = N'Você não tem permissão para gravar o plano de contas.';
+        IF @Recusa = N'' AND @IdPlanoConta IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'CAD.Plano_Conta', @IdPlanoConta) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
+        IF @Recusa = N'' AND @IdPlanoConta IS NOT NULL AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Conta x WHERE x.ID_PLANO_CONTA = @IdPlanoConta)
+            SET @Recusa = N'Registro do plano de contas não encontrado.';
+        IF @Recusa = N'' AND @Descricao = N''
+            SET @Recusa = N'Informe a descrição.';
+        IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo s WHERE s.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND s.DT_EXCLUSAO IS NULL)
+            SET @Recusa = N'Escolha o subgrupo da conta.';
+        IF @Recusa = N'' AND @IdPlanoConta IS NOT NULL
+           AND EXISTS (SELECT 1 FROM CAD.Plano_Conta x WHERE x.ID_PLANO_CONTA = @IdPlanoConta AND x.ID_PLANO_SUBGRUPO <> @IdPlanoSubgrupo)
+           AND EXISTS (SELECT 1 FROM FIN.Lancamento l WHERE l.ID_PLANO_CONTA = @IdPlanoConta)
+            SET @Recusa = N'A conta já tem lançamentos: não pode mudar de subgrupo. Crie uma conta nova no subgrupo certo e desative esta.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Conta c WHERE c.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND c.DESCRICAO = @Descricao
+                                     AND c.ID_PLANO_CONTA <> ISNULL(@IdPlanoConta, 0))
+            SET @Recusa = N'Já existe uma conta com esta descrição neste subgrupo.';
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdPlanoConta AS ID;
+            RETURN;
+        END;
+
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        -- Número: escolhido ou o próximo livre (leitura travada até o COMMIT)
+        IF @Numero IS NULL
+            SELECT @Numero = ISNULL(MAX(x.NUMERO), 0) + 1 FROM CAD.Plano_Conta x WITH (UPDLOCK, HOLDLOCK) WHERE x.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo;
+
+        IF @Numero NOT BETWEEN 1 AND 999
+            SET @Recusa = N'Número do conta fora da faixa (1 a 999).';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Conta x WITH (UPDLOCK, HOLDLOCK) WHERE x.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND x.NUMERO = @Numero AND x.ID_PLANO_CONTA <> ISNULL(@IdPlanoConta, 0))
+            SET @Recusa = N'Este número já está em uso. Escolha outro ou deixe em branco para usar o próximo livre.';
+
+        IF @Recusa <> N''
+        BEGIN
+            COMMIT TRANSACTION;   -- nada foi gravado (COMMIT em vez de ROLLBACK: funciona dentro de INSERT ... EXEC)
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdPlanoConta AS ID;
+            RETURN;
+        END;
+
+        IF @IdPlanoConta IS NULL
+        BEGIN
+            INSERT INTO CAD.Plano_Conta (ID_PLANO_SUBGRUPO, NUMERO, DESCRICAO, CONTABIL, CONTA_CONTABIL_REF, USUARIO_CRIACAO)
+            VALUES (@IdPlanoSubgrupo, @Numero, @Descricao, @Contabil, @ContaContabilRef, @Usuario);
+            SET @IdPlanoConta = SCOPE_IDENTITY();
+        END
+        ELSE
+            UPDATE c
+               SET c.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo, c.NUMERO = @Numero, c.DESCRICAO = @Descricao, c.CONTABIL = @Contabil,
+                   c.CONTA_CONTABIL_REF = @ContaContabilRef, c.DT_ALTERACAO = SYSDATETIME(), c.USUARIO_ALTERACAO = @Usuario
+            FROM CAD.Plano_Conta c
+            WHERE c.ID_PLANO_CONTA = @IdPlanoConta;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Plano de contas gravado.' AS NVARCHAR(400)) AS MENSAGEM, @IdPlanoConta AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar o plano de contas. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, @IdPlanoConta AS ID;
     END CATCH;
 END;
 GO

@@ -134,6 +134,7 @@ ParceiroTipoEndpoints.Mapear(app);
 EmpresaEndpoints.Mapear(app);
 ContaBancariaEndpoints.Mapear(app);
 CentroCustoEndpoints.Mapear(app);
+PlanoContaEndpoints.Mapear(app);
 AnexoEndpoints.Mapear(app);
 UsuarioEndpoints.Mapear(app);
 HistoricoEndpoints.Mapear(app);

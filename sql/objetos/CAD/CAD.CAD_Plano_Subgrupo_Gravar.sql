@@ -12,6 +12,8 @@
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: subgrupo com conta que tem lançamentos não
+                        muda de grupo (mudaria o tipo dos lançamentos já feitos).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -48,6 +50,10 @@ BEGIN
             SET @Recusa = N'Informe a descrição.';
         IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Grupo g WHERE g.ID_PLANO_GRUPO = @IdPlanoGrupo AND g.DT_EXCLUSAO IS NULL)
             SET @Recusa = N'Escolha o grupo do subgrupo.';
+        IF @Recusa = N'' AND @IdPlanoSubgrupo IS NOT NULL
+           AND EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo x WHERE x.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND x.ID_PLANO_GRUPO <> @IdPlanoGrupo)
+           AND EXISTS (SELECT 1 FROM FIN.Lancamento l INNER JOIN CAD.Plano_Conta c ON c.ID_PLANO_CONTA = l.ID_PLANO_CONTA WHERE c.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo)
+            SET @Recusa = N'O subgrupo tem contas com lançamentos: não pode mudar de grupo.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo s WHERE s.ID_PLANO_GRUPO = @IdPlanoGrupo AND s.DESCRICAO = @Descricao
                                      AND s.ID_PLANO_SUBGRUPO <> ISNULL(@IdPlanoSubgrupo, 0))
             SET @Recusa = N'Já existe um subgrupo com esta descrição neste grupo.';

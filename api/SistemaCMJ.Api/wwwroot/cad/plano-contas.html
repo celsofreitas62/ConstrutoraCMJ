@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Plano de contas</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/historico.js" defer></script>
+  <script src="/js/cad/rotulos.js" defer></script>
+  <script src="/js/cad/plano-contas.js" defer></script>
+</head>
+<body data-tela="cad/plano-contas.html" data-ajuda="cad-plano-contas" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Cadastros › Plano de contas</div>
+          <h1>Plano de contas</h1>
+        </div>
+        <a data-dica="Abre a Lixeira já filtrada nos itens do plano excluídos." class="link-lixeira" href="/sis/lixeira.html?item=CAD_PLANO_CONTA" id="link-lixeira" hidden>Lixeira</a>
+        <button data-dica="Baixa o plano inteiro (o que está na tela) num arquivo que o Excel abre, uma linha por grupo, subgrupo e conta." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <button data-dica="Cria um grupo novo (nível 1: receita, despesa ou não operacional)." type="button" class="botao botao-principal" id="botao-incluir-grupo" hidden>+ Grupo</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Digite parte do nome ou o número (ex.: 05.2). A árvore mostra só o que bate e abre os grupos." class="campo f-3">Nome ou número
+          <input type="search" id="busca" maxlength="60" placeholder="Ex.: cimento" autocomplete="off">
+        </label>
+        <label data-dica="Mostra só os grupos de um tipo." class="campo f-1">Tipo
+          <select id="tipo">
+            <option value="">Todos</option>
+            <option value="RECEITA">Receita</option>
+            <option value="DESPESA">Despesa</option>
+            <option value="NAO_OPERACIONAL">Não operacional</option>
+          </select>
+        </label>
+        <label data-dica="Mostra também o que está desativado (cinza). Desativar um grupo ou subgrupo esconde tudo o que está abaixo dele das escolhas." class="marcacao">
+          <input type="checkbox" id="inativos"> Mostrar inativos
+        </label>
+        <button data-dica="Abre todos os grupos e subgrupos." type="button" class="botao" id="abrir-tudo">Abrir tudo</button>
+        <button data-dica="Fecha todos os grupos." type="button" class="botao" id="fechar-tudo">Fechar tudo</button>
+      </form>
+
+      <div class="area-lista">
+        <div class="plano-area">
+          <div class="cartao plano-arvore">
+            <div class="rolagem" id="arvore" role="tree" aria-label="Plano de contas"></div>
+            <div class="rodape-lista">
+              <span id="contagem" aria-live="polite"></span>
+              <span>Clique num item para ver e alterar</span>
+            </div>
+          </div>
+
+          <form class="cartao plano-ficha" id="ficha" novalidate>
+            <div id="ficha-vazia" class="suave">Escolha um grupo, subgrupo ou conta na árvore, ou clique em <strong>+ Grupo</strong>.</div>
+            <div id="ficha-conteudo" hidden>
+              <div class="plano-ficha-topo">
+                <div>
+                  <div class="suave" id="ficha-nivel"></div>
+                  <h2 id="ficha-titulo"></h2>
+                  <div class="suave" id="ficha-subtitulo"></div>
+                </div>
+              </div>
+              <div class="aviso-faixa" id="ficha-aviso" role="note" hidden></div>
+              <div class="grade">
+                <label data-dica="Onde este item fica na árvore. Com lançamentos, não muda mais de lugar." class="campo s-4" id="campo-pai">
+                  <span id="rotulo-pai">Grupo</span>
+                  <select id="idPai"></select>
+                </label>
+                <label data-dica="Número dentro do nível de cima (grupo 0 a 99, subgrupo 1 a 99, conta 1 a 999). Em branco = o próximo livre." class="campo">Número
+                  <input id="numero" type="number" min="0" max="999" placeholder="próximo">
+                </label>
+                <label data-dica="Nome como aparece nas escolhas e nos relatórios. Não repete dentro do mesmo nível de cima." data-obrigatorio class="campo s-3">Descrição *
+                  <input id="descricao" maxlength="80" autocomplete="off">
+                </label>
+                <label data-dica="Receita (entra dinheiro), Despesa (sai dinheiro) ou Não operacional (transferências, empréstimos, aportes). Vale para tudo abaixo do grupo." class="campo s-2 so-grupo">Tipo
+                  <select id="tipoGrupo">
+                    <option value="DESPESA">Despesa</option>
+                    <option value="RECEITA">Receita</option>
+                    <option value="NAO_OPERACIONAL">Não operacional</option>
+                  </select>
+                </label>
+                <label data-dica="Posição nas listas (menor aparece primeiro). Em branco = pelo número." class="campo so-grupo so-subgrupo">Ordem
+                  <input id="ordem" type="number" min="0" max="999">
+                </label>
+                <div class="campo marcacoes so-grupo">
+                  <label data-dica="Marque se as despesas deste grupo são custo de obra (entram no custo do empreendimento)." class="marcacao"><input type="checkbox" id="custoObra"> Custo de obra</label>
+                </div>
+                <div class="campo marcacoes so-conta">
+                  <label data-dica="Marque se os lançamentos desta conta vão para a contabilidade (exportação ao contador e fechamento de mês)." class="marcacao"><input type="checkbox" id="contabil"> Contábil</label>
+                </div>
+                <label data-dica="Código da conta no plano do contador, para a exportação contábil (opcional)." class="campo s-2 so-conta">Conta contábil
+                  <input id="contaContabilRef" maxlength="30" autocomplete="off">
+                </label>
+              </div>
+              <div class="barra-acoes">
+                <button data-dica="Grava este item (pede confirmação)." type="submit" class="botao botao-principal" id="botao-gravar">Gravar</button>
+                <button data-dica="Cria um item abaixo deste (subgrupo dentro do grupo, conta dentro do subgrupo)." type="button" class="botao botao-contorno" id="botao-filho" hidden></button>
+                <button data-dica="Desativa: some das escolhas (e tudo o que está abaixo dele também), mas os lançamentos continuam. Pede confirmação." type="button" class="botao" id="botao-desativar" hidden>Desativar</button>
+                <button data-dica="Volta o item para as escolhas." type="button" class="botao" id="botao-reativar" hidden>Reativar</button>
+                <button data-dica="Manda para a lixeira. Só para item sem nenhum uso (sem lançamentos e sem itens abaixo). Pede confirmação." type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
+                <button data-dica="Mostra quem mudou o quê neste item e quando; dá para voltar como estava." type="button" class="botao" id="botao-historico" hidden>Histórico</button>
+                <button data-dica="Descarta o que foi digitado e volta como estava." type="button" class="botao" id="botao-cancelar">Cancelar</button>
+              </div>
+              <div id="historico" hidden></div>
+              <div class="rodape-ficha" id="rodape"></div>
+            </div>
+          </form>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

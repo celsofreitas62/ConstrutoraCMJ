@@ -12,6 +12,8 @@
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): recusa alterar registro que está na lixeira e escolher registro ligado que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: conta com lançamentos não muda de subgrupo
+                        (mudaria o grupo e o tipo dos lançamentos já feitos).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -50,6 +52,10 @@ BEGIN
             SET @Recusa = N'Informe a descrição.';
         IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM CAD.Plano_Subgrupo s WHERE s.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND s.DT_EXCLUSAO IS NULL)
             SET @Recusa = N'Escolha o subgrupo da conta.';
+        IF @Recusa = N'' AND @IdPlanoConta IS NOT NULL
+           AND EXISTS (SELECT 1 FROM CAD.Plano_Conta x WHERE x.ID_PLANO_CONTA = @IdPlanoConta AND x.ID_PLANO_SUBGRUPO <> @IdPlanoSubgrupo)
+           AND EXISTS (SELECT 1 FROM FIN.Lancamento l WHERE l.ID_PLANO_CONTA = @IdPlanoConta)
+            SET @Recusa = N'A conta já tem lançamentos: não pode mudar de subgrupo. Crie uma conta nova no subgrupo certo e desative esta.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM CAD.Plano_Conta c WHERE c.ID_PLANO_SUBGRUPO = @IdPlanoSubgrupo AND c.DESCRICAO = @Descricao
                                      AND c.ID_PLANO_CONTA <> ISNULL(@IdPlanoConta, 0))
             SET @Recusa = N'Já existe uma conta com esta descrição neste subgrupo.';

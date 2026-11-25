@@ -13,6 +13,8 @@
   Changelog:
     v1.0 (16/11/2026) - Criação (etapa 03a).
     v1.1 (22/11/2026) - Etapa 04b (P20): não lista o que está na lixeira.
+    v1.2 (25/11/2026) - Etapa 04e: QTD_LANCAMENTOS (na conta: lançamentos que a
+                        usam; no subgrupo e no grupo: soma das contas abaixo).
 
   Homologação (LOCAL):
     -- EXEC CAD.CAD_Plano_Conta_Listar @IdUsuario = 2;
@@ -36,9 +38,20 @@ BEGIN
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'CAD_PLANO_CONTA', 'VER') = 0
             THROW 50001, N'Você não tem permissão para ver o plano de contas.', 1;
 
+        SET @EtapaAtual = 'Uso';
+        SELECT l.ID_PLANO_CONTA, c.ID_PLANO_SUBGRUPO, s.ID_PLANO_GRUPO, COUNT(*) AS QTD
+        INTO #Uso
+        FROM FIN.Lancamento l WITH (NOLOCK)
+        INNER JOIN CAD.Plano_Conta c    WITH (NOLOCK) ON c.ID_PLANO_CONTA = l.ID_PLANO_CONTA
+        INNER JOIN CAD.Plano_Subgrupo s WITH (NOLOCK) ON s.ID_PLANO_SUBGRUPO = c.ID_PLANO_SUBGRUPO
+        GROUP BY l.ID_PLANO_CONTA, c.ID_PLANO_SUBGRUPO, s.ID_PLANO_GRUPO;
+
         SET @EtapaAtual = 'Consulta';
         SELECT x.NIVEL, x.ID, x.ID_PAI, x.NUMERO, x.CODIGO, x.DESCRICAO, x.TIPO, x.CUSTO_OBRA, x.CONTABIL, x.CONTA_CONTABIL_REF,
-               x.ORDEM, x.ATIVO, x.ATIVO_EFETIVO, x.ORDEM_ARVORE, x.DT_ALTERACAO, x.USUARIO_ALTERACAO
+               x.ORDEM, x.ATIVO, x.ATIVO_EFETIVO, x.ORDEM_ARVORE, x.DT_ALTERACAO, x.USUARIO_ALTERACAO,
+               ISNULL(CASE x.NIVEL WHEN 3 THEN q.QTD
+                                   WHEN 2 THEN (SELECT SUM(q2.QTD) FROM #Uso q2 WHERE q2.ID_PLANO_SUBGRUPO = x.ID)
+                                   ELSE (SELECT SUM(q2.QTD) FROM #Uso q2 WHERE q2.ID_PLANO_GRUPO = x.ID) END, 0) AS QTD_LANCAMENTOS
         FROM (
             SELECT CAST(1 AS TINYINT) AS NIVEL, g.ID_PLANO_GRUPO AS ID, CAST(NULL AS INT) AS ID_PAI, g.NUMERO,
                    CONVERT(VARCHAR(12), RIGHT('0' + CONVERT(VARCHAR(3), g.NUMERO), 2)) AS CODIGO,
@@ -67,6 +80,7 @@ BEGIN
             INNER JOIN CAD.Plano_Conta c WITH (NOLOCK) ON c.ID_PLANO_CONTA = v.ID_PLANO_CONTA
             WHERE c.DT_EXCLUSAO IS NULL
         ) x
+        LEFT JOIN #Uso q ON x.NIVEL = 3 AND q.ID_PLANO_CONTA = x.ID
         WHERE (ISNULL(@SomenteAtivos, 0) = 0 OR x.ATIVO_EFETIVO = 1)
         ORDER BY x.ORDEM_ARVORE;
     END TRY

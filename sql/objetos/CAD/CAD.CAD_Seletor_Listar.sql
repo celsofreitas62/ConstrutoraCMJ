@@ -59,22 +59,18 @@ BEGIN
         SET @EtapaAtual = 'Consulta';
         IF @Tipo = 'PLANO'
             SELECT TOP (@Limite) v.ID, v.CODIGO, v.DESCRICAO, v.COMPLEMENTO, v.ATIVO
-            FROM (SELECT pc.ID_PLANO_CONTA AS ID,
-                         RIGHT('0' + CAST(g.NUMERO AS VARCHAR(2)), 2) + '.' + RIGHT('0' + CAST(s.NUMERO AS VARCHAR(2)), 2) + '.' + RIGHT('00' + CAST(pc.NUMERO AS VARCHAR(3)), 3) AS CODIGO,
-                         pc.DESCRICAO, g.DESCRICAO + N' › ' + s.DESCRICAO AS COMPLEMENTO,
-                         CAST(CASE WHEN pc.ATIVO = 1 AND s.ATIVO = 1 AND g.ATIVO = 1 THEN 1 ELSE 0 END AS BIT) AS ATIVO,
-                         g.ORDEM AS O1, g.NUMERO AS O2, s.NUMERO AS O3, pc.NUMERO AS O4
-                  FROM CAD.Plano_Conta pc WITH (NOLOCK)
-                  INNER JOIN CAD.Plano_Subgrupo s WITH (NOLOCK) ON s.ID_PLANO_SUBGRUPO = pc.ID_PLANO_SUBGRUPO
-                  INNER JOIN CAD.Plano_Grupo g    WITH (NOLOCK) ON g.ID_PLANO_GRUPO = s.ID_PLANO_GRUPO
+            FROM (SELECT v.ID_PLANO_CONTA AS ID, v.CODIGO, v.DESCRICAO, v.GRUPO_DESCRICAO + N' › ' + v.SUBGRUPO_DESCRICAO AS COMPLEMENTO,
+                         v.ATIVO_EFETIVO AS ATIVO, v.ORDEM_ARVORE
+                  FROM CAD.vw_CAD_Plano_Conta v WITH (NOLOCK)
+                  INNER JOIN CAD.Plano_Conta pc WITH (NOLOCK) ON pc.ID_PLANO_CONTA = v.ID_PLANO_CONTA
                   WHERE pc.DT_EXCLUSAO IS NULL
-                    AND (pc.ID_PLANO_CONTA = @IdAtual
-                         OR (pc.ATIVO = 1 AND s.ATIVO = 1 AND g.ATIVO = 1
-                             AND (@Busca = N'' OR pc.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
-                                  OR s.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo OR g.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
-                                  OR RIGHT('0' + CAST(g.NUMERO AS VARCHAR(2)), 2) + '.' + RIGHT('0' + CAST(s.NUMERO AS VARCHAR(2)), 2) + '.' + RIGHT('00' + CAST(pc.NUMERO AS VARCHAR(3)), 3) LIKE @Busca + '%')))
+                    AND (v.ID_PLANO_CONTA = @IdAtual
+                         OR (v.ATIVO_EFETIVO = 1
+                             AND (@Busca = N'' OR v.DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
+                                  OR v.SUBGRUPO_DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo OR v.GRUPO_DESCRICAO COLLATE Latin1_General_CI_AI LIKE @Termo
+                                  OR v.CODIGO LIKE @Busca + '%')))
                  ) v
-            ORDER BY CASE WHEN v.ID = @IdAtual THEN 0 ELSE 1 END, v.O1, v.O2, v.O3, v.O4;
+            ORDER BY CASE WHEN v.ID = @IdAtual THEN 0 ELSE 1 END, v.ORDEM_ARVORE;
         ELSE IF @Tipo = 'CENTRO'
             SELECT TOP (@Limite) cc.ID_CENTRO_CUSTO AS ID, cc.CODIGO, cc.DESCRICAO,
                    ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL)

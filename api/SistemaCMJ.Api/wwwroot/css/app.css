@@ -374,3 +374,27 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .seletor-descricao { font-weight: 500; }
 .seletor-complemento { font-size: 12px; color: #6B6B6B; }
 .seletor-vazio { padding: 8px 10px; color: #6B6B6B; font-style: italic; }
+
+/* Plano de contas em árvore (04e) */
+.plano-area { display: grid; grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr); gap: 16px; align-items: start; flex: 1; min-width: 0; }
+.plano-arvore .rolagem { max-height: calc(100vh - 300px); overflow-y: auto; }
+.plano-ficha { position: sticky; top: 12px; }
+.plano-ficha h2 { margin: 2px 0 4px; font-size: 18px; }
+.plano-ficha-topo { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.plano-nivel { list-style: none; margin: 0; padding: 0; }
+.plano-nivel .plano-nivel { padding-left: 22px; }
+.plano-linha { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; cursor: pointer; }
+.plano-linha:hover, .plano-linha:focus-visible { background: #F6F6F4; outline: none; }
+.plano-linha.plano-escolhido { background: var(--cor-principal-clara); }
+.plano-n1 { font-weight: 600; }
+.plano-inativo { color: #9A9A9A; }
+.plano-seta { border: 0; background: none; width: 18px; cursor: pointer; color: #6B6B6B; padding: 0; }
+.plano-seta:disabled { cursor: default; }
+.plano-codigo { font-variant-numeric: tabular-nums; font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: #555; min-width: 62px; }
+.plano-descricao { flex: 0 1 auto; }
+.plano-qtd { margin-left: auto; font-size: 12px; white-space: nowrap; }
+.plano-tipo-receita { background: #E7F3E8; color: #1E6B22; }
+.plano-tipo-despesa { background: #FDECEA; color: #8A2A12; }
+.plano-tipo-nao_operacional { background: #ECEFF5; color: #34465F; }
+.barra-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+@media (max-width: 1100px) { .plano-area { grid-template-columns: 1fr; } .plano-ficha { position: static; } }
