@@ -199,10 +199,10 @@ ORDEM_04C2 = ['objetos/SIS/Carga_SIS_Versao_Nota.sql', 'objetos/SIS/Carga_SIS_Ve
 ORDEM_04D = ['objetos/CAD/CAD.Parceiro_Tipo.sql', 'objetos/CAD/CAD.Pessoa_Tipo.sql', 'objetos/CAD/CAD.Cep_Cache.sql',
              'objetos/CAD/CAD.Pessoa.sql', 'objetos/CAD/CAD.Pessoa_Contato.sql', 'objetos/SIS/SIS.Anexo.sql',
              'objetos/CAD/Carga_CAD_Parceiro_Tipo.sql', 'objetos/SIS/Carga_SIS_Parametro.sql', 'objetos/CAD/CAD.fn_CAD_Pessoa_Pendencia_Cobranca.sql', 'objetos/CAD/CAD.CAD_Parceiro_Tipo_Listar.sql', 'objetos/CAD/CAD.CAD_Parceiro_Tipo_Gravar.sql', 'objetos/CAD/CAD.CAD_Pessoa_Gravar.sql', 'objetos/CAD/CAD.CAD_Pessoa_Obter.sql', 'objetos/CAD/CAD.CAD_Pessoa_Listar.sql', 'objetos/CAD/CAD.CAD_Consulta_Config_Obter.sql', 'objetos/CAD/CAD.CAD_Cep_Cache_Gravar.sql', 'objetos/SIS/SIS.SIS_Anexo_Gravar.sql', 'objetos/SIS/SIS.SIS_Anexo_Listar.sql', 'objetos/CAD/Carga_CAD_Item.sql', 'objetos/CAD/Carga_CAD_Auditoria_Triggers.sql', 'objetos/SIS/Carga_SIS_Tabela_Config.sql']
-ORDEM_04D2 = ['objetos/SIS/SIS.SIS_Anexo_Tipo_Listar.sql']
+ORDEM_04D2 = ['objetos/SIS/SIS.SIS_Anexo_Tipo_Listar.sql', 'objetos/MIG/MIG.fn_MIG_Endereco_Separar.sql', 'objetos/MIG/MIG.MIG_Cadastros_Processar.sql']
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B, '03d': ORDEM_03D, '03g': ORDEM_03G, '03h': ORDEM_03H, '04a': ORDEM_04A, '04b': ORDEM_04B, '04b2': ORDEM_04B2, '04c': ORDEM_04C, '04c2': ORDEM_04C2, '04d': ORDEM_04D, '04d2': ORDEM_04D2}[PARTE]
-TITULO = {'04d2': '04d2 - telas dos Parceiros: tipos de anexo para a aba Anexos; banco 2.3',
+TITULO = {'04d2': '04d2 - telas dos Parceiros: tipos de anexo para a aba Anexos, separacao de numero e complemento do endereco na migracao; banco 2.3',
           '04d': '04d - Parceiros (P12, P10): tipos de parceiro, finalidade e principal unico nos contatos, validade do anexo, conta/centro padrao, cache de CEP',
           '04c2': '04c2 - telas das versoes e do O que ha de novo (P22): nota da 2.2; banco 2.2',
           '04c': '04c - versoes e notas da versao (SIS.Versao_Nota, aviso O que ha de novo, e-mail da nota; P22); banco continua 2.1 ate a 04c2',

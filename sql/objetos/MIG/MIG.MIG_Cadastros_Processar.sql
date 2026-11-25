@@ -33,6 +33,10 @@
                         lugar da do Access; centro extra com ATIVO decidido na
                         classificação (ex.: imóvel vendido) prevalece sobre a
                         regra automática.
+    v1.2 (25/11/2026) - 04d2: número e complemento separados do logradouro
+                        (MIG.fn_MIG_Endereco_Separar, regra aprovada pelo
+                        Celso); o não reconhecido fica inteiro no logradouro,
+                        com o número vazio (pendência da Renata).
 
   Homologação (LOCAL):
     -- EXEC MIG.MIG_Cadastros_Processar;
@@ -212,7 +216,7 @@ BEGIN
                CAST(LEFT(LTRIM(RTRIM(ISNULL(d.RG, N''))), 20) AS VARCHAR(20)) AS RG,
                CAST(LEFT(LTRIM(RTRIM(ISNULL(d.IE, N''))), 20) AS VARCHAR(20)) AS INSCRICAO_ESTADUAL,
                CAST(CASE WHEN LEN(CAD.fn_CAD_Somente_Digitos(d.CEP)) = 8 THEN CAD.fn_CAD_Somente_Digitos(d.CEP) ELSE '' END AS VARCHAR(8)) AS CEP,
-               CAST(LEFT(LTRIM(RTRIM(ISNULL(d.Endereco, N''))), 150) AS NVARCHAR(150)) AS LOGRADOURO,
+               en.LOGRADOURO, en.NUMERO, en.COMPLEMENTO, en.RECONHECIDO AS ENDERECO_RECONHECIDO,
                CAST(LEFT(LTRIM(RTRIM(ISNULL(d.Bairro, N''))), 60) AS NVARCHAR(60)) AS BAIRRO,
                CAST(LEFT(LTRIM(RTRIM(ISNULL(d.Cidade, N''))), 60) AS NVARCHAR(60)) AS CIDADE,
                CAST(CASE WHEN LEN(LTRIM(RTRIM(ISNULL(d.Estado, N'')))) = 2 AND UPPER(LTRIM(RTRIM(d.Estado))) NOT LIKE '%[^A-Z]%' COLLATE Latin1_General_BIN2
@@ -234,7 +238,8 @@ BEGIN
                     ), 1800) AS NVARCHAR(2000)) AS OBSERVACAO,
                d.Email, d.Telefone, d.TelefoneComercial, d.Fax
         INTO #Pes
-        FROM Doc d;
+        FROM Doc d
+        CROSS APPLY MIG.fn_MIG_Endereco_Separar(LEFT(LTRIM(RTRIM(ISNULL(d.Endereco, N''))), 150)) en;  -- v1.2: número e complemento separados
 
         -- contatos candidatos (e-mail separado por ; , espaço ou #mailto:; telefone só dígitos)
         SELECT x.COD, x.TIPO, x.VALOR, x.ORIGEM, x.ORDEM,
@@ -267,20 +272,20 @@ BEGIN
 
         UPDATE d
            SET d.TIPO_PESSOA = s.TIPO_PESSOA, d.NOME = s.NOME, d.CPF_CNPJ = s.CPF_CNPJ, d.RG = s.RG, d.INSCRICAO_ESTADUAL = s.INSCRICAO_ESTADUAL,
-               d.CEP = s.CEP, d.LOGRADOURO = s.LOGRADOURO, d.BAIRRO = s.BAIRRO, d.CIDADE = s.CIDADE, d.UF = s.UF,
+               d.CEP = s.CEP, d.LOGRADOURO = s.LOGRADOURO, d.NUMERO = s.NUMERO, d.COMPLEMENTO = s.COMPLEMENTO, d.BAIRRO = s.BAIRRO, d.CIDADE = s.CIDADE, d.UF = s.UF,
                d.CLIENTE = s.CLIENTE, d.FORNECEDOR = s.FORNECEDOR, d.FUNCIONARIO = s.FUNCIONARIO, d.OBSERVACAO = s.OBSERVACAO, d.ATIVO = s.ATIVO,
                d.DT_ALTERACAO = @Agora, d.USUARIO_ALTERACAO = @Usuario
         FROM CAD.Pessoa d
         INNER JOIN #Pes s ON s.COD = d.CODIGO_ACCESS
-        WHERE EXISTS (SELECT d.TIPO_PESSOA, d.NOME, d.CPF_CNPJ, d.RG, d.INSCRICAO_ESTADUAL, d.CEP, d.LOGRADOURO, d.BAIRRO, d.CIDADE, d.UF,
+        WHERE EXISTS (SELECT d.TIPO_PESSOA, d.NOME, d.CPF_CNPJ, d.RG, d.INSCRICAO_ESTADUAL, d.CEP, d.LOGRADOURO, d.NUMERO, d.COMPLEMENTO, d.BAIRRO, d.CIDADE, d.UF,
                              d.CLIENTE, d.FORNECEDOR, d.FUNCIONARIO, d.OBSERVACAO, d.ATIVO
                       EXCEPT
-                      SELECT s.TIPO_PESSOA, s.NOME, s.CPF_CNPJ, s.RG, s.INSCRICAO_ESTADUAL, s.CEP, s.LOGRADOURO, s.BAIRRO, s.CIDADE, s.UF,
+                      SELECT s.TIPO_PESSOA, s.NOME, s.CPF_CNPJ, s.RG, s.INSCRICAO_ESTADUAL, s.CEP, s.LOGRADOURO, s.NUMERO, s.COMPLEMENTO, s.BAIRRO, s.CIDADE, s.UF,
                              s.CLIENTE, s.FORNECEDOR, s.FUNCIONARIO, s.OBSERVACAO, s.ATIVO);
 
-        INSERT INTO CAD.Pessoa (TIPO_PESSOA, NOME, CPF_CNPJ, RG, INSCRICAO_ESTADUAL, CEP, LOGRADOURO, BAIRRO, CIDADE, UF,
+        INSERT INTO CAD.Pessoa (TIPO_PESSOA, NOME, CPF_CNPJ, RG, INSCRICAO_ESTADUAL, CEP, LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE, UF,
                                 CLIENTE, FORNECEDOR, FUNCIONARIO, OBSERVACAO, ATIVO, CODIGO_ACCESS, USUARIO_CRIACAO)
-        SELECT s.TIPO_PESSOA, s.NOME, s.CPF_CNPJ, s.RG, s.INSCRICAO_ESTADUAL, s.CEP, s.LOGRADOURO, s.BAIRRO, s.CIDADE, s.UF,
+        SELECT s.TIPO_PESSOA, s.NOME, s.CPF_CNPJ, s.RG, s.INSCRICAO_ESTADUAL, s.CEP, s.LOGRADOURO, s.NUMERO, s.COMPLEMENTO, s.BAIRRO, s.CIDADE, s.UF,
                s.CLIENTE, s.FORNECEDOR, s.FUNCIONARIO, s.OBSERVACAO, s.ATIVO, s.COD, @Usuario
         FROM #Pes s
         WHERE NOT EXISTS (SELECT 1 FROM CAD.Pessoa d WHERE d.CODIGO_ACCESS = s.COD);
