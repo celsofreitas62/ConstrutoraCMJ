@@ -19,6 +19,10 @@
                         FIN_PEND_* (todas só para lançamentos em aberto;
                         data de corte e valor do anexo alteráveis pela
                         administradora, pedido do Celso em 26/11/2026).
+    v1.3 (26/11/2026) - Etapa 04g: baixa (juros, multa, carência, cálculo
+                        no a pagar, limite de desconto) e fechamento de caixa
+                        (tipos de conta, aviso na transferência entre
+                        empresas). Aprovado pelo Celso em 26/11/2026.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -89,7 +93,21 @@ FROM (VALUES
         ('FIN_PEND_VENCIDA_DIAS', N'30', 'INTEIRO',
          N'Pendência automática: parcela em aberto vencida há mais destes dias. 0 = desligada.', 1, N''),
         ('FIN_PEND_A_PARTIR_DE', N'2022-01-01', 'DATA',
-         N'As pendências automáticas só olham os lançamentos em aberto com emissão a partir desta data. 01/01/2022 (início dos dados migrados) = todos.', 1, N'')
+         N'As pendências automáticas só olham os lançamentos em aberto com emissão a partir desta data. 01/01/2022 (início dos dados migrados) = todos.', 1, N''),
+        ('FIN_BAIXA_MULTA_PERC', N'2.00', 'DECIMAL',
+         N'Baixa com atraso: multa sugerida, em % do saldo da parcela (uma vez). 0 = sem multa.', 1, N''),
+        ('FIN_BAIXA_JUROS_MES_PERC', N'1.00', 'DECIMAL',
+         N'Baixa com atraso: juros sugeridos, em % ao mês, proporcionais aos dias de atraso (pro rata). 0 = sem juros.', 1, N''),
+        ('FIN_BAIXA_CARENCIA_DIAS', N'0', 'INTEIRO',
+         N'Baixa: dias depois do vencimento sem multa nem juros. Passou da carência, conta desde o vencimento.', 1, N''),
+        ('FIN_BAIXA_CALCULA_PAGAR', N'N', 'SN',
+         N'Calcular juros e multa também nas contas a pagar (N = o valor informado pelo fornecedor é digitado).', 1, N''),
+        ('FIN_BAIXA_DESCONTO_LIMITE_PERC', N'5.00', 'DECIMAL',
+         N'Desconto máximo na baixa a receber, em % do saldo da parcela. Acima disso, só com a ação "Desconto acima do limite" e motivo. 0 = sem limite.', 1, N''),
+        ('FIN_CAIXA_FECHAMENTO_TIPOS', N'CAIXA', 'TEXTO',
+         N'Tipos de conta que usam o fechamento de caixa, separados por vírgula (CAIXA, CORRENTE, POUPANCA, APLICACAO, PERMUTA). Vazio = nenhum.', 1, N''),
+        ('FIN_TRANSF_ENTRE_EMPRESAS', N'AVISO', 'TEXTO',
+         N'Transferência entre contas de empresas diferentes do grupo: AVISO (pede confirmação), BLOQUEIO (não deixa) ou NAO (sem aviso).', 1, N'AVISO;BLOQUEIO;NAO')
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, NIVEL, OPCOES);
 
 INSERT INTO SIS.Parametro (CHAVE, VALOR, VALOR_PADRAO, TIPO, DESCRICAO, ID_MODULO, EDITAVEL_ADMIN, NIVEL_MINIMO, OPCOES)

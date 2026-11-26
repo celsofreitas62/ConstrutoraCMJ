@@ -12,6 +12,7 @@
     v1.0 (17/11/2026) - Criação (etapa 03c).
     v1.1 (26/11/2026) - Etapa 04f2c (P27): FIN.Pendencia_Tipo e
                         FIN.Lancamento_Pendencia.
+    v1.2 (26/11/2026) - Etapa 04g: BANCO.Caixa_Fechamento.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -27,4 +28,5 @@ EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Parcela',          @Criar =
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Baixa',            @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Pendencia_Tipo',   @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Lancamento_Pendencia', @Criar = 1;
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'BANCO.Caixa_Fechamento', @Criar = 1;
 GO

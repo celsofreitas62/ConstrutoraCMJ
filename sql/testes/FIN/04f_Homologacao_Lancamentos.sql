@@ -5,7 +5,7 @@
                 lixeira, lista, ficha, sugestões, escolhas com busca e
                 parâmetros de uso (nível mínimo e opções).
   Autor       : Celso de Freitas / Refatorado: Claude
-  Criação     : 25/11/2026 (v1.0). v1.1 (25/11/2026, 04f2a): 23 parâmetros FIN; canceladas contadas na lista. v1.2 (26/11/2026, 04f2c): colunas de pendências na lista e na ficha; parâmetros FIN_PEND_* contados no teste 04f2c. Roda no SISTEMACMJ_LOCAL e no banco do MASTER
+  Criação     : 25/11/2026 (v1.0). v1.1 (25/11/2026, 04f2a): 23 parâmetros FIN; canceladas contadas na lista. v1.2 (26/11/2026, 04f2c): colunas de pendências na lista e na ficha; parâmetros FIN_PEND_* contados no teste 04f2c. v1.3 (26/11/2026, 04g): parâmetros da baixa e do caixa (contados no 04g) fora da conta; 13 ações por tela. Roda no SISTEMACMJ_LOCAL e no banco do MASTER
                 (no banco sem cadastros, os casos com dados passam direto).
   Observação  : não muda nada (tudo desfeito com ROLLBACK). Datas calculadas a
                 partir de hoje, para o teste valer em qualquer dia.
@@ -47,9 +47,9 @@ INSERT @r SELECT N'tabela SIS.Aviso_Confirmado', N'1', CAST(COUNT(*) AS NVARCHAR
 INSERT @r SELECT N'colunas novas de FIN.Lancamento', N'6', CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.columns WHERE object_id = OBJECT_ID('FIN.Lancamento')
          AND name IN ('ATIVO', 'DT_EXCLUSAO', 'USUARIO_EXCLUSAO', 'DT_CANCELAMENTO', 'USUARIO_CANCELAMENTO', 'MOTIVO_CANCELAMENTO');
 INSERT @r SELECT N'colunas NIVEL_MINIMO e OPCOES em SIS.Parametro', N'2', CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.columns WHERE object_id = OBJECT_ID('SIS.Parametro') AND name IN ('NIVEL_MINIMO', 'OPCOES');
-INSERT @r SELECT N'parâmetros FIN da 04f e 04f2a', N'23', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE CHAVE LIKE 'FIN[_]%' AND CHAVE NOT LIKE 'FIN[_]PEND[_]%' AND NIVEL_MINIMO = 1;
-INSERT @r SELECT N'regras com opções AVISO;BLOQUEIO;NAO', N'7', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE OPCOES = N'AVISO;BLOQUEIO;NAO';
-INSERT @r SELECT N'telas FIN_PAGAR e FIN_RECEBER com 9 ações cada (PENDENCIA desde a 04f2c)', N'18', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM WHERE i.CODIGO IN ('FIN_PAGAR', 'FIN_RECEBER');
+INSERT @r SELECT N'parâmetros FIN da 04f e 04f2a', N'23', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE CHAVE LIKE 'FIN[_]%' AND CHAVE NOT LIKE 'FIN[_]PEND[_]%' AND CHAVE NOT IN ('FIN_BAIXA_MULTA_PERC', 'FIN_BAIXA_JUROS_MES_PERC', 'FIN_BAIXA_CARENCIA_DIAS', 'FIN_BAIXA_CALCULA_PAGAR', 'FIN_BAIXA_DESCONTO_LIMITE_PERC', 'FIN_CAIXA_FECHAMENTO_TIPOS', 'FIN_TRANSF_ENTRE_EMPRESAS') AND NIVEL_MINIMO = 1;
+INSERT @r SELECT N'regras com opções AVISO;BLOQUEIO;NAO', N'7', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Parametro WHERE OPCOES = N'AVISO;BLOQUEIO;NAO' AND CHAVE LIKE 'FIN[_]REGRA[_]%';
+INSERT @r SELECT N'telas FIN_PAGAR e FIN_RECEBER com 13 ações cada (PENDENCIA desde a 04f2c, baixa desde a 04g)', N'26', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM WHERE i.CODIGO IN ('FIN_PAGAR', 'FIN_RECEBER');
 INSERT @r SELECT N'tela Parâmetros de uso (não exclusiva)', N'0', ISNULL((SELECT CAST(EXCLUSIVO_GERAL AS NVARCHAR(1)) FROM SIS.Item WHERE CODIGO = 'SIS_PARAMETRO_USO'), N'-');
 INSERT @r SELECT N'FIN.Lancamento na lixeira com trava própria', N'1', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Tabela_Config WHERE TABELA = N'FIN.Lancamento' AND PERMITE_LIXEIRA = 1 AND PROC_VALIDAR = N'FIN.FIN_Lancamento_Trava_Conferir';
 INSERT @r SELECT N'trava de datas: 2 meses atrás recusa', N'recusa', CASE WHEN FIN.fn_FIN_Data_Recusa('EMISSAO', DATEADD(MONTH, -2, @Hoje)) <> N'' THEN N'recusa' ELSE N'aceita' END;
