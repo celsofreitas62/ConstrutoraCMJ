@@ -20,6 +20,8 @@
                         sem baixa, mês fechado de conta contábil) e FIN.Parcela
                         (desfazer; inclusão de parcela não é desfeita).
                         PROC_VALIDAR entra também pela carga.
+    v1.3 (26/11/2026) - Etapa 04f2c (P27): FIN.Lancamento_Pendencia (filha
+                        do lançamento) e FIN.Pendencia_Tipo (lixeira).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -51,10 +53,13 @@ FROM (VALUES
         (N'SIS.Usuario_Permissao',    1, 0, N'', N'', N'', 'APAGAR', 'REINSERIR', N'N''Permissão '' + CAST(t.ID_ITEM_ACAO AS NVARCHAR(10))'),
         (N'SIS.Perfil',               1, 0, N'NIVEL_ADMIN', N'', N'SIS.Perfil_Permissao.ID_PERFIL', 'DESATIVAR', 'RECUSAR', N't.NOME'),
         (N'SIS.Perfil_Permissao',     1, 0, N'', N'', N'', 'APAGAR', 'REINSERIR', N'N''Permissão '' + CAST(t.ID_ITEM_ACAO AS NVARCHAR(10))'),
-        (N'FIN.Lancamento',           1, 1, N'TIPO,ORIGEM,ID_ORIGEM,ID_LOTE,CODIGO_ACCESS,ORIGEM_ACCESS,ID_PEDIDO_COMPRA', N'', N'FIN.Parcela.ID_LANCAMENTO', 'LIXEIRA', 'RECUSAR',
+        (N'FIN.Lancamento',           1, 1, N'TIPO,ORIGEM,ID_ORIGEM,ID_LOTE,CODIGO_ACCESS,ORIGEM_ACCESS,ID_PEDIDO_COMPRA', N'', N'FIN.Parcela.ID_LANCAMENTO,FIN.Lancamento_Pendencia.ID_LANCAMENTO', 'LIXEIRA', 'RECUSAR',
          N'CASE t.TIPO WHEN ''P'' THEN N''A pagar '' ELSE N''A receber '' END + CASE WHEN t.DOCUMENTO <> N'''' THEN N''doc. '' + t.DOCUMENTO + N'' - '' ELSE N'''' END + t.HISTORICO + N'' ('' + CONVERT(NVARCHAR(30), t.VALOR_TOTAL) + N'')'''),
         (N'FIN.Parcela',              1, 0, N'VALOR_BAIXADO,SITUACAO,ID_LANCAMENTO,CODIGO_ACCESS,ID_LOTE', N'', N'', 'RECUSAR', 'RECUSAR',
          N'N''Parcela '' + CONVERT(NVARCHAR(5), t.NUMERO) + N''/'' + CONVERT(NVARCHAR(5), t.QTD_PARCELAS) + N'' venc. '' + CONVERT(NVARCHAR(10), t.DT_VENCIMENTO, 103)')
+        ,(N'FIN.Lancamento_Pendencia', 1, 0, N'ID_LANCAMENTO,ORIGEM', N'', N'', 'DESATIVAR', 'RECUSAR',
+         N'N''Pendência '' + CASE t.SITUACAO WHEN ''RESOLVIDA'' THEN N''resolvida'' ELSE N''aberta'' END + N'' (tipo '' + CAST(t.ID_PENDENCIA_TIPO AS NVARCHAR(10)) + N'')'''),
+        (N'FIN.Pendencia_Tipo',       1, 1, N'SISTEMA', N'CODIGO', N'', 'LIXEIRA', 'RECUSAR', N't.DESCRICAO')
      ) v (TABELA, DESFAZER, LIXEIRA, BLOQUEADOS, UNICOS, FILHAS, INCLUSAO, EXCLUSAO, DESCRICAO);
 
 INSERT INTO SIS.Tabela_Config (TABELA, PERMITE_DESFAZER, PERMITE_LIXEIRA, CAMPOS_BLOQUEADOS, CAMPOS_UNICOS, TABELAS_FILHAS, DESFAZER_INCLUSAO, DESFAZER_EXCLUSAO, DESCRICAO_SQL, USUARIO_CRIACAO)

@@ -16,6 +16,8 @@
                         lixeira (nome acertado).
     v1.4 (25/11/2026) - Etapa 04f: LANCAR_RETROATIVO (lançar fora da trava de
                         datas do financeiro, com motivo; decisão de 18/11/2026).
+    v1.5 (26/11/2026) - Etapa 04f2c (P27): PENDENCIA (incluir, resolver e
+                        reabrir pendências dos lançamentos).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -44,7 +46,8 @@ FROM (VALUES
         ('DESFAZER',         N'Desfazer pelo histórico',    170),
         ('RECUPERAR',        N'Recuperar da lixeira',       180),
         ('ESVAZIAR',         N'Esvaziar a lixeira (apagar de vez)', 190),
-        ('LANCAR_RETROATIVO', N'Lançar fora da trava de datas (com motivo)', 200)
+        ('LANCAR_RETROATIVO', N'Lançar fora da trava de datas (com motivo)', 200),
+        ('PENDENCIA',        N'Pendências (incluir, resolver, reabrir)', 210)
      ) v (CODIGO, NOME, ORDEM)
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Acao a WHERE a.CODIGO = v.CODIGO);
 GO

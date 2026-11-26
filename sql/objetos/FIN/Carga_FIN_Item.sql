@@ -12,6 +12,11 @@
     v1.1 (25/11/2026) - Etapa 04f: telas "Contas a pagar" (FIN_PAGAR) e
                         "Contas a receber" (FIN_RECEBER), mesma tela com o tipo
                         no endereço, permissões separadas; nascem desabilitadas.
+    v1.2 (26/11/2026) - Etapa 04f2c (P27): tela "Tipos de pendência"
+                        (FIN_PENDENCIA_TIPO, nasce desabilitada); ação PENDENCIA
+                        nas telas de pagar e receber, dada (só quando nasce) a
+                        quem já tinha ALTERAR; FIN.Lancamento_Pendencia nas
+                        tabelas das duas telas.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -47,4 +52,55 @@ CROSS JOIN (VALUES (CAST('VER' AS VARCHAR(20))), ('INCLUIR'), ('ALTERAR'), ('CAN
 INNER JOIN SIS.Item i ON i.CODIGO = t.ITEM
 INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+GO
+
+-- Etapa 04f2c (P27): tabelas das telas de pagar e receber
+UPDATE i
+   SET i.TABELAS_DA_TELA = 'FIN.Lancamento,FIN.Parcela,FIN.Lancamento_Pendencia', i.DT_ALTERACAO = SYSDATETIME(), i.USUARIO_ALTERACAO = N'instalacao'
+FROM SIS.Item i
+WHERE i.CODIGO IN ('FIN_PAGAR', 'FIN_RECEBER')
+  AND i.TABELAS_DA_TELA <> 'FIN.Lancamento,FIN.Parcela,FIN.Lancamento_Pendencia';
+GO
+
+-- Tela Financeiro › Tipos de pendência
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, NULL, 'FIN_PENDENCIA_TIPO', N'Tipos de pendência', 'TELA', 'fin/pendencia-tipos.html', 80, 0, 0, 'FIN.Pendencia_Tipo'
+FROM SIS.Modulo m
+WHERE m.CODIGO = 'FIN'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = 'FIN_PENDENCIA_TIPO');
+GO
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('VER' AS VARCHAR(20))), ('INCLUIR'), ('ALTERAR'), ('EXCLUIR'), ('DESATIVAR'), ('EXPORTAR'), ('DESFAZER')) v (ACAO)
+INNER JOIN SIS.Item i ON i.CODIGO = 'FIN_PENDENCIA_TIPO'
+INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+GO
+
+-- Ação PENDENCIA nas telas de pagar e receber: quem tinha ALTERAR recebe, só quando a ação nasce
+DECLARE @NovosPendencia TABLE (ID_ITEM_ACAO INT NOT NULL, ID_ITEM INT NOT NULL);
+DECLARE @IdAlterar INT = (SELECT a.ID_ACAO FROM SIS.Acao a WHERE a.CODIGO = 'ALTERAR');
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+OUTPUT inserted.ID_ITEM_ACAO, inserted.ID_ITEM INTO @NovosPendencia (ID_ITEM_ACAO, ID_ITEM)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('FIN_PAGAR' AS VARCHAR(40))), ('FIN_RECEBER')) v (ITEM)
+INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
+INNER JOIN SIS.Acao a ON a.CODIGO = 'PENDENCIA'
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+
+INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO, USUARIO_CRIACAO)
+SELECT pp.ID_PERFIL, n.ID_ITEM_ACAO, N'instalacao'
+FROM @NovosPendencia n
+INNER JOIN SIS.Item_Acao ia ON ia.ID_ITEM = n.ID_ITEM AND ia.ID_ACAO = @IdAlterar
+INNER JOIN SIS.Perfil_Permissao pp ON pp.ID_ITEM_ACAO = ia.ID_ITEM_ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao x WHERE x.ID_PERFIL = pp.ID_PERFIL AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+
+INSERT INTO SIS.Usuario_Permissao (ID_USUARIO, ID_ITEM_ACAO, TIPO, USUARIO_CRIACAO)
+SELECT up.ID_USUARIO, n.ID_ITEM_ACAO, up.TIPO, N'instalacao'
+FROM @NovosPendencia n
+INNER JOIN SIS.Item_Acao ia ON ia.ID_ITEM = n.ID_ITEM AND ia.ID_ACAO = @IdAlterar
+INNER JOIN SIS.Usuario_Permissao up ON up.ID_ITEM_ACAO = ia.ID_ITEM_ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Usuario_Permissao x WHERE x.ID_USUARIO = up.ID_USUARIO AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
 GO

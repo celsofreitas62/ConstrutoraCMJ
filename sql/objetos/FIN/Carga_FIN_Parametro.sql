@@ -15,6 +15,10 @@
     v1.0 (25/11/2026) - Criação (etapa 04f).
     v1.1 (25/11/2026) - Etapa 04f2a: parâmetros da lista (dias "a vencer",
                         situação e visão ao abrir, canceladas em "todas").
+    v1.2 (26/11/2026) - Etapa 04f2c (P27): regras das pendências automáticas
+                        FIN_PEND_* (todas só para lançamentos em aberto;
+                        data de corte e valor do anexo alteráveis pela
+                        administradora, pedido do Celso em 26/11/2026).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -71,7 +75,21 @@ FROM (VALUES
         ('FIN_LISTA_VISAO_INICIAL', N'PARCELA', 'TEXTO',
          N'Visão ao abrir as listas: PARCELA (uma linha por vencimento) ou LANCAMENTO (uma linha por lançamento).', 1, N'PARCELA;LANCAMENTO'),
         ('FIN_LISTA_OCULTA_CANCELADAS', N'S', 'SN',
-         N'S = a situação "Todas" não mostra as parcelas canceladas (aparecem só escolhendo "Cancelada").', 1, N'')
+         N'S = a situação "Todas" não mostra as parcelas canceladas (aparecem só escolhendo "Cancelada").', 1, N''),
+        ('FIN_PEND_SEM_CENTRO', N'S', 'SN',
+         N'Pendência automática: lançamento em aberto sem centro de custo.', 1, N''),
+        ('FIN_PEND_SEM_PLANO', N'S', 'SN',
+         N'Pendência automática: lançamento em aberto sem conta do plano de contas.', 1, N''),
+        ('FIN_PEND_SEM_DOCUMENTO', N'P', 'TEXTO',
+         N'Pendência automática: lançamento em aberto sem número de documento. P = só contas a pagar, R = só a receber, A = ambos, N = desligada.', 1, N'P;R;A;N'),
+        ('FIN_PEND_PAGAR_SEM_ANEXO_VALOR', N'1000.00', 'DECIMAL',
+         N'Pendência automática: conta a pagar em aberto com valor total acima deste, sem nenhum anexo (nota, boleto, contrato). 0 = desligada.', 1, N''),
+        ('FIN_PEND_RECEBER_NAO_APTO', N'S', 'SN',
+         N'Pendência automática: conta a receber em aberto de parceiro com o cadastro não apto para cobrança (falta CPF/CNPJ, endereço completo ou e-mail de cobrança).', 1, N''),
+        ('FIN_PEND_VENCIDA_DIAS', N'30', 'INTEIRO',
+         N'Pendência automática: parcela em aberto vencida há mais destes dias. 0 = desligada.', 1, N''),
+        ('FIN_PEND_A_PARTIR_DE', N'2022-01-01', 'DATA',
+         N'As pendências automáticas só olham os lançamentos em aberto com emissão a partir desta data. 01/01/2022 (início dos dados migrados) = todos.', 1, N'')
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, NIVEL, OPCOES);
 
 INSERT INTO SIS.Parametro (CHAVE, VALOR, VALOR_PADRAO, TIPO, DESCRICAO, ID_MODULO, EDITAVEL_ADMIN, NIVEL_MINIMO, OPCOES)
