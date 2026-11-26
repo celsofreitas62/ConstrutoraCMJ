@@ -41,6 +41,12 @@
         <button type="button" class="contador contador-aberto" data-situacao="EM_ABERTO" data-dica="Todas as parcelas em aberto (vencidas e a vencer). Clique para ver todas elas.">
           <span class="contador-rotulo">Total em aberto</span><span class="contador-valor" id="valor-aberto">–</span><span class="contador-qtd" id="qtd-aberto"></span>
         </button>
+        <button type="button" class="contador contador-pendencia" data-pendencia="COM" data-dica="Lançamentos com alguma pendência aberta (automática, como falta de centro de custo ou de anexo, ou lançada por alguém). Clique para ver só eles.">
+          <span class="contador-rotulo">Com pendência</span><span class="contador-valor" id="qtd-pendencia">–</span><span class="contador-qtd">lançamentos</span>
+        </button>
+        <button type="button" class="contador contador-minhas" data-pendencia="MINHAS" data-dica="Pendências lançadas com você como responsável e ainda não resolvidas. Clique para ver só elas.">
+          <span class="contador-rotulo">Minhas pendências</span><span class="contador-valor" id="qtd-minhas">–</span><span class="contador-qtd">lançamentos</span>
+        </button>
       </div>
 
       <form class="cartao filtros" id="filtros" role="search">
@@ -81,6 +87,20 @@
         <div class="campo f-2">Conta do plano<div id="seletor-plano"></div></div>
         <label data-dica="Início do número do documento (nota, boleto, contrato)." class="campo f-1">Documento
           <input type="text" id="documento" maxlength="40" autocomplete="off">
+        </label>
+        <label data-dica="Mostra só os lançamentos com pendência. Automáticas = o sistema achou (sem centro, sem anexo, vencida há muito tempo...). Manuais = lançadas por alguém. Atrasadas = a previsão de resolver já passou." class="campo f-1">Pendência
+          <select id="pendencia">
+            <option value="">Todas</option>
+            <option value="COM">Com pendência</option>
+            <option value="AUTOMATICA">Automáticas</option>
+            <option value="MANUAL">Manuais</option>
+            <option value="MINHAS">Minhas (sou o responsável)</option>
+            <option value="ATRASADA">Atrasadas (previsão passou)</option>
+            <option value="BLOQUEIA">Que bloqueiam a baixa</option>
+          </select>
+        </label>
+        <label data-dica="Mostra só um tipo de pendência (ex.: Sem anexo, Aguardando nota fiscal)." class="campo f-1">Tipo de pendência
+          <select id="pendencia-codigo"><option value="">Todos</option></select>
         </label>
         <label data-dica="Por parcela: uma linha por vencimento. Por lançamento: uma linha por lançamento, somando as parcelas." class="campo f-1">Visão
           <select id="visao">

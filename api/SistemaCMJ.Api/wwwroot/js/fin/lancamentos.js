@@ -14,6 +14,10 @@
                tela) e o último filtro lembrado neste navegador.
                04f2b: a linha abre a ficha (fin/lancamento.html) e entra o
                botão "+ Incluir".
+               04f2c2: pendências (P27): contadores "Com pendência" e "Minhas
+               pendências", filtros Pendência e Tipo de pendência, etiqueta na
+               linha com as 3 primeiras ao passar o mouse (+N), vermelha quando
+               a previsão já passou, cadeado quando bloqueia a baixa.
    ========================================================================== */
 'use strict';
 
@@ -43,7 +47,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const campos = {
     texto: $('texto'), situacao: $('situacao'), campoData: $('campo-data'), de: $('de'), ate: $('ate'),
-    idEmpresa: $('empresa'), documento: $('documento'), visao: $('visao'), ordem: $('ordem')
+    idEmpresa: $('empresa'), documento: $('documento'), visao: $('visao'), ordem: $('ordem'),
+    pendencia: $('pendencia'), pendenciaCodigo: $('pendencia-codigo')
   };
   const corpo = $('linhas');
   const CHAVE_ULTIMO = 'cmj.fin.lista.' + tipo + '.' + ((sessao && sessao.login) || '');
@@ -79,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return {
       texto: '', situacao: parametros.SITUACAO_INICIAL === 'TODAS' ? '' : parametros.SITUACAO_INICIAL, campoData: 'VENCIMENTO',
       de: '', ate: '', idEmpresa: '', documento: '', visao: parametros.VISAO_INICIAL, ordem: 'VENCIMENTO',
-      idPessoa: '', idCentroCusto: '', idPlanoConta: ''
+      idPessoa: '', idCentroCusto: '', idPlanoConta: '', pendencia: '', pendenciaCodigo: ''
     };
   }
 
@@ -111,7 +116,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     return {
       tipo, visao: f.visao, situacao: f.situacao, campoData: f.campoData, vencDe: f.de, vencAte: f.ate,
       idEmpresa: f.idEmpresa, idPessoa: f.idPessoa, idCentroCusto: f.idCentroCusto, idPlanoConta: f.idPlanoConta,
-      documento: f.documento, texto: f.texto, ordem: f.ordem, pagina: paginaPedida, porPagina
+      documento: f.documento, texto: f.texto, ordem: f.ordem, pagina: paginaPedida, porPagina,
+      pendencia: f.pendencia, pendenciaCodigo: f.pendenciaCodigo
     };
   }
 
@@ -136,11 +142,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('rotulo-a-vencer').textContent = 'A vencer (' + (d.DIAS_A_VENCER || parametros.DIAS_A_VENCER) + ' dias)';
     $('valor-aberto').textContent = Util.moeda(d.VALOR_EM_ABERTO || 0);
     $('qtd-aberto').textContent = qtd(d.QTD_EM_ABERTO);
+    $('qtd-pendencia').textContent = String(d.QTD_COM_PENDENCIA || 0);
+    $('qtd-minhas').textContent = String(d.QTD_MINHAS_PENDENCIAS || 0);
     marcarContador();
   }
 
   function marcarContador() {
-    for (const b of document.querySelectorAll('.contador')) b.classList.toggle('ativo', b.dataset.situacao === campos.situacao.value);
+    for (const b of document.querySelectorAll('.contador')) {
+      const ativo = b.dataset.pendencia
+        ? b.dataset.pendencia === campos.pendencia.value
+        : !campos.pendencia.value && b.dataset.situacao === campos.situacao.value;
+      b.classList.toggle('ativo', ativo);
+    }
   }
 
   // ---------- lista ----------
@@ -154,6 +167,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const textoParcela = (l) => (l.ID_PARCELA ? (l.NUMERO + '/' + l.QTD_PARCELAS) : (l.QTD_PARCELAS === 1 ? '1 parcela' : l.QTD_PARCELAS + ' parcelas'));
   const textoCentro = (l) => [l.CENTRO_CODIGO, l.CENTRO_DESCRICAO].filter(Boolean).join(' - ');
   const textoPlano = (l) => [l.PLANO_CODIGO, l.PLANO_DESCRICAO].filter(Boolean).join(' - ');
+
+  // Etiqueta das pendências: as 3 primeiras na dica, "+N" para o resto (P27)
+  const MAX_DICA_PENDENCIAS = 3;
+  function etiquetaPendencias(l) {
+    const qtdPend = Number(l.QTD_PENDENCIAS) || 0;
+    if (qtdPend === 0) return null;
+    const itens = String(l.PENDENCIAS || '').split('; ').filter(Boolean);
+    const linhas = itens.slice(0, MAX_DICA_PENDENCIAS).map((t) => '• ' + t);
+    if (qtdPend > linhas.length) linhas.push('e mais ' + (qtdPend - linhas.length) + ' (veja na ficha)');
+    if (l.PENDENCIA_ATRASADA) linhas.push('A previsão de resolver já passou.');
+    if (l.PENDENCIA_BLOQUEIA) linhas.push('Bloqueia a baixa até ser resolvida.');
+    const texto = (l.PENDENCIA_BLOQUEIA ? '🔒 ' : '⚠ ') + (qtdPend === 1 ? '1 pendência' : qtdPend + ' pendências');
+    const span = Util.el('span', 'etiqueta-pendencia' + (l.PENDENCIA_ATRASADA ? ' atrasada' : ''), texto);
+    span.dataset.dica = (qtdPend === 1 ? 'Pendência:' : 'Pendências:') + '\n' + linhas.join('\n');
+    return span;
+  }
 
   function celula(texto, sub, classe) {
     const td = Util.el('td', classe || null, texto || '');
@@ -180,6 +209,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const classe = l.VENCIDA ? 'vencida' : String(l.SITUACAO || '').toLowerCase();
       sit.append(Util.el('span', 'situacao situacao-' + classe, textoSituacao(l)));
       if (l.PREVISAO) sit.append(Util.el('span', 'sub', 'previsão'));
+      const etiqueta = etiquetaPendencias(l);
+      if (etiqueta) { sit.append(Util.el('br'), etiqueta); }
       tr.append(
         celula(Util.data(l.DT_VENCIMENTO), l.ID_PARCELA ? null : 'primeiro em aberto'),
         celula(l.PESSOA_NOME || '(sem parceiro)', l.EMPRESA_NOME, 'forte'),
@@ -306,6 +337,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ---------- eventos ----------
   for (const b of document.querySelectorAll('.contador')) {
     b.addEventListener('click', () => {
+      if (b.dataset.pendencia) {
+        // os contadores de pendência contam lançamentos: mostra todas as situações por lançamento
+        campos.pendencia.value = b.dataset.pendencia;
+        campos.pendenciaCodigo.value = '';
+        campos.situacao.value = '';
+        campos.visao.value = 'LANCAMENTO';
+        pagina = 1;
+        carregar();
+        return;
+      }
+      campos.pendencia.value = '';
+      campos.pendenciaCodigo.value = '';
       campos.situacao.value = b.dataset.situacao;
       if (campos.campoData.value === 'VENCIMENTO') { campos.de.value = ''; campos.ate.value = ''; }
       pagina = 1;
@@ -315,19 +358,51 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('filtros').addEventListener('submit', (e) => { e.preventDefault(); pagina = 1; carregar(); });
   campos.texto.addEventListener('input', Util.atrasar(() => { pagina = 1; carregar(); }, 350));
   campos.documento.addEventListener('input', Util.atrasar(() => { pagina = 1; carregar(); }, 350));
-  for (const nome of ['situacao', 'campoData', 'de', 'ate', 'visao', 'ordem']) {
+  for (const nome of ['situacao', 'campoData', 'de', 'ate', 'visao', 'ordem', 'pendencia', 'pendenciaCodigo']) {
     campos[nome].addEventListener('change', () => { if (!aplicando) { pagina = 1; carregar(); } });
   }
   campos.idEmpresa.addEventListener('change', recarregarTudo);
   $('pagina-anterior').addEventListener('click', () => { if (pagina > 1) { pagina--; carregar(); } });
   $('pagina-proxima').addEventListener('click', () => { pagina++; carregar(); });
 
+  // ---------- tipos de pendência do filtro ----------
+  // Regras automáticas (FIN.fn_FIN_Lancamento_Pendencias; cada uma ligada por parâmetro FIN_PEND_*)
+  const REGRAS_AUTOMATICAS = [
+    { codigo: 'SEM_CENTRO', nome: 'Sem centro de custo', tipos: 'PR' },
+    { codigo: 'SEM_PLANO', nome: 'Sem conta do plano', tipos: 'PR' },
+    { codigo: 'SEM_DOCUMENTO', nome: 'Sem número de documento', tipos: 'PR' },
+    { codigo: 'SEM_ANEXO', nome: 'Sem anexo (valor alto)', tipos: 'P' },
+    { codigo: 'NAO_APTO', nome: 'Cliente não apto para cobrança', tipos: 'R' },
+    { codigo: 'VENCIDA', nome: 'Vencida há muito tempo', tipos: 'PR' }
+  ];
+  function montarTiposPendencia(manuais) {
+    const lista = campos.pendenciaCodigo;
+    const grupo = (rotulo) => { const g = document.createElement('optgroup'); g.label = rotulo; lista.append(g); return g; };
+    const auto = grupo('Automáticas');
+    for (const regra of REGRAS_AUTOMATICAS.filter((x) => x.tipos.includes(tipo))) {
+      const op = Util.el('option', null, regra.nome);
+      op.value = regra.codigo;
+      auto.append(op);
+    }
+    const daTela = manuais.filter((t) => t.ATIVO !== false && (t.APLICA_A === 'A' || t.APLICA_A === tipo));
+    if (daTela.length) {
+      const man = grupo('Lançadas por alguém');
+      for (const t of daTela) {
+        const op = Util.el('option', null, t.DESCRICAO);
+        op.value = t.CODIGO;
+        man.append(op);
+      }
+    }
+  }
+
   // ---------- abertura ----------
-  const [rResumo, rEmpresas] = await Promise.all([
+  const [rResumo, rEmpresas, , rTiposPend] = await Promise.all([
     Api.get('/api/fin/lancamentos/resumo', { tipo }),
     Api.get('/api/cad/empresas'),
-    carregarFiltrosSalvos(null)
+    carregarFiltrosSalvos(null),
+    Api.get('/api/fin/pendencia-tipos', { somenteAtivos: true, tipo })
   ]);
+  montarTiposPendencia(rTiposPend && rTiposPend.sucesso ? (rTiposPend.dados || []) : []);
   if (rResumo.sucesso && rResumo.dados) parametros = { ...parametros, ...rResumo.dados };
   if (rEmpresas.sucesso) {
     for (const e of (rEmpresas.dados || []).filter((x) => x.ATIVO !== false)) {
@@ -348,7 +423,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ultimo = lerUltimo();
     if (ultimo) inicial = { ...inicial, ...ultimo };
   }
-  for (const nome of ['situacao', 'idPessoa', 'idEmpresa', 'idCentroCusto']) {
+  for (const nome of ['situacao', 'idPessoa', 'idEmpresa', 'idCentroCusto', 'pendencia', 'visao']) {
     const v = Util.parametro(nome);
     if (v !== null) inicial[nome] = v;
   }

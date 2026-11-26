@@ -241,7 +241,7 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .dica {
   position: absolute; z-index: 60; max-width: 320px; padding: 8px 12px; border-radius: 6px;
   background: #2B2B2B; color: #FFFFFF; font-size: 13px; font-weight: 400; line-height: 1.4;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, .2); pointer-events: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .2); pointer-events: none; white-space: pre-line;
 }
 
 /* Comunicados (03c, 17/11/2026): pré-visualização do e-mail como ele sai. */
@@ -404,7 +404,7 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .rodape-previa { margin-top: 6px; padding: 10px 14px; font-size: 12px; color: #555; border-top: 2px solid #A8A8A8; text-align: justify; min-height: 3em; }
 
 /* Contas a pagar e a receber (04f2a): contadores do topo, linhas vencidas, situações das parcelas, paginação, filtros salvos */
-.contadores { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.contadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
 .contador { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; background: var(--branco); border: 1px solid var(--borda); border-left: 4px solid var(--cor-secundaria); border-radius: var(--raio); cursor: pointer; text-align: left; font: inherit; color: var(--texto); }
 .contador:hover, .contador:focus-visible { background: #FAFAF9; }
 .contador.ativo { box-shadow: 0 0 0 2px var(--cor-principal) inset; }
@@ -416,7 +416,6 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .contador-hoje { border-left-color: var(--atencao); }
 .contador-a-vencer { border-left-color: #C9A400; }
 .contador-aberto { border-left-color: var(--cor-principal); }
-@media (max-width: 800px) { .contadores { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .f-2 { flex: 2 1 220px; }
 .filtros-salvos { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
 .filtros-salvos .campo { flex: 1 1 200px; }
@@ -446,3 +445,9 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .parcelas-diferenca { color: var(--erro); }
 .lista-confirmados { margin: 0; padding-left: 18px; line-height: 1.5; }
 
+
+/* 04f2c2: pendências na lista (P27) */
+.contador-pendencia { border-left-color: #C26A00; }
+.contador-minhas { border-left-color: #6B4FA0; }
+.etiqueta-pendencia { display: inline-block; margin-top: 4px; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; background: #FFF4E5; color: #8A3B00; border: 1px solid #F3C98B; cursor: help; }
+.etiqueta-pendencia.atrasada { background: #FDE7E4; color: #9B1C12; border-color: #F2B8B0; }
