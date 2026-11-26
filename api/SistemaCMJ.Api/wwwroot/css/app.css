@@ -451,3 +451,24 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .contador-minhas { border-left-color: #6B4FA0; }
 .etiqueta-pendencia { display: inline-block; margin-top: 4px; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; background: #FFF4E5; color: #8A3B00; border: 1px solid #F3C98B; cursor: help; }
 .etiqueta-pendencia.atrasada { background: #FDE7E4; color: #9B1C12; border-color: #F2B8B0; }
+
+/* 04f2c2: quadro de Pendências da ficha (P27) */
+.quadro-pendencias { margin: 12px 0; border-left: 4px solid var(--borda); }
+.quadro-pendencias.com-pendencia { border-left-color: #C26A00; }
+.quadro-pendencias-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.quadro-pendencias-topo h2 { margin: 0; font-size: 16px; }
+.lista-pendencias { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.pendencia-item { padding: 8px 12px; border: 1px solid #F3C98B; background: #FFF8EE; border-radius: var(--raio); display: flex; flex-direction: column; gap: 4px; }
+.pendencia-item.atrasada { border-color: #F2B8B0; background: #FDF0EE; }
+.pendencia-item.bloqueia { border-color: #E89A8F; }
+.pendencia-item.resolvida { border-color: #E2E2DF; background: #FAFAF9; color: var(--texto-suave); }
+.pendencia-linha { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.pendencia-origem { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--texto-suave); }
+.pendencia-info { font-size: 12px; color: var(--texto-suave); }
+.pendencia-como { font-size: 13px; }
+.pendencia-botoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.pendencias-resolvidas { margin-top: 10px; }
+.pendencias-resolvidas summary { cursor: pointer; font-size: 13px; color: var(--texto-suave); margin-bottom: 6px; }
+.aviso-bloqueio-baixa { margin-top: 8px; background: #FDE7E4; color: #9B1C12; border-color: #F2B8B0; }
+.pendencia-orientacao { align-self: end; font-size: 13px; }
+.atalhos-data-botoes { display: flex; gap: 6px; flex-wrap: wrap; }

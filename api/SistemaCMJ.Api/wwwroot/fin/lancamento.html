@@ -12,6 +12,7 @@
   <script src="/js/seletor.js" defer></script>
   <script src="/js/historico.js" defer></script>
   <script src="/js/anexos.js" defer></script>
+  <script src="/js/fin/pendencias.js" defer></script>
   <script src="/js/fin/lancamento.js" defer></script>
 </head>
 <body data-tela="fin/lancamentos.html?tipo=P" data-menu="fin/lancamentos.html?tipo=P" data-ajuda="fin-lancamento" data-exige-tela>
@@ -34,6 +35,8 @@
       </div>
 
       <div class="aviso-faixa" id="aviso-situacao" role="note" hidden></div>
+      <div class="aviso-faixa aviso-bloqueio-baixa" id="aviso-bloqueio" role="note" hidden></div>
+      <section class="cartao" id="quadro-pendencias" aria-label="Pendências do lançamento" hidden></section>
 
       <div class="abas" role="tablist" aria-label="Partes da ficha">
         <button type="button" class="aba" role="tab" id="aba-dados" aria-controls="painel-dados" aria-selected="true">Dados principais</button>

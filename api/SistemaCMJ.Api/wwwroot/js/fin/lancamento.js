@@ -15,6 +15,9 @@
                Padroes_Obter). Abas Parcelas, Baixas (consulta), Anexos e
                Histórico (componentes padrão). Regras de verdade ficam no
                FIN_Lancamento_Gravar.
+               04f2c2: quadro de Pendências (js/fin/pendencias.js, P27) acima
+               das abas, com atalho para o campo de cada pendência automática
+               e a faixa vermelha quando alguma bloqueia a baixa.
    ========================================================================== */
 'use strict';
 
@@ -289,7 +292,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!anexos) anexos = Anexos.criar($('anexos'), {
       item, tabela: 'FIN.Lancamento', id: idLancamento,
       podeAnexar: acoes.has('ALTERAR') && !(lanc && lanc.NA_LIXEIRA),
-      aoMudar: (qtd) => { $('aba-anexos').textContent = 'Anexos' + (qtd ? ' (' + qtd + ')' : ''); }
+      aoMudar: (qtd) => {
+        $('aba-anexos').textContent = 'Anexos' + (qtd ? ' (' + qtd + ')' : '');
+        if (quadroPendencias && carregadas.has('anexos')) quadroPendencias.carregar(); // anexar pode resolver "Sem anexo"
+      }
     });
     if (await anexos.carregar()) carregadas.add('anexos');
   }
@@ -301,6 +307,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     if (await historico.carregar()) carregadas.add('historico');
   }
+  // ---------- Pendências (P27) ----------
+  let quadroPendencias = null;
+  function irParaPendencia(codigo) {
+    if (codigo === 'SEM_CENTRO') focarCampo('idCentroCusto');
+    else if (codigo === 'SEM_PLANO') focarCampo('idPlanoConta');
+    else if (codigo === 'SEM_DOCUMENTO') focarCampo('documento');
+    else if (codigo === 'SEM_ANEXO') abrirAba($('aba-anexos'));
+    else if (codigo === 'VENCIDA') abrirAba($('aba-parcelas'));
+    else if (codigo === 'NAO_APTO' && lanc && lanc.ID_PESSOA) sair('/cad/pessoa.html?id=' + encodeURIComponent(lanc.ID_PESSOA));
+  }
+  function parcelasDaPendencia() {
+    const comId = parcelas.filter((p) => p.id && p.situacao !== 'CANCELADA')
+      .sort((a, b) => String(a.vencimento).localeCompare(String(b.vencimento)));
+    return comId.map((p, i) => ({ id: p.id, numero: i + 1, total: comId.length, vencimento: p.vencimento }));
+  }
+  function mostrarBloqueio(linhas) {
+    const faixa = $('aviso-bloqueio');
+    const bloqueiam = (linhas || []).filter((l) => l.SITUACAO === 'ABERTA' && l.BLOQUEIA_BAIXA);
+    faixa.hidden = bloqueiam.length === 0;
+    faixa.textContent = bloqueiam.length
+      ? '🔒 A baixa deste lançamento está bloqueada até resolver: ' + bloqueiam.map((l) => l.DESCRICAO).join('; ') + '.'
+      : '';
+  }
+  function iniciarPendencias() {
+    const quadro = $('quadro-pendencias');
+    quadro.hidden = false;
+    quadroPendencias = Pendencias.criar(quadro, {
+      idLancamento, tipo,
+      podeIncluir: !!lanc.PODE_PENDENCIA,
+      parcelas: parcelasDaPendencia,
+      irPara: irParaPendencia,
+      aoMudar: mostrarBloqueio
+    });
+    quadroPendencias.carregar();
+  }
+
   const fichaUrl = (id) => '/fin/lancamento.html?tipo=' + tipo + '&id=' + encodeURIComponent(id);
 
   // ---------- Carga ----------
@@ -387,6 +429,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       for (const id of ['aba-baixas', 'aba-anexos', 'aba-historico']) $(id).hidden = false;
       $('botao-excluir').hidden = !l.PODE_EXCLUIR;
       $('botao-cancelar-lanc').hidden = !l.PODE_CANCELAR;
+      iniciarPendencias();
     }
   } else {
     $('dtEmissao').value = hojeIso();
