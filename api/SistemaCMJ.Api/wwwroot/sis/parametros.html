@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Parâmetros</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/historico.js" defer></script>
+  <script src="/js/sis/parametros.js" defer></script>
+</head>
+<body data-tela="sis/parametros.html" data-ajuda="sis-parametros" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho" id="caminho">Sistema › Configuração › Parâmetros</div>
+          <h1 id="titulo">Parâmetros</h1>
+        </div>
+        <button data-dica="Baixa a lista que está na tela num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Digite parte da descrição ou do nome do parâmetro (ex.: anexo, duplicado, vencida). A lista atualiza sozinha." class="campo f-3">Buscar
+          <input type="search" id="busca" maxlength="100" placeholder="Ex.: anexo, trava, vencida" autocomplete="off">
+        </label>
+        <label data-dica="Mostra só os parâmetros que já foram mudados (valor diferente do padrão de fábrica)." class="marcacao">
+          <input type="checkbox" id="so-alterados"> Só os diferentes do padrão
+        </label>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div id="grupos" aria-live="polite"></div>
+          <div class="rodape-lista">
+            <span id="contagem"></span>
+            <span>Cada alteração vale na hora para todos os usuários e fica no histórico (quem, quando, antes e depois, e o motivo).</span>
+          </div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

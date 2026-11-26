@@ -483,3 +483,14 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .movimentacao-rodape .paginacao { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .tipo-p { color: var(--erro); font-weight: 600; }
 .tipo-r { color: #1E6B22; font-weight: 600; }
+
+/* 04f2d: tela Parâmetros / Parâmetros de uso (js/sis/parametros.js) */
+.grupo-parametros { margin-bottom: 18px; }
+.grupo-parametros-titulo { font-size: 15px; margin: 4px 0 8px; color: var(--cor-principal); }
+.tabela-parametros td { vertical-align: top; }
+.tabela-parametros .parametro-nome { max-width: 420px; }
+.tabela-parametros .parametro-nome .sub { display: block; }
+.tabela-parametros input, .tabela-parametros select { min-width: 12em; }
+.tabela-parametros input[type="color"] { min-width: 4em; height: 32px; padding: 2px; }
+.tabela-parametros .acoes-linha { white-space: nowrap; display: flex; gap: 6px; flex-wrap: wrap; }
+.parametro-alterado td:first-child { border-left: 3px solid var(--atencao); }
