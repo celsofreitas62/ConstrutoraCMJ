@@ -9,6 +9,8 @@ O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.
 - Novo: **Meus filtros**: cada usuário salva os filtros que usa sempre (ex.: "Vencidos da CMJ") e pode marcar um para a tela já abrir com ele. Sem filtro marcado, a tela abre com os últimos filtros usados.
 - Novo: **Exportar Excel** das contas a pagar e a receber com todas as linhas do filtro.
 - Novo: **ficha do lançamento**: incluir e alterar contas a pagar e a receber com as parcelas (botão "Gerar parcelas" pelo nº de parcelas, 1º vencimento e intervalo), cancelar com motivo, excluir para a lixeira, copiar um lançamento, e as abas Parcelas, Baixas, Anexos e Histórico. Clique na linha da lista para abrir; "+ Incluir" abre um novo.
+- Novo: **pendências dos lançamentos**: o sistema aponta sozinho o que falta resolver nas contas em aberto (sem centro de custo, sem conta do plano, sem número de documento, conta a pagar acima de um valor sem anexo, cliente sem cadastro completo para cobrança, parcela vencida há muitos dias), e você também pode marcar pendências ("aguardando nota fiscal", "conferir com o contador"...) com responsável e previsão. Algumas pendências podem impedir o pagamento até serem resolvidas. As regras e os tipos de pendência são configuráveis.
+- Melhoria: a conferência de CPF/CNPJ ficou mais rápida nas listas.
 - Novo: **avisos contra erro de digitação** ao gravar um lançamento: o sistema mostra o que parece erro (valor fora da média, documento repetido, datas distantes...) e só grava depois de você marcar "Estou ciente"; o que é bloqueio não deixa gravar.
 
 ## 2.4 (25/11/2026)

@@ -136,6 +136,7 @@ ContaBancariaEndpoints.Mapear(app);
 CentroCustoEndpoints.Mapear(app);
 PlanoContaEndpoints.Mapear(app);
 LancamentoEndpoints.Mapear(app);
+PendenciaEndpoints.Mapear(app);
 FiltroSalvoEndpoints.Mapear(app);
 AnexoEndpoints.Mapear(app);
 UsuarioEndpoints.Mapear(app);

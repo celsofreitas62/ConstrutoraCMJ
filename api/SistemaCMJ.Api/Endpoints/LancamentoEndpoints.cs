@@ -6,6 +6,8 @@
 //  04f2a     : contadores do topo (/resumo) e período por emissão ou
 //              competência (campoData).
 //  04f2b     : integração em branco vai NULL (o banco usa COMPLETA).
+//  04f2c     : filtro de pendências na lista (pendencia, pendenciaCodigo) e
+//              PENDENCIAS (JSON) na ficha (P27; o resto em PendenciaEndpoints).
 //  Descrição : Telas "Contas a pagar" (FIN_PAGAR) e "Contas a receber"
 //              (FIN_RECEBER), ficha do lançamento e aba Movimentação do
 //              Parceiro. A API só repassa: permissão, regras, proteções contra
@@ -62,7 +64,7 @@ public static class LancamentoEndpoints
     private static Task<IResult> Listar(string? tipo, string? visao, string? situacao, DateOnly? vencDe, DateOnly? vencAte, string? campoData,
                                         int? idEmpresa, int? idCentroCusto, int? idPessoa, int? idPlanoConta, long? idLote,
                                         long? idLancamento, string? documento, string? texto, decimal? valorDe, decimal? valorAte,
-                                        string? ordem, int? pagina, int? porPagina,
+                                        string? ordem, int? pagina, int? porPagina, string? pendencia, string? pendenciaCodigo,
                                         HttpContext http, Banco banco, ILogger<Program> logger) =>
         Resposta.Rodar(http, banco, logger, async () =>
         {
@@ -88,7 +90,9 @@ public static class LancamentoEndpoints
                 ["ValorAte"] = valorAte,
                 ["Ordem"] = Banco.Cortar(ordem?.Trim().ToUpperInvariant(), 12),
                 ["Pagina"] = pagina is > 0 ? pagina : 1,
-                ["PorPagina"] = porPagina is > 0 ? porPagina : null
+                ["PorPagina"] = porPagina is > 0 ? porPagina : null,
+                ["Pendencia"] = Banco.Cortar(pendencia?.Trim().ToUpperInvariant(), 12),
+                ["PendenciaCodigo"] = Banco.Cortar(pendenciaCodigo?.Trim().ToUpperInvariant(), 20)
             }, usuario, http.RequestAborted);
             return Resposta.Ok(linhas);
         });
@@ -120,7 +124,7 @@ public static class LancamentoEndpoints
                 ["IdUsuario"] = usuario.IdUsuario,
                 ["IdLancamento"] = id
             }, usuario, http.RequestAborted);
-            foreach (var coluna in new[] { "PARCELAS", "BAIXAS", "AVISOS_CONFIRMADOS" })
+            foreach (var coluna in new[] { "PARCELAS", "BAIXAS", "AVISOS_CONFIRMADOS", "PENDENCIAS" })
                 linha[coluna] = ComoJson(linha.Texto(coluna));
             return Resposta.Ok(linha);
         });
