@@ -1,4 +1,4 @@
-/*******************************************************************************
+﻿/*******************************************************************************
   SistemaCMJ - sql/local/04f2c2_Habilitar_Pendencia_Tipo_LOCAL.sql
   Autor     : Celso de Freitas
   Refatorado: Claude
