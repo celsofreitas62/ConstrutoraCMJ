@@ -13,6 +13,8 @@ O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.
 - Novo: na lista de contas, os contadores **Com pendência** e **Minhas pendências**, o filtro por pendência e uma etiqueta na linha que mostra as pendências ao passar o mouse (vermelha quando a previsão já passou). Na ficha, o quadro **Pendências** diz como resolver cada uma e leva direto ao campo certo.
 - Novo: tela **Tipos de pendência** (Financeiro), para criar os tipos que a empresa usa e dizer quais bloqueiam o pagamento.
 - Melhoria: a conferência de CPF/CNPJ ficou mais rápida nas listas.
+- Novo: aba **Movimentação** na ficha do Parceiro: o que ele tem a pagar e a receber em aberto, o vencido, o total pago ou recebido nos últimos 12 meses com a média por mês e a data do último pagamento; a lista das parcelas abre o lançamento, e os botões "+ Contas a pagar" e "+ Contas a receber" já trazem o parceiro escolhido.
+- Novo: tela **Parâmetros de uso** (Sistema › Configuração), para os administradores ajustarem os avisos ao lançar, as pendências automáticas, a trava de datas e a lista de contas. Antes de gravar, a tela mostra o efeito (ex.: quantos lançamentos passam a ter uma pendência) e, quando a mudança afrouxa uma proteção, pede o motivo, que fica no histórico do parâmetro.
 - Novo: **avisos contra erro de digitação** ao gravar um lançamento: o sistema mostra o que parece erro (valor fora da média, documento repetido, datas distantes...) e só grava depois de você marcar "Estou ciente"; o que é bloqueio não deixa gravar.
 
 ## 2.4 (25/11/2026)
