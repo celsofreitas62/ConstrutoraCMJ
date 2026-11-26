@@ -137,6 +137,7 @@ CentroCustoEndpoints.Mapear(app);
 PlanoContaEndpoints.Mapear(app);
 LancamentoEndpoints.Mapear(app);
 PendenciaEndpoints.Mapear(app);
+ParametroEndpoints.Mapear(app);
 FiltroSalvoEndpoints.Mapear(app);
 AnexoEndpoints.Mapear(app);
 UsuarioEndpoints.Mapear(app);

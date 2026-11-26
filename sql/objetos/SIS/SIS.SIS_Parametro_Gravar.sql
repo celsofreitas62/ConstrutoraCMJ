@@ -33,6 +33,10 @@
     v1.4 (25/11/2026) - Etapa 04f: administrador (nível 1 ou 2) com ALTERAR em
                         SIS_PARAMETRO_USO altera os de NIVEL_MINIMO 1; com
                         OPCOES preenchido, o valor tem de ser uma das opções.
+    v1.5 (26/11/2026) - Etapa 04f2d: @Motivo (gravado em MOTIVO_ALTERACAO e
+                        na auditoria); obrigatório quando a troca afrouxa uma
+                        proteção (SIS.fn_SIS_Parametro_Afrouxa: regra de
+                        bloqueio que desce de nível, trava de datas desligada).
 
   Homologação (LOCAL):
     -- EXEC SIS.SIS_Parametro_Gravar @IdUsuario = 2, @Chave = 'SENHA_TAMANHO_MINIMO', @Valor = N'10';
@@ -45,7 +49,8 @@ GO
 CREATE OR ALTER PROCEDURE [SIS].[SIS_Parametro_Gravar]
     @IdUsuario  INT,
     @Chave      VARCHAR(60),
-    @Valor      NVARCHAR(4000)
+    @Valor      NVARCHAR(4000),
+    @Motivo     NVARCHAR(400) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -194,9 +199,17 @@ BEGIN
             RETURN;
         END;
 
+        SET @Motivo = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+        IF @Motivo = N'' AND SIS.fn_SIS_Parametro_Afrouxa(@Chave, @ValorAtual, @ValorNovo) = 1
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Esta alteração afrouxa uma proteção do sistema: informe o motivo.' AS NVARCHAR(400)) AS MENSAGEM, @IdParametro AS ID_PARAMETRO;
+            RETURN;
+        END;
+
         SET @EtapaAtual = 'Gravação';
         UPDATE p
            SET p.VALOR             = @ValorNovo,
+               p.MOTIVO_ALTERACAO  = @Motivo,
                p.DT_ALTERACAO      = SYSDATETIME(),
                p.USUARIO_ALTERACAO = @Usuario
         FROM SIS.Parametro p

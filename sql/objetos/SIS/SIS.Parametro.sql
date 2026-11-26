@@ -25,6 +25,10 @@
                         OPCOES (valores aceitos separados por ";", ex.:
                         AVISO;BLOQUEIO;NAO; vazio = livre conforme o TIPO).
                         As duas colunas só mudam pela carga da instalação.
+    v1.3 (26/11/2026) - Etapa 04f2d: MOTIVO_ALTERACAO (por que a última
+                        alteração foi feita; obrigatório quando afrouxa uma
+                        regra de bloqueio ou a trava de datas, sugestão (c));
+                        vai para a auditoria junto com o valor.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -75,4 +79,7 @@ IF COL_LENGTH(N'SIS.Parametro', N'NIVEL_MINIMO') IS NULL
 GO
 IF COL_LENGTH(N'SIS.Parametro', N'OPCOES') IS NULL
     ALTER TABLE [SIS].[Parametro] ADD OPCOES NVARCHAR(200) NOT NULL CONSTRAINT DF_Parametro_OPCOES DEFAULT (N'');
+GO
+IF COL_LENGTH(N'SIS.Parametro', N'MOTIVO_ALTERACAO') IS NULL
+    ALTER TABLE [SIS].[Parametro] ADD MOTIVO_ALTERACAO NVARCHAR(400) NOT NULL CONSTRAINT DF_Parametro_MOTIVO_ALTERACAO DEFAULT (N'');
 GO
