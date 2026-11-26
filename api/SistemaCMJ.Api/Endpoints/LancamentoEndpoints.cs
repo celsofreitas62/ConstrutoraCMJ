@@ -5,6 +5,7 @@
 //  Criação   : 25/11/2026 (etapa 04f)
 //  04f2a     : contadores do topo (/resumo) e período por emissão ou
 //              competência (campoData).
+//  04f2b     : integração em branco vai NULL (o banco usa COMPLETA).
 //  Descrição : Telas "Contas a pagar" (FIN_PAGAR) e "Contas a receber"
 //              (FIN_RECEBER), ficha do lançamento e aba Movimentação do
 //              Parceiro. A API só repassa: permissão, regras, proteções contra
@@ -194,7 +195,7 @@ public static class LancamentoEndpoints
         ["Observacao"] = Banco.Cortar(p.Observacao?.Trim(), 2000),
         ["ValorTotal"] = p.ValorTotal,
         ["Previsao"] = p.Previsao,
-        ["Integracao"] = Banco.Cortar(p.Integracao?.Trim().ToUpperInvariant(), 12),
+        ["Integracao"] = string.IsNullOrWhiteSpace(p.Integracao) ? null : Banco.Cortar(p.Integracao.Trim().ToUpperInvariant(), 12),
         ["Parcelas"] = p.Parcelas is { ValueKind: JsonValueKind.Array } lista ? lista.GetRawText() : null
     };
 

@@ -411,6 +411,133 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     if (motivo8.Length > 0) await Foto("fin_lancamentos");
 }
 
+// ---------------------------------------------------------------- 9) Ficha do lançamento (04f2b, 26/11/2026)
+// Contas a pagar: incluir um lançamento de teste pelo caminho do usuário (escolhas com busca, gerar
+// 2 parcelas, Gravar? > janela de avisos do P17, se vier: marca "Estou ciente", NÃO marca o parceiro >
+// Concluído), conferir a ficha gravada, abrir Copiar e descartar, e excluir o lançamento (lixeira).
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    relogio.Restart();
+    var motivo9 = "";
+    var avisos9 = 0;
+    try
+    {
+        async Task Escolher(string seletor, bool pularEncerrado = false)
+        {
+            var campo = pagina.Locator(seletor + " input.seletor-campo");
+            if ((await campo.InputValueAsync()).Trim().Length > 0) return;
+            await campo.ClickAsync();
+            await campo.FillAsync("a");
+            var opcoes = pagina.Locator(seletor + " .seletor-opcao");
+            await opcoes.First.WaitForAsync(new() { Timeout = 10000 });
+            var qtd = await opcoes.CountAsync();
+            for (var i = 0; i < qtd; i++)
+            {
+                var comp = opcoes.Nth(i).Locator(".seletor-complemento");
+                var complemento = await comp.CountAsync() > 0 ? await comp.InnerTextAsync() : "";
+                if (pularEncerrado && complemento.Contains("encerrado")) continue;
+                await opcoes.Nth(i).DispatchEventAsync("mousedown");
+                return;
+            }
+            throw new Exception("nenhuma opcao valida em " + seletor);
+        }
+        await pagina.GotoAsync(endereco + "/fin/lancamento.html?tipo=P", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+        if (await JanelaAberta() is { } j0) motivo9 = "abrir: janela \"" + j0.Titulo + "\": " + j0.Texto;
+        if (motivo9.Length == 0)
+        {
+            await Escolher("#seletor-pessoa");
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await pagina.WaitForTimeoutAsync(500);
+            await Escolher("#seletor-centro", pularEncerrado: true);
+            await Escolher("#seletor-plano");
+            var historico = "Teste automatico das telas " + DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+            await pagina.Locator("#historico").FillAsync(historico);
+            await pagina.Locator("#valorTotal").FillAsync("1,01");
+            await pagina.Locator("#valorTotal").DispatchEventAsync("change");
+            await pagina.Locator("#qtdParcelas").FillAsync("2");
+            await pagina.Locator("#primeiroVencimento").FillAsync(DateTime.Today.AddDays(30).ToString("yyyy-MM-dd"));
+            await pagina.Locator("#botao-gerar").ClickAsync();
+            if (await JanelaAberta() is { } jg) motivo9 = "gerar parcelas: janela \"" + jg.Titulo + "\": " + jg.Texto;
+            else if (await pagina.Locator("#linhas-parcelas tr").CountAsync() != 2) motivo9 = "gerar parcelas nao montou 2 parcelas";
+            else if ((await pagina.Locator("#soma-parcelas").InnerTextAsync()).Trim() != "1,01") motivo9 = "soma das parcelas diferente de 1,01";
+        }
+        if (motivo9.Length == 0)
+        {
+            await pagina.Locator("#botao-gravar").ClickAsync();
+            await pagina.Locator("dialog.janela").WaitForAsync(new() { Timeout = 5000 });
+            if ((await JanelaAberta())?.Titulo != "Gravar?") motivo9 = "esperava a janela \"Gravar?\"";
+            else
+            {
+                await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+                await pagina.WaitForFunctionAsync("() => { const h = document.querySelector('dialog.janela h2'); return h && h.textContent !== 'Gravar?'; }", null, new() { Timeout = 15000 });
+                var janelaAvisos = pagina.Locator("dialog.janela-avisos");
+                if (await janelaAvisos.CountAsync() > 0)
+                {
+                    var titulo = (await janelaAvisos.Locator("h2").InnerTextAsync()).Trim();
+                    if (titulo == "Não dá para gravar") motivo9 = "bloqueio: " + (await janelaAvisos.Locator(".lista-avisos").InnerTextAsync()).Replace("\n", " | ");
+                    else
+                    {
+                        var marcas = janelaAvisos.Locator(".aviso-aviso input[type=checkbox]");
+                        var n = await marcas.CountAsync();
+                        for (var i = 0; i < n; i++)
+                        {
+                            var rotulo = (await marcas.Nth(i).Locator("xpath=..").InnerTextAsync()).Trim();
+                            await marcas.Nth(i).SetCheckedAsync(rotulo == "Estou ciente"); // nao marca o tipo do parceiro
+                            if (rotulo == "Estou ciente") avisos9++;
+                        }
+                        if (await janelaAvisos.Locator("textarea").CountAsync() > 0) await janelaAvisos.Locator("textarea").FillAsync("Teste automatico das telas");
+                        await janelaAvisos.Locator(".botao-principal").ClickAsync();
+                        await pagina.WaitForFunctionAsync("() => { const h = document.querySelector('dialog.janela h2'); return h && h.textContent === 'Concluído'; }", null, new() { Timeout = 15000 });
+                    }
+                }
+                if (motivo9.Length == 0)
+                {
+                    var r = await JanelaAberta();
+                    if (r?.Titulo != "Concluído") motivo9 = "janela \"" + r?.Titulo + "\": " + r?.Texto;
+                    else
+                    {
+                        await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+                        await pagina.WaitForURLAsync(new System.Text.RegularExpressions.Regex("id=\\d+"), new() { Timeout = 15000 });
+                        await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                        if (!(await pagina.Locator("#titulo").InnerTextAsync()).Contains("nº")) motivo9 = "depois de gravar, a ficha nao abriu o lancamento";
+                        else if (await pagina.Locator("#linhas-parcelas tr").CountAsync() != 2) motivo9 = "depois de gravar, a ficha nao tem 2 parcelas";
+                    }
+                }
+            }
+        }
+        var url9 = pagina.Url;
+        if (motivo9.Length == 0)
+        {
+            await pagina.Locator("#botao-copiar").ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            if (!(await pagina.Locator("#titulo").InnerTextAsync()).Contains("cópia")) motivo9 = "Copiar nao abriu a copia";
+            else
+            {
+                await pagina.Locator("#botao-voltar").ClickAsync();
+                if (await JanelaAberta() is not null) await pagina.Locator("dialog.janela .botao-principal").First.ClickAsync(); // descartar
+                await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            }
+        }
+        if (motivo9.Length == 0)
+        {
+            await pagina.GotoAsync(url9, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.Locator("#botao-excluir").ClickAsync();
+            await pagina.Locator("dialog.janela textarea").FillAsync("Teste automatico das telas");
+            await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+            await pagina.WaitForFunctionAsync("() => { const h = document.querySelector('dialog.janela h2'); return h && h.textContent !== 'Excluir lançamento?'; }", null, new() { Timeout = 15000 });
+            var r = await JanelaAberta();
+            if (r?.Titulo != "Concluído") motivo9 = "excluir: janela \"" + r?.Titulo + "\": " + r?.Texto;
+            else await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+        }
+        if (motivo9.Length == 0 && errosJs.Count > 0) motivo9 = "erro de JavaScript: " + errosJs[0];
+        if (motivo9.Length == 0 && errosApi.Count > 0) motivo9 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo9 = erro.Message.Split('\n')[0]; }
+    Linha(motivo9.Length == 0, "ficha do lancamento: incluir com 2 parcelas, avisos do P17 (" + avisos9 + "), copiar, excluir (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo9);
+    if (motivo9.Length > 0) await Foto("fin_lancamento");
+}
+
 // ---------------------------------------------------------------- Fim
 try { await pagina.EvaluateAsync("() => fetch('/api/logout', { method: 'POST', headers: { 'X-CMJ': '1' } })"); } catch { }
 Console.WriteLine(new string('=', 70));

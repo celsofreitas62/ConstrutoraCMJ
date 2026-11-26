@@ -33,6 +33,8 @@
                 mensagem, idReferencia, campo).
   Changelog:
     v1.0 (25/11/2026) - Criação (etapa 04f).
+    v1.1 (26/11/2026) - Etapa 04f2b: integração em branco vale COMPLETA (a API
+                        manda texto vazio quando a ficha não informa).
 
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Gravar @IdUsuario = 2, @Tipo = 'P', @IdCentroCusto = 1, @IdPessoa = 1, @IdPlanoConta = 1,
@@ -106,7 +108,7 @@ BEGIN
         SET @Documento          = LTRIM(RTRIM(ISNULL(@Documento, N'')));
         SET @Historico          = LTRIM(RTRIM(ISNULL(@Historico, N'')));
         SET @Observacao         = LTRIM(RTRIM(ISNULL(@Observacao, N'')));
-        SET @Integracao         = UPPER(LTRIM(RTRIM(ISNULL(@Integracao, 'COMPLETA'))));
+        SET @Integracao         = UPPER(LTRIM(RTRIM(ISNULL(NULLIF(LTRIM(RTRIM(@Integracao)), ''), 'COMPLETA'))));
         SET @Previsao           = ISNULL(@Previsao, 0);
         SET @MotivoRetroativo   = LTRIM(RTRIM(ISNULL(@MotivoRetroativo, N'')));
         SET @AvisosConfirmados  = UPPER(ISNULL(@AvisosConfirmados, N''));
