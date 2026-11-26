@@ -29,12 +29,13 @@
                       2.2 (25/11/2026) versões e aviso O que há de novo (P22, etapas 04c e 04c2).
                       2.3 (25/11/2026) Parceiros: tipos, CEP/CNPJ, pendências de cobrança e anexos (P10, P12; etapas 04d e 04d2).
                       2.4 (25/11/2026) empresas, contas bancárias, bancos, centros de custo, plano de contas em árvore e escolha com busca (P11; etapa 04e).
+                      2.5 (26/11/2026) contas a pagar e a receber, pendências dos lançamentos (P17, P27), movimentação do Parceiro e parâmetros de uso (etapas 04f a 04f2e).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '2.4';
+DECLARE @Versao VARCHAR(20) = '2.5';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;

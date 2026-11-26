@@ -9,7 +9,7 @@
                 Sincroniza a tabela com o .md (as notas são do sistema, não da
                 CMJ): inclui o que falta, acerta o texto do que mudou e tira o
                 item que saiu do .md. Idempotente.
-                Versões no arquivo: 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
+                Versões no arquivo: 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
   Changelog:
     v1.0 (23/11/2026) - Criação (etapa 04c, P22).
 *******************************************************************************/
@@ -21,8 +21,41 @@ DROP TABLE IF EXISTS #CargaNota;
 SELECT v.VERSAO, SIS.fn_SIS_Versao_Numero(v.VERSAO) AS VERSAO_NUMERO, v.DT_VERSAO, v.ORDEM, v.TIPO, v.PUBLICO, v.TEXTO, v.TEXTO_HTML
 INTO #CargaNota
 FROM (VALUES
-       (CAST('2.4' AS VARCHAR(20)), CAST('2026-11-25' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
-         CAST(N'telas de Empresas (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.' AS NVARCHAR(2000)), CAST(N'telas de <b>Empresas</b> (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.' AS NVARCHAR(4000)))
+       (CAST('2.5' AS VARCHAR(20)), CAST('2026-11-26' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
+         CAST(N'telas Contas a pagar e Contas a receber (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.' AS NVARCHAR(2000)), CAST(N'telas <b>Contas a pagar</b> e <b>Contas a receber</b> (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.' AS NVARCHAR(4000)))
+      ,('2.5', '2026-11-26', 2, 'NOVO', 'TODOS',
+         N'Meus filtros: cada usuário salva os filtros que usa sempre (ex.: "Vencidos da CMJ") e pode marcar um para a tela já abrir com ele. Sem filtro marcado, a tela abre com os últimos filtros usados.',
+         N'<b>Meus filtros</b>: cada usuário salva os filtros que usa sempre (ex.: "Vencidos da CMJ") e pode marcar um para a tela já abrir com ele. Sem filtro marcado, a tela abre com os últimos filtros usados.')
+      ,('2.5', '2026-11-26', 3, 'NOVO', 'TODOS',
+         N'Exportar Excel das contas a pagar e a receber com todas as linhas do filtro.',
+         N'<b>Exportar Excel</b> das contas a pagar e a receber com todas as linhas do filtro.')
+      ,('2.5', '2026-11-26', 4, 'NOVO', 'TODOS',
+         N'ficha do lançamento: incluir e alterar contas a pagar e a receber com as parcelas (botão "Gerar parcelas" pelo nº de parcelas, 1º vencimento e intervalo), cancelar com motivo, excluir para a lixeira, copiar um lançamento, e as abas Parcelas, Baixas, Anexos e Histórico. Clique na linha da lista para abrir; "+ Incluir" abre um novo.',
+         N'<b>ficha do lançamento</b>: incluir e alterar contas a pagar e a receber com as parcelas (botão "Gerar parcelas" pelo nº de parcelas, 1º vencimento e intervalo), cancelar com motivo, excluir para a lixeira, copiar um lançamento, e as abas Parcelas, Baixas, Anexos e Histórico. Clique na linha da lista para abrir; "+ Incluir" abre um novo.')
+      ,('2.5', '2026-11-26', 5, 'NOVO', 'TODOS',
+         N'pendências dos lançamentos: o sistema aponta sozinho o que falta resolver nas contas em aberto (sem centro de custo, sem conta do plano, sem número de documento, conta a pagar acima de um valor sem anexo, cliente sem cadastro completo para cobrança, parcela vencida há muitos dias), e você também pode marcar pendências ("aguardando nota fiscal", "conferir com o contador"...) com responsável e previsão. Algumas pendências podem impedir o pagamento até serem resolvidas. As regras e os tipos de pendência são configuráveis.',
+         N'<b>pendências dos lançamentos</b>: o sistema aponta sozinho o que falta resolver nas contas em aberto (sem centro de custo, sem conta do plano, sem número de documento, conta a pagar acima de um valor sem anexo, cliente sem cadastro completo para cobrança, parcela vencida há muitos dias), e você também pode marcar pendências ("aguardando nota fiscal", "conferir com o contador"...) com responsável e previsão. Algumas pendências podem impedir o pagamento até serem resolvidas. As regras e os tipos de pendência são configuráveis.')
+      ,('2.5', '2026-11-26', 6, 'NOVO', 'TODOS',
+         N'na lista de contas, os contadores Com pendência e Minhas pendências, o filtro por pendência e uma etiqueta na linha que mostra as pendências ao passar o mouse (vermelha quando a previsão já passou). Na ficha, o quadro Pendências diz como resolver cada uma e leva direto ao campo certo.',
+         N'na lista de contas, os contadores <b>Com pendência</b> e <b>Minhas pendências</b>, o filtro por pendência e uma etiqueta na linha que mostra as pendências ao passar o mouse (vermelha quando a previsão já passou). Na ficha, o quadro <b>Pendências</b> diz como resolver cada uma e leva direto ao campo certo.')
+      ,('2.5', '2026-11-26', 7, 'NOVO', 'TODOS',
+         N'tela Tipos de pendência (Financeiro), para criar os tipos que a empresa usa e dizer quais bloqueiam o pagamento.',
+         N'tela <b>Tipos de pendência</b> (Financeiro), para criar os tipos que a empresa usa e dizer quais bloqueiam o pagamento.')
+      ,('2.5', '2026-11-26', 8, 'MELHORIA', 'TODOS',
+         N'a conferência de CPF/CNPJ ficou mais rápida nas listas.',
+         N'a conferência de CPF/CNPJ ficou mais rápida nas listas.')
+      ,('2.5', '2026-11-26', 9, 'NOVO', 'TODOS',
+         N'aba Movimentação na ficha do Parceiro: o que ele tem a pagar e a receber em aberto, o vencido, o total pago ou recebido nos últimos 12 meses com a média por mês e a data do último pagamento; a lista das parcelas abre o lançamento, e os botões "+ Contas a pagar" e "+ Contas a receber" já trazem o parceiro escolhido.',
+         N'aba <b>Movimentação</b> na ficha do Parceiro: o que ele tem a pagar e a receber em aberto, o vencido, o total pago ou recebido nos últimos 12 meses com a média por mês e a data do último pagamento; a lista das parcelas abre o lançamento, e os botões "+ Contas a pagar" e "+ Contas a receber" já trazem o parceiro escolhido.')
+      ,('2.5', '2026-11-26', 10, 'NOVO', 'TODOS',
+         N'tela Parâmetros de uso (Sistema › Configuração), para os administradores ajustarem os avisos ao lançar, as pendências automáticas, a trava de datas e a lista de contas. Antes de gravar, a tela mostra o efeito (ex.: quantos lançamentos passam a ter uma pendência) e, quando a mudança afrouxa uma proteção, pede o motivo, que fica no histórico do parâmetro.',
+         N'tela <b>Parâmetros de uso</b> (Sistema › Configuração), para os administradores ajustarem os avisos ao lançar, as pendências automáticas, a trava de datas e a lista de contas. Antes de gravar, a tela mostra o efeito (ex.: quantos lançamentos passam a ter uma pendência) e, quando a mudança afrouxa uma proteção, pede o motivo, que fica no histórico do parâmetro.')
+      ,('2.5', '2026-11-26', 11, 'NOVO', 'TODOS',
+         N'avisos contra erro de digitação ao gravar um lançamento: o sistema mostra o que parece erro (valor fora da média, documento repetido, datas distantes...) e só grava depois de você marcar "Estou ciente"; o que é bloqueio não deixa gravar.',
+         N'<b>avisos contra erro de digitação</b> ao gravar um lançamento: o sistema mostra o que parece erro (valor fora da média, documento repetido, datas distantes...) e só grava depois de você marcar "Estou ciente"; o que é bloqueio não deixa gravar.')
+      ,('2.4', '2026-11-25', 1, 'NOVO', 'TODOS',
+         N'telas de Empresas (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.',
+         N'telas de <b>Empresas</b> (Cadastros), com busca na Receita pelo CNPJ e no CEP, logomarca, anexos (contrato social, certidões com validade) e as abas das contas bancárias e dos centros de custo da empresa.')
       ,('2.4', '2026-11-25', 2, 'NOVO', 'TODOS',
          N'rodapé dos e-mails por empresa: um texto livre com os contatos (e-mails, telefones, site), com prévia de como vai aparecer.',
          N'<b>rodapé dos e-mails por empresa</b>: um texto livre com os contatos (e-mails, telefones, site), com prévia de como vai aparecer.')

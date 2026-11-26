@@ -26,7 +26,7 @@ subprocess.run([_sys.executable, os.path.join(BASE, 'ferramentas', 'montar_notas
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)
-PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2', 'ORDEM_04C', 'ORDEM_04C2', 'ORDEM_04D', 'ORDEM_04D2', 'ORDEM_04E', 'ORDEM_04F', 'ORDEM_04F2A', 'ORDEM_04F2C', 'ORDEM_04F2D']
+PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2', 'ORDEM_04C', 'ORDEM_04C2', 'ORDEM_04D', 'ORDEM_04D2', 'ORDEM_04E', 'ORDEM_04F', 'ORDEM_04F2A', 'ORDEM_04F2C', 'ORDEM_04F2D', 'ORDEM_04F2E']
 ordem = []
 for k in PACOTES:
     for f in ns[k]:
@@ -71,7 +71,7 @@ cab = """/**********************************************************************
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : """ + hoje + """ por sql/ferramentas/montar_master.py, juntando os
-                arquivos de sql/objetos aprovados (pacotes 02a a 04f2d), sem o schema
+                arquivos de sql/objetos aprovados (pacotes 02a a 04f2e), sem o schema
                 MIG (regra 60). NAO EDITAR ESTE ARQUIVO: corrigir o arquivo do
                 objeto e gerar o MASTER de novo.
   Descricao   : Instala (ou atualiza) TODO o banco do SisCMJ no servidor do
