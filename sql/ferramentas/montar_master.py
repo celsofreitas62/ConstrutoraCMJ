@@ -12,6 +12,9 @@
 # v1.8 (25/11/2026) - Etapa 04c2: pacote 04c2 (banco 2.2).
 # v1.9 (25/11/2026) - Etapa 04d2: pacotes 04d e 04d2 (Parceiros; banco 2.3).
 # v2.0 (25/11/2026) - Etapa 04e: pacote 04e (empresas, contas, centros, plano, seletor; banco 2.4).
+# v2.1 (26/11/2026) - Etapa 04f2e: pacotes 04f, 04f2a, 04f2c e 04f2d (contas a pagar/receber, pendencias P27,
+#                     movimentacao do Parceiro e parametros de uso; banco 2.5). ANTES: function que outra chama
+#                     entra antes dela, mesmo vindo de um pacote mais novo.
 # v1.7 (23/11/2026) - Etapa 04c: pacote 04c (versoes e notas, P22); gera antes a carga das notas (montar_notas.py).
 # Uso: python3 sql/ferramentas/montar_master.py   (SISTEMACMJ_SQL = pasta sql)
 import os, re, datetime
@@ -23,12 +26,18 @@ subprocess.run([_sys.executable, os.path.join(BASE, 'ferramentas', 'montar_notas
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)
-PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2', 'ORDEM_04C', 'ORDEM_04C2', 'ORDEM_04D', 'ORDEM_04D2', 'ORDEM_04E']
+PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2', 'ORDEM_04C', 'ORDEM_04C2', 'ORDEM_04D', 'ORDEM_04D2', 'ORDEM_04E', 'ORDEM_04F', 'ORDEM_04F2A', 'ORDEM_04F2C', 'ORDEM_04F2D']
 ordem = []
 for k in PACOTES:
     for f in ns[k]:
         if f not in ordem and '/MIG/' not in f:
             ordem.append(f)
+# Function nova chamada por outra mais antiga: entra logo antes dela (o pacote dela e mais novo).
+ANTES = {'objetos/CAD/CAD.fn_CAD_Documento_Checar.sql': 'objetos/CAD/CAD.fn_CAD_Documento_Valido.sql',
+         'objetos/FIN/FIN.fn_FIN_Lancamento_Pendencias_Simular.sql': 'objetos/FIN/FIN.fn_FIN_Lancamento_Pendencias.sql'}
+for f, alvo in ANTES.items():
+    if f in ordem and alvo in ordem and ordem.index(f) > ordem.index(alvo):
+        ordem.remove(f); ordem.insert(ordem.index(alvo), f)
 
 def ler(p):
     return open(os.path.join(BASE, p), encoding='utf-8-sig').read().replace('\r\n', '\n')
@@ -62,7 +71,7 @@ cab = """/**********************************************************************
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : """ + hoje + """ por sql/ferramentas/montar_master.py, juntando os
-                arquivos de sql/objetos aprovados (pacotes 02a a 04b2), sem o schema
+                arquivos de sql/objetos aprovados (pacotes 02a a 04f2d), sem o schema
                 MIG (regra 60). NAO EDITAR ESTE ARQUIVO: corrigir o arquivo do
                 objeto e gerar o MASTER de novo.
   Descricao   : Instala (ou atualiza) TODO o banco do SisCMJ no servidor do

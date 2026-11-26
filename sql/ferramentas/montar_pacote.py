@@ -229,11 +229,11 @@ ORDEM_04F2C = ['objetos/FIN/FIN.Pendencia_Tipo.sql', 'objetos/FIN/FIN.Lancamento
                'objetos/FIN/FIN.FIN_Lancamento_Pendencia_Listar.sql', 'objetos/FIN/FIN.FIN_Lancamento_Pendencia_Gravar.sql',
                'objetos/FIN/FIN.FIN_Lancamento_Pendencia_Resolver.sql', 'objetos/FIN/FIN.FIN_Lancamento_Pendencia_Reabrir.sql', 'objetos/FIN/FIN.FIN_Pendencia_Responsavel_Listar.sql',
                'objetos/FIN/FIN.FIN_Lancamento_Listar.sql', 'objetos/FIN/FIN.FIN_Lancamento_Resumo.sql', 'objetos/FIN/FIN.FIN_Lancamento_Obter.sql']
-PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 ORDEM_04F2D = ['objetos/SIS/SIS.Parametro.sql', 'objetos/SIS/Carga_SIS_Auditoria_Triggers.sql',
                'objetos/SIS/SIS.fn_SIS_Parametro_Afrouxa.sql', 'objetos/SIS/SIS.SIS_Parametro_Gravar.sql',
                'objetos/FIN/FIN.fn_FIN_Lancamento_Pendencias_Simular.sql', 'objetos/FIN/FIN.fn_FIN_Lancamento_Pendencias.sql',
                'objetos/SIS/SIS.SIS_Parametro_Conferir.sql', 'objetos/FIN/FIN.FIN_Parceiro_Movimento_Resumo.sql']
+PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 
 ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B, '03d': ORDEM_03D, '03g': ORDEM_03G, '03h': ORDEM_03H, '04a': ORDEM_04A, '04b': ORDEM_04B, '04b2': ORDEM_04B2, '04c': ORDEM_04C, '04c2': ORDEM_04C2, '04d': ORDEM_04D, '04d2': ORDEM_04D2, '04e': ORDEM_04E, '04f': ORDEM_04F, '04f2a': ORDEM_04F2A, '04f2c': ORDEM_04F2C, '04f2d': ORDEM_04F2D}[PARTE]
 TITULO = {'04f2d': '04f2d - movimentacao do Parceiro (resumo por tipo com media mensal) e parametros de uso; banco continua 2.4 ate a 04f2e',
