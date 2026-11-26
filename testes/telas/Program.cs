@@ -24,6 +24,9 @@
 //                   salvo (04f2a); 9) ficha do lançamento (04f2b);
 //                10) pendências (04f2c2): + Pendência no lançamento de teste,
 //                   resolver, reabrir; contador "Com pendência" na lista.
+//                11) Movimentação do Parceiro (resumo e filtro pelo contador) e
+//                   Parâmetros de uso (prévia do efeito, motivo ao afrouxar uma
+//                   regra, volta ao valor de antes) (04f2d).
 //              Resultado: uma linha por conferência, "RESULTADO: OK" ou
 //              "RESULTADO: FALHAS (n)" no fim; código de saída = falhas.
 //              Foto da tela em cada falha em %LOCALAPPDATA%\SistemaCMJ\testes_telas.
@@ -618,6 +621,103 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     catch (Exception erro) { motivo9 = erro.Message.Split('\n')[0]; }
     Linha(motivo9.Length == 0, "ficha do lancamento: incluir com 2 parcelas, avisos do P17 (" + avisos9 + "), copiar, excluir (" + relogio.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo9);
     if (motivo9.Length > 0) await Foto("fin_lancamento");
+}
+
+// ---------------------------------------------------------------- 11) Movimentação do Parceiro e Parâmetros de uso (04f2d, 26/11/2026)
+// a) ficha de um parceiro com conta a receber em aberto: aba Movimentação, resumo (contadores) e grade com linha;
+//    clicar no contador "A receber em aberto" filtra a grade.
+// b) Parâmetros de uso: prévia do efeito de um parâmetro de pendência (FIN_PEND_VENCIDA_DIAS, cancelada, nada gravado);
+//    afrouxar uma regra (FIN_REGRA_DUPLIC_DOCUMENTO para "Não confere") pede o motivo e grava; depois volta ao valor de antes.
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    var relogio11 = Stopwatch.StartNew();
+    var motivo11 = "";
+    try
+    {
+        var aberto = await Api("/api/fin/lancamentos?tipo=R&situacao=EM_ABERTO&porPagina=10");
+        var idPessoa = 0;
+        if (aberto.GetProperty("sucesso").GetBoolean())
+            foreach (var l in aberto.GetProperty("dados").EnumerateArray())
+                if (l.TryGetProperty("ID_PESSOA", out var ip) && ip.ValueKind == JsonValueKind.Number) { idPessoa = ip.GetInt32(); break; }
+        if (idPessoa == 0) motivo11 = "nenhum parceiro com conta a receber em aberto no LOCAL";
+        else
+        {
+            await pagina.GotoAsync(endereco + "/cad/pessoa.html?id=" + idPessoa, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            var aba = pagina.Locator("#aba-movimentacao");
+            if (!await aba.IsVisibleAsync()) motivo11 = "aba Movimentacao nao apareceu";
+            else
+            {
+                await aba.ClickAsync();
+                await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                var painel = pagina.Locator("#movimentacao");
+                await painel.Locator("tbody tr").First.WaitForAsync(new() { Timeout = 30000 });
+                if (await painel.Locator(".contador").CountAsync() < 3) motivo11 = "resumo da Movimentacao sem os contadores";
+                else if (await painel.Locator("tbody tr.clicavel").CountAsync() == 0) motivo11 = "grade da Movimentacao sem lancamento (o parceiro tem conta em aberto)";
+                else
+                {
+                    await painel.Locator(".contador", new() { HasText = "A receber em aberto" }).ClickAsync();
+                    await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    var tipos = await painel.Locator("tbody tr.clicavel td:first-child").AllInnerTextsAsync();
+                    if (tipos.Count == 0 || tipos.Any(t => t.Trim() != "A receber")) motivo11 = "contador A receber em aberto nao filtrou a grade";
+                }
+            }
+        }
+
+        if (motivo11.Length == 0)
+        {
+            await pagina.GotoAsync(endereco + "/sis/parametros.html?uso=1", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            // prévia do efeito, cancelada
+            var linhaPend = pagina.Locator(".tabela-parametros tbody tr", new() { HasText = "FIN_PEND_VENCIDA_DIAS" }).First;
+            var campoPend = linhaPend.Locator("input");
+            var dias = await campoPend.InputValueAsync();
+            await campoPend.FillAsync(((int.TryParse(dias, out var diasNum) ? diasNum : 30) + 5).ToString());
+            await linhaPend.Locator(".botao", new() { HasText = "Gravar" }).ClickAsync();
+            await pagina.Locator("dialog.janela").WaitForAsync(new() { Timeout = 60000 });
+            var previa = await JanelaAberta();
+            if (previa is null || !previa.Value.Texto.Contains("lançamentos em aberto")) motivo11 = "previa do parametro de pendencia sem o efeito: " + previa?.Texto;
+            await pagina.Locator("dialog.janela .botao:not(.botao-principal)").First.ClickAsync();
+            await campoPend.FillAsync(dias);
+
+            // afrouxar com motivo e voltar
+            if (motivo11.Length == 0)
+            {
+                var linhaRegra = pagina.Locator(".tabela-parametros tbody tr", new() { HasText = "FIN_REGRA_DUPLIC_DOCUMENTO" }).First;
+                var antes = await linhaRegra.Locator("select").InputValueAsync();
+                if (antes != "NAO")
+                {
+                    await linhaRegra.Locator("select").SelectOptionAsync("NAO");
+                    await linhaRegra.Locator(".botao", new() { HasText = "Gravar" }).ClickAsync();
+                    var textoMotivo = pagina.Locator("dialog.janela textarea");
+                    try { await textoMotivo.WaitForAsync(new() { Timeout = 15000 }); }
+                    catch (TimeoutException) { motivo11 = "afrouxar a regra nao pediu o motivo"; }
+                    if (motivo11.Length == 0)
+                    {
+                        await textoMotivo.FillAsync("Teste automatico das telas");
+                        await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+                        await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                        await pagina.WaitForTimeoutAsync(500);
+                        if (await JanelaAberta() is { } jg) motivo11 = "gravar com motivo: janela \"" + jg.Titulo + "\": " + jg.Texto;
+                        linhaRegra = pagina.Locator(".tabela-parametros tbody tr", new() { HasText = "FIN_REGRA_DUPLIC_DOCUMENTO" }).First;
+                        if (motivo11.Length == 0 && await linhaRegra.Locator("select").InputValueAsync() != "NAO") motivo11 = "a regra nao ficou gravada como Nao confere";
+                        // volta ao valor de antes (aperta: sem motivo)
+                        await linhaRegra.Locator("select").SelectOptionAsync(antes);
+                        await linhaRegra.Locator(".botao", new() { HasText = "Gravar" }).ClickAsync();
+                        await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+                        await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                        await pagina.WaitForTimeoutAsync(500);
+                        linhaRegra = pagina.Locator(".tabela-parametros tbody tr", new() { HasText = "FIN_REGRA_DUPLIC_DOCUMENTO" }).First;
+                        if (motivo11.Length == 0 && await linhaRegra.Locator("select").InputValueAsync() != antes) motivo11 = "a regra nao voltou para " + antes;
+                    }
+                }
+            }
+        }
+        if (motivo11.Length == 0 && errosJs.Count > 0) motivo11 = "erro de JavaScript: " + errosJs[0];
+        if (motivo11.Length == 0 && errosApi.Count > 0) motivo11 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo11 = erro.Message.Split('\n')[0]; }
+    Linha(motivo11.Length == 0, "movimentacao do parceiro e parametros de uso: previa do efeito, motivo ao afrouxar (" + relogio11.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo11);
+    if (motivo11.Length > 0) await Foto("movimentacao_parametros");
 }
 
 // ---------------------------------------------------------------- Fim
