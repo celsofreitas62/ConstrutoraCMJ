@@ -472,3 +472,5 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .aviso-bloqueio-baixa { margin-top: 8px; background: #FDE7E4; color: #9B1C12; border-color: #F2B8B0; }
 .pendencia-orientacao { align-self: end; font-size: 13px; }
 .atalhos-data-botoes { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabela-pendencia-tipos .campo-codigo { width: 11em; }
+.tabela-pendencia-tipos .campo-ordem { width: 4em; }

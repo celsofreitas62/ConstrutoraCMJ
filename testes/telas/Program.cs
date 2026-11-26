@@ -21,7 +21,9 @@
 //                7) fichas de empresa, conta e centro; escolha com busca e
 //                   plano de contas em árvore (04e, só leitura);
 //                8) contas a pagar e a receber: contadores, filtro e filtro
-//                   salvo (04f2a).
+//                   salvo (04f2a); 9) ficha do lançamento (04f2b);
+//                10) pendências (04f2c2): + Pendência no lançamento de teste,
+//                   resolver, reabrir; contador "Com pendência" na lista.
 //              Resultado: uma linha por conferência, "RESULTADO: OK" ou
 //              "RESULTADO: FALHAS (n)" no fim; código de saída = falhas.
 //              Foto da tela em cada falha em %LOCALAPPDATA%\SistemaCMJ\testes_telas.
@@ -519,6 +521,86 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
                 await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
             }
         }
+        // ------------------------------------------------------------ 10) Pendências (04f2c2, 26/11/2026)
+        // No lançamento de teste: quadro aparece, "+ Pendência" (1º tipo da lista, previsão "+7 dias") >
+        // Incluir > item manual aparece > Resolver (nota) > vai para "Resolvidas" > Reabrir > volta a aberta.
+        // Na lista: clicar em "Com pendência" filtra por pendência e passa para "por lançamento".
+        if (motivo9.Length == 0)
+        {
+            var relogio10 = Stopwatch.StartNew();
+            var motivo10 = "";
+            try
+            {
+                await pagina.GotoAsync(url9, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+                var quadro = pagina.Locator("#quadro-pendencias");
+                if (!await quadro.IsVisibleAsync()) motivo10 = "o quadro de Pendencias nao apareceu na ficha";
+                else if (!await quadro.Locator(".quadro-pendencias-topo .botao").IsVisibleAsync()) motivo10 = "botao + Pendencia nao apareceu (acao PENDENCIA?)";
+                if (motivo10.Length == 0)
+                {
+                    var manuaisAntes = await quadro.Locator(".pendencia-item:not(.resolvida) .pendencia-origem", new() { HasText = "Manual" }).CountAsync();
+                    await quadro.Locator(".quadro-pendencias-topo .botao").ClickAsync();
+                    var janela = pagina.Locator("dialog.janela-larga");
+                    await janela.WaitForAsync(new() { Timeout = 10000 });
+                    await janela.Locator("select").First.SelectOptionAsync(new SelectOptionValue { Index = 1 });
+                    await janela.Locator(".atalhos-data-botoes .botao", new() { HasText = "+7 dias" }).ClickAsync();
+                    await janela.Locator("textarea").FillAsync("Teste automatico das telas");
+                    await janela.Locator(".botao-principal").ClickAsync();
+                    await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    if (await JanelaAberta() is { } jp) motivo10 = "incluir: janela \"" + jp.Titulo + "\": " + jp.Texto;
+                    else
+                    {
+                        var abertas = quadro.Locator(".pendencia-item:not(.resolvida)", new() { HasText = "Teste automatico das telas" });
+                        await abertas.First.WaitForAsync(new() { Timeout = 10000 });
+                        if (await quadro.Locator(".pendencia-item:not(.resolvida) .pendencia-origem", new() { HasText = "Manual" }).CountAsync() != manuaisAntes + 1) motivo10 = "a pendencia incluida nao apareceu no quadro";
+                    }
+                }
+                if (motivo10.Length == 0)
+                {
+                    var item = quadro.Locator(".pendencia-item:not(.resolvida)", new() { HasText = "Teste automatico das telas" }).First;
+                    await item.Locator(".botao", new() { HasText = "Resolver" }).ClickAsync();
+                    await pagina.Locator("dialog.janela textarea").FillAsync("Resolvida pelo teste automatico");
+                    await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+                    await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    if (await JanelaAberta() is { } jr) motivo10 = "resolver: janela \"" + jr.Titulo + "\": " + jr.Texto;
+                    else
+                    {
+                        var resolvida = quadro.Locator(".pendencias-resolvidas .pendencia-item", new() { HasText = "Teste automatico das telas" }).First;
+                        await quadro.Locator(".pendencias-resolvidas summary").ClickAsync();
+                        await resolvida.WaitForAsync(new() { Timeout = 10000 });
+                        await resolvida.Locator(".botao", new() { HasText = "Reabrir" }).ClickAsync();
+                        await pagina.Locator("dialog.janela .botao-principal").ClickAsync();
+                        await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                        if (await JanelaAberta() is { } jb) motivo10 = "reabrir: janela \"" + jb.Titulo + "\": " + jb.Texto;
+                        else
+                        {
+                            try { await quadro.Locator(".pendencia-item:not(.resolvida)", new() { HasText = "Teste automatico das telas" }).First.WaitForAsync(new() { Timeout = 10000 }); }
+                            catch (TimeoutException) { motivo10 = "depois de reabrir, a pendencia nao voltou para aberta"; }
+                        }
+                    }
+                }
+                if (motivo10.Length == 0)
+                {
+                    await pagina.GotoAsync(endereco + "/fin/lancamentos.html?tipo=P", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 60000 });
+                    if ((await pagina.Locator("#qtd-pendencia").InnerTextAsync()).Trim() is "–" or "0") motivo10 = "contador Com pendencia nao carregou (ou zero com a pendencia de teste aberta)";
+                    else
+                    {
+                        await pagina.Locator(".contador-pendencia").ClickAsync();
+                        await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                        if (await pagina.Locator("#pendencia").InputValueAsync() != "COM" || await pagina.Locator("#visao").InputValueAsync() != "LANCAMENTO")
+                            motivo10 = "clicar em Com pendencia nao filtrou";
+                        else if (await pagina.Locator("#linhas .etiqueta-pendencia").CountAsync() == 0) motivo10 = "lista filtrada sem etiqueta de pendencia";
+                        await pagina.Locator("#botao-limpar").ClickAsync();
+                        await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    }
+                }
+                if (motivo10.Length == 0 && errosJs.Count > 0) motivo10 = "erro de JavaScript: " + errosJs[0];
+                if (motivo10.Length == 0 && errosApi.Count > 0) motivo10 = "API respondeu " + errosApi[0];
+            }
+            catch (Exception erro) { motivo10 = erro.Message.Split('\n')[0]; }
+            Linha(motivo10.Length == 0, "pendencias: incluir, resolver, reabrir e contador na lista (" + relogio10.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo10);
+            if (motivo10.Length > 0) await Foto("fin_pendencias");
+        }
+
         if (motivo9.Length == 0)
         {
             await pagina.GotoAsync(url9, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Tipos de pendência</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> cadastrar os tipos de pendência que aparecem no botão <strong>+ Pendência</strong> da ficha dos lançamentos (ex.: Aguardando nota fiscal, Aguardando contrato, Conferir valor).</p>
+  <h2>Como usar</h2>
+  <ul>
+    <li>Clique em <strong>+ Incluir tipo</strong>, preencha a linha e clique em <strong>Gravar</strong> na própria linha.</li>
+    <li><strong>Código</strong>: letras sem acento, números e "_" (ex.: AGUARDA_MEDICAO).</li>
+    <li><strong>Vale para</strong>: contas a pagar, a receber ou as duas.</li>
+    <li><strong>Bloqueia a baixa</strong>: enquanto uma pendência desse tipo estiver aberta, o lançamento não pode ser pago ou recebido.</li>
+    <li><strong>Como resolver</strong>: orientação que aparece na ficha para quem for resolver.</li>
+    <li><strong>Abertas</strong>: quantas pendências desse tipo ainda estão abertas.</li>
+  </ul>
+  <h2>Cuidados</h2>
+  <ul>
+    <li>Para parar de usar um tipo, desmarque <strong>Ativo</strong> e grave: ele some do "+ Pendência", mas as pendências já lançadas continuam.</li>
+    <li>Tipos <strong>do sistema</strong> (ex.: Veio da migração – conferir) não mudam de código nem podem ser desativados.</li>
+    <li>As pendências <strong>automáticas</strong> (sem centro de custo, sem anexo, vencida há muito tempo...) não são cadastradas aqui: são ligadas e ajustadas nos <strong>Parâmetros de uso</strong> (FIN_PEND_*).</li>
+  </ul>
+</body>
+</html>
