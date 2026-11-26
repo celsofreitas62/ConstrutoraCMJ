@@ -14,6 +14,8 @@
                 partir de hoje, para o teste valer em qualquer dia.
 *******************************************************************************/
 SET NOCOUNT ON;
+DROP TABLE IF EXISTS #prep;
+CREATE TABLE #prep (C01 NVARCHAR(MAX), C02 NVARCHAR(MAX), C03 NVARCHAR(MAX), C04 NVARCHAR(MAX), C05 NVARCHAR(MAX), C06 NVARCHAR(MAX), C07 NVARCHAR(MAX), C08 NVARCHAR(MAX), C09 NVARCHAR(MAX), C10 NVARCHAR(MAX), C11 NVARCHAR(MAX), C12 NVARCHAR(MAX), C13 NVARCHAR(MAX), C14 NVARCHAR(MAX), C15 NVARCHAR(MAX), C16 NVARCHAR(MAX), C17 NVARCHAR(MAX), C18 NVARCHAR(MAX), C19 NVARCHAR(MAX), C20 NVARCHAR(MAX), C21 NVARCHAR(MAX), C22 NVARCHAR(MAX), C23 NVARCHAR(MAX), C24 NVARCHAR(MAX), C25 NVARCHAR(MAX), C26 NVARCHAR(MAX), C27 NVARCHAR(MAX), C28 NVARCHAR(MAX), C29 NVARCHAR(MAX), C30 NVARCHAR(MAX));
 DECLARE @r TABLE (CASO NVARCHAR(100), ESPERADO NVARCHAR(200), OBTIDO NVARCHAR(200));
 DECLARE @g TABLE (SUCESSO BIT, MENSAGEM NVARCHAR(400), ID BIGINT);
 DECLARE @b TABLE (SUCESSO BIT, MENSAGEM NVARCHAR(400), ID BIGINT, ID_MOVIMENTO BIGINT, ID_LOTE BIGINT, PENDENTE BIT, AVISOS NVARCHAR(MAX));
@@ -26,7 +28,7 @@ DECLARE @Empresa INT, @Conta INT, @Forn INT, @Cli INT, @LR BIGINT, @LP BIGINT, @
 -- estrutura e cargas
 INSERT @r SELECT N'tabela BANCO.Caixa_Fechamento', N'1', CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.tables WHERE object_id = OBJECT_ID('BANCO.Caixa_Fechamento');
 INSERT @r SELECT N'funções novas', N'2', CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.objects WHERE object_id IN (OBJECT_ID('FIN.fn_FIN_Baixa_Sugerir'), OBJECT_ID('BANCO.fn_BANCO_Caixa_Recusa'));
-INSERT @r SELECT N'procedures novas', N'2', CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.procedures WHERE object_id IN (OBJECT_ID('FIN.FIN_Baixa_Gravar'), OBJECT_ID('FIN.FIN_Baixa_Estornar'));
+INSERT @r SELECT N'procedures novas', N'3', CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.procedures WHERE object_id IN (OBJECT_ID('FIN.FIN_Baixa_Gravar'), OBJECT_ID('FIN.FIN_Baixa_Estornar'), OBJECT_ID('FIN.FIN_Baixa_Preparar'));
 INSERT @r SELECT N'ações novas', N'2', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Acao WHERE CODIGO IN ('LIBERAR_PENDENCIA', 'DESCONTO_LIMITE');
 INSERT @r SELECT N'ações da baixa nas telas de pagar e receber', N'8', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Item_Acao ia
        INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM INNER JOIN SIS.Acao a ON a.ID_ACAO = ia.ID_ACAO
@@ -87,6 +89,15 @@ BEGIN
     SET @PP1 = SCOPE_IDENTITY();
     INSERT INTO FIN.Parcela (ID_LANCAMENTO, NUMERO, QTD_PARCELAS, DT_VENCIMENTO, VALOR) VALUES (@LP, 2, 2, DATEADD(DAY, 10, @Hoje), 250.00);
     SET @PP2 = SCOPE_IDENTITY();
+
+    -- janela de baixa (preparar)
+    INSERT #prep EXEC FIN.FIN_Baixa_Preparar @IdUsuario = @Fin, @Parcelas = N'0', @DtPagamento = @Hoje;
+    DELETE #prep;
+    DECLARE @Lista NVARCHAR(100) = CONVERT(NVARCHAR(20), @PR) + N',' + CONVERT(NVARCHAR(20), @PP1) + N',' + CONVERT(NVARCHAR(20), @PR);
+    INSERT #prep EXEC FIN.FIN_Baixa_Preparar @IdUsuario = @Fin, @Parcelas = @Lista, @DtPagamento = @Hoje;
+    INSERT @r SELECT N'preparar: 2 parcelas (repetida uma vez)', N'2', CAST(COUNT(*) AS NVARCHAR(5)) FROM #prep;
+    INSERT @r SELECT N'preparar a receber: multa/juros/limite/pode desconto', N'20.00/10.00/50.00/0',
+           (SELECT CONCAT(C20, '/', C21, '/', C22, '/', C29) FROM #prep WHERE C01 = CONVERT(NVARCHAR(20), @PR));
 
     -- sugestão
     INSERT @r SELECT N'sugerir a receber: dias/multa/juros/limite desconto', N'30/20.00/10.00/50.00',
@@ -198,3 +209,4 @@ ROLLBACK;
 
 SELECT CASO, ESPERADO, OBTIDO, CASE WHEN ESPERADO = OBTIDO THEN 'OK' ELSE 'FALHOU' END AS RESULTADO FROM @r;
 SELECT SUM(CASE WHEN ESPERADO = OBTIDO THEN 1 ELSE 0 END) AS OK, SUM(CASE WHEN ESPERADO = OBTIDO THEN 0 ELSE 1 END) AS FALHOU FROM @r;
+DROP TABLE IF EXISTS #prep;

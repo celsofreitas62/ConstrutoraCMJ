@@ -1,4 +1,4 @@
-﻿// =============================================================================
+// =============================================================================
 //  SistemaCMJ.Api - Program.cs
 //  Autor     : Celso de Freitas
 //  Refatorado: Claude
@@ -136,6 +136,7 @@ ContaBancariaEndpoints.Mapear(app);
 CentroCustoEndpoints.Mapear(app);
 PlanoContaEndpoints.Mapear(app);
 LancamentoEndpoints.Mapear(app);
+BaixaEndpoints.Mapear(app);
 PendenciaEndpoints.Mapear(app);
 ParametroEndpoints.Mapear(app);
 FiltroSalvoEndpoints.Mapear(app);
