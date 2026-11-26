@@ -6,6 +6,8 @@
 //  04f2a     : contadores do topo (/resumo) e período por emissão ou
 //              competência (campoData).
 //  04f2b     : integração em branco vai NULL (o banco usa COMPLETA).
+//  04f2d     : resumo da aba Movimentação do Parceiro
+//              (/api/fin/parceiros/{id}/movimentacao/resumo).
 //  04f2c     : filtro de pendências na lista (pendencia, pendenciaCodigo) e
 //              PENDENCIAS (JSON) na ficha (P27; o resto em PendenciaEndpoints).
 //  Descrição : Telas "Contas a pagar" (FIN_PAGAR) e "Contas a receber"
@@ -59,6 +61,7 @@ public static class LancamentoEndpoints
         app.MapPost("/api/fin/lancamentos", Gravar);
         app.MapPost("/api/fin/lancamentos/conferir", Conferir);
         app.MapPost("/api/fin/lancamentos/{id:long}/cancelar", Cancelar);
+        app.MapGet("/api/fin/parceiros/{id:int}/movimentacao/resumo", MovimentacaoResumo);
     }
 
     private static Task<IResult> Listar(string? tipo, string? visao, string? situacao, DateOnly? vencDe, DateOnly? vencAte, string? campoData,
@@ -98,6 +101,18 @@ public static class LancamentoEndpoints
         });
 
     /// <summary>Contadores do topo da lista (vencidas, hoje, a vencer, em aberto) e parâmetros da tela.</summary>
+    private static Task<IResult> MovimentacaoResumo(int id, HttpContext http, Banco banco, ILogger<Program> logger) =>
+        Resposta.Rodar(http, banco, logger, async () =>
+        {
+            var usuario = http.Usuario();
+            var linhas = await banco.ExecutarAsync("FIN.FIN_Parceiro_Movimento_Resumo", new Dictionary<string, object?>
+            {
+                ["IdUsuario"] = usuario.IdUsuario,
+                ["IdPessoa"] = id
+            }, usuario, http.RequestAborted);
+            return Resposta.Ok(linhas);
+        });
+
     private static Task<IResult> Resumo(string tipo, int? idEmpresa, int? idCentroCusto, int? idPessoa, int? idPlanoConta,
                                         HttpContext http, Banco banco, ILogger<Program> logger) =>
         Resposta.Rodar(http, banco, logger, async () =>
