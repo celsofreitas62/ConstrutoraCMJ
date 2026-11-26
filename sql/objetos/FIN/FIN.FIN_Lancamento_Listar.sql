@@ -28,11 +28,18 @@
     v1.1 (25/11/2026) - Etapa 04f2a: situações HOJE e A_VENCER, período por
                         emissão ou competência (@CampoData) e canceladas fora
                         de "todas" pelo parâmetro FIN_LISTA_OCULTA_CANCELADAS.
+    v1.2 (26/11/2026) - Etapa 04f2c (P27): filtro de pendências (@Pendencia
+                        COM, AUTOMATICA, MANUAL, MINHAS, ATRASADA ou BLOQUEIA;
+                        @PendenciaCodigo = tipo manual ou regra automática) e
+                        colunas QTD_PENDENCIAS, PENDENCIAS (texto), PENDENCIA_
+                        BLOQUEIA e PENDENCIA_ATRASADA, calculadas só para as
+                        linhas da página (FIN.fn_FIN_Lancamento_Pendencias).
 
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'R', @Situacao = 'EM_ABERTO';
     -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'P', @Visao = 'LANCAMENTO', @Texto = N'cimento';
     -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'R', @Situacao = 'A_VENCER', @CampoData = 'EMISSAO', @VencDe = '2026-01-01';
+    -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'P', @Pendencia = 'COM', @Visao = 'LANCAMENTO';
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -58,7 +65,9 @@ CREATE OR ALTER PROCEDURE [FIN].[FIN_Lancamento_Listar]
     @ValorAte       DECIMAL(18,2)  = NULL,
     @Ordem          VARCHAR(12)    = 'VENCIMENTO',
     @Pagina         INT            = 1,
-    @PorPagina      INT            = NULL
+    @PorPagina      INT            = NULL,
+    @Pendencia      VARCHAR(12)    = NULL,
+    @PendenciaCodigo VARCHAR(20)   = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -82,6 +91,7 @@ BEGIN
     DROP TABLE IF EXISTS #G;
     DROP TABLE IF EXISTS #T;
     DROP TABLE IF EXISTS #Pg;
+    DROP TABLE IF EXISTS #PendL;
 
     BEGIN TRY
         SET @Tipo = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@Tipo, '')))), '');
@@ -106,6 +116,9 @@ BEGIN
         SET @Texto     = NULLIF(LTRIM(RTRIM(ISNULL(@Texto, N''))), N'');
         SET @Termo     = N'%' + REPLACE(REPLACE(REPLACE(ISNULL(@Texto, N''), N'[', N'[[]'), N'%', N'[%]'), N'_', N'[_]') + N'%';
         SET @Digitos   = NULLIF(CONVERT(VARCHAR(100), CAD.fn_CAD_Somente_Digitos(ISNULL(@Texto, N''))), '');
+        SET @Pendencia       = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@Pendencia, '')))), '');
+        SET @PendenciaCodigo = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@PendenciaCodigo, '')))), '');
+        IF @PendenciaCodigo IS NOT NULL AND @Pendencia IS NULL SET @Pendencia = 'COM';
 
         SET @EtapaAtual = 'Filtro';
         SELECT p.ID_PARCELA, p.ID_LANCAMENTO, p.NUMERO, p.DT_VENCIMENTO, p.VALOR, p.VALOR_BAIXADO, p.SALDO, l.DT_EMISSAO,
@@ -149,6 +162,28 @@ BEGIN
                OR (@Digitos IS NOT NULL AND LEN(@Digitos) >= 5 AND pe.CPF_CNPJ LIKE @Digitos + '%')
                OR CONVERT(NVARCHAR(20), l.ID_LANCAMENTO) = @Texto)
         OPTION (RECOMPILE);
+
+        -- P27: filtro de pendências (calcula só para os lançamentos que já passaram pelo filtro)
+        IF @Pendencia IS NOT NULL
+        BEGIN
+            SET @EtapaAtual = 'Pendências';
+            SELECT DISTINCT l.ID_LANCAMENTO
+            INTO #PendL
+            FROM (SELECT DISTINCT ID_LANCAMENTO FROM #F) l
+            CROSS APPLY FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pd
+            WHERE (@Pendencia = 'COM'
+                   OR (@Pendencia = 'AUTOMATICA' AND pd.ORIGEM = 'AUTOMATICA')
+                   OR (@Pendencia = 'MANUAL'     AND pd.ORIGEM = 'MANUAL')
+                   OR (@Pendencia = 'MINHAS'     AND pd.ORIGEM = 'MANUAL' AND pd.ID_USUARIO_RESPONSAVEL = @IdUsuario)
+                   OR (@Pendencia = 'ATRASADA'   AND pd.ATRASADA = 1)
+                   OR (@Pendencia = 'BLOQUEIA'   AND pd.BLOQUEIA_BAIXA = 1))
+              AND (@PendenciaCodigo IS NULL OR pd.CODIGO = @PendenciaCodigo)
+              -- só os candidatos: em aberto (automáticas) ou com pendência manual aberta
+              AND (EXISTS (SELECT 1 FROM FIN.Parcela p2 WITH (NOLOCK) WHERE p2.ID_LANCAMENTO = l.ID_LANCAMENTO AND p2.SITUACAO IN ('ABERTA', 'PARCIAL'))
+                   OR EXISTS (SELECT 1 FROM FIN.Lancamento_Pendencia x WITH (NOLOCK) WHERE x.ID_LANCAMENTO = l.ID_LANCAMENTO AND x.SITUACAO = 'ABERTA' AND x.ATIVO = 1));
+
+            DELETE f FROM #F f WHERE NOT EXISTS (SELECT 1 FROM #PendL x WHERE x.ID_LANCAMENTO = f.ID_LANCAMENTO);
+        END;
 
         -- linhas da página primeiro (só com o que já está em #F); detalhes depois, só para elas
         SET @EtapaAtual = 'Página';
@@ -223,7 +258,9 @@ BEGIN
                l.ID_CENTRO_CUSTO, ISNULL(CONVERT(NVARCHAR(20), cc.CODIGO), N'') AS CENTRO_CODIGO, ISNULL(cc.DESCRICAO, N'') AS CENTRO_DESCRICAO,
                l.ID_PLANO_CONTA, ISNULL(CONVERT(NVARCHAR(12), v.CODIGO), N'') AS PLANO_CODIGO, ISNULL(v.DESCRICAO, N'') AS PLANO_DESCRICAO,
                ISNULL(p.ID_LOTE, l.ID_LOTE) AS ID_LOTE, l.ORIGEM, l.PREVISAO, l.SITUACAO AS LANCAMENTO_SITUACAO,
-               @Linhas AS TOTAL_LINHAS, @TotValor AS TOTAL_VALOR, @TotBaixado AS TOTAL_BAIXADO, @TotSaldo AS TOTAL_SALDO
+               @Linhas AS TOTAL_LINHAS, @TotValor AS TOTAL_VALOR, @TotBaixado AS TOTAL_BAIXADO, @TotSaldo AS TOTAL_SALDO,
+               ISNULL(pd.QTD, 0) AS QTD_PENDENCIAS, CAST(ISNULL(pd.TEXTO, N'') AS NVARCHAR(1000)) AS PENDENCIAS,
+               CAST(ISNULL(pd.BLOQUEIA, 0) AS BIT) AS PENDENCIA_BLOQUEIA, CAST(ISNULL(pd.ATRASADA, 0) AS BIT) AS PENDENCIA_ATRASADA
         FROM #Pg pg
         INNER JOIN FIN.Lancamento l         WITH (NOLOCK) ON l.ID_LANCAMENTO = pg.ID_LANCAMENTO
         INNER JOIN CAD.Empresa e            WITH (NOLOCK) ON e.ID_EMPRESA = l.ID_EMPRESA
@@ -231,18 +268,24 @@ BEGIN
         LEFT  JOIN CAD.Pessoa pe            WITH (NOLOCK) ON pe.ID_PESSOA = l.ID_PESSOA
         LEFT  JOIN CAD.Centro_Custo cc      WITH (NOLOCK) ON cc.ID_CENTRO_CUSTO = l.ID_CENTRO_CUSTO
         LEFT  JOIN CAD.vw_CAD_Plano_Conta v ON v.ID_PLANO_CONTA = l.ID_PLANO_CONTA
+        OUTER APPLY (SELECT COUNT(*) AS QTD,
+                            STRING_AGG(CONVERT(NVARCHAR(MAX), f.DESCRICAO), N'; ') AS TEXTO,
+                            MAX(CAST(f.BLOQUEIA_BAIXA AS INT)) AS BLOQUEIA, MAX(CAST(f.ATRASADA AS INT)) AS ATRASADA
+                     FROM FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) f) pd
         ORDER BY pg.ORDEM;
 
         DROP TABLE IF EXISTS #F;
         DROP TABLE IF EXISTS #G;
         DROP TABLE IF EXISTS #T;
         DROP TABLE IF EXISTS #Pg;
+        DROP TABLE IF EXISTS #PendL;
     END TRY
     BEGIN CATCH
         DROP TABLE IF EXISTS #F;
         DROP TABLE IF EXISTS #G;
         DROP TABLE IF EXISTS #T;
         DROP TABLE IF EXISTS #Pg;
+        DROP TABLE IF EXISTS #PendL;
         IF ERROR_NUMBER() = 50001 THROW;
 
         IF XACT_STATE() <> -1

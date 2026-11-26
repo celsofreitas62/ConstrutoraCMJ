@@ -14,6 +14,9 @@
                 Padrão "Listar": THROW 50001.
   Changelog:
     v1.0 (25/11/2026) - Criação (etapa 04f).
+    v1.1 (26/11/2026) - Etapa 04f2c (P27): PENDENCIAS (JSON, as abertas,
+                        automáticas e manuais), QTD_PENDENCIAS, PODE_PENDENCIA,
+                        BLOQUEIA_BAIXA e MOTIVO_BLOQUEIO (FIN.fn_FIN_Pendencia_Bloqueia).
 
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Obter @IdUsuario = 2, @IdLancamento = 1;
@@ -104,13 +107,23 @@ BEGIN
                        FROM SIS.Aviso_Confirmado a WITH (NOLOCK)
                        WHERE a.TABELA = N'FIN.Lancamento' AND a.ID_REGISTRO = l.ID_LANCAMENTO
                        ORDER BY a.DT_CRIACAO DESC, a.ID_AVISO_CONFIRMADO DESC
-                       FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS AVISOS_CONFIRMADOS
+                       FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS AVISOS_CONFIRMADOS,
+               ISNULL((SELECT pd.ID_LANCAMENTO_PENDENCIA AS id, pd.ORIGEM AS origem, pd.CODIGO AS codigo, pd.DESCRICAO AS descricao,
+                              pd.ORIENTACAO AS orientacao, pd.BLOQUEIA_BAIXA AS bloqueiaBaixa, pd.ATRASADA AS atrasada,
+                              pd.ID_PARCELA AS idParcela, pd.ID_USUARIO_RESPONSAVEL AS idResponsavel, pd.DT_PREVISAO AS previsao
+                       FROM FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pd
+                       ORDER BY CASE pd.ORIGEM WHEN 'MANUAL' THEN 0 ELSE 1 END, pd.DT_PREVISAO, pd.CODIGO
+                       FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS PENDENCIAS,
+               (SELECT COUNT(*) FROM FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pc) AS QTD_PENDENCIAS,
+               CAST(CASE WHEN @NaLixeira = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'PENDENCIA') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_PENDENCIA,
+               bq.BLOQUEIA AS BLOQUEIA_BAIXA, bq.MOTIVO AS MOTIVO_BLOQUEIO
         FROM FIN.Lancamento l WITH (NOLOCK)
         INNER JOIN CAD.Empresa e            WITH (NOLOCK) ON e.ID_EMPRESA = l.ID_EMPRESA
         LEFT  JOIN CAD.Centro_Custo cc      WITH (NOLOCK) ON cc.ID_CENTRO_CUSTO = l.ID_CENTRO_CUSTO
         LEFT  JOIN CAD.Pessoa pe            WITH (NOLOCK) ON pe.ID_PESSOA = l.ID_PESSOA
         LEFT  JOIN CAD.vw_CAD_Plano_Conta v ON v.ID_PLANO_CONTA = l.ID_PLANO_CONTA
         LEFT  JOIN FIN.Historico_Padrao h   WITH (NOLOCK) ON h.ID_HISTORICO_PADRAO = l.ID_HISTORICO_PADRAO
+        CROSS APPLY FIN.fn_FIN_Pendencia_Bloqueia(l.ID_LANCAMENTO, NULL) bq
         WHERE l.ID_LANCAMENTO = @IdLancamento;
     END TRY
     BEGIN CATCH

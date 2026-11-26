@@ -15,6 +15,10 @@
                 Padrão "Listar": THROW 50001.
   Changelog:
     v1.0 (25/11/2026) - Criação (etapa 04f2a).
+    v1.1 (26/11/2026) - Etapa 04f2c (P27): QTD_COM_PENDENCIA (lançamentos com
+                        alguma pendência aberta, automática ou manual) e
+                        QTD_MINHAS_PENDENCIAS (manuais com o usuário como
+                        responsável), com os mesmos filtros.
 
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Resumo @IdUsuario = 2, @Tipo = 'R';
@@ -43,6 +47,8 @@ BEGIN
     DECLARE @PorPagina   INT;
     DECLARE @SitInicial  NVARCHAR(20);
     DECLARE @VisInicial  NVARCHAR(20);
+    DECLARE @QtdPend     INT = 0;
+    DECLARE @QtdMinhas   INT = 0;
 
     BEGIN TRY
         SET @Tipo = UPPER(LTRIM(RTRIM(ISNULL(@Tipo, ''))));
@@ -62,6 +68,22 @@ BEGIN
         SET @VisInicial  = UPPER(ISNULL(SIS.fn_SIS_Parametro('FIN_LISTA_VISAO_INICIAL'), N'PARCELA'));
         IF @VisInicial NOT IN (N'PARCELA', N'LANCAMENTO') SET @VisInicial = N'PARCELA';
 
+        SET @EtapaAtual = 'Pendências';
+        SELECT @QtdPend   = COUNT(DISTINCT l.ID_LANCAMENTO),
+               @QtdMinhas = COUNT(DISTINCT CASE WHEN pd.ORIGEM = 'MANUAL' AND pd.ID_USUARIO_RESPONSAVEL = @IdUsuario THEN l.ID_LANCAMENTO END)
+        FROM FIN.Lancamento l WITH (NOLOCK)
+        CROSS APPLY FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pd
+        WHERE l.DT_EXCLUSAO IS NULL
+          AND l.TIPO = @Tipo
+          AND l.SITUACAO = 'ATIVO'
+          AND (EXISTS (SELECT 1 FROM FIN.Parcela p2 WITH (NOLOCK) WHERE p2.ID_LANCAMENTO = l.ID_LANCAMENTO AND p2.SITUACAO IN ('ABERTA', 'PARCIAL'))
+               OR EXISTS (SELECT 1 FROM FIN.Lancamento_Pendencia x WITH (NOLOCK) WHERE x.ID_LANCAMENTO = l.ID_LANCAMENTO AND x.SITUACAO = 'ABERTA' AND x.ATIVO = 1))
+          AND (@IdEmpresa     IS NULL OR l.ID_EMPRESA = @IdEmpresa)
+          AND (@IdCentroCusto IS NULL OR l.ID_CENTRO_CUSTO = @IdCentroCusto)
+          AND (@IdPessoa      IS NULL OR l.ID_PESSOA = @IdPessoa)
+          AND (@IdPlanoConta  IS NULL OR l.ID_PLANO_CONTA = @IdPlanoConta)
+        OPTION (RECOMPILE);
+
         SET @EtapaAtual = 'Consulta';
         SELECT CAST(ISNULL(SUM(CASE WHEN p.DT_VENCIMENTO < @Hoje THEN 1 ELSE 0 END), 0) AS INT)                                        AS QTD_VENCIDAS,
                CAST(ISNULL(SUM(CASE WHEN p.DT_VENCIMENTO < @Hoje THEN p.SALDO ELSE 0 END), 0) AS DECIMAL(18,2))                        AS VALOR_VENCIDAS,
@@ -74,7 +96,9 @@ BEGIN
                @DiasAVencer                                                                                                            AS DIAS_A_VENCER,
                @PorPagina                                                                                                              AS POR_PAGINA,
                CAST(@SitInicial AS VARCHAR(12))                                                                                        AS SITUACAO_INICIAL,
-               CAST(@VisInicial AS VARCHAR(12))                                                                                        AS VISAO_INICIAL
+               CAST(@VisInicial AS VARCHAR(12))                                                                                        AS VISAO_INICIAL,
+               ISNULL(@QtdPend, 0)                                                                                                     AS QTD_COM_PENDENCIA,
+               ISNULL(@QtdMinhas, 0)                                                                                                   AS QTD_MINHAS_PENDENCIAS
         FROM FIN.Parcela p WITH (NOLOCK)
         INNER JOIN FIN.Lancamento l WITH (NOLOCK) ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
         WHERE l.DT_EXCLUSAO IS NULL

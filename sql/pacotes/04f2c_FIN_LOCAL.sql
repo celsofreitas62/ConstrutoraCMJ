@@ -628,6 +628,1572 @@ EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Pendencia_Tipo',   @Criar =
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Lancamento_Pendencia', @Criar = 1;
 GO
 
+-- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.fn_CAD_Documento_Checar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[fn_CAD_Documento_Checar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : Confere os dígitos de CPF (11) ou CNPJ (14, inclusive o CNPJ
+                alfanumérico) e devolve 1 linha com VALIDO (1/0). Fonte única
+                da regra: CAD.fn_CAD_Documento_Valido (escalar) chama esta.
+                Função em linha: dentro de consultas de muitas linhas não
+                força o cálculo linha a linha (a escalar, por não poder ser
+                incorporada ao plano, deixava a lista de lançamentos a receber
+                lenta: 200 s; etapa 04f2c).
+                Mesma regra da escalar v1.0: documento limpo (sem . - / espaço
+                e tabulação, maiúsculo); todos os caracteres iguais = inválido.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04f2c).
+
+  Homologação (LOCAL):
+    -- SELECT * FROM CAD.fn_CAD_Documento_Checar(N'529.982.247-25');      -- 1
+    -- SELECT * FROM CAD.fn_CAD_Documento_Checar(N'25.686.528/0001-97');  -- 1
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [CAD].[fn_CAD_Documento_Checar] (@Documento NVARCHAR(30))
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT CAST(CASE
+                  WHEN d.D = '' OR REPLACE(d.D, LEFT(d.D, 1), '') = '' THEN 0
+                  WHEN LEN(d.D) = 11 AND d.D NOT LIKE '%[^0-9]%'
+                       THEN CASE WHEN c.V1 = ASCII(SUBSTRING(d.D, 10, 1)) - 48 AND c.V2 = ASCII(SUBSTRING(d.D, 11, 1)) - 48 THEN 1 ELSE 0 END
+                  WHEN LEN(d.D) = 14 AND LEFT(d.D, 12) NOT LIKE '%[^0-9A-Z]%' COLLATE Latin1_General_BIN2 AND RIGHT(d.D, 2) NOT LIKE '%[^0-9]%'
+                       THEN CASE WHEN j.V1 = ASCII(SUBSTRING(d.D, 13, 1)) - 48 AND j.V2 = ASCII(SUBSTRING(d.D, 14, 1)) - 48 THEN 1 ELSE 0 END
+                  ELSE 0 END AS BIT) AS VALIDO
+    FROM (SELECT CONVERT(VARCHAR(30), UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LTRIM(RTRIM(ISNULL(@Documento, N''))),
+                 N'.', N''), N'-', N''), N'/', N''), N' ', N''), NCHAR(9), N''))) AS D) d
+    CROSS APPLY (
+        SELECT CASE WHEN s.S1 % 11 < 2 THEN 0 ELSE 11 - s.S1 % 11 END AS V1,
+               CASE WHEN s.S2 % 11 < 2 THEN 0 ELSE 11 - s.S2 % 11 END AS V2
+        FROM (SELECT SUM(CASE WHEN q.N <= 9 THEN q.X * (11 - q.N) ELSE 0 END) AS S1,
+                     SUM(q.X * (12 - q.N)) AS S2
+              FROM (SELECT v.N, ASCII(SUBSTRING(d.D, v.N, 1)) - 48 AS X
+                    FROM (VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10)) v (N)) q) s
+    ) c
+    CROSS APPLY (
+        SELECT CASE WHEN s.S1 % 11 < 2 THEN 0 ELSE 11 - s.S1 % 11 END AS V1,
+               CASE WHEN s.S2 % 11 < 2 THEN 0 ELSE 11 - s.S2 % 11 END AS V2
+        FROM (SELECT SUM(CASE WHEN q.N <= 12 THEN q.X * CASE WHEN q.N <= 4 THEN 6 - q.N ELSE 14 - q.N END ELSE 0 END) AS S1,
+                     SUM(q.X * CASE WHEN q.N <= 5 THEN 7 - q.N ELSE 15 - q.N END) AS S2
+              FROM (SELECT v.N, ASCII(SUBSTRING(d.D, v.N, 1)) - 48 AS X
+                    FROM (VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13)) v (N)) q) s
+    ) j
+);
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.fn_CAD_Documento_Valido.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[fn_CAD_Documento_Valido]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 16/11/2026
+  Descrição   : Confere os dígitos verificadores de CPF (11 dígitos) e de CNPJ (14
+                posições, aceitando o CNPJ alfanumérico: as 12 primeiras posições
+                podem ter letras, valor = código ASCII - 48; os 2 dígitos finais são
+                numéricos). Recusa todos os caracteres iguais. Vazio ou outro tamanho
+                devolve 0. Nunca NULL.
+
+  Changelog:
+    v1.0 (16/11/2026) - Criação (etapa 03a).
+    v1.1 (26/11/2026) - Etapa 04f2c: a regra passou para CAD.fn_CAD_Documento_Checar
+                        (em linha, rápida em consultas grandes); esta chama aquela.
+
+  Homologação (LOCAL):
+    -- SELECT CAD.fn_CAD_Documento_Valido('529.982.247-25'), CAD.fn_CAD_Documento_Valido('12.ABC.345/01DE-35');
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [CAD].[fn_CAD_Documento_Valido] (@Documento NVARCHAR(30))
+RETURNS BIT
+AS
+BEGIN
+    RETURN ISNULL((SELECT c.VALIDO FROM CAD.fn_CAD_Documento_Checar(@Documento) c), CAST(0 AS BIT));
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/CAD/CAD.fn_CAD_Pessoa_Pendencia_Cobranca.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [CAD].[fn_CAD_Pessoa_Pendencia_Cobranca]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : P10 - cadastro apto para cobrança (boleto). Devolve uma linha
+                com APTO (1/0) e PENDENCIA (texto do que falta, separado por
+                "; "; vazio = apto). Exigências em parâmetros
+                COBRANCA_APTO_EXIGE_DOCUMENTO / _ENDERECO / _EMAIL / _TELEFONE.
+                E-mail: contato ativo principal ou de finalidade COBRANCA, com
+                formato válido. Usada pela lista e ficha de Parceiros (aviso)
+                e, na fase 6, pela trava da emissão do boleto.
+                Função em linha (sem custo por linha nas listas).
+
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04d).
+    v1.1 (26/11/2026) - Etapa 04f2c: totalmente em linha (parâmetros lidos
+                        direto de SIS.Parametro e documento conferido por
+                        CAD.fn_CAD_Documento_Checar); com funções escalares,
+                        usada por lançamento, a lista a receber levava 200 s.
+
+  Homologação (LOCAL):
+    -- SELECT p.ID_PESSOA, f.* FROM CAD.Pessoa p CROSS APPLY CAD.fn_CAD_Pessoa_Pendencia_Cobranca(p.ID_PESSOA) f WHERE f.APTO = 0;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [CAD].[fn_CAD_Pessoa_Pendencia_Cobranca] (@IdPessoa INT)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT CASE WHEN x.PENDENCIA = N'' THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS APTO,
+           x.PENDENCIA
+    FROM (
+        SELECT CONCAT_WS(N'; ',
+                 CASE WHEN cfg.EXIGE_DOCUMENTO = 1
+                           AND (p.CPF_CNPJ = '' OR dv.VALIDO = 0
+                                OR LEN(p.CPF_CNPJ) <> CASE p.TIPO_PESSOA WHEN 'F' THEN 11 ELSE 14 END)
+                      THEN CASE p.TIPO_PESSOA WHEN 'F' THEN N'CPF ausente ou inválido' ELSE N'CNPJ ausente ou inválido' END END,
+                 CASE WHEN cfg.EXIGE_ENDERECO = 1
+                           AND (LEN(p.CEP) <> 8 OR p.LOGRADOURO = N'' OR p.NUMERO = N'' OR p.BAIRRO = N'' OR p.CIDADE = N'' OR LEN(p.UF) <> 2)
+                      THEN N'endereço incompleto (CEP, logradouro, número, bairro, cidade e UF)' END,
+                 CASE WHEN cfg.EXIGE_EMAIL = 1
+                           AND NOT EXISTS (SELECT 1 FROM CAD.Pessoa_Contato c
+                                           WHERE c.ID_PESSOA = p.ID_PESSOA AND c.ATIVO = 1 AND c.TIPO = 'EMAIL'
+                                             AND (c.PRINCIPAL = 1 OR c.FINALIDADE = 'COBRANCA')
+                                             AND c.VALOR LIKE N'_%@_%._%' AND c.VALOR NOT LIKE N'% %' AND c.VALOR NOT LIKE N'%@%@%')
+                      THEN N'sem e-mail principal ou de cobrança válido' END,
+                 CASE WHEN cfg.EXIGE_TELEFONE = 1
+                           AND NOT EXISTS (SELECT 1 FROM CAD.Pessoa_Contato c
+                                           WHERE c.ID_PESSOA = p.ID_PESSOA AND c.ATIVO = 1 AND c.TIPO IN ('CELULAR', 'TELEFONE', 'WHATSAPP'))
+                      THEN N'sem telefone' END) AS PENDENCIA
+        FROM CAD.Pessoa p
+        CROSS APPLY CAD.fn_CAD_Documento_Checar(p.CPF_CNPJ) dv
+        CROSS JOIN (SELECT MAX(CASE WHEN pa.CHAVE = 'COBRANCA_APTO_EXIGE_DOCUMENTO' AND UPPER(LTRIM(RTRIM(pa.VALOR))) = N'S' THEN 1 ELSE 0 END) AS EXIGE_DOCUMENTO,
+                           MAX(CASE WHEN pa.CHAVE = 'COBRANCA_APTO_EXIGE_ENDERECO'  AND UPPER(LTRIM(RTRIM(pa.VALOR))) = N'S' THEN 1 ELSE 0 END) AS EXIGE_ENDERECO,
+                           MAX(CASE WHEN pa.CHAVE = 'COBRANCA_APTO_EXIGE_EMAIL'     AND UPPER(LTRIM(RTRIM(pa.VALOR))) = N'S' THEN 1 ELSE 0 END) AS EXIGE_EMAIL,
+                           MAX(CASE WHEN pa.CHAVE = 'COBRANCA_APTO_EXIGE_TELEFONE'  AND UPPER(LTRIM(RTRIM(pa.VALOR))) = N'S' THEN 1 ELSE 0 END) AS EXIGE_TELEFONE
+                    FROM SIS.Parametro pa WITH (NOLOCK)
+                    WHERE pa.CHAVE LIKE 'COBRANCA[_]APTO[_]EXIGE[_]%') cfg
+        WHERE p.ID_PESSOA = @IdPessoa
+    ) x
+);
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.fn_FIN_Lancamento_Pendencias.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[fn_FIN_Lancamento_Pendencias]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : P27 - pendências em aberto de um lançamento, uma linha por
+                pendência. Fonte única da lista, dos contadores, da ficha e,
+                mais adiante, do check-up diário (P25).
+                AUTOMATICA: calculada na hora (nada gravado), só para
+                  lançamento em aberto (ativo, fora da lixeira, com parcela
+                  ABERTA ou PARCIAL) emitido a partir de FIN_PEND_A_PARTIR_DE;
+                  some sozinha quando o problema é corrigido. Regras ligadas
+                  por parâmetro (nível 1):
+                    SEM_CENTRO      FIN_PEND_SEM_CENTRO (S/N)
+                    SEM_PLANO       FIN_PEND_SEM_PLANO (S/N)
+                    SEM_DOCUMENTO   FIN_PEND_SEM_DOCUMENTO (P, R, A ou N)
+                    SEM_ANEXO       FIN_PEND_PAGAR_SEM_ANEXO_VALOR (a pagar
+                                    com valor total acima; 0 = desligada)
+                    NAO_APTO        FIN_PEND_RECEBER_NAO_APTO (a receber; P10)
+                    VENCIDA         FIN_PEND_VENCIDA_DIAS (0 = desligada; uma
+                                    linha por lançamento, com a parcela mais
+                                    antiga)
+                  Automáticas nunca bloqueiam a baixa.
+                MANUAL: FIN.Lancamento_Pendencia ABERTA e ativa, de lançamento
+                  ativo fora da lixeira (pago ou não). BLOQUEIA_BAIXA vem do
+                  tipo; ATRASADA = previsão já passou.
+                Função em linha: nas listas entra por CROSS APPLY sem custo
+                por linha.
+
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04f2c). Parâmetros lidos direto de
+                        SIS.Parametro (sem função escalar por linha).
+
+  Homologação (LOCAL):
+    -- SELECT TOP 50 l.ID_LANCAMENTO, f.* FROM FIN.Lancamento l CROSS APPLY FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) f;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [FIN].[fn_FIN_Lancamento_Pendencias] (@IdLancamento BIGINT)
+RETURNS TABLE
+AS
+RETURN
+(
+    WITH cfg AS (   -- parâmetros lidos direto da tabela (função escalar por linha deixava a lista lenta)
+        SELECT MAX(CASE WHEN p.CHAVE = 'FIN_PEND_SEM_CENTRO'       AND UPPER(LTRIM(RTRIM(p.VALOR))) = N'S' THEN 1 ELSE 0 END) AS SEM_CENTRO,
+               MAX(CASE WHEN p.CHAVE = 'FIN_PEND_SEM_PLANO'        AND UPPER(LTRIM(RTRIM(p.VALOR))) = N'S' THEN 1 ELSE 0 END) AS SEM_PLANO,
+               ISNULL(MAX(CASE WHEN p.CHAVE = 'FIN_PEND_SEM_DOCUMENTO' THEN CONVERT(VARCHAR(1), UPPER(LTRIM(p.VALOR))) END), 'N') AS SEM_DOCUMENTO,
+               ISNULL(MAX(CASE WHEN p.CHAVE = 'FIN_PEND_PAGAR_SEM_ANEXO_VALOR' THEN TRY_CONVERT(DECIMAL(18,2), REPLACE(p.VALOR, N',', N'.')) END), 0) AS ANEXO_VALOR,
+               MAX(CASE WHEN p.CHAVE = 'FIN_PEND_RECEBER_NAO_APTO' AND UPPER(LTRIM(RTRIM(p.VALOR))) = N'S' THEN 1 ELSE 0 END) AS NAO_APTO,
+               ISNULL(MAX(CASE WHEN p.CHAVE = 'FIN_PEND_VENCIDA_DIAS' THEN TRY_CONVERT(INT, p.VALOR) END), 0) AS VENCIDA_DIAS,
+               ISNULL(MAX(CASE WHEN p.CHAVE = 'FIN_PEND_A_PARTIR_DE' THEN TRY_CONVERT(DATE, p.VALOR, 23) END), CAST('19000101' AS DATE)) AS A_PARTIR_DE,
+               CAST(SYSDATETIME() AS DATE) AS HOJE
+        FROM SIS.Parametro p WITH (NOLOCK)
+        WHERE p.CHAVE LIKE 'FIN[_]PEND[_]%'
+    ),
+    lanc AS (
+        SELECT l.ID_LANCAMENTO, l.TIPO, l.ID_PESSOA, l.ID_CENTRO_CUSTO, l.ID_PLANO_CONTA, l.DOCUMENTO, l.VALOR_TOTAL, l.DT_EMISSAO
+        FROM FIN.Lancamento l
+        WHERE l.ID_LANCAMENTO = @IdLancamento
+          AND l.SITUACAO = 'ATIVO'
+          AND l.DT_EXCLUSAO IS NULL
+    ),
+    aberto AS (
+        SELECT l.*, c.*
+        FROM lanc l
+        CROSS JOIN cfg c
+        WHERE l.DT_EMISSAO >= c.A_PARTIR_DE
+          AND EXISTS (SELECT 1 FROM FIN.Parcela p WHERE p.ID_LANCAMENTO = l.ID_LANCAMENTO AND p.SITUACAO IN ('ABERTA', 'PARCIAL'))
+    )
+    SELECT a.ID_LANCAMENTO, CAST(NULL AS BIGINT) AS ID_PARCELA, CAST(NULL AS BIGINT) AS ID_LANCAMENTO_PENDENCIA,
+           CAST('AUTOMATICA' AS VARCHAR(10)) AS ORIGEM, CAST('SEM_CENTRO' AS VARCHAR(20)) AS CODIGO,
+           CAST(N'Sem centro de custo' AS NVARCHAR(400)) AS DESCRICAO,
+           CAST(N'Informe o centro de custo (obra) na ficha do lançamento.' AS NVARCHAR(400)) AS ORIENTACAO,
+           CAST(0 AS BIT) AS BLOQUEIA_BAIXA, CAST(0 AS BIT) AS ATRASADA,
+           CAST(NULL AS INT) AS ID_PENDENCIA_TIPO, CAST(NULL AS INT) AS ID_USUARIO_RESPONSAVEL, CAST(NULL AS DATE) AS DT_PREVISAO
+    FROM aberto a
+    WHERE a.SEM_CENTRO = 1 AND a.ID_CENTRO_CUSTO IS NULL
+
+    UNION ALL
+    SELECT a.ID_LANCAMENTO, NULL, NULL, 'AUTOMATICA', 'SEM_PLANO', N'Sem conta do plano de contas',
+           N'Informe a conta do plano de contas na ficha do lançamento.', 0, 0, NULL, NULL, NULL
+    FROM aberto a
+    WHERE a.SEM_PLANO = 1 AND a.ID_PLANO_CONTA IS NULL
+
+    UNION ALL
+    SELECT a.ID_LANCAMENTO, NULL, NULL, 'AUTOMATICA', 'SEM_DOCUMENTO', N'Sem número de documento',
+           N'Informe o número do documento (nota fiscal, boleto, contrato) na ficha do lançamento.', 0, 0, NULL, NULL, NULL
+    FROM aberto a
+    WHERE a.DOCUMENTO = N'' AND (a.SEM_DOCUMENTO = 'A' OR a.SEM_DOCUMENTO = a.TIPO)
+
+    UNION ALL
+    SELECT a.ID_LANCAMENTO, NULL, NULL, 'AUTOMATICA', 'SEM_ANEXO',
+           N'Sem anexo (valor acima de ' + SIS.fn_SIS_Formatar_Moeda(a.ANEXO_VALOR) + N')',
+           N'Anexe a nota fiscal, o boleto ou o contrato na aba Anexos.', 0, 0, NULL, NULL, NULL
+    FROM aberto a
+    WHERE a.TIPO = 'P' AND a.ANEXO_VALOR > 0 AND a.VALOR_TOTAL > a.ANEXO_VALOR
+      AND NOT EXISTS (SELECT 1 FROM SIS.Anexo x
+                      WHERE x.TABELA_REFERENCIA = N'FIN.Lancamento' AND x.ID_REFERENCIA = a.ID_LANCAMENTO AND x.SITUACAO = 'ATIVO')
+
+    UNION ALL
+    SELECT a.ID_LANCAMENTO, NULL, NULL, 'AUTOMATICA', 'NAO_APTO',
+           N'Parceiro não apto para cobrança: ' + ISNULL(f.PENDENCIA, N''),
+           N'Complete o cadastro do parceiro (Cadastros › Parceiros, filtro "Pendências de cadastro").', 0, 0, NULL, NULL, NULL
+    FROM aberto a
+    CROSS APPLY (SELECT TOP (1) c.APTO, c.PENDENCIA FROM CAD.fn_CAD_Pessoa_Pendencia_Cobranca(a.ID_PESSOA) c) f   -- TOP: busca só o parceiro do lançamento
+    WHERE a.TIPO = 'R' AND a.NAO_APTO = 1 AND f.APTO = 0
+
+    UNION ALL
+    SELECT a.ID_LANCAMENTO, NULL, NULL, 'AUTOMATICA', 'NAO_APTO', N'Sem parceiro para a cobrança',
+           N'Informe o parceiro (cliente) na ficha do lançamento.', 0, 0, NULL, NULL, NULL
+    FROM aberto a
+    WHERE a.TIPO = 'R' AND a.NAO_APTO = 1 AND a.ID_PESSOA IS NULL
+
+    UNION ALL
+    SELECT a.ID_LANCAMENTO, v.ID_PARCELA, NULL, 'AUTOMATICA', 'VENCIDA',
+           CASE WHEN v.QTD = 1 THEN N'Parcela vencida há mais de ' ELSE CONVERT(NVARCHAR(10), v.QTD) + N' parcelas vencidas há mais de ' END
+             + CONVERT(NVARCHAR(10), a.VENCIDA_DIAS) + N' dias (desde ' + CONVERT(NVARCHAR(10), v.DT_VENCIMENTO, 103) + N')',
+           CASE a.TIPO WHEN 'P' THEN N'Pague, renegocie ou corrija o vencimento.' ELSE N'Cobre o cliente, renegocie ou corrija o vencimento.' END,
+           0, 0, NULL, NULL, NULL
+    FROM aberto a
+    CROSS APPLY (SELECT TOP (1) p.ID_PARCELA, p.DT_VENCIMENTO, COUNT(*) OVER () AS QTD
+                 FROM FIN.Parcela p
+                 WHERE p.ID_LANCAMENTO = a.ID_LANCAMENTO AND p.SITUACAO IN ('ABERTA', 'PARCIAL')
+                   AND p.DT_VENCIMENTO < DATEADD(DAY, -a.VENCIDA_DIAS, a.HOJE)
+                 ORDER BY p.DT_VENCIMENTO, p.NUMERO) v
+    WHERE a.VENCIDA_DIAS > 0
+
+    UNION ALL
+    SELECT lp.ID_LANCAMENTO, lp.ID_PARCELA, lp.ID_LANCAMENTO_PENDENCIA, 'MANUAL', t.CODIGO,
+           t.DESCRICAO + CASE WHEN lp.OBSERVACAO <> N'' THEN N': ' + LEFT(lp.OBSERVACAO, 300) ELSE N'' END,
+           t.ORIENTACAO, t.BLOQUEIA_BAIXA,
+           CASE WHEN lp.DT_PREVISAO < c.HOJE THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END,
+           lp.ID_PENDENCIA_TIPO, lp.ID_USUARIO_RESPONSAVEL, lp.DT_PREVISAO
+    FROM lanc l
+    CROSS JOIN cfg c
+    INNER JOIN FIN.Lancamento_Pendencia lp ON lp.ID_LANCAMENTO = l.ID_LANCAMENTO AND lp.SITUACAO = 'ABERTA' AND lp.ATIVO = 1
+    INNER JOIN FIN.Pendencia_Tipo t ON t.ID_PENDENCIA_TIPO = lp.ID_PENDENCIA_TIPO
+);
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.fn_FIN_Pendencia_Bloqueia.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[fn_FIN_Pendencia_Bloqueia]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : P27 - a baixa pode ser feita? Devolve sempre 1 linha:
+                BLOQUEIA (1 = há pendência manual aberta de tipo que bloqueia
+                a baixa) e MOTIVO (as pendências, separadas por "; ").
+                Vale a pendência do lançamento inteiro (ID_PARCELA vazio) ou
+                da parcela informada. Com @IdParcela NULL: qualquer pendência
+                que bloqueia o lançamento. As automáticas nunca bloqueiam.
+                Usada pela baixa (04g) e pela ficha (aviso).
+
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04f2c).
+
+  Homologação (LOCAL):
+    -- SELECT * FROM FIN.fn_FIN_Pendencia_Bloqueia(123, NULL);
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [FIN].[fn_FIN_Pendencia_Bloqueia] (@IdLancamento BIGINT, @IdParcela BIGINT)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT CASE WHEN COUNT(*) > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS BLOQUEIA,
+           CAST(ISNULL(STRING_AGG(CONVERT(NVARCHAR(MAX), t.DESCRICAO + CASE WHEN lp.OBSERVACAO <> N'' THEN N' (' + LEFT(lp.OBSERVACAO, 100) + N')' ELSE N'' END), N'; '), N'') AS NVARCHAR(1000)) AS MOTIVO
+    FROM FIN.Lancamento_Pendencia lp
+    INNER JOIN FIN.Pendencia_Tipo t ON t.ID_PENDENCIA_TIPO = lp.ID_PENDENCIA_TIPO AND t.BLOQUEIA_BAIXA = 1
+    WHERE lp.ID_LANCAMENTO = @IdLancamento
+      AND lp.SITUACAO = 'ABERTA'
+      AND lp.ATIVO = 1
+      AND (@IdParcela IS NULL OR lp.ID_PARCELA IS NULL OR lp.ID_PARCELA = @IdParcela)
+);
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Pendencia_Tipo_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Pendencia_Tipo_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : P27 - tipos de pendência (tela Financeiro › Tipos de
+                pendência e escolha do tipo na ficha do lançamento).
+                @Tipo P/R: só os tipos que valem para contas a pagar ou a
+                receber (APLICA_A = @Tipo ou A). Não lista o que está na
+                lixeira. QTD_ABERTAS: pendências abertas do tipo.
+                Permissão: VER em FIN_PENDENCIA_TIPO, FIN_PAGAR ou FIN_RECEBER.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04f2c).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Pendencia_Tipo_Listar @IdUsuario = 2;
+    -- EXEC FIN.FIN_Pendencia_Tipo_Listar @IdUsuario = 2, @Tipo = 'R', @SomenteAtivos = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Pendencia_Tipo_Listar]
+    @IdUsuario      INT,
+    @Busca          NVARCHAR(60) = NULL,
+    @SomenteAtivos  BIT          = 0,
+    @Tipo           CHAR(1)      = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PENDENCIA_TIPO', 'VER') = 0
+       AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PAGAR', 'VER') = 0
+       AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_RECEBER', 'VER') = 0
+    BEGIN
+        SELECT TOP (0) CAST(NULL AS INT) AS ID_PENDENCIA_TIPO;
+        RETURN;
+    END;
+
+    SET @Busca = NULLIF(LTRIM(RTRIM(ISNULL(@Busca, N''))), N'');
+    SET @Tipo  = NULLIF(UPPER(ISNULL(@Tipo, '')), '');
+
+    SELECT t.ID_PENDENCIA_TIPO, t.CODIGO, t.DESCRICAO, t.ORIENTACAO, t.APLICA_A, t.BLOQUEIA_BAIXA, t.SISTEMA, t.ORDEM, t.ATIVO,
+           ISNULL(q.QTD, 0) AS QTD_ABERTAS
+    FROM FIN.Pendencia_Tipo t WITH (NOLOCK)
+    OUTER APPLY (SELECT COUNT(*) AS QTD
+                 FROM FIN.Lancamento_Pendencia lp WITH (NOLOCK)
+                 WHERE lp.ID_PENDENCIA_TIPO = t.ID_PENDENCIA_TIPO AND lp.SITUACAO = 'ABERTA' AND lp.ATIVO = 1) q
+    WHERE t.DT_EXCLUSAO IS NULL
+      AND (@SomenteAtivos = 0 OR t.ATIVO = 1)
+      AND (@Tipo IS NULL OR t.APLICA_A IN ('A', @Tipo))
+      AND (@Busca IS NULL OR t.DESCRICAO LIKE N'%' + @Busca + N'%' OR t.CODIGO LIKE @Busca + '%')
+    ORDER BY t.ORDEM, t.DESCRICAO;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Pendencia_Tipo_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Pendencia_Tipo_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : P27 - inclui ou altera um tipo de pendência (@IdPendenciaTipo
+                NULL = novo). Tipo do sistema (MIGRACAO): código não muda e
+                não pode ser desativado; descrição, orientação, onde vale e o
+                bloqueio da baixa podem. Desativar: o tipo some da escolha,
+                as pendências já lançadas continuam valendo.
+                Permissão: INCLUIR / ALTERAR em FIN_PENDENCIA_TIPO e DESATIVAR
+                para mudar o ativo. Excluir = lixeira (SIS_Lixeira_Excluir).
+                Devolve SUCESSO, MENSAGEM, ID.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04f2c).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Pendencia_Tipo_Gravar @IdUsuario = 2, @Codigo = 'TESTE', @Descricao = N'Teste', @AplicaA = 'A', @BloqueiaBaixa = 0;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Pendencia_Tipo_Gravar]
+    @IdUsuario        INT,
+    @IdPendenciaTipo  INT            = NULL,
+    @Codigo           VARCHAR(20),
+    @Descricao        NVARCHAR(60),
+    @Orientacao       NVARCHAR(400)  = NULL,
+    @AplicaA          CHAR(1)        = 'A',
+    @BloqueiaBaixa    BIT            = 0,
+    @Ordem            INT            = NULL,
+    @Ativo            BIT            = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[FIN].[FIN_Pendencia_Tipo_Gravar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa      NVARCHAR(400) = N'';
+    DECLARE @Usuario     NVARCHAR(100) = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+    DECLARE @Sistema     BIT           = 0;
+    DECLARE @CodigoAtual VARCHAR(20);
+    DECLARE @AtivoAtual  BIT;
+    DECLARE @Abertas     INT           = 0;
+
+    BEGIN TRY
+        SET @Codigo        = UPPER(LTRIM(RTRIM(ISNULL(@Codigo, ''))));
+        SET @Descricao     = LTRIM(RTRIM(ISNULL(@Descricao, N'')));
+        SET @Orientacao    = LTRIM(RTRIM(ISNULL(@Orientacao, N'')));
+        SET @AplicaA       = UPPER(ISNULL(@AplicaA, 'A'));
+        SET @BloqueiaBaixa = ISNULL(@BloqueiaBaixa, 0);
+        SET @Ativo         = ISNULL(@Ativo, 1);
+
+        SELECT @Sistema = t.SISTEMA, @CodigoAtual = t.CODIGO, @AtivoAtual = t.ATIVO
+        FROM FIN.Pendencia_Tipo t WHERE t.ID_PENDENCIA_TIPO = @IdPendenciaTipo;
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PENDENCIA_TIPO', CASE WHEN @IdPendenciaTipo IS NULL THEN 'INCLUIR' ELSE 'ALTERAR' END) = 0
+            SET @Recusa = N'Você não tem permissão para gravar tipos de pendência.';
+        IF @Recusa = N'' AND @IdPendenciaTipo IS NOT NULL AND @CodigoAtual IS NULL
+            SET @Recusa = N'Tipo de pendência não encontrado.';
+        IF @Recusa = N'' AND @IdPendenciaTipo IS NOT NULL AND SIS.fn_SIS_Na_Lixeira(N'FIN.Pendencia_Tipo', @IdPendenciaTipo) = 1
+            SET @Recusa = N'O registro está na lixeira: recupere-o antes de alterar (Sistema › Lixeira).';
+        IF @Recusa = N'' AND @Sistema = 1 AND @Codigo <> @CodigoAtual
+            SET @Recusa = N'O código de um tipo do sistema não pode ser mudado.';
+        IF @Recusa = N'' AND @Sistema = 1 AND @Ativo = 0
+            SET @Recusa = N'Um tipo do sistema não pode ser desativado.';
+        IF @Recusa = N'' AND (@Codigo = '' OR @Codigo LIKE '%[^A-Z0-9_]%' COLLATE Latin1_General_BIN2)
+            SET @Recusa = N'Código inválido: use letras sem acento, números e "_" (ex.: AGUARDA_MEDICAO).';
+        IF @Recusa = N'' AND @Descricao = N''
+            SET @Recusa = N'Informe a descrição.';
+        IF @Recusa = N'' AND @AplicaA NOT IN ('P', 'R', 'A')
+            SET @Recusa = N'Escolha onde o tipo vale: contas a pagar, a receber ou ambos.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Pendencia_Tipo t WHERE t.CODIGO = @Codigo AND t.ID_PENDENCIA_TIPO <> ISNULL(@IdPendenciaTipo, 0))
+            SET @Recusa = N'Já existe um tipo de pendência com este código (confira também a lixeira).';
+        IF @Recusa = N'' AND @IdPendenciaTipo IS NOT NULL AND @Ativo <> @AtivoAtual
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PENDENCIA_TIPO', 'DESATIVAR') = 0
+            SET @Recusa = N'Você não tem permissão para desativar ou reativar tipos de pendência.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdPendenciaTipo AS ID;
+            RETURN;
+        END;
+
+        IF @IdPendenciaTipo IS NOT NULL AND @Ativo = 0 AND @AtivoAtual = 1
+            SELECT @Abertas = COUNT(*) FROM FIN.Lancamento_Pendencia x
+            WHERE x.ID_PENDENCIA_TIPO = @IdPendenciaTipo AND x.SITUACAO = 'ABERTA' AND x.ATIVO = 1;
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        IF @IdPendenciaTipo IS NULL
+        BEGIN
+            INSERT INTO FIN.Pendencia_Tipo (CODIGO, DESCRICAO, ORIENTACAO, APLICA_A, BLOQUEIA_BAIXA, SISTEMA, ORDEM, ATIVO, USUARIO_CRIACAO)
+            VALUES (@Codigo, @Descricao, @Orientacao, @AplicaA, @BloqueiaBaixa, 0, ISNULL(@Ordem, 100), @Ativo, ISNULL(@Usuario, N''));
+            SET @IdPendenciaTipo = SCOPE_IDENTITY();
+        END
+        ELSE
+            UPDATE FIN.Pendencia_Tipo
+               SET CODIGO = @Codigo, DESCRICAO = @Descricao, ORIENTACAO = @Orientacao, APLICA_A = @AplicaA,
+                   BLOQUEIA_BAIXA = @BloqueiaBaixa, ORDEM = ISNULL(@Ordem, ORDEM), ATIVO = @Ativo,
+                   DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+             WHERE ID_PENDENCIA_TIPO = @IdPendenciaTipo;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(N'Tipo de pendência gravado.'
+                    + CASE WHEN @Abertas > 0 THEN N' Atenção: ' + CONVERT(NVARCHAR(10), @Abertas)
+                                + N' pendência(s) abertas continuam com este tipo; ele só não aparece mais para novas pendências.' ELSE N'' END
+                    AS NVARCHAR(400)) AS MENSAGEM,
+               @IdPendenciaTipo AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar o tipo de pendência. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, @IdPendenciaTipo AS ID;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Lancamento_Pendencia_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Lancamento_Pendencia_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : P27 - quadro de pendências da ficha do lançamento: as
+                automáticas (calculadas na hora, FIN.fn_FIN_Lancamento_Pendencias)
+                e as manuais ativas (abertas e, com @IncluirResolvidas = 1,
+                também as resolvidas). Ordem: manuais abertas (por
+                previsão), automáticas e, por último, as resolvidas.
+                PODE_ALTERAR = 1 na manual aberta quando o usuário tem a ação
+                PENDENCIA; PODE_REABRIR na resolvida.
+                Permissão: VER em FIN_PAGAR / FIN_RECEBER (conforme o tipo).
+                Padrão "Listar": THROW 50001.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04f2c).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Lancamento_Pendencia_Listar @IdUsuario = 2, @IdLancamento = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Lancamento_Pendencia_Listar]
+    @IdUsuario          INT,
+    @IdLancamento       BIGINT,
+    @IncluirResolvidas  BIT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Tipo  CHAR(1);
+    DECLARE @Item  VARCHAR(40);
+    DECLARE @Pode  BIT;
+
+    SELECT @Tipo = l.TIPO FROM FIN.Lancamento l WITH (NOLOCK) WHERE l.ID_LANCAMENTO = @IdLancamento;
+    SET @Item = CASE @Tipo WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END;
+
+    IF @Tipo IS NULL OR SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'VER') = 0
+        THROW 50001, N'Você não tem permissão para ver este lançamento.', 1;
+
+    SET @Pode = CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'PENDENCIA') = 1
+                      AND SIS.fn_SIS_Na_Lixeira(N'FIN.Lancamento', @IdLancamento) = 0 THEN 1 ELSE 0 END;
+
+    SELECT x.ID_LANCAMENTO_PENDENCIA, x.ORIGEM, x.CODIGO, x.DESCRICAO, x.ORIENTACAO, x.SITUACAO, x.BLOQUEIA_BAIXA, x.ATRASADA,
+           x.ID_PENDENCIA_TIPO, x.ID_PARCELA, x.PARCELA, x.OBSERVACAO, x.ID_USUARIO_RESPONSAVEL, x.RESPONSAVEL, x.DT_PREVISAO,
+           x.DT_RESOLUCAO, x.USUARIO_RESOLUCAO, x.RESOLUCAO, x.DT_CRIACAO, x.USUARIO_CRIACAO,
+           CAST(CASE WHEN x.ORIGEM = 'MANUAL' AND x.SITUACAO = 'ABERTA' THEN @Pode ELSE 0 END AS BIT) AS PODE_ALTERAR,
+           CAST(CASE WHEN x.ORIGEM = 'MANUAL' AND x.SITUACAO = 'RESOLVIDA' THEN @Pode ELSE 0 END AS BIT) AS PODE_REABRIR
+    FROM (
+        SELECT CAST(NULL AS BIGINT) AS ID_LANCAMENTO_PENDENCIA, f.ORIGEM, f.CODIGO, f.DESCRICAO, f.ORIENTACAO,
+               CAST('ABERTA' AS VARCHAR(10)) AS SITUACAO, f.BLOQUEIA_BAIXA, f.ATRASADA, f.ID_PENDENCIA_TIPO,
+               f.ID_PARCELA, ISNULL(CONVERT(NVARCHAR(5), p.NUMERO) + N'/' + CONVERT(NVARCHAR(5), p.QTD_PARCELAS), N'') AS PARCELA,
+               CAST(N'' AS NVARCHAR(1000)) AS OBSERVACAO, CAST(NULL AS INT) AS ID_USUARIO_RESPONSAVEL, CAST(N'' AS NVARCHAR(100)) AS RESPONSAVEL,
+               CAST(NULL AS DATE) AS DT_PREVISAO, CAST(NULL AS DATETIME2(0)) AS DT_RESOLUCAO, CAST(N'' AS NVARCHAR(100)) AS USUARIO_RESOLUCAO,
+               CAST(N'' AS NVARCHAR(1000)) AS RESOLUCAO, CAST(NULL AS DATETIME2(0)) AS DT_CRIACAO, CAST(N'' AS NVARCHAR(100)) AS USUARIO_CRIACAO,
+               1 AS ORDEM_GRUPO
+        FROM FIN.fn_FIN_Lancamento_Pendencias(@IdLancamento) f
+        LEFT JOIN FIN.Parcela p WITH (NOLOCK) ON p.ID_PARCELA = f.ID_PARCELA
+        WHERE f.ORIGEM = 'AUTOMATICA'
+
+        UNION ALL
+        SELECT lp.ID_LANCAMENTO_PENDENCIA, CAST('MANUAL' AS VARCHAR(10)), t.CODIGO, t.DESCRICAO, t.ORIENTACAO,
+               lp.SITUACAO, t.BLOQUEIA_BAIXA,
+               CAST(CASE WHEN lp.SITUACAO = 'ABERTA' AND lp.DT_PREVISAO < CAST(SYSDATETIME() AS DATE) THEN 1 ELSE 0 END AS BIT),
+               lp.ID_PENDENCIA_TIPO, lp.ID_PARCELA,
+               ISNULL(CONVERT(NVARCHAR(5), p.NUMERO) + N'/' + CONVERT(NVARCHAR(5), p.QTD_PARCELAS), N''),
+               lp.OBSERVACAO, lp.ID_USUARIO_RESPONSAVEL, ISNULL(u.NOME, N''), lp.DT_PREVISAO,
+               lp.DT_RESOLUCAO, ISNULL(lp.USUARIO_RESOLUCAO, N''), lp.RESOLUCAO, lp.DT_CRIACAO, lp.USUARIO_CRIACAO,
+               CASE WHEN lp.SITUACAO = 'ABERTA' THEN 0 ELSE 2 END
+        FROM FIN.Lancamento_Pendencia lp WITH (NOLOCK)
+        INNER JOIN FIN.Pendencia_Tipo t WITH (NOLOCK) ON t.ID_PENDENCIA_TIPO = lp.ID_PENDENCIA_TIPO
+        LEFT JOIN FIN.Parcela p WITH (NOLOCK) ON p.ID_PARCELA = lp.ID_PARCELA
+        LEFT JOIN SIS.Usuario u WITH (NOLOCK) ON u.ID_USUARIO = lp.ID_USUARIO_RESPONSAVEL
+        WHERE lp.ID_LANCAMENTO = @IdLancamento
+          AND lp.ATIVO = 1
+          AND (lp.SITUACAO = 'ABERTA' OR ISNULL(@IncluirResolvidas, 1) = 1)
+    ) x
+    ORDER BY x.ORDEM_GRUPO, CASE WHEN x.DT_PREVISAO IS NULL THEN 1 ELSE 0 END, x.DT_PREVISAO, x.DT_RESOLUCAO DESC, x.CODIGO;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Lancamento_Pendencia_Gravar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Lancamento_Pendencia_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : P27 - inclui (@IdLancamentoPendencia NULL) ou altera uma
+                pendência manual do lançamento: tipo, parcela (opcional),
+                observação, responsável e previsão. @Ativo = 0: desativa a
+                pendência lançada por engano (não conta mais em lugar
+                nenhum; o histórico guarda).
+                Regras: lançamento ativo e fora da lixeira; tipo ativo e que
+                vale para o tipo do lançamento (a pagar / a receber); parcela
+                do próprio lançamento; responsável = usuário ativo; uma só
+                pendência aberta do mesmo tipo por lançamento e parcela;
+                pendência resolvida não é alterada (reabrir antes).
+                Permissão: PENDENCIA em FIN_PAGAR / FIN_RECEBER.
+                Devolve SUCESSO, MENSAGEM, ID.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04f2c).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Lancamento_Pendencia_Gravar @IdUsuario = 2, @IdLancamento = 1, @IdPendenciaTipo = 1, @Observacao = N'NF 123';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Lancamento_Pendencia_Gravar]
+    @IdUsuario              INT,
+    @IdLancamentoPendencia  BIGINT          = NULL,
+    @IdLancamento           BIGINT,
+    @IdParcela              BIGINT          = NULL,
+    @IdPendenciaTipo        INT,
+    @Observacao             NVARCHAR(1000)  = NULL,
+    @IdUsuarioResponsavel   INT             = NULL,
+    @DtPrevisao             DATE            = NULL,
+    @Ativo                  BIT             = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc      NVARCHAR(128) = N'[FIN].[FIN_Lancamento_Pendencia_Gravar]';
+    DECLARE @EtapaAtual    VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa        NVARCHAR(400) = N'';
+    DECLARE @Usuario       NVARCHAR(100) = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+    DECLARE @TipoLanc      CHAR(1);
+    DECLARE @SituacaoLanc  VARCHAR(10);
+    DECLARE @AplicaA       CHAR(1);
+    DECLARE @TipoAtivo     BIT;
+    DECLARE @TipoAtual     INT;
+    DECLARE @LancAtual     BIGINT;
+    DECLARE @SituacaoAtual VARCHAR(10);
+    DECLARE @AtivoAtual    BIT;
+    DECLARE @Linhas        INT;
+
+    BEGIN TRY
+        SET @Observacao = LTRIM(RTRIM(ISNULL(@Observacao, N'')));
+        SET @Ativo      = ISNULL(@Ativo, 1);
+        IF @IdUsuarioResponsavel = 0 SET @IdUsuarioResponsavel = NULL;
+        IF @IdParcela = 0 SET @IdParcela = NULL;
+
+        IF @IdLancamentoPendencia IS NOT NULL
+            SELECT @LancAtual = lp.ID_LANCAMENTO, @SituacaoAtual = lp.SITUACAO, @AtivoAtual = lp.ATIVO, @TipoAtual = lp.ID_PENDENCIA_TIPO
+            FROM FIN.Lancamento_Pendencia lp WHERE lp.ID_LANCAMENTO_PENDENCIA = @IdLancamentoPendencia;
+
+        IF @IdLancamentoPendencia IS NOT NULL AND @IdLancamento IS NULL
+            SET @IdLancamento = @LancAtual;
+
+        SELECT @TipoLanc = l.TIPO, @SituacaoLanc = l.SITUACAO FROM FIN.Lancamento l WHERE l.ID_LANCAMENTO = @IdLancamento;
+        SELECT @AplicaA = t.APLICA_A, @TipoAtivo = CASE WHEN t.ATIVO = 1 AND t.DT_EXCLUSAO IS NULL THEN 1 ELSE 0 END
+        FROM FIN.Pendencia_Tipo t WHERE t.ID_PENDENCIA_TIPO = @IdPendenciaTipo;
+
+        IF @TipoLanc IS NULL
+            SET @Recusa = N'Lançamento não encontrado.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE @TipoLanc WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'PENDENCIA') = 0
+            SET @Recusa = N'Você não tem permissão para lançar ou alterar pendências.';
+        IF @Recusa = N'' AND @IdLancamentoPendencia IS NOT NULL AND (@LancAtual IS NULL OR @LancAtual <> @IdLancamento)
+            SET @Recusa = N'Pendência não encontrada neste lançamento.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(N'FIN.Lancamento', @IdLancamento) = 1
+            SET @Recusa = N'O lançamento está na lixeira.';
+        IF @Recusa = N'' AND @IdLancamentoPendencia IS NULL AND @SituacaoLanc = 'CANCELADO'
+            SET @Recusa = N'O lançamento está cancelado.';
+        IF @Recusa = N'' AND @IdLancamentoPendencia IS NOT NULL AND @AtivoAtual = 0
+            SET @Recusa = N'Esta pendência foi desativada.';
+        IF @Recusa = N'' AND @IdLancamentoPendencia IS NOT NULL AND @SituacaoAtual = 'RESOLVIDA'
+            SET @Recusa = N'A pendência já está resolvida: reabra-a antes de alterar.';
+
+        IF @Recusa = N'' AND @Ativo = 1
+        BEGIN
+            IF @AplicaA IS NULL
+                SET @Recusa = N'Escolha o tipo da pendência.';
+            IF @Recusa = N'' AND @TipoAtivo = 0 AND ISNULL(@TipoAtual, 0) <> @IdPendenciaTipo
+                SET @Recusa = N'Este tipo de pendência está desativado.';
+            IF @Recusa = N'' AND @AplicaA NOT IN ('A', @TipoLanc)
+                SET @Recusa = CASE @TipoLanc WHEN 'P' THEN N'Este tipo de pendência vale só para contas a receber.'
+                                             ELSE N'Este tipo de pendência vale só para contas a pagar.' END;
+            IF @Recusa = N'' AND @IdParcela IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM FIN.Parcela p WHERE p.ID_PARCELA = @IdParcela AND p.ID_LANCAMENTO = @IdLancamento)
+                SET @Recusa = N'A parcela escolhida não é deste lançamento.';
+            IF @Recusa = N'' AND @IdUsuarioResponsavel IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM SIS.Usuario u WHERE u.ID_USUARIO = @IdUsuarioResponsavel AND u.ATIVO = 1)
+                SET @Recusa = N'O responsável escolhido não é um usuário ativo.';
+            IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Lancamento_Pendencia x
+                                         WHERE x.ID_LANCAMENTO = @IdLancamento AND x.ID_PENDENCIA_TIPO = @IdPendenciaTipo
+                                           AND ISNULL(x.ID_PARCELA, 0) = ISNULL(@IdParcela, 0)
+                                           AND x.SITUACAO = 'ABERTA' AND x.ATIVO = 1
+                                           AND x.ID_LANCAMENTO_PENDENCIA <> ISNULL(@IdLancamentoPendencia, 0))
+                SET @Recusa = N'Já existe uma pendência aberta deste tipo neste lançamento' + CASE WHEN @IdParcela IS NULL THEN N'.' ELSE N' e parcela.' END;
+        END;
+
+        IF @Recusa = N'' AND @Ativo = 0 AND @IdLancamentoPendencia IS NULL
+            SET @Recusa = N'Pendência não encontrada.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdLancamentoPendencia AS ID;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        IF @IdLancamentoPendencia IS NULL
+        BEGIN
+            INSERT INTO FIN.Lancamento_Pendencia (ID_LANCAMENTO, ID_PARCELA, ID_PENDENCIA_TIPO, OBSERVACAO, ID_USUARIO_RESPONSAVEL, DT_PREVISAO,
+                                                  SITUACAO, ORIGEM, ATIVO, USUARIO_CRIACAO)
+            VALUES (@IdLancamento, @IdParcela, @IdPendenciaTipo, @Observacao, @IdUsuarioResponsavel, @DtPrevisao,
+                    'ABERTA', 'MANUAL', 1, ISNULL(@Usuario, N''));
+            SET @IdLancamentoPendencia = SCOPE_IDENTITY();
+            SET @Linhas = 1;
+        END
+        ELSE IF @Ativo = 0
+        BEGIN
+            UPDATE FIN.Lancamento_Pendencia
+               SET ATIVO = 0, DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+             WHERE ID_LANCAMENTO_PENDENCIA = @IdLancamentoPendencia AND ATIVO = 1 AND SITUACAO = 'ABERTA';
+            SET @Linhas = @@ROWCOUNT;
+        END
+        ELSE
+        BEGIN
+            UPDATE FIN.Lancamento_Pendencia
+               SET ID_PARCELA = @IdParcela, ID_PENDENCIA_TIPO = @IdPendenciaTipo, OBSERVACAO = @Observacao,
+                   ID_USUARIO_RESPONSAVEL = @IdUsuarioResponsavel, DT_PREVISAO = @DtPrevisao,
+                   DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+             WHERE ID_LANCAMENTO_PENDENCIA = @IdLancamentoPendencia AND ATIVO = 1 AND SITUACAO = 'ABERTA';
+            SET @Linhas = @@ROWCOUNT;
+        END;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(CASE WHEN @Linhas = 1 THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+               CAST(CASE WHEN @Linhas <> 1 THEN N'A pendência foi alterada por outra pessoa. Abra a ficha de novo.'
+                         WHEN @Ativo = 0 THEN N'Pendência desativada.'
+                         ELSE N'Pendência gravada.' END AS NVARCHAR(400)) AS MENSAGEM,
+               @IdLancamentoPendencia AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar a pendência. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, @IdLancamentoPendencia AS ID;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Lancamento_Pendencia_Resolver.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Lancamento_Pendencia_Resolver]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : P27 - resolve uma pendência manual aberta, com a nota da
+                resolução (obrigatória), quem e quando. Para voltar atrás:
+                FIN_Lancamento_Pendencia_Reabrir.
+                Permissão: PENDENCIA em FIN_PAGAR / FIN_RECEBER.
+                Devolve SUCESSO, MENSAGEM, ID.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04f2c).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Lancamento_Pendencia_Resolver @IdUsuario = 2, @IdLancamentoPendencia = 1, @Resolucao = N'NF anexada';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Lancamento_Pendencia_Resolver]
+    @IdUsuario              INT,
+    @IdLancamentoPendencia  BIGINT,
+    @Resolucao              NVARCHAR(1000)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[FIN].[FIN_Lancamento_Pendencia_Resolver]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa     NVARCHAR(400) = N'';
+    DECLARE @Usuario    NVARCHAR(100) = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+    DECLARE @TipoLanc   CHAR(1);
+    DECLARE @IdLanc     BIGINT;
+    DECLARE @Situacao   VARCHAR(10);
+    DECLARE @Ativo      BIT;
+    DECLARE @Linhas     INT;
+
+    BEGIN TRY
+        SET @Resolucao = LTRIM(RTRIM(ISNULL(@Resolucao, N'')));
+
+        SELECT @IdLanc = lp.ID_LANCAMENTO, @Situacao = lp.SITUACAO, @Ativo = lp.ATIVO, @TipoLanc = l.TIPO
+        FROM FIN.Lancamento_Pendencia lp
+        INNER JOIN FIN.Lancamento l ON l.ID_LANCAMENTO = lp.ID_LANCAMENTO
+        WHERE lp.ID_LANCAMENTO_PENDENCIA = @IdLancamentoPendencia;
+
+        IF @IdLanc IS NULL OR @Ativo = 0
+            SET @Recusa = N'Pendência não encontrada.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE @TipoLanc WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'PENDENCIA') = 0
+            SET @Recusa = N'Você não tem permissão para resolver pendências.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(N'FIN.Lancamento', @IdLanc) = 1
+            SET @Recusa = N'O lançamento está na lixeira.';
+        IF @Recusa = N'' AND @Situacao = 'RESOLVIDA'
+            SET @Recusa = N'A pendência já está resolvida.';
+        IF @Recusa = N'' AND LEN(@Resolucao) < 3
+            SET @Recusa = N'Informe como a pendência foi resolvida.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdLancamentoPendencia AS ID;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        UPDATE FIN.Lancamento_Pendencia
+           SET SITUACAO = 'RESOLVIDA', DT_RESOLUCAO = SYSDATETIME(), USUARIO_RESOLUCAO = @Usuario, RESOLUCAO = @Resolucao,
+               DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+         WHERE ID_LANCAMENTO_PENDENCIA = @IdLancamentoPendencia AND SITUACAO = 'ABERTA' AND ATIVO = 1;
+        SET @Linhas = @@ROWCOUNT;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(CASE WHEN @Linhas = 1 THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+               CAST(CASE WHEN @Linhas = 1 THEN N'Pendência resolvida.' ELSE N'A pendência foi alterada por outra pessoa. Abra a ficha de novo.' END AS NVARCHAR(400)) AS MENSAGEM,
+               @IdLancamentoPendencia AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível resolver a pendência. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, @IdLancamentoPendencia AS ID;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Lancamento_Pendencia_Reabrir.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Lancamento_Pendencia_Reabrir]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : P27 - reabre uma pendência manual resolvida (volta a ABERTA e
+                limpa a resolução; o histórico do lançamento guarda quem
+                resolveu, quando e a nota). Lançamento cancelado ou na
+                lixeira não reabre.
+                Permissão: PENDENCIA em FIN_PAGAR / FIN_RECEBER.
+                Devolve SUCESSO, MENSAGEM, ID.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04f2c).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Lancamento_Pendencia_Reabrir @IdUsuario = 2, @IdLancamentoPendencia = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Lancamento_Pendencia_Reabrir]
+    @IdUsuario              INT,
+    @IdLancamentoPendencia  BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc     NVARCHAR(128) = N'[FIN].[FIN_Lancamento_Pendencia_Reabrir]';
+    DECLARE @EtapaAtual   VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa       NVARCHAR(400) = N'';
+    DECLARE @Usuario      NVARCHAR(100) = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+    DECLARE @TipoLanc     CHAR(1);
+    DECLARE @SituacaoLanc VARCHAR(10);
+    DECLARE @IdLanc       BIGINT;
+    DECLARE @IdTipo       INT;
+    DECLARE @IdParcela    BIGINT;
+    DECLARE @Situacao     VARCHAR(10);
+    DECLARE @Ativo        BIT;
+    DECLARE @Linhas       INT;
+
+    BEGIN TRY
+        SELECT @IdLanc = lp.ID_LANCAMENTO, @Situacao = lp.SITUACAO, @Ativo = lp.ATIVO, @IdTipo = lp.ID_PENDENCIA_TIPO,
+               @IdParcela = lp.ID_PARCELA, @TipoLanc = l.TIPO, @SituacaoLanc = l.SITUACAO
+        FROM FIN.Lancamento_Pendencia lp
+        INNER JOIN FIN.Lancamento l ON l.ID_LANCAMENTO = lp.ID_LANCAMENTO
+        WHERE lp.ID_LANCAMENTO_PENDENCIA = @IdLancamentoPendencia;
+
+        IF @IdLanc IS NULL OR @Ativo = 0
+            SET @Recusa = N'Pendência não encontrada.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE @TipoLanc WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'PENDENCIA') = 0
+            SET @Recusa = N'Você não tem permissão para reabrir pendências.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Na_Lixeira(N'FIN.Lancamento', @IdLanc) = 1
+            SET @Recusa = N'O lançamento está na lixeira.';
+        IF @Recusa = N'' AND @SituacaoLanc = 'CANCELADO'
+            SET @Recusa = N'O lançamento está cancelado.';
+        IF @Recusa = N'' AND @Situacao = 'ABERTA'
+            SET @Recusa = N'A pendência já está aberta.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Lancamento_Pendencia x
+                                     WHERE x.ID_LANCAMENTO = @IdLanc AND x.ID_PENDENCIA_TIPO = @IdTipo
+                                       AND ISNULL(x.ID_PARCELA, 0) = ISNULL(@IdParcela, 0)
+                                       AND x.SITUACAO = 'ABERTA' AND x.ATIVO = 1)
+            SET @Recusa = N'Já existe outra pendência aberta deste tipo neste lançamento.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdLancamentoPendencia AS ID;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        UPDATE FIN.Lancamento_Pendencia
+           SET SITUACAO = 'ABERTA', DT_RESOLUCAO = NULL, USUARIO_RESOLUCAO = NULL, RESOLUCAO = N'',
+               DT_ALTERACAO = SYSDATETIME(), USUARIO_ALTERACAO = @Usuario
+         WHERE ID_LANCAMENTO_PENDENCIA = @IdLancamentoPendencia AND SITUACAO = 'RESOLVIDA' AND ATIVO = 1;
+        SET @Linhas = @@ROWCOUNT;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(CASE WHEN @Linhas = 1 THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+               CAST(CASE WHEN @Linhas = 1 THEN N'Pendência reaberta.' ELSE N'A pendência foi alterada por outra pessoa. Abra a ficha de novo.' END AS NVARCHAR(400)) AS MENSAGEM,
+               @IdLancamentoPendencia AS ID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível reabrir a pendência. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM, @IdLancamentoPendencia AS ID;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Lancamento_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Lancamento_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Lista das telas Contas a pagar (@Tipo P) e Contas a receber
+                (@Tipo R) e da aba Movimentação do Parceiro (@Tipo NULL com
+                @IdPessoa: os dois tipos que o usuário pode ver).
+                @Visao PARCELA (padrão): uma linha por vencimento.
+                @Visao LANCAMENTO: uma linha por lançamento (vencimento = o
+                primeiro das parcelas filtradas; valores = todas as parcelas).
+                @Situacao: EM_ABERTO (aberta + parcial), ABERTA, PARCIAL, PAGA,
+                CANCELADA, VENCIDA (em aberto e vencida), HOJE (em aberto
+                vencendo hoje), A_VENCER (em aberto, de amanhã até
+                FIN_LISTA_DIAS_A_VENCER dias) ou vazio (todas; sem as
+                canceladas quando FIN_LISTA_OCULTA_CANCELADAS = S).
+                @CampoData escolhe a data do período (@VencDe/@VencAte):
+                VENCIMENTO (padrão), EMISSAO ou COMPETENCIA (mês).
+                Filtros opcionais por período, empresa, centro,
+                parceiro, conta do plano, lote, documento, texto e valor.
+                Paginação (@Pagina, @PorPagina; padrão FIN_LISTA_POR_PAGINA:
+                a página é escolhida antes de buscar os detalhes) e
+                totais do filtro inteiro em cada linha (TOTAL_*). Não lista o
+                que está na lixeira. Permissão: VER em FIN_PAGAR / FIN_RECEBER.
+                Padrão "Listar": THROW 50001.
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04f).
+    v1.1 (25/11/2026) - Etapa 04f2a: situações HOJE e A_VENCER, período por
+                        emissão ou competência (@CampoData) e canceladas fora
+                        de "todas" pelo parâmetro FIN_LISTA_OCULTA_CANCELADAS.
+    v1.2 (26/11/2026) - Etapa 04f2c (P27): filtro de pendências (@Pendencia
+                        COM, AUTOMATICA, MANUAL, MINHAS, ATRASADA ou BLOQUEIA;
+                        @PendenciaCodigo = tipo manual ou regra automática) e
+                        colunas QTD_PENDENCIAS, PENDENCIAS (texto), PENDENCIA_
+                        BLOQUEIA e PENDENCIA_ATRASADA, calculadas só para as
+                        linhas da página (FIN.fn_FIN_Lancamento_Pendencias).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'R', @Situacao = 'EM_ABERTO';
+    -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'P', @Visao = 'LANCAMENTO', @Texto = N'cimento';
+    -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'R', @Situacao = 'A_VENCER', @CampoData = 'EMISSAO', @VencDe = '2026-01-01';
+    -- EXEC FIN.FIN_Lancamento_Listar @IdUsuario = 2, @Tipo = 'P', @Pendencia = 'COM', @Visao = 'LANCAMENTO';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Lancamento_Listar]
+    @IdUsuario      INT,
+    @Tipo           CHAR(1)        = NULL,
+    @Visao          VARCHAR(12)    = 'PARCELA',
+    @Situacao       VARCHAR(12)    = NULL,
+    @VencDe         DATE           = NULL,
+    @VencAte        DATE           = NULL,
+    @CampoData      VARCHAR(12)    = 'VENCIMENTO',
+    @IdEmpresa      INT            = NULL,
+    @IdCentroCusto  INT            = NULL,
+    @IdPessoa       INT            = NULL,
+    @IdPlanoConta   INT            = NULL,
+    @IdLote         BIGINT         = NULL,
+    @IdLancamento   BIGINT         = NULL,
+    @Documento      NVARCHAR(40)   = NULL,
+    @Texto          NVARCHAR(100)  = NULL,
+    @ValorDe        DECIMAL(18,2)  = NULL,
+    @ValorAte       DECIMAL(18,2)  = NULL,
+    @Ordem          VARCHAR(12)    = 'VENCIMENTO',
+    @Pagina         INT            = 1,
+    @PorPagina      INT            = NULL,
+    @Pendencia      VARCHAR(12)    = NULL,
+    @PendenciaCodigo VARCHAR(20)   = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[FIN].[FIN_Lancamento_Listar]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+    DECLARE @VeP        BIT;
+    DECLARE @VeR        BIT;
+    DECLARE @Hoje       DATE = CONVERT(DATE, SYSDATETIME());
+    DECLARE @Termo      NVARCHAR(102);
+    DECLARE @Digitos    VARCHAR(100);
+    DECLARE @Linhas     INT = 0;
+    DECLARE @TotValor   DECIMAL(18,2) = 0;
+    DECLARE @TotBaixado DECIMAL(18,2) = 0;
+    DECLARE @TotSaldo   DECIMAL(18,2) = 0;
+    DECLARE @DiasAVencer INT;
+    DECLARE @OcultaCanc  BIT;
+
+    DROP TABLE IF EXISTS #F;
+    DROP TABLE IF EXISTS #G;
+    DROP TABLE IF EXISTS #T;
+    DROP TABLE IF EXISTS #Pg;
+    DROP TABLE IF EXISTS #PendL;
+
+    BEGIN TRY
+        SET @Tipo = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@Tipo, '')))), '');
+        SET @VeP  = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PAGAR', 'VER');
+        SET @VeR  = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_RECEBER', 'VER');
+        IF (@Tipo = 'P' AND @VeP = 0) OR (@Tipo = 'R' AND @VeR = 0) OR (@Tipo IS NULL AND @VeP = 0 AND @VeR = 0)
+            THROW 50001, N'Você não tem permissão para ver estes lançamentos.', 1;
+        IF @Tipo IS NOT NULL AND @Tipo NOT IN ('P', 'R')
+            THROW 50001, N'Tipo inválido.', 1;
+
+        SET @Visao     = CASE WHEN UPPER(ISNULL(@Visao, '')) = 'LANCAMENTO' THEN 'LANCAMENTO' ELSE 'PARCELA' END;
+        SET @Situacao  = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@Situacao, '')))), '');
+        SET @Ordem     = UPPER(ISNULL(@Ordem, 'VENCIMENTO'));
+        SET @CampoData = CASE UPPER(ISNULL(@CampoData, '')) WHEN 'EMISSAO' THEN 'EMISSAO' WHEN 'COMPETENCIA' THEN 'COMPETENCIA' ELSE 'VENCIMENTO' END;
+        SET @DiasAVencer = ISNULL(SIS.fn_SIS_Parametro_Inteiro('FIN_LISTA_DIAS_A_VENCER'), 7);
+        IF @DiasAVencer NOT BETWEEN 1 AND 365 SET @DiasAVencer = 7;
+        SET @OcultaCanc  = ISNULL(SIS.fn_SIS_Parametro_SN('FIN_LISTA_OCULTA_CANCELADAS'), 1);
+        SET @Pagina    = CASE WHEN ISNULL(@Pagina, 1) < 1 THEN 1 ELSE @Pagina END;
+        SET @PorPagina = ISNULL(@PorPagina, ISNULL(SIS.fn_SIS_Parametro_Inteiro('FIN_LISTA_POR_PAGINA'), 100));
+        IF @PorPagina NOT BETWEEN 10 AND 1000 SET @PorPagina = 100;
+        SET @Documento = NULLIF(LTRIM(RTRIM(ISNULL(@Documento, N''))), N'');
+        SET @Texto     = NULLIF(LTRIM(RTRIM(ISNULL(@Texto, N''))), N'');
+        SET @Termo     = N'%' + REPLACE(REPLACE(REPLACE(ISNULL(@Texto, N''), N'[', N'[[]'), N'%', N'[%]'), N'_', N'[_]') + N'%';
+        SET @Digitos   = NULLIF(CONVERT(VARCHAR(100), CAD.fn_CAD_Somente_Digitos(ISNULL(@Texto, N''))), '');
+        SET @Pendencia       = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@Pendencia, '')))), '');
+        SET @PendenciaCodigo = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@PendenciaCodigo, '')))), '');
+        IF @PendenciaCodigo IS NOT NULL AND @Pendencia IS NULL SET @Pendencia = 'COM';
+
+        SET @EtapaAtual = 'Filtro';
+        SELECT p.ID_PARCELA, p.ID_LANCAMENTO, p.NUMERO, p.DT_VENCIMENTO, p.VALOR, p.VALOR_BAIXADO, p.SALDO, l.DT_EMISSAO,
+               ISNULL(pe.NOME, N'') AS PESSOA_NOME
+        INTO #F
+        FROM FIN.Parcela p WITH (NOLOCK)
+        INNER JOIN FIN.Lancamento l WITH (NOLOCK) ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
+        LEFT  JOIN CAD.Pessoa pe    WITH (NOLOCK) ON pe.ID_PESSOA = l.ID_PESSOA
+        WHERE l.DT_EXCLUSAO IS NULL
+          AND ((l.TIPO = 'P' AND @VeP = 1) OR (l.TIPO = 'R' AND @VeR = 1))
+          AND (@Tipo IS NULL OR l.TIPO = @Tipo)
+          AND ((@Situacao IS NULL AND (@OcultaCanc = 0 OR p.SITUACAO <> 'CANCELADA'))
+               OR (@Situacao = 'EM_ABERTO' AND p.SITUACAO IN ('ABERTA', 'PARCIAL'))
+               OR (@Situacao = 'VENCIDA'   AND p.SITUACAO IN ('ABERTA', 'PARCIAL') AND p.DT_VENCIMENTO < @Hoje)
+               OR (@Situacao = 'HOJE'      AND p.SITUACAO IN ('ABERTA', 'PARCIAL') AND p.DT_VENCIMENTO = @Hoje)
+               OR (@Situacao = 'A_VENCER'  AND p.SITUACAO IN ('ABERTA', 'PARCIAL') AND p.DT_VENCIMENTO > @Hoje AND p.DT_VENCIMENTO <= DATEADD(DAY, @DiasAVencer, @Hoje))
+               OR p.SITUACAO = @Situacao)
+          AND (@VencDe IS NULL
+               OR (@CampoData = 'VENCIMENTO'  AND p.DT_VENCIMENTO >= @VencDe)
+               OR (@CampoData = 'EMISSAO'     AND l.DT_EMISSAO >= @VencDe)
+               OR (@CampoData = 'COMPETENCIA' AND l.DT_COMPETENCIA >= DATEFROMPARTS(YEAR(@VencDe), MONTH(@VencDe), 1)))
+          AND (@VencAte IS NULL
+               OR (@CampoData = 'VENCIMENTO'  AND p.DT_VENCIMENTO <= @VencAte)
+               OR (@CampoData = 'EMISSAO'     AND l.DT_EMISSAO <= @VencAte)
+               OR (@CampoData = 'COMPETENCIA' AND l.DT_COMPETENCIA <= @VencAte))
+          AND (@IdEmpresa     IS NULL OR l.ID_EMPRESA = @IdEmpresa)
+          AND (@IdCentroCusto IS NULL OR l.ID_CENTRO_CUSTO = @IdCentroCusto)
+          AND (@IdPessoa      IS NULL OR l.ID_PESSOA = @IdPessoa)
+          AND (@IdPlanoConta  IS NULL OR l.ID_PLANO_CONTA = @IdPlanoConta)
+          AND (@IdLote        IS NULL OR l.ID_LOTE = @IdLote OR p.ID_LOTE = @IdLote)
+          AND (@IdLancamento  IS NULL OR l.ID_LANCAMENTO = @IdLancamento)
+          AND (@Documento     IS NULL OR l.DOCUMENTO LIKE @Documento + N'%')
+          AND (@ValorDe       IS NULL OR p.VALOR >= @ValorDe)
+          AND (@ValorAte      IS NULL OR p.VALOR <= @ValorAte)
+          AND (@Texto IS NULL
+               OR l.HISTORICO  COLLATE Latin1_General_CI_AI LIKE @Termo
+               OR l.DOCUMENTO  COLLATE Latin1_General_CI_AI LIKE @Termo
+               OR l.OBSERVACAO COLLATE Latin1_General_CI_AI LIKE @Termo
+               OR pe.NOME      COLLATE Latin1_General_CI_AI LIKE @Termo
+               OR pe.NOME_FANTASIA COLLATE Latin1_General_CI_AI LIKE @Termo
+               OR (@Digitos IS NOT NULL AND LEN(@Digitos) >= 5 AND pe.CPF_CNPJ LIKE @Digitos + '%')
+               OR CONVERT(NVARCHAR(20), l.ID_LANCAMENTO) = @Texto)
+        OPTION (RECOMPILE);
+
+        -- P27: filtro de pendências (calcula só para os lançamentos que já passaram pelo filtro)
+        IF @Pendencia IS NOT NULL
+        BEGIN
+            SET @EtapaAtual = 'Pendências';
+            SELECT DISTINCT l.ID_LANCAMENTO
+            INTO #PendL
+            FROM (SELECT DISTINCT ID_LANCAMENTO FROM #F) l
+            CROSS APPLY FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pd
+            WHERE (@Pendencia = 'COM'
+                   OR (@Pendencia = 'AUTOMATICA' AND pd.ORIGEM = 'AUTOMATICA')
+                   OR (@Pendencia = 'MANUAL'     AND pd.ORIGEM = 'MANUAL')
+                   OR (@Pendencia = 'MINHAS'     AND pd.ORIGEM = 'MANUAL' AND pd.ID_USUARIO_RESPONSAVEL = @IdUsuario)
+                   OR (@Pendencia = 'ATRASADA'   AND pd.ATRASADA = 1)
+                   OR (@Pendencia = 'BLOQUEIA'   AND pd.BLOQUEIA_BAIXA = 1))
+              AND (@PendenciaCodigo IS NULL OR pd.CODIGO = @PendenciaCodigo)
+              -- só os candidatos: em aberto (automáticas) ou com pendência manual aberta
+              AND (EXISTS (SELECT 1 FROM FIN.Parcela p2 WITH (NOLOCK) WHERE p2.ID_LANCAMENTO = l.ID_LANCAMENTO AND p2.SITUACAO IN ('ABERTA', 'PARCIAL'))
+                   OR EXISTS (SELECT 1 FROM FIN.Lancamento_Pendencia x WITH (NOLOCK) WHERE x.ID_LANCAMENTO = l.ID_LANCAMENTO AND x.SITUACAO = 'ABERTA' AND x.ATIVO = 1));
+
+            DELETE f FROM #F f WHERE NOT EXISTS (SELECT 1 FROM #PendL x WHERE x.ID_LANCAMENTO = f.ID_LANCAMENTO);
+        END;
+
+        -- linhas da página primeiro (só com o que já está em #F); detalhes depois, só para elas
+        SET @EtapaAtual = 'Página';
+        CREATE TABLE #Pg (ORDEM INT NOT NULL, ID_LANCAMENTO BIGINT NOT NULL, ID_PARCELA BIGINT NULL, DT_VENCIMENTO DATE NULL,
+                          QTD INT NULL, VALOR DECIMAL(18,2) NULL, BAIXADO DECIMAL(18,2) NULL, SALDO DECIMAL(18,2) NULL,
+                          EM_ABERTO INT NULL, CANCELADAS INT NULL, PRIMEIRA_VENCIDA DATE NULL);
+
+        IF @Visao = 'PARCELA'
+        BEGIN
+            SELECT @Linhas = COUNT(*), @TotValor = ISNULL(SUM(f.VALOR), 0), @TotBaixado = ISNULL(SUM(f.VALOR_BAIXADO), 0), @TotSaldo = ISNULL(SUM(f.SALDO), 0) FROM #F f;
+
+            INSERT INTO #Pg (ORDEM, ID_LANCAMENTO, ID_PARCELA, DT_VENCIMENTO)
+            SELECT ROW_NUMBER() OVER (ORDER BY (SELECT 1)), x.ID_LANCAMENTO, x.ID_PARCELA, x.DT_VENCIMENTO
+            FROM (SELECT f.ID_LANCAMENTO, f.ID_PARCELA, f.DT_VENCIMENTO, f.VALOR, f.PESSOA_NOME, f.DT_EMISSAO, f.NUMERO
+                  FROM #F f
+                  ORDER BY CASE WHEN @Ordem = 'VALOR'    THEN f.VALOR END DESC,
+                           CASE WHEN @Ordem = 'PARCEIRO' THEN f.PESSOA_NOME END,
+                           CASE WHEN @Ordem = 'EMISSAO'  THEN f.DT_EMISSAO END DESC,
+                           f.DT_VENCIMENTO, f.ID_LANCAMENTO, f.NUMERO
+                  OFFSET (@Pagina - 1) * @PorPagina ROWS FETCH NEXT @PorPagina ROWS ONLY) x;
+        END
+        ELSE
+        BEGIN
+            SELECT g.ID_LANCAMENTO, MIN(g.DT_VENCIMENTO) AS DT_VENCIMENTO, MAX(g.PESSOA_NOME) AS PESSOA_NOME, MAX(g.DT_EMISSAO) AS DT_EMISSAO
+            INTO #G
+            FROM #F g
+            GROUP BY g.ID_LANCAMENTO;
+
+            SELECT p.ID_LANCAMENTO, COUNT(*) AS QTD, SUM(p.VALOR) AS VALOR, SUM(p.VALOR_BAIXADO) AS BAIXADO, SUM(p.SALDO) AS SALDO,
+                   SUM(CASE WHEN p.SITUACAO IN ('ABERTA', 'PARCIAL') THEN 1 ELSE 0 END) AS EM_ABERTO,
+                   SUM(CASE WHEN p.SITUACAO = 'CANCELADA' THEN 1 ELSE 0 END) AS CANCELADAS,
+                   MIN(CASE WHEN p.SITUACAO IN ('ABERTA', 'PARCIAL') AND p.DT_VENCIMENTO < @Hoje THEN p.DT_VENCIMENTO END) AS PRIMEIRA_VENCIDA
+            INTO #T
+            FROM FIN.Parcela p WITH (NOLOCK)
+            INNER JOIN #G g ON g.ID_LANCAMENTO = p.ID_LANCAMENTO
+            GROUP BY p.ID_LANCAMENTO;
+
+            SELECT @Linhas = COUNT(*), @TotValor = ISNULL(SUM(t.VALOR), 0), @TotBaixado = ISNULL(SUM(t.BAIXADO), 0), @TotSaldo = ISNULL(SUM(t.SALDO), 0) FROM #T t;
+
+            INSERT INTO #Pg (ORDEM, ID_LANCAMENTO, DT_VENCIMENTO, QTD, VALOR, BAIXADO, SALDO, EM_ABERTO, CANCELADAS, PRIMEIRA_VENCIDA)
+            SELECT ROW_NUMBER() OVER (ORDER BY (SELECT 1)), x.ID_LANCAMENTO, x.DT_VENCIMENTO, x.QTD, x.VALOR, x.BAIXADO, x.SALDO, x.EM_ABERTO, x.CANCELADAS, x.PRIMEIRA_VENCIDA
+            FROM (SELECT g.ID_LANCAMENTO, g.DT_VENCIMENTO, t.QTD, t.VALOR, t.BAIXADO, t.SALDO, t.EM_ABERTO, t.CANCELADAS, t.PRIMEIRA_VENCIDA
+                  FROM #G g
+                  INNER JOIN #T t ON t.ID_LANCAMENTO = g.ID_LANCAMENTO
+                  ORDER BY CASE WHEN @Ordem = 'VALOR'    THEN t.VALOR END DESC,
+                           CASE WHEN @Ordem = 'PARCEIRO' THEN g.PESSOA_NOME END,
+                           CASE WHEN @Ordem = 'EMISSAO'  THEN g.DT_EMISSAO END DESC,
+                           g.DT_VENCIMENTO, g.ID_LANCAMENTO
+                  OFFSET (@Pagina - 1) * @PorPagina ROWS FETCH NEXT @PorPagina ROWS ONLY) x;
+        END;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT l.ID_LANCAMENTO, pg.ID_PARCELA, l.TIPO,
+               CAST(p.NUMERO AS SMALLINT) AS NUMERO,
+               CAST(ISNULL(p.QTD_PARCELAS, pg.QTD) AS SMALLINT) AS QTD_PARCELAS,
+               pg.DT_VENCIMENTO,
+               CAST(ISNULL(p.VALOR, pg.VALOR) AS DECIMAL(18,2)) AS VALOR,
+               CAST(ISNULL(p.VALOR_BAIXADO, pg.BAIXADO) AS DECIMAL(18,2)) AS VALOR_BAIXADO,
+               CAST(ISNULL(p.SALDO, pg.SALDO) AS DECIMAL(18,2)) AS SALDO,
+               CAST(CASE WHEN p.ID_PARCELA IS NOT NULL THEN p.SITUACAO
+                         WHEN pg.CANCELADAS = pg.QTD THEN 'CANCELADA'
+                         WHEN pg.EM_ABERTO = 0 THEN 'PAGA'
+                         WHEN pg.BAIXADO > 0 THEN 'PARCIAL'
+                         ELSE 'ABERTA' END AS VARCHAR(10)) AS SITUACAO,
+               CAST(CASE WHEN p.ID_PARCELA IS NOT NULL AND p.SITUACAO IN ('ABERTA', 'PARCIAL') AND p.DT_VENCIMENTO < @Hoje THEN 1
+                         WHEN p.ID_PARCELA IS NULL AND pg.PRIMEIRA_VENCIDA IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS VENCIDA,
+               CASE WHEN p.ID_PARCELA IS NOT NULL AND p.SITUACAO IN ('ABERTA', 'PARCIAL') AND p.DT_VENCIMENTO < @Hoje THEN DATEDIFF(DAY, p.DT_VENCIMENTO, @Hoje)
+                    WHEN p.ID_PARCELA IS NULL AND pg.PRIMEIRA_VENCIDA IS NOT NULL THEN DATEDIFF(DAY, pg.PRIMEIRA_VENCIDA, @Hoje) ELSE 0 END AS DIAS_ATRASO,
+               l.DT_EMISSAO, l.DT_COMPETENCIA, l.DOCUMENTO, l.HISTORICO,
+               l.ID_PESSOA, ISNULL(pe.NOME, N'') AS PESSOA_NOME,
+               l.ID_EMPRESA, ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL) AS EMPRESA_NOME,
+               l.ID_CENTRO_CUSTO, ISNULL(CONVERT(NVARCHAR(20), cc.CODIGO), N'') AS CENTRO_CODIGO, ISNULL(cc.DESCRICAO, N'') AS CENTRO_DESCRICAO,
+               l.ID_PLANO_CONTA, ISNULL(CONVERT(NVARCHAR(12), v.CODIGO), N'') AS PLANO_CODIGO, ISNULL(v.DESCRICAO, N'') AS PLANO_DESCRICAO,
+               ISNULL(p.ID_LOTE, l.ID_LOTE) AS ID_LOTE, l.ORIGEM, l.PREVISAO, l.SITUACAO AS LANCAMENTO_SITUACAO,
+               @Linhas AS TOTAL_LINHAS, @TotValor AS TOTAL_VALOR, @TotBaixado AS TOTAL_BAIXADO, @TotSaldo AS TOTAL_SALDO,
+               ISNULL(pd.QTD, 0) AS QTD_PENDENCIAS, CAST(ISNULL(pd.TEXTO, N'') AS NVARCHAR(1000)) AS PENDENCIAS,
+               CAST(ISNULL(pd.BLOQUEIA, 0) AS BIT) AS PENDENCIA_BLOQUEIA, CAST(ISNULL(pd.ATRASADA, 0) AS BIT) AS PENDENCIA_ATRASADA
+        FROM #Pg pg
+        INNER JOIN FIN.Lancamento l         WITH (NOLOCK) ON l.ID_LANCAMENTO = pg.ID_LANCAMENTO
+        INNER JOIN CAD.Empresa e            WITH (NOLOCK) ON e.ID_EMPRESA = l.ID_EMPRESA
+        LEFT  JOIN FIN.Parcela p            WITH (NOLOCK) ON p.ID_PARCELA = pg.ID_PARCELA
+        LEFT  JOIN CAD.Pessoa pe            WITH (NOLOCK) ON pe.ID_PESSOA = l.ID_PESSOA
+        LEFT  JOIN CAD.Centro_Custo cc      WITH (NOLOCK) ON cc.ID_CENTRO_CUSTO = l.ID_CENTRO_CUSTO
+        LEFT  JOIN CAD.vw_CAD_Plano_Conta v ON v.ID_PLANO_CONTA = l.ID_PLANO_CONTA
+        OUTER APPLY (SELECT COUNT(*) AS QTD,
+                            STRING_AGG(CONVERT(NVARCHAR(MAX), f.DESCRICAO), N'; ') AS TEXTO,
+                            MAX(CAST(f.BLOQUEIA_BAIXA AS INT)) AS BLOQUEIA, MAX(CAST(f.ATRASADA AS INT)) AS ATRASADA
+                     FROM FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) f) pd
+        ORDER BY pg.ORDEM;
+
+        DROP TABLE IF EXISTS #F;
+        DROP TABLE IF EXISTS #G;
+        DROP TABLE IF EXISTS #T;
+        DROP TABLE IF EXISTS #Pg;
+        DROP TABLE IF EXISTS #PendL;
+    END TRY
+    BEGIN CATCH
+        DROP TABLE IF EXISTS #F;
+        DROP TABLE IF EXISTS #G;
+        DROP TABLE IF EXISTS #T;
+        DROP TABLE IF EXISTS #Pg;
+        DROP TABLE IF EXISTS #PendL;
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar os lançamentos. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Lancamento_Resumo.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Lancamento_Resumo]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Contadores do topo das telas Contas a pagar (@Tipo P) e Contas
+                a receber (@Tipo R): quantidade e saldo das parcelas em aberto
+                vencidas, vencendo hoje, a vencer (de amanhã até
+                FIN_LISTA_DIAS_A_VENCER dias) e o total em aberto. Respeita os
+                filtros de empresa, centro, parceiro e conta do plano (não os
+                de situação e período: cada contador é uma situação). Devolve
+                também os parâmetros que a tela usa ao abrir (situação e visão
+                iniciais, linhas por página, dias a vencer). Não conta o que
+                está na lixeira. Permissão: VER em FIN_PAGAR / FIN_RECEBER.
+                Padrão "Listar": THROW 50001.
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04f2a).
+    v1.1 (26/11/2026) - Etapa 04f2c (P27): QTD_COM_PENDENCIA (lançamentos com
+                        alguma pendência aberta, automática ou manual) e
+                        QTD_MINHAS_PENDENCIAS (manuais com o usuário como
+                        responsável), com os mesmos filtros.
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Lancamento_Resumo @IdUsuario = 2, @Tipo = 'R';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Lancamento_Resumo]
+    @IdUsuario      INT,
+    @Tipo           CHAR(1),
+    @IdEmpresa      INT = NULL,
+    @IdCentroCusto  INT = NULL,
+    @IdPessoa       INT = NULL,
+    @IdPlanoConta   INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[FIN].[FIN_Lancamento_Resumo]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Permissão';
+    DECLARE @Hoje        DATE = CONVERT(DATE, SYSDATETIME());
+    DECLARE @DiasAVencer INT;
+    DECLARE @Limite      DATE;
+    DECLARE @PorPagina   INT;
+    DECLARE @SitInicial  NVARCHAR(20);
+    DECLARE @VisInicial  NVARCHAR(20);
+    DECLARE @QtdPend     INT = 0;
+    DECLARE @QtdMinhas   INT = 0;
+
+    BEGIN TRY
+        SET @Tipo = UPPER(LTRIM(RTRIM(ISNULL(@Tipo, ''))));
+        IF @Tipo NOT IN ('P', 'R')
+            THROW 50001, N'Tipo inválido.', 1;
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE @Tipo WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver estes lançamentos.', 1;
+
+        SET @EtapaAtual  = 'Parâmetros';
+        SET @DiasAVencer = ISNULL(SIS.fn_SIS_Parametro_Inteiro('FIN_LISTA_DIAS_A_VENCER'), 7);
+        IF @DiasAVencer NOT BETWEEN 1 AND 365 SET @DiasAVencer = 7;
+        SET @Limite      = DATEADD(DAY, @DiasAVencer, @Hoje);
+        SET @PorPagina   = ISNULL(SIS.fn_SIS_Parametro_Inteiro('FIN_LISTA_POR_PAGINA'), 100);
+        IF @PorPagina NOT BETWEEN 10 AND 1000 SET @PorPagina = 100;
+        SET @SitInicial  = UPPER(ISNULL(SIS.fn_SIS_Parametro('FIN_LISTA_SITUACAO_INICIAL'), N'EM_ABERTO'));
+        IF @SitInicial NOT IN (N'EM_ABERTO', N'VENCIDA', N'HOJE', N'A_VENCER', N'TODAS') SET @SitInicial = N'EM_ABERTO';
+        SET @VisInicial  = UPPER(ISNULL(SIS.fn_SIS_Parametro('FIN_LISTA_VISAO_INICIAL'), N'PARCELA'));
+        IF @VisInicial NOT IN (N'PARCELA', N'LANCAMENTO') SET @VisInicial = N'PARCELA';
+
+        SET @EtapaAtual = 'Pendências';
+        SELECT @QtdPend   = COUNT(DISTINCT l.ID_LANCAMENTO),
+               @QtdMinhas = COUNT(DISTINCT CASE WHEN pd.ORIGEM = 'MANUAL' AND pd.ID_USUARIO_RESPONSAVEL = @IdUsuario THEN l.ID_LANCAMENTO END)
+        FROM FIN.Lancamento l WITH (NOLOCK)
+        CROSS APPLY FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pd
+        WHERE l.DT_EXCLUSAO IS NULL
+          AND l.TIPO = @Tipo
+          AND l.SITUACAO = 'ATIVO'
+          AND (EXISTS (SELECT 1 FROM FIN.Parcela p2 WITH (NOLOCK) WHERE p2.ID_LANCAMENTO = l.ID_LANCAMENTO AND p2.SITUACAO IN ('ABERTA', 'PARCIAL'))
+               OR EXISTS (SELECT 1 FROM FIN.Lancamento_Pendencia x WITH (NOLOCK) WHERE x.ID_LANCAMENTO = l.ID_LANCAMENTO AND x.SITUACAO = 'ABERTA' AND x.ATIVO = 1))
+          AND (@IdEmpresa     IS NULL OR l.ID_EMPRESA = @IdEmpresa)
+          AND (@IdCentroCusto IS NULL OR l.ID_CENTRO_CUSTO = @IdCentroCusto)
+          AND (@IdPessoa      IS NULL OR l.ID_PESSOA = @IdPessoa)
+          AND (@IdPlanoConta  IS NULL OR l.ID_PLANO_CONTA = @IdPlanoConta)
+        OPTION (RECOMPILE);
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT CAST(ISNULL(SUM(CASE WHEN p.DT_VENCIMENTO < @Hoje THEN 1 ELSE 0 END), 0) AS INT)                                        AS QTD_VENCIDAS,
+               CAST(ISNULL(SUM(CASE WHEN p.DT_VENCIMENTO < @Hoje THEN p.SALDO ELSE 0 END), 0) AS DECIMAL(18,2))                        AS VALOR_VENCIDAS,
+               CAST(ISNULL(SUM(CASE WHEN p.DT_VENCIMENTO = @Hoje THEN 1 ELSE 0 END), 0) AS INT)                                        AS QTD_HOJE,
+               CAST(ISNULL(SUM(CASE WHEN p.DT_VENCIMENTO = @Hoje THEN p.SALDO ELSE 0 END), 0) AS DECIMAL(18,2))                        AS VALOR_HOJE,
+               CAST(ISNULL(SUM(CASE WHEN p.DT_VENCIMENTO > @Hoje AND p.DT_VENCIMENTO <= @Limite THEN 1 ELSE 0 END), 0) AS INT)         AS QTD_A_VENCER,
+               CAST(ISNULL(SUM(CASE WHEN p.DT_VENCIMENTO > @Hoje AND p.DT_VENCIMENTO <= @Limite THEN p.SALDO ELSE 0 END), 0) AS DECIMAL(18,2)) AS VALOR_A_VENCER,
+               CAST(COUNT(*) AS INT)                                                                                                   AS QTD_EM_ABERTO,
+               CAST(ISNULL(SUM(p.SALDO), 0) AS DECIMAL(18,2))                                                                          AS VALOR_EM_ABERTO,
+               @DiasAVencer                                                                                                            AS DIAS_A_VENCER,
+               @PorPagina                                                                                                              AS POR_PAGINA,
+               CAST(@SitInicial AS VARCHAR(12))                                                                                        AS SITUACAO_INICIAL,
+               CAST(@VisInicial AS VARCHAR(12))                                                                                        AS VISAO_INICIAL,
+               ISNULL(@QtdPend, 0)                                                                                                     AS QTD_COM_PENDENCIA,
+               ISNULL(@QtdMinhas, 0)                                                                                                   AS QTD_MINHAS_PENDENCIAS
+        FROM FIN.Parcela p WITH (NOLOCK)
+        INNER JOIN FIN.Lancamento l WITH (NOLOCK) ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
+        WHERE l.DT_EXCLUSAO IS NULL
+          AND l.TIPO = @Tipo
+          AND p.SITUACAO IN ('ABERTA', 'PARCIAL')
+          AND (@IdEmpresa     IS NULL OR l.ID_EMPRESA = @IdEmpresa)
+          AND (@IdCentroCusto IS NULL OR l.ID_CENTRO_CUSTO = @IdCentroCusto)
+          AND (@IdPessoa      IS NULL OR l.ID_PESSOA = @IdPessoa)
+          AND (@IdPlanoConta  IS NULL OR l.ID_PLANO_CONTA = @IdPlanoConta)
+        OPTION (RECOMPILE);
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar o resumo dos lançamentos. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Lancamento_Obter.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Lancamento_Obter]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 25/11/2026
+  Descrição   : Ficha do lançamento (Contas a pagar / a receber): dados do
+                documento com os nomes do que foi escolhido, as parcelas
+                (PARCELAS, JSON, com QTD_BAIXAS e TRAVADA), as baixas (BAIXAS,
+                JSON, só consulta até a etapa 04g) e os avisos já confirmados
+                (AVISOS_CONFIRMADOS, JSON). Situação para a tela: TEM_BAIXA,
+                NA_LIXEIRA, MES_FECHADO, PODE_ALTERAR (permissão + situação +
+                origem), PODE_CANCELAR e PODE_EXCLUIR.
+                Permissão: VER em FIN_PAGAR / FIN_RECEBER (conforme o tipo).
+                Padrão "Listar": THROW 50001.
+  Changelog:
+    v1.0 (25/11/2026) - Criação (etapa 04f).
+    v1.1 (26/11/2026) - Etapa 04f2c (P27): PENDENCIAS (JSON, as abertas,
+                        automáticas e manuais), QTD_PENDENCIAS, PODE_PENDENCIA,
+                        BLOQUEIA_BAIXA e MOTIVO_BLOQUEIO (FIN.fn_FIN_Pendencia_Bloqueia).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Lancamento_Obter @IdUsuario = 2, @IdLancamento = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Lancamento_Obter]
+    @IdUsuario     INT,
+    @IdLancamento  BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc   NVARCHAR(128) = N'[FIN].[FIN_Lancamento_Obter]';
+    DECLARE @EtapaAtual VARCHAR(100)  = 'Permissão';
+    DECLARE @Tipo       CHAR(1);
+    DECLARE @Item       VARCHAR(40);
+    DECLARE @TemBaixa   BIT = 0;
+    DECLARE @NaLixeira  BIT = 0;
+    DECLARE @MesFechado BIT = 0;
+    DECLARE @Editavel   BIT = 0;
+
+    BEGIN TRY
+        SELECT @Tipo = l.TIPO FROM FIN.Lancamento l WITH (NOLOCK) WHERE l.ID_LANCAMENTO = @IdLancamento;
+        IF @Tipo IS NULL
+            THROW 50001, N'Lançamento não encontrado.', 1;
+
+        SET @Item = CASE @Tipo WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END;
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver este lançamento.', 1;
+
+        SET @EtapaAtual = 'Situação';
+        IF EXISTS (SELECT 1 FROM FIN.Baixa b WITH (NOLOCK) INNER JOIN FIN.Parcela p WITH (NOLOCK) ON p.ID_PARCELA = b.ID_PARCELA
+                   WHERE p.ID_LANCAMENTO = @IdLancamento)
+            SET @TemBaixa = 1;
+        SET @NaLixeira = SIS.fn_SIS_Na_Lixeira(N'FIN.Lancamento', @IdLancamento);
+        IF EXISTS (SELECT 1 FROM FIN.Lancamento l WITH (NOLOCK)
+                   INNER JOIN FIN.Mes_Fechado m  WITH (NOLOCK) ON m.ID_EMPRESA = l.ID_EMPRESA AND m.MES = l.DT_COMPETENCIA AND m.FECHADO = 1
+                   INNER JOIN CAD.Plano_Conta pc WITH (NOLOCK) ON pc.ID_PLANO_CONTA = l.ID_PLANO_CONTA AND pc.CONTABIL = 1
+                   WHERE l.ID_LANCAMENTO = @IdLancamento)
+            SET @MesFechado = 1;
+        SELECT @Editavel = CASE WHEN l.SITUACAO = 'ATIVO' AND l.ORIGEM IN ('MANUAL', 'MIGRACAO') AND @NaLixeira = 0 AND @MesFechado = 0 THEN 1 ELSE 0 END
+        FROM FIN.Lancamento l WITH (NOLOCK) WHERE l.ID_LANCAMENTO = @IdLancamento;
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT l.ID_LANCAMENTO, l.TIPO, l.ID_EMPRESA, ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL) AS EMPRESA_NOME,
+               l.ID_CENTRO_CUSTO, ISNULL(CONVERT(NVARCHAR(20), cc.CODIGO), N'') AS CENTRO_CODIGO, ISNULL(cc.DESCRICAO, N'') AS CENTRO_DESCRICAO,
+               l.ID_PESSOA, ISNULL(pe.NOME, N'') AS PESSOA_NOME, ISNULL(pe.CPF_CNPJ, '') AS PESSOA_CPF_CNPJ,
+               l.ID_PLANO_CONTA, ISNULL(CONVERT(NVARCHAR(12), v.CODIGO), N'') AS PLANO_CODIGO, ISNULL(v.DESCRICAO, N'') AS PLANO_DESCRICAO,
+               ISNULL(CONVERT(VARCHAR(15), v.TIPO), '') AS PLANO_TIPO,
+               l.ID_HISTORICO_PADRAO, ISNULL(h.DESCRICAO, N'') AS HISTORICO_PADRAO_DESCRICAO,
+               l.DOCUMENTO, l.DT_EMISSAO, l.DT_COMPETENCIA, l.HISTORICO, l.OBSERVACAO, l.VALOR_TOTAL,
+               l.ORIGEM, l.ID_ORIGEM, l.ID_LOTE, l.SITUACAO, l.PREVISAO, l.INTEGRACAO,
+               l.DT_CANCELAMENTO, ISNULL(l.USUARIO_CANCELAMENTO, N'') AS USUARIO_CANCELAMENTO, l.MOTIVO_CANCELAMENTO,
+               l.CODIGO_ACCESS, l.DT_CRIACAO, l.USUARIO_CRIACAO, l.DT_ALTERACAO, ISNULL(l.USUARIO_ALTERACAO, N'') AS USUARIO_ALTERACAO,
+               @TemBaixa AS TEM_BAIXA, @NaLixeira AS NA_LIXEIRA, @MesFechado AS MES_FECHADO,
+               CAST(CASE WHEN @Editavel = 1 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'ALTERAR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_ALTERAR,
+               CAST(CASE WHEN @Editavel = 1 AND @TemBaixa = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'CANCELAR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_CANCELAR,
+               CAST(CASE WHEN @Editavel = 1 AND @TemBaixa = 0 AND l.ORIGEM = 'MANUAL' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'EXCLUIR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_EXCLUIR,
+               ISNULL((SELECT p.ID_PARCELA AS id, p.NUMERO AS numero, p.QTD_PARCELAS AS qtdParcelas, p.DT_VENCIMENTO AS vencimento,
+                              p.VALOR AS valor, p.VALOR_BAIXADO AS valorBaixado, p.SALDO AS saldo, p.SITUACAO AS situacao,
+                              p.ID_CONTA_PREVISTA AS idContaPrevista, ISNULL(c.DESCRICAO, N'') AS contaPrevista, p.ID_LOTE AS idLote,
+                              (SELECT COUNT(*) FROM FIN.Baixa b WITH (NOLOCK) WHERE b.ID_PARCELA = p.ID_PARCELA) AS qtdBaixas,
+                              CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.Baixa b WITH (NOLOCK) WHERE b.ID_PARCELA = p.ID_PARCELA) THEN 1 ELSE 0 END AS BIT) AS travada
+                       FROM FIN.Parcela p WITH (NOLOCK)
+                       LEFT JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = p.ID_CONTA_PREVISTA
+                       WHERE p.ID_LANCAMENTO = l.ID_LANCAMENTO
+                       ORDER BY p.NUMERO
+                       FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS PARCELAS,
+               ISNULL((SELECT b.ID_BAIXA AS id, p.NUMERO AS parcela, b.DT_PAGAMENTO AS data, b.ID_CONTA AS idConta, c.DESCRICAO AS conta,
+                              b.FORMA AS forma, b.VALOR_PRINCIPAL AS principal, b.JUROS AS juros, b.MULTA AS multa, b.CORRECAO AS correcao,
+                              b.DESCONTO AS desconto, b.ABATIMENTO AS abatimento, b.TARIFA AS tarifa, b.RETENCAO AS retencao,
+                              b.VALOR_LIQUIDO AS liquido, b.COMPENSADO AS compensado, b.DT_COMPENSACAO AS dataCompensacao,
+                              b.ID_BAIXA_ESTORNADA AS idBaixaEstornada,
+                              CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.Baixa x WITH (NOLOCK) WHERE x.ID_BAIXA_ESTORNADA = b.ID_BAIXA) THEN 1 ELSE 0 END AS BIT) AS estornada,
+                              b.OBSERVACAO AS observacao, b.USUARIO_CRIACAO AS usuario
+                       FROM FIN.Baixa b WITH (NOLOCK)
+                       INNER JOIN FIN.Parcela p WITH (NOLOCK) ON p.ID_PARCELA = b.ID_PARCELA
+                       INNER JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = b.ID_CONTA
+                       WHERE p.ID_LANCAMENTO = l.ID_LANCAMENTO
+                       ORDER BY b.DT_PAGAMENTO, b.ID_BAIXA
+                       FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS BAIXAS,
+               ISNULL((SELECT a.CODIGO_REGRA AS codigo, a.NIVEL AS nivel, a.MENSAGEM AS mensagem, a.MOTIVO AS motivo,
+                              a.ID_REFERENCIA AS idReferencia, a.USUARIO_CRIACAO AS usuario, a.DT_CRIACAO AS data
+                       FROM SIS.Aviso_Confirmado a WITH (NOLOCK)
+                       WHERE a.TABELA = N'FIN.Lancamento' AND a.ID_REGISTRO = l.ID_LANCAMENTO
+                       ORDER BY a.DT_CRIACAO DESC, a.ID_AVISO_CONFIRMADO DESC
+                       FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS AVISOS_CONFIRMADOS,
+               ISNULL((SELECT pd.ID_LANCAMENTO_PENDENCIA AS id, pd.ORIGEM AS origem, pd.CODIGO AS codigo, pd.DESCRICAO AS descricao,
+                              pd.ORIENTACAO AS orientacao, pd.BLOQUEIA_BAIXA AS bloqueiaBaixa, pd.ATRASADA AS atrasada,
+                              pd.ID_PARCELA AS idParcela, pd.ID_USUARIO_RESPONSAVEL AS idResponsavel, pd.DT_PREVISAO AS previsao
+                       FROM FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pd
+                       ORDER BY CASE pd.ORIGEM WHEN 'MANUAL' THEN 0 ELSE 1 END, pd.DT_PREVISAO, pd.CODIGO
+                       FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS PENDENCIAS,
+               (SELECT COUNT(*) FROM FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pc) AS QTD_PENDENCIAS,
+               CAST(CASE WHEN @NaLixeira = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'PENDENCIA') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_PENDENCIA,
+               bq.BLOQUEIA AS BLOQUEIA_BAIXA, bq.MOTIVO AS MOTIVO_BLOQUEIO
+        FROM FIN.Lancamento l WITH (NOLOCK)
+        INNER JOIN CAD.Empresa e            WITH (NOLOCK) ON e.ID_EMPRESA = l.ID_EMPRESA
+        LEFT  JOIN CAD.Centro_Custo cc      WITH (NOLOCK) ON cc.ID_CENTRO_CUSTO = l.ID_CENTRO_CUSTO
+        LEFT  JOIN CAD.Pessoa pe            WITH (NOLOCK) ON pe.ID_PESSOA = l.ID_PESSOA
+        LEFT  JOIN CAD.vw_CAD_Plano_Conta v ON v.ID_PLANO_CONTA = l.ID_PLANO_CONTA
+        LEFT  JOIN FIN.Historico_Padrao h   WITH (NOLOCK) ON h.ID_HISTORICO_PADRAO = l.ID_HISTORICO_PADRAO
+        CROSS APPLY FIN.fn_FIN_Pendencia_Bloqueia(l.ID_LANCAMENTO, NULL) bq
+        WHERE l.ID_LANCAMENTO = @IdLancamento;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível carregar o lançamento. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
 PRINT N'Pacote 04f2c concluído sem erro.';
 GO
 
