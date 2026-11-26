@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Lançamento</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/seletor.js" defer></script>
+  <script src="/js/historico.js" defer></script>
+  <script src="/js/anexos.js" defer></script>
+  <script src="/js/fin/lancamento.js" defer></script>
+</head>
+<body data-tela="fin/lancamentos.html?tipo=P" data-menu="fin/lancamentos.html?tipo=P" data-ajuda="fin-lancamento" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <a href="/fin/lancamentos.html" id="link-voltar">‹ Voltar para a lista</a>
+          <h1 id="titulo">Novo lançamento</h1>
+          <div class="subtitulo" id="subtitulo"></div>
+        </div>
+        <button data-dica="Manda o lançamento para a lixeira (pode ser recuperado até o prazo acabar). Só lançamento digitado na tela, sem nenhuma baixa e fora de mês fechado; senão, use Cancelar lançamento. Pede confirmação." type="button" class="botao botao-perigo" id="botao-excluir" hidden>Excluir</button>
+        <button data-dica="Cancela o lançamento (continua na lista em &quot;Todas&quot;, riscado, com o motivo). Só sem baixa. Pede o motivo." type="button" class="botao" id="botao-cancelar-lanc" hidden>Cancelar lançamento</button>
+        <button data-dica="Abre um lançamento novo com os mesmos dados deste (parceiro, centro, conta, histórico, valor e parcelas). Confira as datas e o documento antes de gravar." type="button" class="botao" id="botao-copiar" hidden>Copiar</button>
+        <button data-dica="Volta para a lista sem gravar (avisa se houver alteração). Atalho: Esc." type="button" class="botao" id="botao-voltar">Voltar</button>
+        <button data-dica="Grava o lançamento. Pede confirmação antes e mostra os avisos contra erro de digitação. Atalho: Ctrl+S." type="submit" form="ficha" class="botao botao-principal" id="botao-gravar" hidden>Gravar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="aviso-faixa" id="aviso-situacao" role="note" hidden></div>
+
+      <div class="abas" role="tablist" aria-label="Partes da ficha">
+        <button type="button" class="aba" role="tab" id="aba-dados" aria-controls="painel-dados" aria-selected="true">Dados principais</button>
+        <button type="button" class="aba" role="tab" id="aba-parcelas" aria-controls="painel-parcelas" aria-selected="false">Parcelas</button>
+        <button type="button" class="aba" role="tab" id="aba-baixas" aria-controls="painel-baixas" aria-selected="false" hidden>Baixas</button>
+        <button type="button" class="aba" role="tab" id="aba-anexos" aria-controls="painel-anexos" aria-selected="false" hidden>Anexos</button>
+        <button type="button" class="aba" role="tab" id="aba-historico" aria-controls="painel-historico" aria-selected="false" hidden>Histórico</button>
+      </div>
+
+      <div class="area-lista">
+        <form class="cartao" id="ficha" novalidate>
+
+          <section class="painel-aba" role="tabpanel" id="painel-dados" aria-labelledby="aba-dados">
+            <div class="grade">
+              <div class="campo s-2" data-obrigatorio><span id="rotulo-parceiro">Parceiro *</span><div id="seletor-pessoa"></div></div>
+              <div class="campo s-2" data-obrigatorio>Centro de custo *<div id="seletor-centro"></div></div>
+              <div class="campo s-2" data-obrigatorio>Conta do plano *<div id="seletor-plano"></div></div>
+              <div class="campo s-2">Histórico padrão<div id="seletor-historico"></div></div>
+              <label data-dica="Texto que aparece na lista e nos relatórios (ex.: &quot;Compra de cimento – NF 1234&quot;). Escolher um histórico padrão preenche este campo quando ele está vazio." class="campo s-2">Histórico
+                <input id="historico" maxlength="200" autocomplete="off">
+              </label>
+              <label data-dica="Número da nota fiscal, do boleto ou do contrato. Opcional. O sistema avisa se o mesmo número já foi lançado para o mesmo parceiro." class="campo">Documento
+                <input id="documento" maxlength="40" autocomplete="off">
+              </label>
+              <div class="campo marcacoes">
+                <label data-dica="Marque quando ainda é só uma previsão (valor ou data podem mudar). Aparece como &quot;previsão&quot; na lista." class="marcacao"><input type="checkbox" id="previsao"> É só previsão</label>
+              </div>
+              <label data-dica="Data do documento (emissão da nota ou do contrato). Obrigatória. O sistema confere a trava de datas." data-obrigatorio class="campo">Emissão *
+                <input id="dtEmissao" type="date">
+              </label>
+              <label data-dica="Mês a que a despesa ou a receita pertence (regime de competência). Se ficar em branco, vale o mês da emissão." class="campo">Competência
+                <input id="dtCompetencia" type="month">
+              </label>
+              <label data-dica="Valor total do lançamento. Obrigatório. A soma das parcelas tem que bater com ele. Pode digitar 1.234,56 ou 1234.56." data-obrigatorio class="campo">Valor total *
+                <input id="valorTotal" inputmode="decimal" autocomplete="off">
+              </label>
+              <span></span>
+              <label data-dica="Quantas parcelas gerar a partir do valor total. O centavo que sobra da divisão vai na última parcela." class="campo">Nº de parcelas
+                <input id="qtdParcelas" type="number" min="1" max="360" step="1" value="1">
+              </label>
+              <label data-dica="Vencimento da primeira parcela. As outras seguem o intervalo escolhido." class="campo">1º vencimento
+                <input id="primeiroVencimento" type="date">
+              </label>
+              <label data-dica="De quanto em quanto tempo vencem as parcelas seguintes. Mensal mantém o mesmo dia (31 vira o último dia dos meses mais curtos)." class="campo">Intervalo
+                <select id="intervalo">
+                  <option value="M1">Mensal</option>
+                  <option value="D15">Quinzenal (15 dias)</option>
+                  <option value="D7">Semanal (7 dias)</option>
+                  <option value="D30">A cada 30 dias</option>
+                  <option value="M2">Bimestral</option>
+                  <option value="M3">Trimestral</option>
+                  <option value="M12">Anual</option>
+                </select>
+              </label>
+              <div class="campo">
+                <span>&nbsp;</span>
+                <button data-dica="Monta as parcelas pelo valor total, nº de parcelas, 1º vencimento e intervalo. Troca as parcelas que ainda não têm baixa; confira na aba Parcelas." type="button" class="botao botao-contorno" id="botao-gerar">Gerar parcelas</button>
+              </div>
+              <label data-dica="Anotações internas sobre o lançamento. Opcional." class="campo s-4">Observação
+                <textarea id="observacao" rows="3" maxlength="2000"></textarea>
+              </label>
+              <div class="campo s-4" id="bloco-confirmados" hidden>
+                <span>Avisos confirmados e motivos registrados</span>
+                <ul class="lista-confirmados" id="lista-confirmados"></ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-parcelas" aria-labelledby="aba-parcelas" hidden>
+            <div class="barra-lista">
+              <span class="suave" id="parcelas-explica">Vencimento e valor de cada parcela. A numeração segue a ordem de vencimento ao gravar. Parcela com baixa não muda.</span>
+              <button data-dica="Acrescenta uma parcela em branco no fim (preencha o vencimento e o valor)." type="button" class="botao botao-contorno" id="botao-mais-parcela">+ Parcela</button>
+            </div>
+            <div class="rolagem">
+              <table class="tabela tabela-larga tabela-parcelas">
+                <thead><tr><th scope="col" class="col-numero">Nº</th><th scope="col">Vencimento</th><th scope="col">Valor</th><th scope="col">Conta prevista</th><th scope="col" id="coluna-baixado">Baixado</th><th scope="col">Saldo</th><th scope="col">Situação</th><th scope="col" class="col-acao" aria-label="Tirar parcela"></th></tr></thead>
+                <tbody id="linhas-parcelas"></tbody>
+              </table>
+            </div>
+            <div class="parcelas-rodape">
+              <span>Soma das parcelas: <span id="soma-parcelas">0,00</span></span>
+              <span id="diferenca-parcelas" class="parcelas-diferenca" hidden></span>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-baixas" aria-labelledby="aba-baixas" hidden>
+            <p class="suave">Pagamentos e recebimentos deste lançamento (só consulta; a baixa é feita na tela de baixas).</p>
+            <div class="rolagem">
+              <table class="tabela tabela-larga">
+                <thead><tr><th scope="col">Data</th><th scope="col">Parcela</th><th scope="col">Conta</th><th scope="col">Forma</th><th scope="col">Principal</th><th scope="col">Juros/multa</th><th scope="col">Desconto</th><th scope="col">Líquido</th><th scope="col">Situação</th></tr></thead>
+                <tbody id="linhas-baixas"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-anexos" aria-labelledby="aba-anexos" hidden>
+            <div id="anexos"></div>
+          </section>
+
+          <section class="painel-aba" role="tabpanel" id="painel-historico" aria-labelledby="aba-historico" hidden>
+            <div id="historico-lanc"></div>
+          </section>
+        </form>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+
+      <div class="rodape-ficha" id="rodape"></div>
+    </main>
+  </div>
+</body>
+</html>

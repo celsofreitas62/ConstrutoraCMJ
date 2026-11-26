@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Ficha do lançamento</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> incluir ou alterar uma conta a pagar ou a receber, com as parcelas. A mesma ficha serve para as duas telas; cada uma tem a sua permissão.</p>
+  <h2>Como incluir</h2>
+  <ul>
+    <li>Escolha o <strong>parceiro</strong>, o <strong>centro de custo</strong> e a <strong>conta do plano</strong> (digite parte do nome e escolha na lista). Ao escolher o parceiro, o sistema sugere a conta e o centro padrão dele (ou os do último lançamento dele), se estiverem em branco.</li>
+    <li>A <strong>empresa</strong> do lançamento é a do centro de custo.</li>
+    <li>Informe a <strong>emissão</strong>, o <strong>valor total</strong> e, se quiser, a <strong>competência</strong> (sem ela, vale o mês da emissão).</li>
+    <li>Em <strong>Nº de parcelas</strong>, <strong>1º vencimento</strong> e <strong>Intervalo</strong>, clique em <strong>Gerar parcelas</strong>. O centavo que sobra vai na última. Confira e ajuste na aba <strong>Parcelas</strong> (dá para mudar vencimento e valor, tirar ou acrescentar parcelas). A soma tem que bater com o valor total.</li>
+    <li>Clique em <strong>Gravar</strong> (ou Ctrl+S).</li>
+  </ul>
+  <h2>Avisos contra erro de digitação</h2>
+  <ul>
+    <li>Ao gravar, o sistema confere se algo parece erro: valor muito fora da média do parceiro, documento já lançado, datas distantes, parceiro sem o tipo Fornecedor/Cliente e outros.</li>
+    <li>Abre uma janela com os avisos. Se estiver certo, marque <strong>Estou ciente</strong> em cada um e clique em <strong>Gravar mesmo assim</strong>; se não, clique em <strong>Voltar e corrigir</strong>.</li>
+    <li>Data fora do prazo permitido (trava de datas): quem tem a permissão de lançar retroativo grava informando o <strong>motivo</strong>; quem não tem não consegue gravar.</li>
+    <li>Alguns pontos <strong>bloqueiam</strong> a gravação (parceiro, centro ou conta inativos, mês fechado e as regras que a empresa configurou como bloqueio).</li>
+    <li>Os avisos confirmados e os motivos ficam registrados na ficha.</li>
+    <li>Quais avisos existem e se avisam ou bloqueiam fica nos <strong>Parâmetros de uso</strong>.</li>
+  </ul>
+  <h2>Outras ações</h2>
+  <ul>
+    <li><strong>Copiar</strong>: abre um lançamento novo com os mesmos dados; a emissão vira hoje e o documento fica em branco. Confira antes de gravar.</li>
+    <li><strong>Cancelar lançamento</strong>: tira das contas em aberto e guarda o motivo. Só sem baixa.</li>
+    <li><strong>Excluir</strong>: manda para a <strong>Lixeira</strong>, de onde pode ser recuperado até o prazo acabar. Só lançamento digitado na tela, sem baixa e fora de mês fechado.</li>
+    <li>Abas <strong>Baixas</strong> (pagamentos e recebimentos, só consulta), <strong>Anexos</strong> (nota fiscal, boleto, contrato) e <strong>Histórico</strong> (quem mudou o quê, com desfazer).</li>
+  </ul>
+  <h2>Cuidados</h2>
+  <ul>
+    <li>Com baixa, o parceiro, o valor total e as parcelas já baixadas não mudam: estorne a baixa antes.</li>
+    <li>Lançamento que veio de outra rotina (por exemplo, da migração ou de uma venda) só muda pela rotina de origem.</li>
+  </ul>
+</body>
+</html>

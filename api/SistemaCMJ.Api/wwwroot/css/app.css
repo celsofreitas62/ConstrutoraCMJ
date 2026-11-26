@@ -431,3 +431,18 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .situacao-vencida { background: #FDE7E4; color: #9B1C12; }
 .paginacao { display: inline-flex; align-items: center; gap: 8px; }
 .paginacao .botao { padding: 4px 10px; font-size: 12px; }
+
+/* 04f2b: janela de avisos do P17 e ficha do lançamento */
+.lista-avisos { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
+.aviso-item { padding: 10px 12px; border-radius: var(--raio); border: 1px solid #E2E2DF; display: flex; flex-direction: column; gap: 6px; }
+.aviso-bloqueio { background: #FDE7E4; border-color: #F2B8B0; color: #9B1C12; }
+.aviso-motivo { background: #FFF8D6; border-color: #EAD98A; color: #5C4700; }
+.aviso-aviso { background: #FFF4E5; border-color: #F3C98B; color: #6B3200; }
+.aviso-texto { line-height: 1.45; }
+.tabela-parcelas input { width: 100%; box-sizing: border-box; }
+.tabela-parcelas .col-numero { width: 70px; }
+.tabela-parcelas .col-acao { width: 44px; text-align: center; }
+.parcelas-rodape { display: flex; flex-wrap: wrap; gap: 16px; justify-content: flex-end; margin-top: 8px; font-weight: 600; }
+.parcelas-diferenca { color: var(--erro); }
+.lista-confirmados { margin: 0; padding-left: 18px; line-height: 1.5; }
+

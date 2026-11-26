@@ -12,7 +12,8 @@
                banco (FIN_Lancamento_Listar / _Resumo), Exportar Excel de todas
                as linhas do filtro, filtros salvos por usuário (★ = abre com a
                tela) e o último filtro lembrado neste navegador.
-               A ficha do lançamento entra na 04f2b.
+               04f2b: a linha abre a ficha (fin/lancamento.html) e entra o
+               botão "+ Incluir".
    ========================================================================== */
 'use strict';
 
@@ -33,6 +34,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('coluna-parceiro').textContent = pagar ? 'Fornecedor' : 'Cliente';
   $('coluna-baixado').textContent = pagar ? 'Pago' : 'Recebido';
   $('botao-exportar').hidden = !acoes.has('EXPORTAR');
+  const incluir = $('botao-incluir');
+  incluir.href = '/fin/lancamento.html?tipo=' + tipo;
+  incluir.hidden = !acoes.has('INCLUIR');
   const lixeira = $('link-lixeira');
   lixeira.href = '/sis/lixeira.html?item=' + item;
   lixeira.hidden = !Layout.acoesDe('sis/lixeira.html').has('VER');
@@ -167,7 +171,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       corpo.append(tr);
     }
     for (const l of linhas) {
-      const tr = Util.el('tr', l.VENCIDA ? 'linha-vencida' : null);
+      const tr = Util.el('tr', 'clicavel' + (l.VENCIDA ? ' linha-vencida' : ''));
+      tr.tabIndex = 0;
+      const abrir = () => { location.href = '/fin/lancamento.html?tipo=' + tipo + '&id=' + encodeURIComponent(l.ID_LANCAMENTO); };
+      tr.addEventListener('click', abrir);
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') abrir(); });
       const sit = Util.el('td');
       const classe = l.VENCIDA ? 'vencida' : String(l.SITUACAO || '').toLowerCase();
       sit.append(Util.el('span', 'situacao situacao-' + classe, textoSituacao(l)));
