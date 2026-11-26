@@ -18,6 +18,7 @@
                04f2c2: quadro de Pendências (js/fin/pendencias.js, P27) acima
                das abas, com atalho para o campo de cada pendência automática
                e a faixa vermelha quando alguma bloqueia a baixa.
+               04f2d: ?idPessoa= já escolhe o parceiro (vem da aba Movimentação).
    ========================================================================== */
 'use strict';
 
@@ -435,6 +436,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('dtEmissao').value = hojeIso();
     $('primeiroVencimento').value = hojeIso();
     parcelas = [];
+    // 04f2d: "+ Contas a pagar/receber" da aba Movimentação do Parceiro já vem com o parceiro
+    const idPessoaInicial = parseInt(Util.parametro('idPessoa') || '0', 10) || null;
+    if (idPessoaInicial) {
+      await seletorPessoa.definir(idPessoaInicial);
+      if (seletorPessoa.valor()) await sugerirPadroes(idPessoaInicial);
+    }
   }
   $('botao-copiar').hidden = !idLancamento || !acoes.has('INCLUIR') || !!(lanc && lanc.NA_LIXEIRA);
   atualizarCabecalho();

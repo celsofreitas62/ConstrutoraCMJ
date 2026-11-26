@@ -10,6 +10,8 @@
                Botões e edição seguem as ações do usuário na tela.
                04e (25/11/2026): conta do plano e centro de custo padrão pela
                escolha com busca (js/seletor.js).
+               04f2d (26/11/2026): aba Movimentação (js/fin/movimentacao.js),
+               só para quem vê contas a pagar ou a receber.
    ========================================================================== */
 'use strict';
 
@@ -54,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let sujo = false;
   let historicoCarregado = false;
   let anexosCarregados = false;
+  let movimentacaoCarregada = false;
   let naLixeira = false;
   let podeEditar = idPessoa ? acoes.has('ALTERAR') : acoes.has('INCLUIR');
 
@@ -68,6 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (aba.id === 'aba-historico' && !historicoCarregado) carregarHistorico();
     if (aba.id === 'aba-anexos' && !anexosCarregados) carregarAnexos();
+    if (aba.id === 'aba-movimentacao' && !movimentacaoCarregada) carregarMovimentacao();
   }
   abas.forEach((a, i) => {
     a.addEventListener('click', () => abrirAba(a));
@@ -369,6 +373,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (await anexos.carregar()) anexosCarregados = true;
   }
 
+  // ---------- Movimentação (04f2d; componente js/fin/movimentacao.js) ----------
+  let movimentacao = null;
+  async function carregarMovimentacao() {
+    if (!movimentacao) movimentacao = Movimentacao.criar($('movimentacao'), {
+      idPessoa,
+      aoContar: (qtd) => { $('aba-movimentacao').textContent = 'Movimentação' + (qtd ? ' (' + qtd + ' em aberto)' : ''); }
+    });
+    if (await movimentacao.carregar()) movimentacaoCarregada = true;
+  }
+
   // ---------- Histórico ----------
   let historico = null;
   async function carregarHistorico() {
@@ -435,6 +449,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     atualizarCabecalho(p);
     $('aba-historico').hidden = false;
     $('aba-anexos').hidden = false;
+    $('aba-movimentacao').hidden = Movimentacao.tiposVisiveis().length === 0;
     naLixeira = !!p.NA_LIXEIRA;
     if (naLixeira) {
       const aviso = $('aviso-lixeira');
@@ -585,6 +600,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   if (idPessoa && location.hash === '#historico') abrirAba($('aba-historico'));
   if (idPessoa && location.hash === '#anexos') abrirAba($('aba-anexos'));
+  if (idPessoa && location.hash === '#movimentacao' && !$('aba-movimentacao').hidden) abrirAba($('aba-movimentacao'));
 
   async function sair(destino) {
     if (sujo && podeEditar && !(await Mensagens.confirmar('Descartar alterações?', 'Há alterações que ainda não foram gravadas. Elas serão perdidas.', 'Descartar'))) return;

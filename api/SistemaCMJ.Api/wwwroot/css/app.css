@@ -474,3 +474,12 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .atalhos-data-botoes { display: flex; gap: 6px; flex-wrap: wrap; }
 .tabela-pendencia-tipos .campo-codigo { width: 11em; }
 .tabela-pendencia-tipos .campo-ordem { width: 4em; }
+
+/* 04f2d: aba Movimentação da ficha do Parceiro (js/fin/movimentacao.js) */
+.movimentacao-barra { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-bottom: 12px; }
+.movimentacao-media { margin: -6px 0 10px; font-size: 13px; }
+.movimentacao-filtros { padding: 0 0 12px; }
+.movimentacao-rodape { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 10px; }
+.movimentacao-rodape .paginacao { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.tipo-p { color: var(--erro); font-weight: 600; }
+.tipo-r { color: #1E6B22; font-weight: 600; }
