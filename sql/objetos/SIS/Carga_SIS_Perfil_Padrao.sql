@@ -28,6 +28,10 @@
                         (liberável por perfil; decisão do Celso).
     v1.2 (25/11/2026) - Etapa 04f: Financeiro também não recebe
                         LANCAR_RETROATIVO (por padrão só os administradores).
+    v1.3 (27/11/2026) - Etapa 04g2: Financeiro também não recebe
+                        LIBERAR_PENDENCIA, DESCONTO_LIMITE e AJUSTE_CAIXA
+                        (decisão de 26/11/2026: nascem sem ninguém; os
+                        administradores dão pela tela Perfis e permissões).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -56,7 +60,7 @@ INNER JOIN SIS.Acao   a ON a.ID_ACAO   = ia.ID_ACAO
 WHERE ia.ATIVO = 1
   AND m.CODIGO <> 'SIS'
   AND (   (n.NOME = N'Consulta'   AND a.CODIGO = 'VER')
-       OR (n.NOME = N'Financeiro' AND m.CODIGO IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO NOT IN ('REABRIR', 'DESFAZER', 'LANCAR_RETROATIVO'))
+       OR (n.NOME = N'Financeiro' AND m.CODIGO IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO NOT IN ('REABRIR', 'DESFAZER', 'LANCAR_RETROATIVO', 'LIBERAR_PENDENCIA', 'DESCONTO_LIMITE', 'AJUSTE_CAIXA'))
        OR (n.NOME = N'Financeiro' AND m.CODIGO NOT IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO = 'VER'))
   AND NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao pp WHERE pp.ID_PERFIL = n.ID_PERFIL AND pp.ID_ITEM_ACAO = ia.ID_ITEM_ACAO);
 GO
