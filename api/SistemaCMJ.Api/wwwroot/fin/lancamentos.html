@@ -10,6 +10,7 @@
   <script src="/js/dicas.js" defer></script>
   <script src="/js/layout.js" defer></script>
   <script src="/js/seletor.js" defer></script>
+  <script src="/js/fin/baixa.js" defer></script>
   <script src="/js/fin/lancamentos.js" defer></script>
 </head>
 <body data-tela="fin/lancamentos.html" data-ajuda="fin-lancamentos" data-exige-tela>
@@ -128,10 +129,16 @@
 
       <div class="area-lista">
         <div class="cartao">
+          <div class="barra-marcadas" id="barra-marcadas" role="status" hidden>
+            <span id="marcadas-texto"></span>
+            <button type="button" class="botao botao-pequeno" id="botao-desmarcar" data-dica="Desmarca todas as parcelas marcadas.">Desmarcar</button>
+            <button type="button" class="botao botao-principal botao-pequeno" id="botao-baixar" data-dica="Abre a janela de baixa com as parcelas marcadas (podem ser de parceiros diferentes, todas desta tela).">Baixar marcadas</button>
+          </div>
           <div class="rolagem">
-            <table class="tabela tabela-larga tabela-lancamentos">
+            <table class="tabela tabela-larga tabela-lancamentos sem-marcar" id="tabela-lancamentos">
               <thead>
                 <tr>
+                  <th scope="col" class="col-marcar"><input type="checkbox" id="marcar-pagina" aria-label="Marcar as parcelas em aberto desta página" data-dica="Marca ou desmarca as parcelas em aberto desta página, para baixar juntas."></th>
                   <th scope="col">Vencimento</th>
                   <th scope="col" id="coluna-parceiro">Parceiro</th>
                   <th scope="col">Histórico / documento</th>
@@ -146,6 +153,7 @@
               <tbody id="linhas"></tbody>
               <tfoot id="totais" hidden>
                 <tr>
+                  <td class="col-marcar"></td>
                   <td colspan="5" class="forte">Total do filtro</td>
                   <td class="numero forte" id="total-valor"></td>
                   <td class="numero forte" id="total-baixado"></td>

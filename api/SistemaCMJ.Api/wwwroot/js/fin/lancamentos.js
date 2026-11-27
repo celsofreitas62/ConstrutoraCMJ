@@ -18,6 +18,10 @@
                pendências", filtros Pendência e Tipo de pendência, etiqueta na
                linha com as 3 primeiras ao passar o mouse (+N), vermelha quando
                a previsão já passou, cadeado quando bloqueia a baixa.
+               04g3c: na visão por parcela, quem tem BAIXAR marca as parcelas
+               em aberto (caixa na 1ª coluna; marca a página no cabeçalho) e
+               clica em "Baixar marcadas" (janela js/fin/baixa.js). As marcas
+               valem entre as páginas e são limpas ao mudar o filtro.
    ========================================================================== */
 'use strict';
 
@@ -190,17 +194,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     return td;
   }
 
+  // ---------- 04g3c: marcar parcelas para baixar ----------
+  const podeBaixar = acoes.has('BAIXAR');
+  const marcadas = new Map();   // ID_PARCELA -> saldo
+  let chaveFiltro = '';
+  let linhasNaTela = [];
+  const marcavel = (l) => podeBaixar && !!l.ID_PARCELA && !l.PREVISAO && Number(l.SALDO) > 0 && (l.SITUACAO === 'ABERTA' || l.SITUACAO === 'PARCIAL');
+  function atualizarMarcadas() {
+    const soma = [...marcadas.values()].reduce((s, v) => s + Math.round(Number(v) * 100), 0) / 100;
+    $('barra-marcadas').hidden = !marcadas.size;
+    $('marcadas-texto').textContent = marcadas.size + (marcadas.size === 1 ? ' parcela marcada' : ' parcelas marcadas') + ' · saldo ' + Util.moeda(soma);
+    const daPagina = linhasNaTela.filter(marcavel);
+    $('marcar-pagina').checked = daPagina.length > 0 && daPagina.every((l) => marcadas.has(l.ID_PARCELA));
+    $('marcar-pagina').disabled = !daPagina.length;
+  }
+  $('marcar-pagina').addEventListener('change', () => {
+    const ligar = $('marcar-pagina').checked;
+    for (const l of linhasNaTela.filter(marcavel)) { if (ligar) marcadas.set(l.ID_PARCELA, l.SALDO); else marcadas.delete(l.ID_PARCELA); }
+    desenhar(linhasNaTela);
+  });
+  $('botao-desmarcar').addEventListener('click', () => { marcadas.clear(); desenhar(linhasNaTela); });
+  $('botao-baixar').addEventListener('click', async () => {
+    if (!marcadas.size) return;
+    if (await Baixa.abrir({ parcelas: [...marcadas.keys()] })) {
+      marcadas.clear();
+      await carregar();
+      carregarResumo();
+    }
+  });
+
   function desenhar(linhas) {
+    linhasNaTela = linhas;
+    const comMarcas = podeBaixar && campos.visao.value !== 'LANCAMENTO';
+    $('tabela-lancamentos').classList.toggle('sem-marcar', !comMarcas);
     corpo.replaceChildren();
     if (linhas.length === 0) {
       const tr = Util.el('tr');
       const td = Util.el('td', 'vazio', 'Nenhum lançamento encontrado com esses filtros.');
-      td.colSpan = 9;
+      td.colSpan = 10;
       tr.append(td);
       corpo.append(tr);
     }
     for (const l of linhas) {
-      const tr = Util.el('tr', 'clicavel' + (l.VENCIDA ? ' linha-vencida' : ''));
+      const tr = Util.el('tr', 'clicavel' + (l.VENCIDA ? ' linha-vencida' : '') + (marcadas.has(l.ID_PARCELA) ? ' linha-marcada' : ''));
+      const tdMarcar = Util.el('td', 'col-marcar');
+      if (comMarcas && marcavel(l)) {
+        const marca = Util.el('input');
+        marca.type = 'checkbox';
+        marca.checked = marcadas.has(l.ID_PARCELA);
+        marca.setAttribute('aria-label', 'Marcar a parcela ' + textoParcela(l) + ' de ' + (l.PESSOA_NOME || 'sem parceiro') + ' para baixar');
+        marca.dataset.dica = 'Marca a parcela para baixar junto com outras (botão "Baixar marcadas").';
+        marca.addEventListener('click', (e) => e.stopPropagation());
+        marca.addEventListener('keydown', (e) => e.stopPropagation());
+        marca.addEventListener('change', () => {
+          if (marca.checked) marcadas.set(l.ID_PARCELA, l.SALDO); else marcadas.delete(l.ID_PARCELA);
+          tr.classList.toggle('linha-marcada', marca.checked);
+          atualizarMarcadas();
+        });
+        tdMarcar.append(marca);
+        tdMarcar.addEventListener('click', (e) => { e.stopPropagation(); if (e.target === tdMarcar) marca.click(); });
+      }
       tr.tabIndex = 0;
       const abrir = () => { location.href = '/fin/lancamento.html?tipo=' + tipo + '&id=' + encodeURIComponent(l.ID_LANCAMENTO); };
       tr.addEventListener('click', abrir);
@@ -212,7 +265,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const etiqueta = etiquetaPendencias(l);
       if (etiqueta) { sit.append(Util.el('br'), etiqueta); }
       tr.append(
-        celula(Util.data(l.DT_VENCIMENTO), l.ID_PARCELA ? null : 'primeiro em aberto'),
+        tdMarcar,
+        celula(Util.data(l.DT_VENCIMENTO), l.ID_PARCELA ? null : 'primeiro em aberto', 'col-vencimento'),
         celula(l.PESSOA_NOME || '(sem parceiro)', l.EMPRESA_NOME, 'forte'),
         celula(l.HISTORICO, [l.DOCUMENTO, 'nº ' + l.ID_LANCAMENTO].filter(Boolean).join(' · ')),
         celula(textoParcela(l)),
@@ -223,6 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sit);
       corpo.append(tr);
     }
+    atualizarMarcadas();
   }
 
   function desenharRodape(linhas) {
@@ -247,6 +302,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function carregar() {
     const meu = ++pedido;
     const f = lerFiltro();
+    const chave = JSON.stringify({ ...f });
+    if (chave !== chaveFiltro) { chaveFiltro = chave; marcadas.clear(); }
     guardarUltimo();
     marcarContador();
     $('contagem').textContent = 'Buscando…';
