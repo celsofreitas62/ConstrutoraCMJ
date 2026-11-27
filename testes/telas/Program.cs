@@ -1064,6 +1064,8 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
         if (await pagina.Locator("#agenda").IsHiddenAsync()) motivo14 = "o usuario de teste nao ve a agenda (VER em FIN_AGENDA)";
         if (motivo14.Length == 0)
         {
+            // 04h3: a tela pode abrir em calendário (preferência INICIO_VISAO); este passo confere a lista.
+            if (await pagina.Locator("#visao-lista").GetAttributeAsync("aria-pressed") != "true") await pagina.Locator("#visao-lista").ClickAsync();
             await pagina.Locator("#periodo").SelectOptionAsync("MES");
             await EsperarLista14();
             var mes = (await pagina.Locator("#periodo-texto").InnerTextAsync()).Trim();
@@ -1217,6 +1219,109 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     catch (Exception erro) { motivo15 = erro.Message.Split('\n')[0]; }
     Linha(motivo15.Length == 0, "telas menores (1366x768 e 1280x720, menu aberto e recolhido), tamanho das letras (" + relogio15.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo15);
     if (motivo15.Length > 0) await Foto("telas_menores");
+}
+
+// ---------------------------------------------------------------- 16) Calendário da agenda (04h3, 27/11/2026)
+// Lista > Calendário; no Mês, a grade de segunda a domingo tem 1 quadro por dia do mês e a soma do D dos quadros bate
+// com o D da barra; clique num quadro com conta abre a lista só dele (barra "Mostrando") e Voltar ao calendário volta;
+// abrir o lançamento pela lista do quadro e voltar pela ficha cai de novo na lista do quadro, e Esc volta ao calendário;
+// Ano = 12 quadros; Vários anos = uma faixa por ano; a dica do quadro traz "Maiores contas". Fotos em 1366 x 768.
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    var relogio16 = Stopwatch.StartNew();
+    var motivo16 = "";
+    try
+    {
+        async Task EsperarCal16() =>
+            await pagina.WaitForFunctionAsync("() => { const c = document.getElementById('contagem-calendario'); return c && c.textContent && c.textContent !== 'Buscando…' && !document.getElementById('cartao-calendario').hidden; }", null, new() { Timeout = 20000 });
+        async Task EsperarLista16() =>
+            await pagina.WaitForFunctionAsync("() => { const c = document.getElementById('contagem'); return c && c.textContent && c.textContent !== 'Buscando…' && !document.getElementById('cartao-lista').hidden; }", null, new() { Timeout = 20000 });
+
+        await pagina.SetViewportSizeAsync(1366, 768);
+        await pagina.GotoAsync(endereco + "/", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+        if (await pagina.Locator("#visao-lista").GetAttributeAsync("aria-pressed") != "true") { await pagina.Locator("#visao-lista").ClickAsync(); await EsperarLista16(); }
+        await pagina.Locator("#periodo").SelectOptionAsync("MES");
+        await pagina.Locator("#periodo-hoje").ClickAsync();
+        await EsperarLista16();
+        await pagina.Locator("#visao-calendario").ClickAsync();
+        await EsperarCal16();
+
+        // a) mês: um quadro por dia e o D bate com a barra
+        var diasMes = DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month);
+        var quadros = await pagina.Locator("#calendario .cal-quadro:not(.cal-fora)").CountAsync();
+        if (quadros != diasMes) motivo16 = "mes: esperava " + diasMes + " quadros, vieram " + quadros;
+        if (motivo16.Length == 0 && await pagina.Locator("#calendario .cal-hoje").CountAsync() != 1) motivo16 = "mes: o dia de hoje nao esta em destaque";
+        if (motivo16.Length == 0)
+        {
+            var barraD = (await pagina.Locator("#valor-d").InnerTextAsync()).Trim();
+            if (barraD != "—" && !await pagina.Locator("#quadro-d").IsHiddenAsync())
+            {
+                var somaD = await pagina.EvaluateAsync<string>("() => { let t = 0; for (const e of document.querySelectorAll('#calendario .cal-linha')) if (e.firstChild.textContent === 'D') t += Util.lerMoeda(e.lastChild.textContent); return Util.moeda(t); }");
+                if (somaD != barraD) motivo16 = "mes: soma do D dos quadros " + somaD + " diferente da barra " + barraD;
+            }
+        }
+        if (motivo16.Length == 0) await Foto("visual_calendario_mes_1366");
+
+        // b) clique num quadro com conta > lista do quadro > lançamento > voltar > Esc
+        var comConta = pagina.Locator("#calendario button.cal-quadro");
+        if (motivo16.Length == 0 && await comConta.CountAsync() > 0)
+        {
+            var de = await comConta.First.GetAttributeAsync("data-de");
+            await pagina.WaitForFunctionAsync("() => { const b = document.querySelector('#calendario button.cal-quadro'); return b && b.dataset.dica && b.dataset.dica.startsWith('Maiores contas'); }", null, new() { Timeout = 20000 });
+            await comConta.First.ClickAsync();
+            await EsperarLista16();
+            if (await pagina.Locator("#barra-recorte").IsHiddenAsync()) motivo16 = "quadro: a barra 'Mostrando' nao apareceu";
+            var fora = await pagina.EvaluateAsync<int>("(de) => [...document.querySelectorAll('#linhas tr.linha-dia .dia-titulo')].filter(e => !e.textContent.includes(de.split('-').reverse().join('/'))).length", de);
+            if (motivo16.Length == 0 && fora > 0) motivo16 = "quadro: a lista trouxe outros dias alem de " + de;
+            if (motivo16.Length == 0)
+            {
+                await pagina.Locator("#linhas tr.clicavel").First.ClickAsync();
+                await pagina.WaitForURLAsync("**/fin/lancamento.html**", new() { Timeout = 20000 });
+                await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                await pagina.Locator("#link-voltar").ClickAsync();
+                await pagina.WaitForURLAsync(endereco + "/", new() { Timeout = 20000 });
+                await EsperarLista16();
+                if (await pagina.Locator("#barra-recorte").IsHiddenAsync()) motivo16 = "voltar da ficha: nao caiu na lista do quadro";
+            }
+            if (motivo16.Length == 0)
+            {
+                await pagina.EvaluateAsync("() => document.getElementById('contagem-calendario').textContent = ''");
+                await pagina.Keyboard.PressAsync("Escape");
+                await EsperarCal16();
+            }
+        }
+
+        // c) ano e vários anos
+        if (motivo16.Length == 0)
+        {
+            await pagina.EvaluateAsync("() => document.getElementById('contagem-calendario').textContent = ''");
+            await pagina.Locator("#periodo").SelectOptionAsync("ANO");
+            await EsperarCal16();
+            var meses = await pagina.Locator("#calendario .cal-mes").CountAsync();
+            if (meses != 12) motivo16 = "ano: esperava 12 quadros, vieram " + meses;
+            else await Foto("visual_calendario_ano_1366");
+        }
+        if (motivo16.Length == 0)
+        {
+            await pagina.EvaluateAsync("() => document.getElementById('contagem-calendario').textContent = ''");
+            await pagina.Locator("#periodo").SelectOptionAsync("ANOS");
+            await EsperarCal16();
+            var anos = await pagina.Locator("#anos").InputValueAsync();
+            var faixas = await pagina.Locator("#calendario .cal-faixa-ano").CountAsync();
+            if (faixas.ToString() != anos) motivo16 = "varios anos: esperava " + anos + " faixas, vieram " + faixas;
+            else await Foto("visual_calendario_anos_1366");
+        }
+        // deixa como estava: mês, em lista
+        await pagina.Locator("#periodo").SelectOptionAsync("MES");
+        await pagina.Locator("#visao-lista").ClickAsync();
+        await pagina.SetViewportSizeAsync(1366, 900);
+        if (motivo16.Length == 0 && errosJs.Count > 0) motivo16 = "erro de JavaScript: " + errosJs[0];
+        if (motivo16.Length == 0 && errosApi.Count > 0) motivo16 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo16 = erro.Message.Split('\n')[0]; }
+    Linha(motivo16.Length == 0, "calendario da agenda: mes, clique no quadro, voltar por nivel, ano e varios anos (" + relogio16.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo16);
+    if (motivo16.Length > 0) await Foto("calendario");
 }
 
 // ---------------------------------------------------------------- Fim
