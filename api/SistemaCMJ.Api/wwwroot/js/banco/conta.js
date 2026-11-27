@@ -123,6 +123,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       aviso.append(link, document.createTextNode('.'));
       aviso.hidden = false;
     }
+    $('link-extrato').href = '/banco/extrato.html?conta=' + encodeURIComponent(idConta);
+    $('link-extrato').hidden = naLixeira || !Layout.acoesDe('banco/extrato.html').has('VER');
     $('botao-excluir').hidden = naLixeira || temMovimento || !acoes.has('EXCLUIR');
     $('botao-desativar').hidden = naLixeira || !ativo || !acoes.has('DESATIVAR');
     $('botao-reativar').hidden = naLixeira || ativo || !acoes.has('DESATIVAR');

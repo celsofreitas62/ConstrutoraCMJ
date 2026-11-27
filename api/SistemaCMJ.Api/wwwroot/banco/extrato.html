@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Extrato e saldos</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/seletor.js" defer></script>
+  <script src="/js/cad/rotulos.js" defer></script>
+  <script src="/js/banco/extrato.js" defer></script>
+</head>
+<body data-tela="banco/extrato.html" data-ajuda="banco-extrato" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Bancos › Extrato e saldos</div>
+          <h1>Extrato e saldos</h1>
+        </div>
+        <a data-dica="Abre a tela de transferências entre contas." class="botao" href="/banco/transferencias.html" id="link-transferencias" hidden>Transferências</a>
+        <a data-dica="Abre a tela de fechamento de caixa." class="botao" href="/banco/caixa.html" id="link-caixa" hidden>Fechamento de caixa</a>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <section class="cartao secao-saldos" aria-labelledby="titulo-saldos">
+        <form class="filtros" id="filtros-saldos">
+          <h2 class="secao-titulo" id="titulo-saldos">Saldos das contas</h2>
+          <label data-dica="Dia do saldo: o saldo de cada conta no fim deste dia. Padrão: hoje." class="campo f-1">Saldo em
+            <input type="date" id="saldo-data">
+          </label>
+          <label data-dica="Mostra só as contas de uma empresa." class="campo f-1">Empresa
+            <select id="saldo-empresa"><option value="">Todas</option></select>
+          </label>
+          <label data-dica="Mostra também as contas ativas que estão marcadas para não aparecer no resumo de saldos (campo da ficha da conta)." class="marcacao">
+            <input type="checkbox" id="saldo-todas"> Todas as contas
+          </label>
+          <label data-dica="Mostra também as contas desativadas." class="marcacao">
+            <input type="checkbox" id="saldo-inativas"> Inativas
+          </label>
+          <button data-dica="Baixa os saldos que estão na tela num arquivo que o Excel abre." type="button" class="botao" id="exportar-saldos" hidden>Exportar Excel</button>
+        </form>
+        <div class="rolagem">
+          <table class="tabela tabela-larga tabela-saldos">
+            <thead>
+              <tr>
+                <th scope="col">Empresa</th>
+                <th scope="col">Conta</th>
+                <th scope="col">Tipo</th>
+                <th scope="col" class="numero">Saldo</th>
+                <th scope="col" class="numero">Limite</th>
+                <th scope="col" class="numero">Disponível</th>
+                <th scope="col">Último movimento</th>
+                <th scope="col">Conciliação</th>
+                <th scope="col">Fechamento de caixa</th>
+              </tr>
+            </thead>
+            <tbody id="saldos"></tbody>
+            <tfoot id="saldos-total"></tfoot>
+          </table>
+        </div>
+        <div class="rodape-lista">
+          <span id="saldos-contagem" aria-live="polite"></span>
+          <span>Clique na linha para ver o extrato do mês; no valor Disponível, os últimos 30 dias</span>
+        </div>
+      </section>
+
+      <section class="cartao secao-extrato" aria-labelledby="titulo-extrato" id="secao-extrato">
+        <form class="filtros" id="filtros-extrato" role="search">
+          <h2 class="secao-titulo" id="titulo-extrato">Extrato da conta</h2>
+          <div class="campo f-2" data-dica="Conta bancária ou caixa do extrato. Digite parte da descrição ou o número e escolha na lista. Obrigatória.">Conta *<div id="seletor-conta"></div></div>
+          <label data-dica="Primeiro dia do extrato. Obrigatório." class="campo f-1">De *
+            <input type="date" id="extrato-de">
+          </label>
+          <label data-dica="Último dia do extrato. Obrigatório. O período tem um limite de dias (parâmetro BANCO_EXTRATO_MAX_DIAS)." class="campo f-1">Até *
+            <input type="date" id="extrato-ate">
+          </label>
+          <label data-dica="Procura no histórico, no documento ou no nome do parceiro. Os saldos continuam contando todas as linhas." class="campo f-2">Procurar
+            <input type="search" id="extrato-texto" maxlength="100" placeholder="Ex.: aluguel" autocomplete="off">
+          </label>
+          <label data-dica="Esconde os movimentos estornados e os estornos deles. Só esconde: o saldo continua contando tudo (o par estornado soma zero)." class="marcacao">
+            <input type="checkbox" id="extrato-ocultar"> Esconder estornados
+          </label>
+          <div class="grupo-botoes" role="group" aria-label="Períodos rápidos">
+            <button type="button" class="botao botao-pequeno" data-periodo="mes" data-dica="Do dia 1º deste mês até hoje.">Este mês</button>
+            <button type="button" class="botao botao-pequeno" data-periodo="anterior" data-dica="O mês passado inteiro.">Mês passado</button>
+            <button type="button" class="botao botao-pequeno" data-periodo="30" data-dica="Os últimos 30 dias, até hoje.">30 dias</button>
+          </div>
+          <button data-dica="Baixa o extrato que está na tela num arquivo que o Excel abre." type="button" class="botao" id="exportar-extrato" hidden>Exportar Excel</button>
+        </form>
+
+        <div class="contadores contadores-fixos" id="extrato-resumo" hidden>
+          <div class="contador contador-fixo"><span class="contador-rotulo" id="rotulo-anterior">Saldo anterior</span><span class="contador-valor" id="valor-anterior">–</span></div>
+          <div class="contador contador-fixo contador-entradas"><span class="contador-rotulo">Entradas</span><span class="contador-valor" id="valor-entradas">–</span></div>
+          <div class="contador contador-fixo contador-saidas"><span class="contador-rotulo">Saídas</span><span class="contador-valor" id="valor-saidas">–</span></div>
+          <div class="contador contador-fixo contador-final"><span class="contador-rotulo" id="rotulo-final">Saldo final</span><span class="contador-valor" id="valor-final">–</span></div>
+        </div>
+
+        <div class="rolagem">
+          <table class="tabela tabela-larga tabela-extrato">
+            <thead>
+              <tr>
+                <th scope="col">Data</th>
+                <th scope="col">Histórico</th>
+                <th scope="col">Documento</th>
+                <th scope="col">Origem</th>
+                <th scope="col" class="numero">Entrada</th>
+                <th scope="col" class="numero">Saída</th>
+                <th scope="col" class="numero">Saldo</th>
+                <th scope="col">Situação</th>
+              </tr>
+            </thead>
+            <tbody id="extrato"></tbody>
+          </table>
+        </div>
+        <div class="rodape-lista">
+          <span id="extrato-contagem" aria-live="polite"></span>
+          <span>Clique na origem para abrir o lançamento ou a transferência</span>
+        </div>
+      </section>
+      <aside class="cartao ajuda" id="ajuda" hidden></aside>
+    </main>
+  </div>
+</body>
+</html>

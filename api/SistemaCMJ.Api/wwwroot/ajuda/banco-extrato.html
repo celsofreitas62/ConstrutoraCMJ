@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Extrato e saldos</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> ver quanto tem em cada conta e caixa num dia e o extrato de uma conta, com o saldo linha a linha.</p>
+  <h2>Saldos das contas</h2>
+  <ul>
+    <li><strong>Saldo em</strong>: o saldo de cada conta no fim do dia escolhido (padrão: hoje).</li>
+    <li><strong>Disponível</strong> = saldo + limite de crédito da conta. Valores negativos ficam em vermelho.</li>
+    <li><strong>Todas as contas</strong> mostra também as contas que estão marcadas para não aparecer no resumo; <strong>Inativas</strong>, as desativadas.</li>
+    <li><strong>Conciliação</strong>: nas contas que conciliam pelo extrato do banco (OFX), quantos movimentos ainda não foram conferidos.</li>
+    <li><strong>Fechamento de caixa</strong>: nos caixas, a data do último fechamento. A etiqueta vermelha <strong>Fechamento atrasado</strong> aparece quando há movimento sem fechar há mais dias do que o parâmetro FIN_CAIXA_FECHAMENTO_ATRASO_DIAS.</li>
+    <li>Clique na linha para ver o <strong>extrato do mês</strong> da conta; clique no valor <strong>Disponível</strong> para ver os <strong>últimos 30 dias</strong>.</li>
+  </ul>
+  <h2>Extrato da conta</h2>
+  <ul>
+    <li>Escolha a <strong>conta</strong> e o <strong>período</strong> (ou use os botões Este mês, Mês passado e 30 dias). O período tem um limite de dias (parâmetro BANCO_EXTRATO_MAX_DIAS).</li>
+    <li>A primeira linha é o <strong>saldo anterior</strong> (fim do dia antes do início do período). Se o saldo inicial da conta cai dentro do período, aparece a linha <strong>Saldo inicial da conta</strong>.</li>
+    <li>Cada movimento mostra a <strong>entrada</strong> ou a <strong>saída</strong> e o <strong>saldo</strong> logo depois dele. Em cima, os totais de entradas e saídas e o saldo final.</li>
+    <li><strong>Origem</strong>: clique para abrir o lançamento (na aba Baixas) ou a transferência. No pagamento em lote aparece quantas parcelas foram pagas juntas.</li>
+    <li><strong>Procurar</strong> filtra pelo histórico, documento ou nome do parceiro; <strong>Esconder estornados</strong> tira da tela os movimentos estornados. Os dois só escondem linhas: o saldo continua contando tudo.</li>
+    <li><strong>Exportar Excel</strong> baixa os saldos ou o extrato que estão na tela.</li>
+  </ul>
+  <h2>Cuidados</h2>
+  <ul>
+    <li>Um estorno aparece como duas linhas (o movimento e o inverso dele), que juntas somam zero; as duas ficam com a etiqueta <strong>Estornado</strong>.</li>
+    <li>Movimento com data <strong>antes do saldo inicial</strong> da conta aparece com a etiqueta <strong>Histórico</strong> e não mexe no saldo.</li>
+    <li>Para acertar um saldo, não mexa no saldo inicial: faça uma transferência, um lançamento ou o fechamento de caixa com ajuste.</li>
+    <li>Também dá para abrir esta tela pelo botão <strong>Ver extrato</strong> da ficha da conta ou pelo botão <strong>Extrato</strong> da lista de contas.</li>
+  </ul>
+</body>
+</html>

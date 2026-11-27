@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('botao-incluir').hidden = !acoes.has('INCLUIR');
   $('botao-exportar').hidden = !acoes.has('EXPORTAR');
   $('link-lixeira').hidden = !Layout.acoesDe('sis/lixeira.html').has('VER');
+  const verExtrato = Layout.acoesDe('banco/extrato.html').has('VER'); // atalho "Ver extrato" (04g4a)
+  $('coluna-extrato').hidden = !verExtrato;
 
   let salvos = {};
   try { salvos = JSON.parse(sessionStorage.getItem(CHAVE_FILTROS) || '{}'); } catch { salvos = {}; }
@@ -54,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (visiveis.length === 0) {
       const tr = Util.el('tr');
       const td = Util.el('td', 'vazio', 'Nenhuma conta encontrada com esses filtros.');
-      td.colSpan = 9;
+      td.colSpan = verExtrato ? 10 : 9;
       tr.append(td);
       corpo.append(tr);
     }
@@ -77,6 +79,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         Util.el('td', null, c.CONCILIA ? 'Sim' : ''),
         Util.el('td', null, c.PADRAO_DA_EMPRESA ? 'Padrão' : ''),
         sit);
+      if (verExtrato) {
+        const tdExt = Util.el('td', 'col-extrato');
+        const ext = Util.el('a', 'botao botao-pequeno', 'Extrato');
+        ext.href = '/banco/extrato.html?conta=' + encodeURIComponent(c.ID_CONTA);
+        ext.dataset.dica = 'Abre o extrato deste mês desta conta.';
+        ext.addEventListener('click', (ev) => ev.stopPropagation());
+        tdExt.append(ext);
+        tr.append(tdExt);
+      }
       corpo.append(tr);
     }
     $('contagem').textContent = visiveis.length === 1 ? '1 conta' : visiveis.length + ' contas';

@@ -519,3 +519,25 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .tabela-lancamentos tr.linha-marcada td { background: #EEF3FB; }
 .barra-marcadas { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 14px; background: #EEF3FB; border-bottom: 1px solid var(--borda); font-size: 13px; }
 .barra-marcadas #marcadas-texto { margin-right: auto; font-weight: 600; }
+
+/* 04g4a: Extrato e saldos (banco/extrato.html) */
+.secao-saldos, .secao-extrato { margin-bottom: 16px; }
+.secao-titulo { flex: 1 0 100%; margin: 0; font-size: 15px; }
+.grupo-botoes { display: inline-flex; flex-wrap: wrap; gap: 6px; align-self: flex-end; }
+.botao-link { background: none; border: 0; padding: 0; font: inherit; color: var(--cor-principal); text-decoration: underline; cursor: pointer; }
+.valor-negativo, .valor-negativo .botao-link { color: var(--erro); }
+.tabela-saldos td.numero, .tabela-saldos th.numero, .tabela-extrato td.numero, .tabela-extrato th.numero { text-align: right; white-space: nowrap; }
+.tabela-saldos .sub, .tabela-extrato .sub { display: block; font-size: 11px; font-weight: 400; color: var(--texto-suave); margin-top: 2px; }
+.tabela-saldos tr.linha-marcada td { background: #EEF3FB; }
+.tabela-saldos tfoot td { border-top: 2px solid var(--borda); background: #FAFAF9; }
+.tabela-extrato tr.linha-saldo td { background: #FAFAF9; }
+.tabela-extrato tr.linha-estornada td { color: var(--texto-suave); }
+.contadores-fixos { padding: 0 14px; }
+.contador-fixo { cursor: default; }
+.contador-fixo:hover { background: var(--branco); }
+.contador-entradas { border-left-color: var(--sucesso); }
+.contador-saidas { border-left-color: var(--erro); }
+.contador-final { border-left-color: var(--cor-principal); }
+.etiqueta-estornado { background: #EFEFED; color: #555555; text-decoration: line-through; }
+.etiqueta-conciliado { background: #E7F3E8; color: #1E6B22; }
+.col-extrato { width: 80px; text-align: center; }
