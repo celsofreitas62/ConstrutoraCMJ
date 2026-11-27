@@ -22,6 +22,8 @@
                         pendência que bloqueia, com justificativa) e
                         DESCONTO_LIMITE (desconto na baixa acima do
                         limite do parâmetro, com motivo).
+    v1.7 (27/11/2026) - Etapa 04g2: AJUSTE_CAIXA (gerar o movimento de
+                        ajuste da diferença no fechamento de caixa).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -53,7 +55,8 @@ FROM (VALUES
         ('LANCAR_RETROATIVO', N'Lançar fora da trava de datas (com motivo)', 200),
         ('PENDENCIA',        N'Pendências (incluir, resolver, reabrir)', 210),
         ('LIBERAR_PENDENCIA', N'Baixar com pendência que bloqueia (com justificativa)', 220),
-        ('DESCONTO_LIMITE', N'Desconto na baixa acima do limite (com motivo)', 230)
+        ('DESCONTO_LIMITE', N'Desconto na baixa acima do limite (com motivo)', 230),
+        ('AJUSTE_CAIXA',     N'Ajustar a diferença no fechamento de caixa', 240)
      ) v (CODIGO, NOME, ORDEM)
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Acao a WHERE a.CODIGO = v.CODIGO);
 GO

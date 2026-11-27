@@ -9,6 +9,10 @@
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c).
+    v1.1 (27/11/2026) - Etapa 04g2: DOCUMENTO e dados do estorno (DT_ESTORNO =
+                        data do estorno no banco/caixa, MOTIVO_ESTORNO,
+                        USUARIO_ESTORNO, DT_HORA_ESTORNO, ID_LOTE_ESTORNO);
+                        índice pela data.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -40,4 +44,27 @@ BEGIN
         CONSTRAINT CK_Transferencia_SITUACAO CHECK (SITUACAO IN ('ATIVA', 'ESTORNADA'))
     );
 END;
+GO
+
+IF COL_LENGTH(N'FIN.Transferencia', N'DOCUMENTO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD DOCUMENTO NVARCHAR(40) NOT NULL CONSTRAINT DF_Transferencia_DOCUMENTO DEFAULT (N'');
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'DT_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD DT_ESTORNO DATE NULL;
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'MOTIVO_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD MOTIVO_ESTORNO NVARCHAR(400) NULL;
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'USUARIO_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD USUARIO_ESTORNO NVARCHAR(100) NULL;
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'DT_HORA_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD DT_HORA_ESTORNO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'ID_LOTE_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD ID_LOTE_ESTORNO BIGINT NULL
+        CONSTRAINT FK_Transferencia_Lote_Estorno FOREIGN KEY REFERENCES [SIS].[Lote] (ID_LOTE);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[FIN].[Transferencia]') AND i.name = N'IX_Transferencia_DATA')
+    CREATE NONCLUSTERED INDEX IX_Transferencia_DATA ON [FIN].[Transferencia] (DT_TRANSFERENCIA) INCLUDE (ID_CONTA_ORIGEM, ID_CONTA_DESTINO, VALOR, SITUACAO);
 GO
