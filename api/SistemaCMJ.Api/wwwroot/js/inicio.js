@@ -21,11 +21,13 @@
                - atualiza sozinha a cada AGENDA_ATUALIZAR_MIN minutos
                  (0 = não atualiza; sugestão aprovada na 04h2).
                - visão Lista ou Calendário (04h3; js/agenda-calendario.js):
-                 dia a dia na semana, quinzena e mês; a escolha fica
-                 lembrada neste computador.
+                 dia a dia na semana, quinzena e mês; um quadro por mês do
+                 bimestre ao ano; faixas por ano em vários anos; a escolha
+                 fica lembrada neste computador.
    Changelog:
      v2.0 (27/11/2026) - Agenda financeira (etapa 04h2).
-     v2.1 (27/11/2026) - Visão calendário da semana, quinzena e mês (04h3a).
+     v2.1 (27/11/2026) - Visão calendário da semana, quinzena e mês (04h3a);
+                         quadros por mês e faixas por ano (04h3b).
    ========================================================================== */
 'use strict';
 
@@ -458,7 +460,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ---------- calendário ----------
   /** Como agrupar os quadros do período: dia a dia, por mês ou por grupo de meses. */
   function agrupamento() {
-    return { modo: 'DIA', meses: null };
+    switch (estado.periodo) {
+      case 'SEMANA': case 'QUINZENA': case 'MES': return { modo: 'DIA', meses: null };
+      case 'LIVRE': {
+        const [i, f] = intervalo();
+        const dias = i && f ? Math.round((f - i) / 86400000) + 1 : 0;
+        return { modo: dias <= 62 ? 'DIA' : 'MES', meses: null };
+      }
+      default: return { modo: 'MES', meses: null }; // bimestre a vários anos: um quadro por mês
+    }
   }
 
   async function carregarCalendario() {
@@ -471,7 +481,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (meu !== pedido) return;
     if (!(await Mensagens.tratar(r))) { $('contagem-calendario').textContent = ''; return; }
     const quadros = r.dados || [];
-    AgendaCalendario.desenhar($('calendario'), { quadros, modo: ag.modo, ini: iso(ini), fim: iso(fim), resumo: resumo || {}, tipo: estado.tipo });
+    AgendaCalendario.desenhar($('calendario'), { quadros, modo: ag.modo, ini: iso(ini), fim: iso(fim), resumo: resumo || {}, tipo: estado.tipo, anos: estado.periodo === 'ANOS' });
     const qp = resumo && resumo.VER_PAGAR && estado.tipo !== 'R' ? quadros.reduce((t, q) => t + (Number(q.QTD_PAGAR) || 0), 0) : 0;
     const qr = resumo && resumo.VER_RECEBER && estado.tipo !== 'P' ? quadros.reduce((t, q) => t + (Number(q.QTD_RECEBER) || 0), 0) : 0;
     $('contagem-calendario').textContent = qtdTexto(qp + qr, 'parcela', 'parcelas') + ' no período';

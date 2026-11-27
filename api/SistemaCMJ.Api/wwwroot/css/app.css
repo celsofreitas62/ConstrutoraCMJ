@@ -663,3 +663,20 @@ button.cal-quadro:hover, button.cal-quadro:focus-visible { border-color: var(--c
 .cal-calor-c .cal-quadro.calor-3 { background: #DAE6F6; }
 .cal-calor-c .cal-quadro.calor-4 { background: #C9DAF1; }
 .cal-linha.cal-zero { color: #B8B8B4; }
+/* 04h3b: quadros por mês e faixas por ano */
+.cal-grade-meses { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cal-grade-meses.cal-colunas-1 { grid-template-columns: minmax(0, 1fr); }
+.cal-grade-meses.cal-colunas-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cal-grade-meses.cal-colunas-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cal-grade-meses.cal-colunas-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.cal-mes { min-height: 110px; }
+.cal-mes .cal-titulo { font-size: 14px; }
+.cal-mes .cal-valores { font-size: 13px; }
+.cal-faixa-ano + .cal-faixa-ano { margin-top: 16px; }
+.cal-faixa-cabeca { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--borda); }
+.cal-faixa-titulo { margin: 0; font-size: 17px; }
+.cal-faixa-total { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cal-faixa-previsto { color: #6B4FA0; font-weight: 400; }
+.cal-faixa-total .cal-qtd { font-weight: 400; }
+@media (max-width: 1100px) { .cal-grade-meses.cal-colunas-6 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .cal-grade-meses, .cal-grade-meses.cal-colunas-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -5,8 +5,13 @@
    Criação   : 27/11/2026 (etapa 04h3)
    Descrição : Visão calendário da agenda financeira (tela inicial, P03/P04).
                Desenha os quadros que vêm do /api/fin/agenda/periodos:
-                 - modo DIA (semana, quinzena, mês): grade de segunda a
-                   domingo; dias fora do período ficam apagados;
+                 - modo DIA (semana, quinzena, mês e datas escolhidas até
+                   62 dias): grade de segunda a domingo; dias fora do
+                   período ficam apagados;
+                 - modo MES: um quadro por mês (bimestre, trimestre e
+                   quadrimestre lado a lado; ano em 4 × 3; datas escolhidas
+                   longas); em "Vários anos" (opção anos: true) uma faixa
+                   por ano com os 12 meses e o total do ano na faixa;
                Em cada quadro: D, C e S alinhados à direita (cores do P03),
                saldo previsto em letra menor, contagem a pagar / a receber,
                hoje em destaque, borda vermelha quando há vencida em aberto
@@ -19,11 +24,13 @@
                fim, resumo, tipo, aoClicar }).
    Changelog:
      v1.0 (27/11/2026) - Modo DIA (etapa 04h3a).
+     v1.1 (27/11/2026) - Modo MES, faixas por ano (etapa 04h3b).
    ========================================================================== */
 'use strict';
 
 const AgendaCalendario = (() => {
   const SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  const NOMES_MES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
   const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -135,6 +142,72 @@ const AgendaCalendario = (() => {
     alvo.append(grade);
   }
 
+  /** Título do quadro do mês: "Janeiro", "jan/2027" ou "10 a 30 nov" quando o período corta o mês. */
+  function tituloMes(q, comAno) {
+    const i = lerIso(q.INICIO);
+    const f = lerIso(q.FIM);
+    const inteiro = i.getDate() === 1 && somarDias(f, 1).getDate() === 1;
+    if (!inteiro) return i.getDate() + ' a ' + f.getDate() + ' ' + MESES[i.getMonth()] + (comAno ? '/' + i.getFullYear() : '');
+    return comAno ? MESES[i.getMonth()] + '/' + i.getFullYear() : NOMES_MES[i.getMonth()];
+  }
+
+  /** Soma de vários quadros (total do ano na faixa de "Vários anos"). */
+  function somar(qs) {
+    const t = { QTD_PAGAR: 0, QTD_RECEBER: 0, QTD_VENCIDAS: 0, QTD_PREVISAO: 0, TOTAL_D: 0, TOTAL_C: 0, SALDO: 0 };
+    for (const q of qs) for (const k of Object.keys(t)) t[k] += Number(q[k]) || 0;
+    t.SALDO_PREVISTO = qs.length ? qs[qs.length - 1].SALDO_PREVISTO : null;
+    return t;
+  }
+
+  /** Modo MES: quadros por mês; em vários anos, uma faixa por ano. */
+  function desenharMeses(alvo, opcoes, m) {
+    const quadros = [...(opcoes.quadros || [])].sort((a, b) => a.ORDEM - b.ORDEM);
+    const caixas = [];
+    const variosAnos = new Set(quadros.map((q) => lerIso(q.INICIO).getFullYear())).size > 1;
+    const montar = (lista, colunas, comAno) => {
+      const grade = Util.el('div', 'cal-grade cal-grade-meses cal-colunas-' + colunas);
+      if (!m.d) grade.classList.add('cal-calor-c');
+      for (const q of lista) {
+        const caixa = quadro(q, m, opcoes, tituloMes(q, comAno), 'cal-mes' + (lerIso(q.FIM) < hoje() ? ' cal-passado' : ''));
+        caixas.push([q, caixa]);
+        grade.append(caixa);
+      }
+      return grade;
+    };
+    if (opcoes.anos) {
+      const porAno = new Map();
+      for (const q of quadros) {
+        const a = lerIso(q.INICIO).getFullYear();
+        if (!porAno.has(a)) porAno.set(a, []);
+        porAno.get(a).push(q);
+      }
+      for (const [ano, lista] of porAno) {
+        const faixa = Util.el('section', 'cal-faixa-ano');
+        const cab = Util.el('div', 'cal-faixa-cabeca');
+        cab.append(Util.el('h3', 'cal-faixa-titulo', String(ano)));
+        const total = somar(lista);
+        const resumoAno = Util.el('div', 'cal-faixa-total');
+        if (m.totais) {
+          if (m.d) resumoAno.append(Util.el('span', 'valor-d', 'D ' + Util.moeda(total.TOTAL_D)));
+          if (m.c) resumoAno.append(Util.el('span', 'valor-c', 'C ' + Util.moeda(total.TOTAL_C)));
+          if (m.s) resumoAno.append(Util.el('span', 'cal-faixa-saldo ' + (total.SALDO < 0 ? 'valor-d' : 'valor-c'), 'S ' + Util.moeda(total.SALDO)));
+          if (m.previsto && total.SALDO_PREVISTO != null) resumoAno.append(Util.el('span', 'cal-faixa-previsto', 'previsto no fim ' + Util.moeda(total.SALDO_PREVISTO)));
+        }
+        const qtds = [];
+        if (m.d) qtds.push(qtd(total.QTD_PAGAR, 'a pagar', 'a pagar'));
+        if (m.c) qtds.push(qtd(total.QTD_RECEBER, 'a receber', 'a receber'));
+        resumoAno.append(Util.el('span', 'cal-qtd', qtds.join(' · ')));
+        cab.append(resumoAno);
+        faixa.append(cab, montar(lista, 6, false));
+        alvo.append(faixa);
+      }
+    } else {
+      const colunas = quadros.length <= 4 ? Math.max(1, quadros.length) : 4;
+      alvo.append(montar(quadros, colunas, variosAnos));
+    }
+    aplicarCalor(caixas, m);
+  }
+
   function legenda(m) {
     const l = Util.el('div', 'cal-legenda');
     const base = m.d ? 'saída (D)' : 'entrada (C)';
@@ -146,7 +219,8 @@ const AgendaCalendario = (() => {
   function desenhar(alvo, opcoes) {
     alvo.replaceChildren();
     const m = mostra(opcoes.resumo || {}, opcoes.tipo || '');
-    desenharDias(alvo, opcoes, m);
+    if (opcoes.modo === 'DIA') desenharDias(alvo, opcoes, m);
+    else desenharMeses(alvo, opcoes, m);
     alvo.append(legenda(m));
   }
 
