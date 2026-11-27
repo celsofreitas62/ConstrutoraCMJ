@@ -1146,6 +1146,79 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     if (motivo14.Length > 0) await Foto("inicio_preferencias");
 }
 
+// ---------------------------------------------------------------- 15) Telas menores, menu recolhível e tamanho das letras (04h2e, 27/11/2026)
+// Em 1366 x 768 e 1280 x 720 (notebooks comuns), com o menu aberto e recolhido pelo ☰, as telas principais não
+// podem ficar mais largas que a janela (as tabelas rolam por dentro). Depois, a preferência "Tamanho das letras" =
+// Grande põe a classe fonte-grande na tela e "Voltar ao padrão" tira. Fotos da tela inicial ficam na pasta das fotos.
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    var relogio15 = Stopwatch.StartNew();
+    var motivo15 = "";
+    try
+    {
+        var telas15 = new[] { "/", "/fin/lancamentos.html?tipo=P", "/fin/lancamento.html?tipo=P", "/banco/extrato.html", "/banco/caixa.html", "/cad/pessoas.html", "/sis/parametros.html?uso=1", "/sis/preferencias.html" };
+        foreach (var (larg, alt) in new[] { (1366, 768), (1280, 720) })
+        {
+            await pagina.SetViewportSizeAsync(larg, alt);
+            foreach (var recolhido in new[] { false, true })
+            {
+                foreach (var tela in telas15)
+                {
+                    await pagina.GotoAsync(endereco + tela, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+                    var esta = await pagina.EvaluateAsync<bool>("() => document.documentElement.classList.contains('menu-recolhido')");
+                    if (esta != recolhido) { await pagina.Locator("button.topo-menu").ClickAsync(); }
+                    var sobra = await pagina.EvaluateAsync<int>("() => document.documentElement.scrollWidth - document.documentElement.clientWidth");
+                    if (sobra > 2 && motivo15.Length == 0) motivo15 = tela + " em " + larg + "x" + alt + (recolhido ? " (menu recolhido)" : "") + " fica " + sobra + " px mais larga que a janela";
+                }
+                if (tela15Foto(larg, recolhido)) { await pagina.GotoAsync(endereco + "/", new() { WaitUntil = WaitUntilState.NetworkIdle }); await Foto("visual_inicio_" + larg + (recolhido ? "_recolhido" : "")); }
+            }
+        }
+        bool tela15Foto(int larg, bool recolhido) => larg == 1366;
+        // deixa o menu aberto e a janela como estava
+        if (await pagina.EvaluateAsync<bool>("() => document.documentElement.classList.contains('menu-recolhido')")) await pagina.Locator("button.topo-menu").ClickAsync();
+        await pagina.SetViewportSizeAsync(1366, 900);
+
+        // tamanho das letras
+        if (motivo15.Length == 0)
+        {
+            await pagina.GotoAsync(endereco + "/sis/preferencias.html", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.Locator("#pref-FONTE_TAMANHO").SelectOptionAsync("GRANDE");
+            await pagina.Locator("#botao-gravar").ClickAsync();
+            async Task<string> Ok15(string acao)
+            {
+                await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); return d && d.querySelector('h2').textContent === 'Gravar?'; }", null, new() { Timeout = 10000 });
+                await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+                try { await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); const h = d && d.querySelector('h2'); return h && h.textContent === 'Concluído'; }", null, new() { Timeout = 15000 }); }
+                catch (TimeoutException) { return acao + ": nao chegou ao Concluido"; }
+                await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+                await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                return "";
+            }
+            motivo15 = await Ok15("letras grandes");
+            if (motivo15.Length == 0)
+            {
+                await pagina.GotoAsync(endereco + "/", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+                if (!await pagina.EvaluateAsync<bool>("() => document.documentElement.classList.contains('fonte-grande')")) motivo15 = "letras grandes: a tela nao aumentou";
+                else await Foto("visual_inicio_letras_grandes");
+            }
+            if (motivo15.Length == 0)
+            {
+                await pagina.GotoAsync(endereco + "/sis/preferencias.html", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+                await pagina.Locator(".linha-preferencia", new() { Has = pagina.Locator("#pref-FONTE_TAMANHO") }).Locator(".botao", new() { HasText = "Voltar ao padrão" }).ClickAsync();
+                await pagina.Locator("#botao-gravar").ClickAsync();
+                motivo15 = await Ok15("letras ao padrao");
+                if (motivo15.Length == 0 && await pagina.EvaluateAsync<bool>("() => document.documentElement.classList.contains('fonte-grande')")) motivo15 = "voltar ao padrao: as letras continuaram grandes";
+            }
+        }
+        if (motivo15.Length == 0 && errosJs.Count > 0) motivo15 = "erro de JavaScript: " + errosJs[0];
+        if (motivo15.Length == 0 && errosApi.Count > 0) motivo15 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo15 = erro.Message.Split('\n')[0]; }
+    Linha(motivo15.Length == 0, "telas menores (1366x768 e 1280x720, menu aberto e recolhido), tamanho das letras (" + relogio15.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo15);
+    if (motivo15.Length > 0) await Foto("telas_menores");
+}
+
 // ---------------------------------------------------------------- Fim
 try { await pagina.EvaluateAsync("() => fetch('/api/logout', { method: 'POST', headers: { 'X-CMJ': '1' } })"); } catch { }
 Console.WriteLine(new string('=', 70));

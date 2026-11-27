@@ -12,6 +12,8 @@
                 mesmo jeito). O que grava fica dentro de transação desfeita.
                 v1.1 (27/11/2026, 04h2): resumo com PERIODO_MAX_DIAS e
                 ATUALIZAR_MINUTOS, conferidos contra os parâmetros.
+                v1.2 (27/11/2026, 04h2e): catálogo com 7 preferências
+                (FONTE_TAMANHO).
 *******************************************************************************/
 SET NOCOUNT ON;
 SET XACT_ABORT OFF;
@@ -46,7 +48,7 @@ WHERE object_id IN (OBJECT_ID('SIS.Preferencia'), OBJECT_ID('SIS.Usuario_Prefere
 INSERT @r SELECT N'tela FIN_AGENDA com VER, EXPORTAR e VER_TOTAIS', N'EXPORTAR,VER,VER_TOTAIS',
        ISNULL(STRING_AGG(a.CODIGO, ',') WITHIN GROUP (ORDER BY a.CODIGO), N'') FROM SIS.Item i JOIN SIS.Item_Acao ia ON ia.ID_ITEM = i.ID_ITEM JOIN SIS.Acao a ON a.ID_ACAO = ia.ID_ACAO
 WHERE i.CODIGO = 'FIN_AGENDA';
-INSERT @r SELECT N'catálogo de preferências (6, com parâmetro)', N'6', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Preferencia p JOIN SIS.Parametro pa ON pa.CHAVE = p.CHAVE_PARAMETRO WHERE p.ATIVO = 1;
+INSERT @r SELECT N'catálogo de preferências (7, com parâmetro)', N'7', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Preferencia p JOIN SIS.Parametro pa ON pa.CHAVE = p.CHAVE_PARAMETRO WHERE p.ATIVO = 1;
 INSERT @r SELECT N'VER_TOTAIS não dada a perfil nenhum', N'0', CAST(COUNT(*) AS NVARCHAR(5)) FROM SIS.Perfil_Permissao pp JOIN SIS.Item_Acao ia ON ia.ID_ITEM_ACAO = pp.ID_ITEM_ACAO
 JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM AND i.CODIGO = 'FIN_AGENDA' JOIN SIS.Acao a ON a.ID_ACAO = ia.ID_ACAO AND a.CODIGO = 'VER_TOTAIS';
 

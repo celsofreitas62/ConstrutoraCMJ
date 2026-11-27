@@ -276,7 +276,7 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
    O menu tem rolagem própria quando for maior que a janela. */
 @media (min-width: 761px) {
   .topo { position: sticky; top: 0; z-index: 20; }
-  .menu { position: sticky; top: 60px; align-self: flex-start; height: calc(100vh - 60px); overflow-y: auto; }
+  .menu { position: sticky; top: 60px; align-self: flex-start; height: calc(100vh / var(--zoom, 1) - 60px); overflow-y: auto; }
 }
 .barra-lote { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 12px 14px; background: var(--cor-principal-clara); border-bottom: 1px solid var(--borda); }
 .marcar-coluna { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -609,3 +609,10 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .caminho-link { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: none; }
 .caminho-link:hover, .caminho-link:focus-visible { color: var(--cor-principal); text-decoration: underline; }
 .caminho-sep { color: var(--texto-suave); }
+/* 04h2e: tamanho das letras (preferência FONTE_TAMANHO; zoom na tela toda, --zoom acerta a altura do menu fixo) */
+html.fonte-pequena { zoom: .9; --zoom: .9; }
+html.fonte-grande { zoom: 1.15; --zoom: 1.15; }
+html.fonte-muito-grande { zoom: 1.3; --zoom: 1.3; }
+/* 04h2e: botão ☰ recolhe o menu lateral */
+.topo-menu { min-width: 36px; padding: 0 8px; font-size: 18px; line-height: 1; justify-content: center; }
+html.menu-recolhido .menu { display: none; }

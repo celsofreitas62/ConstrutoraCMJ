@@ -19,7 +19,7 @@ const Rotulos = Object.freeze({
   grupoTipo: { RECEITA: 'Receita', DESPESA: 'Despesa', NAO_OPERACIONAL: 'Não operacional' },
   preferencia: { CALENDARIO: 'Calendário', LISTA: 'Lista', SEMANA: 'Semana', QUINZENA: 'Quinzena', MES: 'Mês', BIMESTRE: 'Bimestre',
     TRIMESTRE: 'Trimestre', QUADRIMESTRE: 'Quadrimestre', ANO: 'Ano', ANOS: 'Vários anos', SISTEMA: 'Seguir o Windows (claro ou escuro)',
-    CLARO: 'Sempre claro', ESCURO: 'Sempre escuro' },
+    CLARO: 'Sempre claro', ESCURO: 'Sempre escuro', PEQUENA: 'Pequeno', NORMAL: 'Normal', GRANDE: 'Grande', MUITO_GRANDE: 'Muito grande' },
   /** Nome da tabela; se o código não estiver nela, devolve o próprio código. */
   de(tabela, codigo) { const t = this[tabela] || {}; return codigo in t ? t[codigo] : (codigo ?? ''); }
 });

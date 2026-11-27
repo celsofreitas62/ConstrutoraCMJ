@@ -481,6 +481,8 @@ GO
   Changelog:
     v1.0 (27/11/2026) - Criação (etapa 04h1).
     v1.1 (27/11/2026) - AGENDA_ATUALIZAR_MIN (sugestão aprovada na 04h2).
+    v1.2 (27/11/2026) - FONTE_TAMANHO e FONTE_TAMANHO_PADRAO (tamanho das letras
+                        em todas as telas; pedido do Celso, 04h2e).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -514,7 +516,9 @@ VALUES
     ('AGENDA_ATUALIZAR_MIN', N'5', 'INTEIRO',
      N'Tela inicial: de quantos em quantos minutos ela se atualiza sozinha enquanto está aberta (0 = não atualiza sozinha).', 'FIN', N''),
     ('TEMA_PADRAO', N'SISTEMA', 'TEXTO',
-     N'Tema das telas para quem não escolheu nas Preferências: seguir o Windows (claro ou escuro), sempre claro ou sempre escuro.', 'SIS', N'SISTEMA;CLARO;ESCURO');
+     N'Tema das telas para quem não escolheu nas Preferências: seguir o Windows (claro ou escuro), sempre claro ou sempre escuro.', 'SIS', N'SISTEMA;CLARO;ESCURO'),
+    ('FONTE_TAMANHO_PADRAO', N'NORMAL', 'TEXTO',
+     N'Tamanho das letras das telas para quem não escolheu nas Preferências.', 'SIS', N'PEQUENA;NORMAL;GRANDE;MUITO_GRANDE');
 
 INSERT INTO SIS.Parametro (CHAVE, VALOR, VALOR_PADRAO, TIPO, DESCRICAO, ID_MODULO, EDITAVEL_ADMIN, NIVEL_MINIMO, OPCOES)
 SELECT c.CHAVE, c.VALOR, c.VALOR, c.TIPO, c.DESCRICAO, m.ID_MODULO, 1, 1, c.OPCOES
@@ -559,7 +563,9 @@ VALUES
     ('INICIO_SALDO_ACUMULADO', N'Mostrar o saldo previsto acumulado', N'Saldo de hoje nas contas mais o que vence até cada dia. Aparece só para quem pode ver os totais.',
      N'Tela inicial', 'SN', N'', NULL, NULL, 'INICIO_SALDO_ACUMULADO_PADRAO', 50),
     ('TEMA', N'Tema das telas', N'Seguir o Windows (claro ou escuro), sempre claro ou sempre escuro.',
-     N'Aparência', 'TEXTO', N'SISTEMA;CLARO;ESCURO', NULL, NULL, 'TEMA_PADRAO', 10);
+     N'Aparência', 'TEXTO', N'SISTEMA;CLARO;ESCURO', NULL, NULL, 'TEMA_PADRAO', 10),
+    ('FONTE_TAMANHO', N'Tamanho das letras', N'Aumenta ou diminui as letras (e o resto da tela junto) em todas as telas do sistema, só para você.',
+     N'Aparência', 'TEXTO', N'PEQUENA;NORMAL;GRANDE;MUITO_GRANDE', NULL, NULL, 'FONTE_TAMANHO_PADRAO', 20);
 
 INSERT INTO SIS.Preferencia (CODIGO, NOME, DESCRICAO, GRUPO, TIPO, OPCOES, VALOR_MINIMO, VALOR_MAXIMO, CHAVE_PARAMETRO, ORDEM, USUARIO_CRIACAO)
 SELECT c.CODIGO, c.NOME, c.DESCRICAO, c.GRUPO, c.TIPO, c.OPCOES, c.VALOR_MINIMO, c.VALOR_MAXIMO, c.CHAVE_PARAMETRO, c.ORDEM, N'instalacao'

@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     sessionStorage.removeItem('cmj.novidades.conferidas');  // login novo confere o aviso "O que há de novo" (04c2)
+    sessionStorage.removeItem('cmj.aparencia');             // e relê o tamanho das letras do usuário (04h2e)
     if (r.dados && r.dados.trocarSenha) { location.href = '/trocar-senha.html'; return; }
 
     const volta = Util.parametro('volta') || '/';

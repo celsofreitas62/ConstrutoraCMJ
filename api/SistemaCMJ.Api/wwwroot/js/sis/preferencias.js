@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!(await Mensagens.tratar(r, { foco: $('pref-' + (mudou[0] || {}).codigo) }))) return;
     // A agenda deste computador passa a abrir pela preferência nova.
     try { localStorage.removeItem('cmj.inicio.estado'); } catch { /* sem armazenamento */ }
+    await Layout.aplicarAparencia(true);   // tamanho das letras vale na hora
     await Mensagens.concluido('Preferências gravadas.');
     await carregar();
   });

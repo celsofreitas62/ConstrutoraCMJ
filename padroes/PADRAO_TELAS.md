@@ -40,6 +40,13 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 
 16. No computador, o **topo e o menu lateral ficam parados**; só a área da tela rola. Quando o menu for maior que a janela, ele rola sozinho, sem mexer na tela. No celular, tudo rola junto. Fica no `app.css`, vale para todas as telas.
 
+## 7a. Navegação, tamanho das letras e menu recolhível (pedido do Celso, 27/11/2026, 04h2e)
+
+16a. **Início sempre à mão**: o menu tem o item fixo **🏠 Início** no alto, em qualquer nível; a logomarca também leva ao início.
+16b. **Caminho acima do título** (`.cabecalho .caminho`) é **montado pelo menu** (`js/layout.js`, `montarCaminho`), nunca escrito à mão nem trocado pelo JS da tela: `Início › módulo › grupo`; cada grupo clicado abre aquele nível no menu lateral; numa ficha aberta pela lista (`data-menu` diferente do arquivo), o último pedaço leva de volta à lista. Tela nova só precisa do `<div class="caminho">` vazio (ou com um texto provisório).
+16c. **Tamanho das letras** pela preferência `FONTE_TAMANHO` (classe `fonte-*` no `<html>`, com `zoom`); medidas que dependem da altura da janela usam `calc(100vh / var(--zoom, 1) ...)`.
+16d. **☰ recolhe o menu lateral** (classe `menu-recolhido` no `<html>`, lembrada no computador). Toda tela tem de caber em **1366 × 768 e 1280 × 720**, com o menu aberto e recolhido: tabelas largas rolam dentro de `.rolagem`, nunca a página para o lado (passo 15 dos testes das telas).
+
 ## 8. Testes automáticos das telas (aprovado pelo Celso na 03h; feito na 04a, 22/11/2026)
 
 17. Toda tela nova entra sozinha nos testes automáticos (`testes/telas`, Playwright + Edge invisível): o teste abre cada tela do menu e confere que carrega, tem título (`h1`), não abre janela de erro ou recusa, não tem erro de JavaScript e nenhuma chamada da API responde 500. **Ficha** que não fica no menu (aberta pela lista) vai na lista `fichasSemMenu` do `testes/telas/config.json`.

@@ -19,6 +19,10 @@
                do menu e o caminho acima do título (.caminho) montado pelo
                menu, com cada pedaço clicável: Início volta à tela inicial e
                cada grupo abre aquele nível no menu lateral.
+               04h2e: tamanho das letras pela preferência FONTE_TAMANHO
+               (classe fonte-* no <html>, guardada na sessão do navegador
+               para não piscar; Layout.aplicarAparencia(true) relê) e botão
+               ☰ que recolhe o menu lateral (lembrado neste computador).
                Layout.acoesDe(caminho) = ações em OUTRA tela do menu (ex.: o
                atalho "Lixeira desta tela" só aparece para quem vê a Lixeira).
    ========================================================================== */
@@ -29,6 +33,30 @@ const Layout = (() => {
   let nos = new Map();
   let abertos = new Set();
   let telaMenu = '';
+
+  const CHAVE_APARENCIA = 'cmj.aparencia';        // sessionStorage: { fonte }
+  const CHAVE_MENU_RECOLHIDO = 'cmj.menu.recolhido'; // localStorage: '1' = recolhido
+  const CLASSES_FONTE = { PEQUENA: 'fonte-pequena', GRANDE: 'fonte-grande', MUITO_GRANDE: 'fonte-muito-grande' };
+
+  function aplicarFonte(fonte) {
+    const html = document.documentElement;
+    for (const c of Object.values(CLASSES_FONTE)) html.classList.remove(c);
+    if (CLASSES_FONTE[fonte]) html.classList.add(CLASSES_FONTE[fonte]);
+  }
+  // Já ao carregar o script (antes da tela aparecer), para não piscar.
+  try { aplicarFonte((JSON.parse(sessionStorage.getItem(CHAVE_APARENCIA) || 'null') || {}).fonte); } catch { /* sem armazenamento */ }
+  try { if (localStorage.getItem(CHAVE_MENU_RECOLHIDO) === '1') document.documentElement.classList.add('menu-recolhido'); } catch { /* idem */ }
+
+  async function aplicarAparencia(reler) {
+    let guardada = null;
+    try { guardada = JSON.parse(sessionStorage.getItem(CHAVE_APARENCIA) || 'null'); } catch { guardada = null; }
+    if (guardada && !reler) { aplicarFonte(guardada.fonte); return; }
+    const r = await Api.get('/api/sis/preferencias', { grupo: 'Aparência' });
+    if (!r.sucesso) return;
+    const fonte = ((r.dados || []).find((p) => p.CODIGO === 'FONTE_TAMANHO') || {}).VALOR || 'NORMAL';
+    try { sessionStorage.setItem(CHAVE_APARENCIA, JSON.stringify({ fonte })); } catch { /* sem armazenamento */ }
+    aplicarFonte(fonte);
+  }
 
   const SETA_ABRIR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   const LUPA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
@@ -50,6 +78,20 @@ const Layout = (() => {
     const topo = document.getElementById('topo');
     if (!topo) return;
     topo.replaceChildren();
+
+    // ☰ recolhe ou mostra o menu lateral (04h2e): mais espaço em telas menores.
+    const botaoMenu = Util.el('button', 'botao topo-menu', '☰');
+    botaoMenu.type = 'button';
+    botaoMenu.setAttribute('aria-label', 'Recolher ou mostrar o menu');
+    botaoMenu.dataset.dica = 'Recolhe o menu ao lado, para a tela ficar mais larga (clique de novo para mostrar). O sistema lembra neste computador.';
+    const marcarBotao = () => botaoMenu.setAttribute('aria-expanded', document.documentElement.classList.contains('menu-recolhido') ? 'false' : 'true');
+    marcarBotao();
+    botaoMenu.addEventListener('click', () => {
+      const recolhido = document.documentElement.classList.toggle('menu-recolhido');
+      try { localStorage.setItem(CHAVE_MENU_RECOLHIDO, recolhido ? '1' : '0'); } catch { /* sem armazenamento */ }
+      marcarBotao();
+    });
+    topo.append(botaoMenu);
 
     const linkInicio = Util.el('a');
     linkInicio.href = '/';
@@ -95,6 +137,7 @@ const Layout = (() => {
       await Api.post('/api/logout');
       sessionStorage.removeItem(CHAVE_ABERTOS);
       sessionStorage.removeItem('cmj.novidades.conferidas');
+      sessionStorage.removeItem(CHAVE_APARENCIA);
       location.href = '/login.html';
     });
     usuario.append(nome, preferencias, sair);
@@ -329,6 +372,7 @@ const Layout = (() => {
     if (!rSessao.sucesso) { await Mensagens.tratar(rSessao); return { sessao: null, acoes: new Set() }; }
     const sessao = rSessao.dados;
     montarTopo(sessao);
+    aplicarAparencia(false);
 
     let acoes = new Set();
     if (rMenu.sucesso) {
@@ -365,5 +409,5 @@ const Layout = (() => {
     return new Set(tela ? (tela.ACOES || '').split(',').filter(Boolean) : []);
   }
 
-  return { iniciar, aplicarIdentidade, acoesDe };
+  return { iniciar, aplicarIdentidade, acoesDe, aplicarAparencia };
 })();
