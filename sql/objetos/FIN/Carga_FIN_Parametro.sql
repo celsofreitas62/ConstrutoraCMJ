@@ -23,6 +23,9 @@
                         no a pagar, limite de desconto) e fechamento de caixa
                         (tipos de conta, aviso na transferência entre
                         empresas). Aprovado pelo Celso em 26/11/2026.
+    v1.4 (27/11/2026) - Etapa 04g2: BANCO_EXTRATO_MAX_DIAS (período máximo do
+                        extrato) e FIN_CAIXA_FECHAMENTO_ATRASO_DIAS (dias sem
+                        fechar o caixa até a conta aparecer como atrasada).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -107,7 +110,11 @@ FROM (VALUES
         ('FIN_CAIXA_FECHAMENTO_TIPOS', N'CAIXA', 'TEXTO',
          N'Tipos de conta que usam o fechamento de caixa, separados por vírgula (CAIXA, CORRENTE, POUPANCA, APLICACAO, PERMUTA). Vazio = nenhum.', 1, N''),
         ('FIN_TRANSF_ENTRE_EMPRESAS', N'AVISO', 'TEXTO',
-         N'Transferência entre contas de empresas diferentes do grupo: AVISO (pede confirmação), BLOQUEIO (não deixa) ou NAO (sem aviso).', 1, N'AVISO;BLOQUEIO;NAO')
+         N'Transferência entre contas de empresas diferentes do grupo: AVISO (pede confirmação), BLOQUEIO (não deixa) ou NAO (sem aviso).', 1, N'AVISO;BLOQUEIO;NAO'),
+        ('BANCO_EXTRATO_MAX_DIAS', N'400', 'INTEIRO',
+         N'Extrato da conta: período máximo de uma consulta, em dias.', 1, N''),
+        ('FIN_CAIXA_FECHAMENTO_ATRASO_DIAS', N'1', 'INTEIRO',
+         N'Fechamento de caixa: dias com movimento sem fechar até a conta aparecer como "fechamento atrasado". 0 = não avisa.', 1, N'')
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, NIVEL, OPCOES);
 
 INSERT INTO SIS.Parametro (CHAVE, VALOR, VALOR_PADRAO, TIPO, DESCRICAO, ID_MODULO, EDITAVEL_ADMIN, NIVEL_MINIMO, OPCOES)

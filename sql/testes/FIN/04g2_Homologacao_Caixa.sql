@@ -3,7 +3,9 @@
                 estrutura e cargas; transferência (prévia, aviso entre
                 empresas e de saldo, bloqueio pelo parâmetro, caixa fechado,
                 trava de datas, gravação com dois movimentos, estorno das
-                duas pontas, estorno repetido, lista); permissões.
+                duas pontas, estorno repetido, lista); extrato (saldo anterior,
+                saldo inicial, histórico, estornos); saldos por conta;
+                permissões.
   Autor       : Celso de Freitas / Refatorado: Claude
   Criação     : 27/11/2026 (v1.0). Roda no SISTEMACMJ_LOCAL e no banco do MASTER
                 (no banco sem empresa ou sem o usuário de teste, os casos com
@@ -145,6 +147,36 @@ BEGIN
     INSERT @lst EXEC FIN.FIN_Transferencia_Listar @IdUsuario = @Fin, @IdConta = @CxA;
     INSERT @r SELECT N'lista pela conta: 2 linhas, total só das ativas', N'2/5000.00', (SELECT TOP 1 CONCAT(TOTAL_LINHAS, '/', CONVERT(NVARCHAR(20), TOTAL_VALOR)) FROM @lst);
     INSERT @r SELECT N'estornada não pode estornar de novo', N'0', (SELECT CAST(PODE_ESTORNAR AS NVARCHAR(1)) FROM @lst WHERE ID_TRANSFERENCIA = @Tr);
+
+    -- extrato
+    DECLARE @ext TABLE (DT_MOVIMENTO DATE, ID_MOVIMENTO BIGINT, TIPO VARCHAR(15), HISTORICO NVARCHAR(200), DOCUMENTO NVARCHAR(40), VALOR DECIMAL(18,2),
+                        ENTRADA DECIMAL(18,2), SAIDA DECIMAL(18,2), SALDO_ACUMULADO DECIMAL(18,2), CONTA_SALDO BIT, SITUACAO VARCHAR(10), CONCILIADO BIT,
+                        ID_TRANSFERENCIA BIGINT, ID_LOTE BIGINT, USUARIO_CRIACAO NVARCHAR(100), ID_LANCAMENTO BIGINT, LANCAMENTO_TIPO CHAR(1), PESSOA NVARCHAR(150),
+                        QTD_BAIXAS INT, OUTRA_CONTA NVARCHAR(60), SALDO_ANTERIOR DECIMAL(18,2), TOTAL_ENTRADAS DECIMAL(18,2), TOTAL_SAIDAS DECIMAL(18,2), SALDO_FINAL DECIMAL(18,2));
+    DECLARE @De DATE = DATEADD(DAY, -10, @Hoje), @De2 DATE = DATEADD(DAY, -25, @Hoje);
+    INSERT @ext EXEC BANCO.BANCO_Extrato_Listar @IdUsuario = @Fin, @IdConta = @CxA, @DtDe = @De, @DtAte = @Hoje;
+    INSERT @r SELECT N'extrato: linhas (anterior, saldo inicial, 3 movimentos)', N'5', CAST((SELECT COUNT(*) FROM @ext) AS NVARCHAR(5));
+    INSERT @r SELECT N'extrato: entradas/saídas/saldo final', N'300.00/5300.00/-4000.00', (SELECT TOP 1 CONCAT(CONVERT(NVARCHAR(20), TOTAL_ENTRADAS), '/', CONVERT(NVARCHAR(20), TOTAL_SAIDAS), '/', CONVERT(NVARCHAR(20), SALDO_FINAL)) FROM @ext);
+    INSERT @r SELECT N'extrato: última linha acumulada = saldo da conta', N'1', CAST((SELECT COUNT(*) FROM (SELECT TOP 1 SALDO_ACUMULADO FROM @ext ORDER BY DT_MOVIMENTO DESC, ID_MOVIMENTO DESC) x
+           WHERE x.SALDO_ACUMULADO = (SELECT SALDO FROM BANCO.fn_BANCO_Conta_Saldo(@CxA, @Hoje))) AS NVARCHAR(5));
+    INSERT @r SELECT N'extrato: outra conta na transferência', N'Caixa B Teste 04g2', (SELECT TOP 1 OUTRA_CONTA FROM @ext WHERE ID_TRANSFERENCIA = @Tr);
+    DELETE @ext;
+    INSERT @ext EXEC BANCO.BANCO_Extrato_Listar @IdUsuario = @Fin, @IdConta = @CxA, @DtDe = @De2, @DtAte = @Hoje;
+    INSERT @r SELECT N'extrato: movimento antes do saldo inicial é só histórico', N'6/0/-4000.00',
+           CONCAT((SELECT COUNT(*) FROM @ext), '/', (SELECT CAST(CONTA_SALDO AS INT) FROM @ext WHERE VALOR = 999.00), '/', (SELECT TOP 1 CONVERT(NVARCHAR(20), SALDO_FINAL) FROM @ext));
+    DELETE @ext;
+    INSERT @ext EXEC BANCO.BANCO_Extrato_Listar @IdUsuario = @Fin, @IdConta = @CxA, @DtDe = @De, @DtAte = @Hoje, @OcultarEstornados = 1;
+    INSERT @r SELECT N'extrato sem os estornados', N'3', CAST((SELECT COUNT(*) FROM @ext) AS NVARCHAR(5));
+
+    -- saldos por conta
+    INSERT INTO BANCO.Movimento (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO) VALUES (@CxB, @Ontem, 50.00, 'AJUSTE', N'teste atraso');
+    DECLARE @sal TABLE (ID_CONTA INT, ID_EMPRESA INT, EMPRESA NVARCHAR(150), DESCRICAO NVARCHAR(60), TIPO VARCHAR(10), BANCO NVARCHAR(80), AGENCIA VARCHAR(10), NUMERO VARCHAR(20),
+                        ORDEM SMALLINT, ATIVO BIT, MOSTRA_SALDO BIT, CONCILIA BIT, SALDO DECIMAL(18,2), LIMITE_CREDITO DECIMAL(18,2), DISPONIVEL DECIMAL(18,2), TEM_SALDO BIT,
+                        DT_SALDO_INICIAL VARCHAR(10), DT_ULTIMO_MOVIMENTO VARCHAR(10), QTD_NAO_CONCILIADOS INT, USA_FECHAMENTO BIT, DT_ULTIMO_FECHAMENTO VARCHAR(10),
+                        FECHAMENTO_ATRASADO BIT, DT_PRIMEIRO_SEM_FECHAR VARCHAR(10));
+    INSERT @sal EXEC BANCO.BANCO_Saldo_Listar @IdUsuario = @Fin, @IdEmpresa = @Empresa;
+    INSERT @r SELECT N'saldos: conta A', N'-4000.00/1/0', (SELECT CONCAT(CONVERT(NVARCHAR(20), SALDO), '/', CAST(USA_FECHAMENTO AS INT), '/', CAST(FECHAMENTO_ATRASADO AS INT)) FROM @sal WHERE ID_CONTA = @CxA);
+    INSERT @r SELECT N'saldos: conta B com movimento de ontem sem fechar', N'5050.00/1', (SELECT CONCAT(CONVERT(NVARCHAR(20), SALDO), '/', CAST(FECHAMENTO_ATRASADO AS INT)) FROM @sal WHERE ID_CONTA = @CxB);
 
     -- sem a ação INCLUIR
     DELETE pp FROM SIS.Perfil_Permissao pp
