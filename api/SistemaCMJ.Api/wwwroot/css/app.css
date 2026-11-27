@@ -550,3 +550,19 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .tabela-transferencias tfoot td { border-top: 2px solid var(--borda); background: #FAFAF9; }
 .col-acao-lista { width: 90px; text-align: center; }
 .saldo-origem { grid-column: span 2; align-self: end; padding-bottom: 8px; }
+
+/* 04g4c: Fechamento de caixa (banco/caixa.html) */
+.fechar-corpo { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+.contadores-caixa { padding: 0; margin-bottom: 0; }
+.contagem { max-width: 460px; }
+.tabela-contagem td.numero, .tabela-contagem th.numero { text-align: right; white-space: nowrap; }
+.tabela-contagem input { width: 7em; text-align: right; }
+.tabela-contagem tfoot td { border-top: 2px solid var(--borda); background: #FAFAF9; }
+.diferenca { min-height: 36px; display: flex; align-items: center; font-size: 15px; font-weight: 600; }
+.diferenca-zero { color: var(--sucesso); }
+.diferenca-sobra { color: #1F4E8C; }
+.diferenca-falta { color: var(--erro); }
+.tabela-caixa td.numero, .tabela-caixa th.numero { text-align: right; white-space: nowrap; }
+.tabela-caixa .sub { display: block; font-size: 11px; color: var(--texto-suave); margin-top: 2px; }
+.tabela-caixa tr.linha-estornada td { color: var(--texto-suave); }
+.secao-fechar .janela-botoes { margin: 0; }

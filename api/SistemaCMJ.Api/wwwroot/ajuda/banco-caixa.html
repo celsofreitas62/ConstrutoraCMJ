@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Fechamento de caixa</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> conferir no fim do dia se o dinheiro que tem no caixa bate com o saldo do sistema e "fechar" o caixa até essa data, para ninguém lançar nada nele depois sem reabrir.</p>
+  <h2>Como fechar</h2>
+  <ul>
+    <li>Escolha o <strong>caixa</strong> e a data <strong>Fechar até</strong> (padrão hoje). Só aparecem as contas dos tipos que usam o fechamento (parâmetro FIN_CAIXA_FECHAMENTO_TIPOS); o caixa com fechamento atrasado já vem escolhido.</li>
+    <li>A tela mostra o <strong>último fechamento</strong>, as <strong>entradas</strong> e <strong>saídas</strong> desde então e o <strong>saldo do sistema</strong> no fim do dia.</li>
+    <li>Conte o dinheiro e digite o <strong>Saldo contado</strong>, ou marque <strong>Contar por cédulas e moedas</strong>: digite quantas tem de cada uma e o total vai sozinho para o saldo contado. A contagem fica guardada na observação do fechamento.</li>
+    <li>A <strong>diferença</strong> aparece na hora (sobra ou falta). Com diferença, o <strong>motivo</strong> é obrigatório. Quem tem a permissão de ajustar o caixa pode marcar <strong>Lançar o ajuste da diferença</strong>: entra um movimento de ajuste e o saldo do sistema passa a ser o contado.</li>
+    <li><strong>Fechar caixa</strong> (ou Ctrl+S) pede a confirmação e grava.</li>
+  </ul>
+  <h2>Fechamentos e reabertura</h2>
+  <ul>
+    <li>A lista mostra os fechamentos com o saldo do sistema, o contado, a diferença, o motivo, o ajuste e quem fechou. Filtros de caixa, período, situação e só com diferença; <strong>Exportar Excel</strong>.</li>
+    <li><strong>Reabrir</strong> vale só para o último fechamento de cada caixa e pede o motivo. Se o fechamento tinha ajuste, ele é desfeito com um movimento inverso. Nada é apagado: o fechamento fica como <strong>Reaberto</strong>.</li>
+  </ul>
+  <h2>Cuidados</h2>
+  <ul>
+    <li>Fechado, o caixa <strong>não aceita</strong> baixa, estorno, transferência nem ajuste com data até a do fechamento. Para corrigir algo esquecido, reabra (quem tem a permissão), lance e feche de novo.</li>
+    <li>Não dá para fechar um dia que ainda não chegou, nem antes do saldo inicial da conta.</li>
+    <li>O ajuste segue a trava de datas do financeiro: fora dela, feche sem o ajuste ou peça ao administrador.</li>
+    <li>Só aparecem os botões que o seu usuário pode usar.</li>
+  </ul>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Fechamento de caixa</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/banco/caixa.js" defer></script>
+</head>
+<body data-tela="banco/caixa.html" data-ajuda="banco-caixa" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Bancos › Fechamento de caixa</div>
+          <h1>Fechamento de caixa</h1>
+        </div>
+        <a data-dica="Abre o extrato da conta escolhida (tela Extrato e saldos)." class="botao" href="/banco/extrato.html" id="link-extrato" hidden>Ver extrato</a>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <section class="cartao secao-fechar" aria-labelledby="titulo-fechar" id="secao-fechar" hidden>
+        <form id="form-fechar" class="fechar-corpo" autocomplete="off">
+          <h2 class="secao-titulo" id="titulo-fechar">Fechar o caixa</h2>
+          <div class="grade">
+            <label data-dica="Caixa que vai ser fechado. Só aparecem as contas dos tipos que usam o fechamento (parâmetro FIN_CAIXA_FECHAMENTO_TIPOS). Obrigatório." class="campo s-2">Caixa *
+              <select id="conta"></select>
+            </label>
+            <label data-dica="Fecha o caixa até o fim deste dia. Obrigatória (padrão hoje). Tem que ser depois do último fechamento e não pode ser um dia que ainda não chegou." class="campo">Fechar até *
+              <input type="date" id="dtFechamento">
+            </label>
+          </div>
+
+          <div class="contadores contadores-fixos contadores-caixa" id="previa" hidden>
+            <div class="contador contador-fixo"><span class="contador-rotulo">Último fechamento</span><span class="contador-valor" id="p-ultimo">–</span></div>
+            <div class="contador contador-fixo contador-entradas"><span class="contador-rotulo">Entradas desde então</span><span class="contador-valor" id="p-entradas">–</span></div>
+            <div class="contador contador-fixo contador-saidas"><span class="contador-rotulo">Saídas desde então</span><span class="contador-valor" id="p-saidas">–</span><span class="contador-qtd" id="p-qtd"></span></div>
+            <div class="contador contador-fixo contador-final"><span class="contador-rotulo">Saldo do sistema</span><span class="contador-valor" id="p-sistema">–</span></div>
+          </div>
+          <div class="aviso-faixa" id="previa-erro" hidden></div>
+
+          <div id="area-contagem" hidden>
+            <label class="marcacao" data-dica="Abre a grade de cédulas e moedas: digite quantas tem de cada uma e o total vai sozinho para o Saldo contado. A contagem fica guardada na observação do fechamento.">
+              <input type="checkbox" id="usar-contagem"> Contar por cédulas e moedas
+            </label>
+            <div class="contagem" id="contagem" hidden>
+              <table class="tabela tabela-contagem">
+                <thead><tr><th scope="col">Cédula ou moeda</th><th scope="col" class="numero">Quantidade</th><th scope="col" class="numero">Subtotal</th></tr></thead>
+                <tbody id="contagem-linhas"></tbody>
+                <tfoot><tr class="linha-total"><td class="forte">Total contado</td><td></td><td class="numero forte" id="contagem-total">0,00</td></tr></tfoot>
+              </table>
+            </div>
+          </div>
+
+          <div class="grade" id="area-contado" hidden>
+            <label data-dica="Quanto dinheiro tem de verdade no caixa no fim do dia. Obrigatório. Com vírgula nos centavos. Com a contagem por cédulas marcada, vem da contagem." class="campo">Saldo contado *
+              <input type="text" inputmode="decimal" id="saldoContado" placeholder="0,00">
+            </label>
+            <div class="campo">Diferença
+              <div class="diferenca" id="diferenca" aria-live="polite">–</div>
+            </div>
+            <label data-dica="Anotação livre sobre o fechamento (opcional)." class="campo s-2">Observação
+              <input type="text" id="observacao" maxlength="250">
+            </label>
+            <label data-dica="Por que o contado é diferente do sistema (ex.: troco dado a mais, vale não lançado). Obrigatório quando há diferença, pelo menos 5 letras." class="campo s-3" id="campo-motivo" hidden>Motivo da diferença *
+              <textarea id="motivo" rows="2" maxlength="400"></textarea>
+            </label>
+            <label data-dica="Grava um movimento de AJUSTE pela diferença, na data do fechamento: o saldo do sistema passa a ser o contado. Só para quem tem a permissão de ajustar o caixa." class="marcacao" id="campo-ajuste" hidden>
+              <input type="checkbox" id="gerarAjuste"> Lançar o ajuste da diferença
+            </label>
+          </div>
+
+          <div class="janela-botoes" id="botoes-fechar" hidden>
+            <button data-dica="Confere e fecha o caixa (pede confirmação antes). Atalho: Ctrl+S." type="submit" class="botao botao-principal" id="botao-fechar">Fechar caixa</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="cartao" aria-labelledby="titulo-historico">
+        <form class="filtros" id="filtros" role="search">
+          <h2 class="secao-titulo" id="titulo-historico">Fechamentos</h2>
+          <label data-dica="Mostra só os fechamentos de um caixa." class="campo f-2">Caixa
+            <select id="f-conta"><option value="">Todos</option></select>
+          </label>
+          <label data-dica="Primeiro dia do período (data do fechamento)." class="campo f-1">De
+            <input type="date" id="f-de">
+          </label>
+          <label data-dica="Último dia do período (data do fechamento)." class="campo f-1">Até
+            <input type="date" id="f-ate">
+          </label>
+          <label data-dica="Fechados, reabertos ou todos." class="campo f-1">Situação
+            <select id="f-situacao">
+              <option value="">Todos</option>
+              <option value="FECHADO">Fechados</option>
+              <option value="REABERTO">Reabertos</option>
+            </select>
+          </label>
+          <label data-dica="Mostra só os fechamentos em que o contado foi diferente do sistema." class="marcacao">
+            <input type="checkbox" id="f-diferenca"> Só com diferença
+          </label>
+          <button data-dica="Baixa os fechamentos da lista num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        </form>
+        <div class="rolagem">
+          <table class="tabela tabela-larga tabela-caixa">
+            <thead>
+              <tr>
+                <th scope="col">Data</th>
+                <th scope="col">Caixa</th>
+                <th scope="col" class="numero">Sistema</th>
+                <th scope="col" class="numero">Contado</th>
+                <th scope="col" class="numero">Diferença</th>
+                <th scope="col">Motivo e observação</th>
+                <th scope="col">Ajuste</th>
+                <th scope="col">Situação</th>
+                <th scope="col">Fechado por</th>
+                <th scope="col" class="col-acao-lista" id="coluna-reabrir" hidden></th>
+              </tr>
+            </thead>
+            <tbody id="linhas"></tbody>
+          </table>
+        </div>
+        <div class="rodape-lista"><span id="lista-contagem" aria-live="polite"></span></div>
+      </section>
+      <aside class="cartao ajuda" id="ajuda" hidden></aside>
+    </main>
+  </div>
+</body>
+</html>
