@@ -9,7 +9,7 @@
                 Sincroniza a tabela com o .md (as notas são do sistema, não da
                 CMJ): inclui o que falta, acerta o texto do que mudou e tira o
                 item que saiu do .md. Idempotente.
-                Versões no arquivo: 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
+                Versões no arquivo: 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
   Changelog:
     v1.0 (23/11/2026) - Criação (etapa 04c, P22).
 *******************************************************************************/
@@ -21,8 +21,29 @@ DROP TABLE IF EXISTS #CargaNota;
 SELECT v.VERSAO, SIS.fn_SIS_Versao_Numero(v.VERSAO) AS VERSAO_NUMERO, v.DT_VERSAO, v.ORDEM, v.TIPO, v.PUBLICO, v.TEXTO, v.TEXTO_HTML
 INTO #CargaNota
 FROM (VALUES
-       (CAST('2.5' AS VARCHAR(20)), CAST('2026-11-26' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
-         CAST(N'telas Contas a pagar e Contas a receber (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.' AS NVARCHAR(2000)), CAST(N'telas <b>Contas a pagar</b> e <b>Contas a receber</b> (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.' AS NVARCHAR(4000)))
+       (CAST('2.6' AS VARCHAR(20)), CAST('2026-11-27' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
+         CAST(N'pagar e receber (baixa): na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.' AS NVARCHAR(2000)), CAST(N'<b>pagar e receber (baixa)</b>: na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.' AS NVARCHAR(4000)))
+      ,('2.6', '2026-11-27', 2, 'NOVO', 'TODOS',
+         N'proteções na baixa: data fora do período liberado, mês fechado, caixa já fechado, pendência que bloqueia o pagamento e desconto acima do limite só passam com a permissão certa e um motivo, que fica registrado.',
+         N'proteções na baixa: data fora do período liberado, mês fechado, caixa já fechado, pendência que bloqueia o pagamento e desconto acima do limite só passam com a permissão certa e um motivo, que fica registrado.')
+      ,('2.6', '2026-11-27', 3, 'NOVO', 'TODOS',
+         N'estornar uma baixa pela aba Baixas da ficha, com data e motivo; quando o pagamento foi feito em lote, o sistema avisa e estorna o lote inteiro, com a tarifa.',
+         N'<b>estornar uma baixa</b> pela aba Baixas da ficha, com data e motivo; quando o pagamento foi feito em lote, o sistema avisa e estorna o lote inteiro, com a tarifa.')
+      ,('2.6', '2026-11-27', 4, 'MELHORIA', 'TODOS',
+         N'uma baixa estornada não trava mais o lançamento: dá para alterar a parcela e o valor e para cancelar. Excluir continua proibido para quem já teve qualquer baixa, para guardar o histórico.',
+         N'uma baixa <b>estornada</b> não trava mais o lançamento: dá para alterar a parcela e o valor e para cancelar. Excluir continua proibido para quem já teve qualquer baixa, para guardar o histórico.')
+      ,('2.6', '2026-11-27', 5, 'NOVO', 'TODOS',
+         N'tela Extrato e saldos (Bancos): o saldo de cada conta numa data (saldo, limite, disponível, último movimento, fechamento de caixa atrasado) e o extrato da conta com o saldo linha a linha; clique na origem para abrir o lançamento ou a transferência. Na ficha e na lista de contas há o atalho "Ver extrato".',
+         N'tela <b>Extrato e saldos</b> (Bancos): o saldo de cada conta numa data (saldo, limite, disponível, último movimento, fechamento de caixa atrasado) e o extrato da conta com o saldo linha a linha; clique na origem para abrir o lançamento ou a transferência. Na ficha e na lista de contas há o atalho "Ver extrato".')
+      ,('2.6', '2026-11-27', 6, 'NOVO', 'TODOS',
+         N'tela Transferências (Bancos): transferir entre contas com aviso de saldo insuficiente, de transferência entre empresas e de data retroativa; estornar com prévia.',
+         N'tela <b>Transferências</b> (Bancos): transferir entre contas com aviso de saldo insuficiente, de transferência entre empresas e de data retroativa; estornar com prévia.')
+      ,('2.6', '2026-11-27', 7, 'NOVO', 'TODOS',
+         N'tela Fechamento de caixa (Bancos): o sistema mostra o saldo calculado, você digita o valor contado ou conta pelas cédulas e moedas, e a diferença aparece na hora; com diferença, informa o motivo e, se tiver permissão, lança o ajuste. O último fechamento pode ser reaberto com motivo (o ajuste é desfeito).',
+         N'tela <b>Fechamento de caixa</b> (Bancos): o sistema mostra o saldo calculado, você digita o valor contado ou conta pelas cédulas e moedas, e a diferença aparece na hora; com diferença, informa o motivo e, se tiver permissão, lança o ajuste. O último fechamento pode ser reaberto com motivo (o ajuste é desfeito).')
+      ,('2.5', '2026-11-26', 1, 'NOVO', 'TODOS',
+         N'telas Contas a pagar e Contas a receber (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.',
+         N'telas <b>Contas a pagar</b> e <b>Contas a receber</b> (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.')
       ,('2.5', '2026-11-26', 2, 'NOVO', 'TODOS',
          N'Meus filtros: cada usuário salva os filtros que usa sempre (ex.: "Vencidos da CMJ") e pode marcar um para a tela já abrir com ele. Sem filtro marcado, a tela abre com os últimos filtros usados.',
          N'<b>Meus filtros</b>: cada usuário salva os filtros que usa sempre (ex.: "Vencidos da CMJ") e pode marcar um para a tela já abrir com ele. Sem filtro marcado, a tela abre com os últimos filtros usados.')

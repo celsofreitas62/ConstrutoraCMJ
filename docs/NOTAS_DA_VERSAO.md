@@ -4,6 +4,15 @@ Fonte única das notas de cada versão (o que foi corrigido e o que é novo), em
 O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.txt`; o `atualizar.cmd` mostra e grava no banco (`SIS.Atualizacao`), base da futura tela **Sistema › Versões** (pedido P22).
 **Regra**: toda versão nova ganha a sua seção aqui **antes** de publicar (o publicar recusa pacote sem nota). Título da seção = versão do banco (`## 1.8 (22/11/2026)`). Itens começam por **Novo:**, **Melhoria:** ou **Correção:**.
 
+## 2.6 (27/11/2026)
+- Novo: **pagar e receber (baixa)**: na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.
+- Novo: proteções na baixa: data fora do período liberado, mês fechado, caixa já fechado, pendência que bloqueia o pagamento e desconto acima do limite só passam com a permissão certa e um motivo, que fica registrado.
+- Novo: **estornar uma baixa** pela aba Baixas da ficha, com data e motivo; quando o pagamento foi feito em lote, o sistema avisa e estorna o lote inteiro, com a tarifa.
+- Melhoria: uma baixa **estornada** não trava mais o lançamento: dá para alterar a parcela e o valor e para cancelar. Excluir continua proibido para quem já teve qualquer baixa, para guardar o histórico.
+- Novo: tela **Extrato e saldos** (Bancos): o saldo de cada conta numa data (saldo, limite, disponível, último movimento, fechamento de caixa atrasado) e o extrato da conta com o saldo linha a linha; clique na origem para abrir o lançamento ou a transferência. Na ficha e na lista de contas há o atalho "Ver extrato".
+- Novo: tela **Transferências** (Bancos): transferir entre contas com aviso de saldo insuficiente, de transferência entre empresas e de data retroativa; estornar com prévia.
+- Novo: tela **Fechamento de caixa** (Bancos): o sistema mostra o saldo calculado, você digita o valor contado ou conta pelas cédulas e moedas, e a diferença aparece na hora; com diferença, informa o motivo e, se tiver permissão, lança o ajuste. O último fechamento pode ser reaberto com motivo (o ajuste é desfeito).
+
 ## 2.5 (26/11/2026)
 - Novo: telas **Contas a pagar** e **Contas a receber** (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.
 - Novo: **Meus filtros**: cada usuário salva os filtros que usa sempre (ex.: "Vencidos da CMJ") e pode marcar um para a tela já abrir com ele. Sem filtro marcado, a tela abre com os últimos filtros usados.

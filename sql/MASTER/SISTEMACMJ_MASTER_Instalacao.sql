@@ -1,9 +1,9 @@
 ﻿/*******************************************************************************
-  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v2.5)
+  Arquivo     : SISTEMACMJ_MASTER_Instalacao.sql   (MASTER v2.6)
   Autor       : Celso de Freitas
   Refatorado  : Claude
-  Gerado em   : 26/11/2026 por sql/ferramentas/montar_master.py, juntando os
-                arquivos de sql/objetos aprovados (pacotes 02a a 04f2e), sem o schema
+  Gerado em   : 27/11/2026 por sql/ferramentas/montar_master.py, juntando os
+                arquivos de sql/objetos aprovados (pacotes 02a a 04g5), sem o schema
                 MIG (regra 60). NAO EDITAR ESTE ARQUIVO: corrigir o arquivo do
                 objeto e gerar o MASTER de novo.
   Descricao   : Instala (ou atualiza) TODO o banco do SisCMJ no servidor do
@@ -18,7 +18,7 @@
                 rl_sistemacmj_api (roteiro de instalacao; a senha nao fica em
                 arquivo).
   Como rodar  : SSMS > Arquivo > Abrir > este arquivo > conferir o banco > F5.
-  Objetos     : 292 arquivos.
+  Objetos     : 308 arquivos.
 *******************************************************************************/
 -- =============================================================================
 -- 1. CONFERENCIA DO BANCO
@@ -29,7 +29,7 @@ BEGIN
     SET NOEXEC ON;
 END;
 GO
-PRINT N'MASTER v2.5: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
+PRINT N'MASTER v2.6: inicio da instalacao em ' + DB_NAME() + N' (' + CONVERT(NVARCHAR(30), SYSDATETIME(), 120) + N').';
 GO
 
 -- =============================================================================
@@ -2607,6 +2607,10 @@ GO
 
   Changelog:
     v1.0 (17/11/2026) - Criação (etapa 03c).
+    v1.1 (27/11/2026) - Etapa 04g2: DOCUMENTO e dados do estorno (DT_ESTORNO =
+                        data do estorno no banco/caixa, MOTIVO_ESTORNO,
+                        USUARIO_ESTORNO, DT_HORA_ESTORNO, ID_LOTE_ESTORNO);
+                        índice pela data.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -2638,6 +2642,29 @@ BEGIN
         CONSTRAINT CK_Transferencia_SITUACAO CHECK (SITUACAO IN ('ATIVA', 'ESTORNADA'))
     );
 END;
+GO
+
+IF COL_LENGTH(N'FIN.Transferencia', N'DOCUMENTO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD DOCUMENTO NVARCHAR(40) NOT NULL CONSTRAINT DF_Transferencia_DOCUMENTO DEFAULT (N'');
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'DT_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD DT_ESTORNO DATE NULL;
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'MOTIVO_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD MOTIVO_ESTORNO NVARCHAR(400) NULL;
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'USUARIO_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD USUARIO_ESTORNO NVARCHAR(100) NULL;
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'DT_HORA_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD DT_HORA_ESTORNO DATETIME2(0) NULL;
+GO
+IF COL_LENGTH(N'FIN.Transferencia', N'ID_LOTE_ESTORNO') IS NULL
+    ALTER TABLE [FIN].[Transferencia] ADD ID_LOTE_ESTORNO BIGINT NULL
+        CONSTRAINT FK_Transferencia_Lote_Estorno FOREIGN KEY REFERENCES [SIS].[Lote] (ID_LOTE);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.object_id = OBJECT_ID(N'[FIN].[Transferencia]') AND i.name = N'IX_Transferencia_DATA')
+    CREATE NONCLUSTERED INDEX IX_Transferencia_DATA ON [FIN].[Transferencia] (DT_TRANSFERENCIA) INCLUDE (ID_CONTA_ORIGEM, ID_CONTA_DESTINO, VALOR, SITUACAO);
 GO
 GO
 
@@ -4007,6 +4034,63 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Lancamento_Pendencia_
         ON [FIN].[Lancamento_Pendencia] (ID_PENDENCIA_TIPO, ID_LANCAMENTO)
         INCLUDE (ID_USUARIO_RESPONSAVEL, DT_PREVISAO)
         WHERE SITUACAO = 'ABERTA' AND ATIVO = 1;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/BANCO/BANCO.Caixa_Fechamento.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [BANCO].[Caixa_Fechamento]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : Fechamento de caixa por conta e data (aprovado em 26/11/2026,
+                04g). Guarda o saldo do sistema no fim do dia, o saldo contado
+                e a diferença (motivo obrigatório quando houver; pode gerar um
+                movimento de AJUSTE, ID_MOVIMENTO_AJUSTE). Fechado (SITUACAO
+                FECHADO) bloqueia baixa, estorno e transferência na conta com
+                data até DT_FECHAMENTO. Reabrir (REABERTO) exige a ação REABRIR
+                e motivo; o registro fica para a auditoria. Tipos de conta que
+                usam o fechamento: parâmetro FIN_CAIXA_FECHAMENTO_TIPOS.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04g).
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[BANCO].[Caixa_Fechamento]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [BANCO].[Caixa_Fechamento]
+    (
+        ID_CAIXA_FECHAMENTO  BIGINT         IDENTITY(1,1) NOT NULL,
+        ID_CONTA             INT            NOT NULL,
+        DT_FECHAMENTO        DATE           NOT NULL,
+        SALDO_SISTEMA        DECIMAL(18,2)  NOT NULL,
+        SALDO_CONTADO        DECIMAL(18,2)  NOT NULL,
+        DIFERENCA            AS (CAST(SALDO_CONTADO - SALDO_SISTEMA AS DECIMAL(18,2))) PERSISTED,
+        MOTIVO_DIFERENCA     NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caixa_Fechamento_MOTIVO_DIFERENCA DEFAULT (N''),
+        ID_MOVIMENTO_AJUSTE  BIGINT         NULL,
+        OBSERVACAO           NVARCHAR(400)  NOT NULL CONSTRAINT DF_Caixa_Fechamento_OBSERVACAO DEFAULT (N''),
+        SITUACAO             VARCHAR(10)    NOT NULL CONSTRAINT DF_Caixa_Fechamento_SITUACAO DEFAULT ('FECHADO'),
+        DT_REABERTURA        DATETIME2(0)   NULL,
+        USUARIO_REABERTURA   NVARCHAR(100)  NULL,
+        MOTIVO_REABERTURA    NVARCHAR(400)  NULL,
+        DT_CRIACAO           DATETIME2(0)   NOT NULL CONSTRAINT DF_Caixa_Fechamento_DT_CRIACAO      DEFAULT (SYSDATETIME()),
+        USUARIO_CRIACAO      NVARCHAR(100)  NOT NULL CONSTRAINT DF_Caixa_Fechamento_USUARIO_CRIACAO DEFAULT (ISNULL(CONVERT(NVARCHAR(100), SESSION_CONTEXT(N'USUARIO')), SUSER_SNAME())),
+        DT_ALTERACAO         DATETIME2(0)   NULL,
+        USUARIO_ALTERACAO    NVARCHAR(100)  NULL,
+        CONSTRAINT PK_Caixa_Fechamento           PRIMARY KEY CLUSTERED (ID_CAIXA_FECHAMENTO),
+        CONSTRAINT FK_Caixa_Fechamento_Conta     FOREIGN KEY (ID_CONTA)            REFERENCES [BANCO].[Conta] (ID_CONTA),
+        CONSTRAINT FK_Caixa_Fechamento_Movimento FOREIGN KEY (ID_MOVIMENTO_AJUSTE) REFERENCES [BANCO].[Movimento] (ID_MOVIMENTO),
+        CONSTRAINT CK_Caixa_Fechamento_SITUACAO  CHECK (SITUACAO IN ('FECHADO', 'REABERTO')),
+        CONSTRAINT CK_Caixa_Fechamento_MOTIVO    CHECK (SALDO_CONTADO = SALDO_SISTEMA OR LEN(MOTIVO_DIFERENCA) > 0),
+        CONSTRAINT CK_Caixa_Fechamento_REABERTO  CHECK (SITUACAO = 'FECHADO' OR (DT_REABERTURA IS NOT NULL AND LEN(ISNULL(MOTIVO_REABERTURA, N'')) > 0))
+    );
+
+    CREATE UNIQUE INDEX UQ_Caixa_Fechamento_FECHADO ON [BANCO].[Caixa_Fechamento] (ID_CONTA, DT_FECHAMENTO) WHERE SITUACAO = 'FECHADO';
+END;
 GO
 GO
 
@@ -6098,6 +6182,210 @@ BEGIN
 
     RETURN 0;
 END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/BANCO/BANCO.fn_BANCO_Caixa_Recusa.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [BANCO].[fn_BANCO_Caixa_Recusa]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : Fechamento de caixa (04g): a conta aceita movimento nesta data?
+                Devolve '' quando aceita, ou a mensagem de recusa quando há um
+                fechamento FECHADO na conta com data igual ou posterior. Fonte
+                única da regra: baixa, estorno, transferência e ajuste chamam.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04g).
+  Homologação (LOCAL):
+    -- SELECT BANCO.fn_BANCO_Caixa_Recusa(1, '2026-11-26');
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [BANCO].[fn_BANCO_Caixa_Recusa] (@IdConta INT, @Data DATE)
+RETURNS NVARCHAR(400)
+AS
+BEGIN
+    DECLARE @Fechado DATE, @Conta NVARCHAR(100);
+
+    SELECT @Fechado = MAX(f.DT_FECHAMENTO)
+    FROM BANCO.Caixa_Fechamento f
+    WHERE f.ID_CONTA = @IdConta AND f.SITUACAO = 'FECHADO';
+
+    IF @Fechado IS NULL OR @Data IS NULL OR @Data > @Fechado RETURN N'';
+
+    SELECT @Conta = c.DESCRICAO FROM BANCO.Conta c WHERE c.ID_CONTA = @IdConta;
+
+    RETURN N'O caixa da conta ' + ISNULL(@Conta, N'') + N' está fechado até '
+         + CONVERT(NVARCHAR(10), @Fechado, 103) + N': reabra o fechamento para movimentar em '
+         + CONVERT(NVARCHAR(10), @Data, 103) + N'.';
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/BANCO/BANCO.fn_BANCO_Conta_Saldo.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [BANCO].[fn_BANCO_Conta_Saldo]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Saldo de cada conta no fim do dia @Data (etapa 04g2). Fonte
+                única do saldo: transferência (aviso de saldo), extrato,
+                saldos por conta e fechamento de caixa chamam esta função.
+                Regra (aprovada em 19/11/2026): SALDO_INICIAL é o saldo de
+                abertura do dia DT_SALDO_INICIAL; movimento com data anterior
+                nunca altera o saldo (é histórico). Movimentos estornados
+                entram (o par original + inverso zera).
+                @IdConta NULL = todas as contas.
+                TEM_SALDO = 0 quando @Data é anterior ao saldo inicial (a
+                conta ainda não tinha saldo oficial nessa data).
+                Function em linha (entra no plano de quem chama).
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+  Homologação (LOCAL):
+    -- SELECT * FROM BANCO.fn_BANCO_Conta_Saldo(NULL, '2026-11-27');
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [BANCO].[fn_BANCO_Conta_Saldo] (@IdConta INT, @Data DATE)
+RETURNS TABLE
+AS
+RETURN
+    SELECT c.ID_CONTA,
+           CAST(CASE WHEN c.DT_SALDO_INICIAL IS NULL OR @Data >= c.DT_SALDO_INICIAL THEN c.SALDO_INICIAL + ISNULL(m.TOTAL, 0) ELSE 0 END AS DECIMAL(18,2)) AS SALDO,
+           CAST(ISNULL(m.TOTAL, 0) AS DECIMAL(18,2)) AS TOTAL_MOVIMENTOS,
+           c.SALDO_INICIAL,
+           c.DT_SALDO_INICIAL,
+           c.LIMITE_CREDITO,
+           CAST(CASE WHEN c.DT_SALDO_INICIAL IS NULL OR @Data >= c.DT_SALDO_INICIAL THEN 1 ELSE 0 END AS BIT) AS TEM_SALDO
+    FROM BANCO.Conta c WITH (NOLOCK)
+    OUTER APPLY (SELECT SUM(x.VALOR) AS TOTAL
+                 FROM BANCO.Movimento x WITH (NOLOCK)
+                 WHERE x.ID_CONTA = c.ID_CONTA
+                   AND x.DT_MOVIMENTO <= @Data
+                   AND (c.DT_SALDO_INICIAL IS NULL OR x.DT_MOVIMENTO >= c.DT_SALDO_INICIAL)) m
+    WHERE (@IdConta IS NULL OR c.ID_CONTA = @IdConta);
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/FIN/FIN.fn_FIN_Baixa_Sugerir.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [FIN].[fn_FIN_Baixa_Sugerir]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : Baixa (04g): sugestão de juros, multa e limite de desconto de
+                uma parcela numa data de pagamento. Fonte única do cálculo
+                (tela e FIN_Baixa_Gravar). Função em linha (parâmetros lidos
+                direto de SIS.Parametro, lição de desempenho da 04f2c).
+                  - calcula só a receber, ou também a pagar quando
+                    FIN_BAIXA_CALCULA_PAGAR = S;
+                  - atraso = dias entre o vencimento e o pagamento; dentro da
+                    carência (FIN_BAIXA_CARENCIA_DIAS) não há encargo; passou,
+                    conta desde o vencimento;
+                  - multa (FIN_BAIXA_MULTA_PERC) sobre o principal pago, uma
+                    vez só: se a parcela já pagou multa numa baixa parcial,
+                    não sugere de novo;
+                  - juros (FIN_BAIXA_JUROS_MES_PERC) ao mês, pro rata dia
+                    (mês de 30 dias), sobre o principal pago;
+                  - DESCONTO_LIMITE: só a receber; % do saldo
+                    (FIN_BAIXA_DESCONTO_LIMITE_PERC); NULL = sem limite.
+                @Principal NULL = o saldo da parcela.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04g).
+  Homologação (LOCAL):
+    -- SELECT * FROM FIN.fn_FIN_Baixa_Sugerir(1, '2026-11-26', NULL);
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [FIN].[fn_FIN_Baixa_Sugerir] (@IdParcela BIGINT, @DtPagamento DATE, @Principal DECIMAL(18,2))
+RETURNS TABLE
+AS
+RETURN
+    WITH Par AS
+    (
+        SELECT ISNULL(MAX(CASE WHEN p.CHAVE = 'FIN_BAIXA_MULTA_PERC'           THEN TRY_CONVERT(DECIMAL(9,4), REPLACE(p.VALOR, N',', N'.')) END), 0) AS MULTA_PERC,
+               ISNULL(MAX(CASE WHEN p.CHAVE = 'FIN_BAIXA_JUROS_MES_PERC'       THEN TRY_CONVERT(DECIMAL(9,4), REPLACE(p.VALOR, N',', N'.')) END), 0) AS JUROS_PERC,
+               ISNULL(MAX(CASE WHEN p.CHAVE = 'FIN_BAIXA_CARENCIA_DIAS'        THEN TRY_CONVERT(INT, p.VALOR) END), 0)                                  AS CARENCIA,
+               ISNULL(MAX(CASE WHEN p.CHAVE = 'FIN_BAIXA_CALCULA_PAGAR'        THEN UPPER(LEFT(p.VALOR, 1)) END), N'N')                                 AS CALCULA_PAGAR,
+               ISNULL(MAX(CASE WHEN p.CHAVE = 'FIN_BAIXA_DESCONTO_LIMITE_PERC' THEN TRY_CONVERT(DECIMAL(9,4), REPLACE(p.VALOR, N',', N'.')) END), 0) AS DESC_PERC
+        FROM SIS.Parametro p
+        WHERE p.CHAVE IN ('FIN_BAIXA_MULTA_PERC', 'FIN_BAIXA_JUROS_MES_PERC', 'FIN_BAIXA_CARENCIA_DIAS', 'FIN_BAIXA_CALCULA_PAGAR', 'FIN_BAIXA_DESCONTO_LIMITE_PERC')
+    ),
+    Base AS
+    (
+        SELECT p.ID_PARCELA, l.TIPO, p.DT_VENCIMENTO, p.SALDO,
+               CAST(ISNULL(@Principal, p.SALDO) AS DECIMAL(18,2)) AS PRINCIPAL,
+               CASE WHEN @DtPagamento > p.DT_VENCIMENTO THEN DATEDIFF(DAY, p.DT_VENCIMENTO, @DtPagamento) ELSE 0 END AS DIAS_ATRASO,
+               CASE WHEN EXISTS (SELECT 1 FROM FIN.Baixa b WHERE b.ID_PARCELA = p.ID_PARCELA GROUP BY b.ID_PARCELA HAVING SUM(b.MULTA) > 0)
+                    THEN 1 ELSE 0 END AS JA_PAGOU_MULTA,
+               x.MULTA_PERC, x.JUROS_PERC, x.CARENCIA, x.DESC_PERC,
+               CASE WHEN l.TIPO = 'R' OR x.CALCULA_PAGAR = N'S' THEN 1 ELSE 0 END AS CALCULA_TIPO
+        FROM FIN.Parcela p
+        INNER JOIN FIN.Lancamento l ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
+        CROSS JOIN Par x
+        WHERE p.ID_PARCELA = @IdParcela
+    )
+    SELECT b.ID_PARCELA, b.TIPO, b.DT_VENCIMENTO, b.SALDO, b.PRINCIPAL, b.DIAS_ATRASO,
+           CAST(CASE WHEN b.CALCULA_TIPO = 1 AND b.DIAS_ATRASO > b.CARENCIA THEN 1 ELSE 0 END AS BIT) AS CALCULA,
+           CAST(CASE WHEN b.CALCULA_TIPO = 1 AND b.DIAS_ATRASO > b.CARENCIA AND b.JA_PAGOU_MULTA = 0
+                     THEN ROUND(b.PRINCIPAL * b.MULTA_PERC / 100.0, 2) ELSE 0 END AS DECIMAL(18,2)) AS MULTA,
+           CAST(CASE WHEN b.CALCULA_TIPO = 1 AND b.DIAS_ATRASO > b.CARENCIA
+                     THEN ROUND(b.PRINCIPAL * b.JUROS_PERC / 100.0 / 30.0 * b.DIAS_ATRASO, 2) ELSE 0 END AS DECIMAL(18,2)) AS JUROS,
+           CAST(CASE WHEN b.TIPO = 'R' AND b.DESC_PERC > 0 THEN ROUND(b.SALDO * b.DESC_PERC / 100.0, 2) END AS DECIMAL(18,2)) AS DESCONTO_LIMITE,
+           b.MULTA_PERC, b.JUROS_PERC, b.CARENCIA
+    FROM Base b;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/FIN/FIN.fn_FIN_Parcela_Baixa_Viva.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [FIN].[fn_FIN_Parcela_Baixa_Viva]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Baixas vivas da parcela: as que não são estorno e não foram
+                estornadas. Fonte única da regra "a parcela tem pagamento ou
+                recebimento" para alterar e cancelar o lançamento (decisão do
+                Celso, 04g4: baixa estornada não trava; excluir continua
+                proibido com qualquer baixa, para guardar o histórico).
+                Em linha (inline): uso com EXISTS por parcela.
+
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g4).
+
+  Homologação (LOCAL):
+    -- SELECT * FROM FIN.fn_FIN_Parcela_Baixa_Viva(123);
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER FUNCTION [FIN].[fn_FIN_Parcela_Baixa_Viva] (@IdParcela BIGINT)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT b.ID_BAIXA
+    FROM FIN.Baixa b
+    WHERE b.ID_PARCELA = @IdParcela
+      AND b.ID_BAIXA_ESTORNADA IS NULL
+      AND NOT EXISTS (SELECT 1 FROM FIN.Baixa x WHERE x.ID_BAIXA_ESTORNADA = b.ID_BAIXA)
+);
 GO
 GO
 
@@ -20039,7 +20327,7 @@ GO
                 @Parcelas: JSON [{"id":null|ID_PARCELA,"vencimento":"aaaa-mm-dd",
                 "valor":100.00,"idContaPrevista":null}]; a numeração é refeita
                 pela ordem de vencimento. Parcela existente fora da lista é
-                retirada (só sem baixa). Empresa vem do centro de custo.
+                retirada (só sem nenhuma baixa, nem estornada). Empresa vem do centro de custo.
                 Proteções contra erro de digitação (P17), conferidas aqui e na
                 prévia (@SomenteConferir = 1, usada por FIN_Lancamento_Conferir):
                   BLOQUEIO  não grava (fixos: parceiro/centro/conta inativos,
@@ -20066,6 +20354,9 @@ GO
     v1.1 (26/11/2026) - Etapa 04f2b: integração em branco vale COMPLETA (a API
                         manda texto vazio quando a ficha não informa).
 
+    v1.2 (27/11/2026) - Etapa 04g4: só a baixa viva (não estornada) trava
+                        parceiro, valor total e parcela (fn_FIN_Parcela_Baixa_Viva);
+                        parcela só com baixa estornada muda, mas não sai.
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Gravar @IdUsuario = 2, @Tipo = 'P', @IdCentroCusto = 1, @IdPessoa = 1, @IdPlanoConta = 1,
     --      @DtEmissao = '2026-11-25', @ValorTotal = 100, @Parcelas = N'[{"vencimento":"2026-12-10","valor":100}]', @SomenteConferir = 1;
@@ -20161,7 +20452,8 @@ BEGIN
             ELSE
                 SET @Tipo = @aTipo;
 
-            IF EXISTS (SELECT 1 FROM FIN.Baixa b INNER JOIN FIN.Parcela p ON p.ID_PARCELA = b.ID_PARCELA WHERE p.ID_LANCAMENTO = @IdLancamento)
+            -- só baixa viva (não estornada) trava o lançamento (04g4)
+            IF EXISTS (SELECT 1 FROM FIN.Parcela p WHERE p.ID_LANCAMENTO = @IdLancamento AND EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA)))
                 SET @TemBaixa = 1;
         END;
 
@@ -20281,12 +20573,18 @@ BEGIN
             FROM #P x
             INNER JOIN FIN.Parcela p ON p.ID_PARCELA = x.ID_PARCELA;
 
-            -- parcelas com baixa: não mudam e não saem
+            -- parcelas com baixa viva: não mudam e não saem
             IF EXISTS (SELECT 1 FROM FIN.Parcela p
                        WHERE p.ID_LANCAMENTO = @IdLancamento
-                         AND EXISTS (SELECT 1 FROM FIN.Baixa b WHERE b.ID_PARCELA = p.ID_PARCELA)
+                         AND EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA))
                          AND NOT EXISTS (SELECT 1 FROM #P x WHERE x.ID_PARCELA = p.ID_PARCELA AND x.MUDOU = 0))
                 SET @Recusa = N'Parcela com pagamento ou recebimento não pode mudar de vencimento ou valor, nem ser retirada.';
+            -- parcela só com baixa estornada: pode mudar, mas não sai (guarda o histórico)
+            ELSE IF EXISTS (SELECT 1 FROM FIN.Parcela p
+                            WHERE p.ID_LANCAMENTO = @IdLancamento
+                              AND EXISTS (SELECT 1 FROM FIN.Baixa b WHERE b.ID_PARCELA = p.ID_PARCELA)
+                              AND NOT EXISTS (SELECT 1 FROM #P x WHERE x.ID_PARCELA = p.ID_PARCELA))
+                SET @Recusa = N'Parcela com baixa estornada não pode ser retirada (guarda o histórico); mude o vencimento ou o valor dela.';
         END;
 
         IF @Recusa <> N''
@@ -21002,6 +21300,10 @@ GO
                         automáticas e manuais), QTD_PENDENCIAS, PODE_PENDENCIA,
                         BLOQUEIA_BAIXA e MOTIVO_BLOQUEIO (FIN.fn_FIN_Pendencia_Bloqueia).
 
+    v1.2 (27/11/2026) - Etapa 04g4: TEM_BAIXA e "travada" contam só a baixa
+                        viva (fn_FIN_Parcela_Baixa_Viva); TEM_HISTORICO_BAIXA e
+                        "fixa" (parcela que não sai) contam qualquer baixa;
+                        excluir continua proibido com qualquer baixa.
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Obter @IdUsuario = 2, @IdLancamento = 1;
 *******************************************************************************/
@@ -21022,6 +21324,7 @@ BEGIN
     DECLARE @Tipo       CHAR(1);
     DECLARE @Item       VARCHAR(40);
     DECLARE @TemBaixa   BIT = 0;
+    DECLARE @TemHistBaixa BIT = 0;
     DECLARE @NaLixeira  BIT = 0;
     DECLARE @MesFechado BIT = 0;
     DECLARE @Editavel   BIT = 0;
@@ -21036,9 +21339,11 @@ BEGIN
             THROW 50001, N'Você não tem permissão para ver este lançamento.', 1;
 
         SET @EtapaAtual = 'Situação';
+        IF EXISTS (SELECT 1 FROM FIN.Parcela p WITH (NOLOCK) WHERE p.ID_LANCAMENTO = @IdLancamento AND EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA)))
+            SET @TemBaixa = 1;
         IF EXISTS (SELECT 1 FROM FIN.Baixa b WITH (NOLOCK) INNER JOIN FIN.Parcela p WITH (NOLOCK) ON p.ID_PARCELA = b.ID_PARCELA
                    WHERE p.ID_LANCAMENTO = @IdLancamento)
-            SET @TemBaixa = 1;
+            SET @TemHistBaixa = 1;
         SET @NaLixeira = SIS.fn_SIS_Na_Lixeira(N'FIN.Lancamento', @IdLancamento);
         IF EXISTS (SELECT 1 FROM FIN.Lancamento l WITH (NOLOCK)
                    INNER JOIN FIN.Mes_Fechado m  WITH (NOLOCK) ON m.ID_EMPRESA = l.ID_EMPRESA AND m.MES = l.DT_COMPETENCIA AND m.FECHADO = 1
@@ -21062,12 +21367,13 @@ BEGIN
                @TemBaixa AS TEM_BAIXA, @NaLixeira AS NA_LIXEIRA, @MesFechado AS MES_FECHADO,
                CAST(CASE WHEN @Editavel = 1 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'ALTERAR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_ALTERAR,
                CAST(CASE WHEN @Editavel = 1 AND @TemBaixa = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'CANCELAR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_CANCELAR,
-               CAST(CASE WHEN @Editavel = 1 AND @TemBaixa = 0 AND l.ORIGEM = 'MANUAL' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'EXCLUIR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_EXCLUIR,
+               CAST(CASE WHEN @Editavel = 1 AND @TemHistBaixa = 0 AND l.ORIGEM = 'MANUAL' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'EXCLUIR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_EXCLUIR,
                ISNULL((SELECT p.ID_PARCELA AS id, p.NUMERO AS numero, p.QTD_PARCELAS AS qtdParcelas, p.DT_VENCIMENTO AS vencimento,
                               p.VALOR AS valor, p.VALOR_BAIXADO AS valorBaixado, p.SALDO AS saldo, p.SITUACAO AS situacao,
                               p.ID_CONTA_PREVISTA AS idContaPrevista, ISNULL(c.DESCRICAO, N'') AS contaPrevista, p.ID_LOTE AS idLote,
                               (SELECT COUNT(*) FROM FIN.Baixa b WITH (NOLOCK) WHERE b.ID_PARCELA = p.ID_PARCELA) AS qtdBaixas,
-                              CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.Baixa b WITH (NOLOCK) WHERE b.ID_PARCELA = p.ID_PARCELA) THEN 1 ELSE 0 END AS BIT) AS travada
+                              CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA)) THEN 1 ELSE 0 END AS BIT) AS travada,
+                              CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.Baixa b WITH (NOLOCK) WHERE b.ID_PARCELA = p.ID_PARCELA) THEN 1 ELSE 0 END AS BIT) AS fixa
                        FROM FIN.Parcela p WITH (NOLOCK)
                        LEFT JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = p.ID_CONTA_PREVISTA
                        WHERE p.ID_LANCAMENTO = l.ID_LANCAMENTO
@@ -21100,7 +21406,7 @@ BEGIN
                        FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS PENDENCIAS,
                (SELECT COUNT(*) FROM FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pc) AS QTD_PENDENCIAS,
                CAST(CASE WHEN @NaLixeira = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'PENDENCIA') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_PENDENCIA,
-               bq.BLOQUEIA AS BLOQUEIA_BAIXA, bq.MOTIVO AS MOTIVO_BLOQUEIO
+               bq.BLOQUEIA AS BLOQUEIA_BAIXA, bq.MOTIVO AS MOTIVO_BLOQUEIO, @TemHistBaixa AS TEM_HISTORICO_BAIXA
         FROM FIN.Lancamento l WITH (NOLOCK)
         INNER JOIN CAD.Empresa e            WITH (NOLOCK) ON e.ID_EMPRESA = l.ID_EMPRESA
         LEFT  JOIN CAD.Centro_Custo cc      WITH (NOLOCK) ON cc.ID_CENTRO_CUSTO = l.ID_CENTRO_CUSTO
@@ -21142,6 +21448,8 @@ GO
   Changelog:
     v1.0 (25/11/2026) - Criação (etapa 04f).
 
+    v1.1 (27/11/2026) - Etapa 04g4: só a baixa viva (não estornada) impede o
+                        cancelamento (fn_FIN_Parcela_Baixa_Viva).
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Cancelar @IdUsuario = 2, @IdLancamento = 1, @Motivo = N'Lançado em dobro';
 *******************************************************************************/
@@ -21183,7 +21491,7 @@ BEGIN
             SET @Recusa = N'O lançamento já está cancelado.';
         IF @Recusa = N'' AND @Origem NOT IN ('MANUAL', 'MIGRACAO')
             SET @Recusa = N'Este lançamento foi gerado por outra rotina (' + CONVERT(NVARCHAR(15), @Origem) + N'): cancele pela tela de origem.';
-        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Baixa b INNER JOIN FIN.Parcela p ON p.ID_PARCELA = b.ID_PARCELA WHERE p.ID_LANCAMENTO = @IdLancamento)
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Parcela p WHERE p.ID_LANCAMENTO = @IdLancamento AND EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA)))
             SET @Recusa = N'O lançamento tem pagamento ou recebimento: estorne as baixas antes de cancelar.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Lancamento l
                                      INNER JOIN FIN.Mes_Fechado m  ON m.ID_EMPRESA = l.ID_EMPRESA AND m.MES = l.DT_COMPETENCIA AND m.FECHADO = 1
@@ -22674,6 +22982,2041 @@ END;
 GO
 GO
 
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Baixa_Gravar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Baixa_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : Baixa (pagamento ou recebimento) de uma ou várias parcelas, total
+                ou parcial (etapa 04g, desenho aprovado em 26/11/2026). Todas as
+                parcelas do mesmo tipo (pagar ou receber). Tudo-ou-nada.
+                @Itens: JSON [{"idParcela":1,"principal":100.00,"juros":0,
+                "multa":0,"correcao":0,"desconto":0,"abatimento":0,
+                "retencao":0,"tarifa":0}]. principal = quanto da parcela fica
+                quitado (abate o saldo; o abatimento faz parte dele, sem
+                dinheiro). Gera um lote (origem BAIXA), UM BANCO.Movimento pelo
+                total líquido (entra no receber, sai no pagar; sem movimento
+                quando o líquido é zero, ex.: só abatimento) e um movimento
+                TARIFA pela soma das tarifas. Cheque nasce não compensado (a
+                compensação entra com a conciliação).
+                Regras (mesmo contrato do FIN_Lancamento_Gravar: BLOQUEIO,
+                MOTIVO, AVISO; @SomenteConferir = 1 é a prévia):
+                  BLOQUEIO  parcela inexistente/repetida/cancelada/sem saldo,
+                            lançamento cancelado/na lixeira/de previsão, tipos
+                            misturados, valor acima do saldo ou negativo,
+                            conta inativa, forma inválida, mês fechado (conta
+                            contábil, mês do pagamento), caixa fechado
+                            (BANCO.fn_BANCO_Caixa_Recusa); trava de datas,
+                            pendência que bloqueia e desconto acima do limite
+                            para quem não tem a permissão;
+                  MOTIVO    trava de datas com LANCAR_RETROATIVO, pendência
+                            que bloqueia com LIBERAR_PENDENCIA (justificativa)
+                            e desconto acima do limite com DESCONTO_LIMITE:
+                            grava só com @Motivo;
+                  AVISO     encargo diferente do calculado (ENCARGO_AJUSTADO),
+                            conta de outra empresa (CONTA_OUTRA_EMPRESA),
+                            pagamento antes da emissão (PAGTO_ANTES_EMISSAO):
+                            grava só com o código em @AvisosConfirmados.
+                Avisos e motivos ficam em SIS.Aviso_Confirmado (TABELA
+                FIN.Baixa).
+                Permissão: BAIXAR em FIN_PAGAR / FIN_RECEBER.
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID (1ª baixa), ID_MOVIMENTO,
+                ID_LOTE, PENDENTE, AVISOS (JSON: codigo, nivel, mensagem,
+                idReferencia = ID_PARCELA, campo).
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04g).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Baixa_Gravar @IdUsuario = 2, @DtPagamento = '2026-11-26', @IdConta = 1, @Forma = 'PIX',
+    --      @Itens = N'[{"idParcela":1,"principal":100}]', @SomenteConferir = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Baixa_Gravar]
+    @IdUsuario          INT,
+    @DtPagamento        DATE            = NULL,
+    @IdConta            INT             = NULL,
+    @Forma              VARCHAR(12)     = NULL,
+    @Itens              NVARCHAR(MAX)   = NULL,
+    @Documento          NVARCHAR(40)    = NULL,
+    @Observacao         NVARCHAR(400)   = NULL,
+    @AvisosConfirmados  NVARCHAR(1000)  = NULL,
+    @Motivo             NVARCHAR(400)   = NULL,
+    @SomenteConferir    BIT             = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[FIN].[FIN_Baixa_Gravar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa      NVARCHAR(400) = N'';
+    DECLARE @Usuario     NVARCHAR(100);
+    DECLARE @Tipo        CHAR(1);
+    DECLARE @Item        VARCHAR(40);
+    DECLARE @Avisos      NVARCHAR(MAX) = N'[]';
+    DECLARE @Pendente    BIT = 0;
+    DECLARE @IdEmpresaConta INT;
+    DECLARE @ContaAtiva  BIT;
+    DECLARE @Liquido     DECIMAL(18,2);
+    DECLARE @Tarifa      DECIMAL(18,2);
+    DECLARE @IdLote      BIGINT;
+    DECLARE @IdMovimento BIGINT;
+    DECLARE @IdPrimeira  BIGINT;
+    DECLARE @N           INT;
+    DECLARE @Historico   NVARCHAR(200);
+
+    CREATE TABLE #I (ORDEM INT NOT NULL, ID_PARCELA BIGINT NULL, PRINCIPAL DECIMAL(18,2) NULL, JUROS DECIMAL(18,2) NULL, MULTA DECIMAL(18,2) NULL,
+                     CORRECAO DECIMAL(18,2) NULL, DESCONTO DECIMAL(18,2) NULL, ABATIMENTO DECIMAL(18,2) NULL, RETENCAO DECIMAL(18,2) NULL,
+                     TARIFA DECIMAL(18,2) NULL, ID_LANCAMENTO BIGINT NULL, TIPO CHAR(1) NULL, ID_EMPRESA INT NULL, ID_PLANO_CONTA INT NULL,
+                     NUMERO SMALLINT NULL, QTD SMALLINT NULL, SALDO DECIMAL(18,2) NULL, SITUACAO VARCHAR(10) NULL, SITUACAO_LANC VARCHAR(10) NULL,
+                     PREVISAO BIT NULL, DT_EMISSAO DATE NULL, PESSOA NVARCHAR(150) NULL, DOCUMENTO NVARCHAR(40) NULL,
+                     SUG_JUROS DECIMAL(18,2) NULL, SUG_MULTA DECIMAL(18,2) NULL, CALCULA BIT NULL, DESC_LIMITE DECIMAL(18,2) NULL,
+                     ID_BAIXA BIGINT NULL);
+    CREATE TABLE #Regra (ORDEM INT IDENTITY(1,1), CODIGO VARCHAR(40) NOT NULL, NIVEL VARCHAR(12) NOT NULL,
+                         MENSAGEM NVARCHAR(400) NOT NULL, ID_REFERENCIA BIGINT NULL, CAMPO VARCHAR(40) NOT NULL DEFAULT (''));
+
+    BEGIN TRY
+        SET @Forma             = UPPER(LTRIM(RTRIM(ISNULL(@Forma, ''))));
+        SET @Documento         = LTRIM(RTRIM(ISNULL(@Documento, N'')));
+        SET @Observacao        = LTRIM(RTRIM(ISNULL(@Observacao, N'')));
+        SET @Motivo            = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+        SET @AvisosConfirmados = ISNULL(@AvisosConfirmados, N'');
+
+        ---------------------------------------------------------------------
+        -- 1) Itens
+        ---------------------------------------------------------------------
+        IF ISJSON(ISNULL(@Itens, N'')) = 1
+            INSERT INTO #I (ORDEM, ID_PARCELA, PRINCIPAL, JUROS, MULTA, CORRECAO, DESCONTO, ABATIMENTO, RETENCAO, TARIFA)
+            SELECT CONVERT(INT, j.[key]) + 1, x.idParcela, x.principal, ISNULL(x.juros, 0), ISNULL(x.multa, 0), ISNULL(x.correcao, 0),
+                   ISNULL(x.desconto, 0), ISNULL(x.abatimento, 0), ISNULL(x.retencao, 0), ISNULL(x.tarifa, 0)
+            FROM OPENJSON(@Itens) j
+            CROSS APPLY OPENJSON(j.[value]) WITH (idParcela BIGINT '$.idParcela', principal DECIMAL(18,2) '$.principal', juros DECIMAL(18,2) '$.juros',
+                                                  multa DECIMAL(18,2) '$.multa', correcao DECIMAL(18,2) '$.correcao', desconto DECIMAL(18,2) '$.desconto',
+                                                  abatimento DECIMAL(18,2) '$.abatimento', retencao DECIMAL(18,2) '$.retencao', tarifa DECIMAL(18,2) '$.tarifa') x;
+
+        UPDATE i
+           SET i.ID_LANCAMENTO = l.ID_LANCAMENTO, i.TIPO = l.TIPO, i.ID_EMPRESA = l.ID_EMPRESA, i.ID_PLANO_CONTA = l.ID_PLANO_CONTA,
+               i.NUMERO = p.NUMERO, i.QTD = p.QTD_PARCELAS, i.SALDO = p.SALDO, i.SITUACAO = p.SITUACAO, i.SITUACAO_LANC = l.SITUACAO,
+               i.PREVISAO = l.PREVISAO, i.DT_EMISSAO = l.DT_EMISSAO, i.DOCUMENTO = l.DOCUMENTO,
+               i.PESSOA = ISNULL(NULLIF(pe.NOME_FANTASIA, N''), pe.NOME)
+        FROM #I i
+        INNER JOIN FIN.Parcela p    ON p.ID_PARCELA = i.ID_PARCELA
+        INNER JOIN FIN.Lancamento l ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
+        LEFT  JOIN CAD.Pessoa pe    ON pe.ID_PESSOA = l.ID_PESSOA;
+
+        SELECT TOP 1 @Tipo = i.TIPO FROM #I i WHERE i.TIPO IS NOT NULL ORDER BY i.ORDEM;
+        SET @Item = CASE @Tipo WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END;
+
+        IF NOT EXISTS (SELECT 1 FROM #I)
+            SET @Recusa = N'Escolha pelo menos uma parcela para baixar.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #I WHERE ID_LANCAMENTO IS NULL)
+            SET @Recusa = N'Parcela não encontrada.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'BAIXAR') = 0
+            SET @Recusa = CASE @Tipo WHEN 'P' THEN N'Você não tem permissão para baixar contas a pagar.' ELSE N'Você não tem permissão para baixar contas a receber.' END;
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #I WHERE TIPO <> @Tipo)
+            SET @Recusa = N'Baixe as contas a pagar e as contas a receber separadamente.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #I GROUP BY ID_PARCELA HAVING COUNT(*) > 1)
+            SET @Recusa = N'A mesma parcela foi escolhida mais de uma vez.';
+        IF @Recusa = N'' AND @DtPagamento IS NULL
+            SET @Recusa = CASE @Tipo WHEN 'P' THEN N'Informe a data do pagamento.' ELSE N'Informe a data do recebimento.' END;
+
+        SELECT @IdEmpresaConta = c.ID_EMPRESA, @ContaAtiva = c.ATIVO FROM BANCO.Conta c WHERE c.ID_CONTA = @IdConta;
+        IF @Recusa = N'' AND @ContaAtiva IS NULL
+            SET @Recusa = N'Escolha a conta (banco ou caixa).';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID,
+                   CAST(NULL AS BIGINT) AS ID_MOVIMENTO, CAST(NULL AS BIGINT) AS ID_LOTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #I;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        UPDATE i
+           SET i.SUG_JUROS = s.JUROS, i.SUG_MULTA = s.MULTA, i.CALCULA = s.CALCULA, i.DESC_LIMITE = s.DESCONTO_LIMITE
+        FROM #I i
+        CROSS APPLY FIN.fn_FIN_Baixa_Sugerir(i.ID_PARCELA, @DtPagamento, i.PRINCIPAL) s;
+
+        ---------------------------------------------------------------------
+        -- 2) Regras
+        ---------------------------------------------------------------------
+        IF @ContaAtiva = 0
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO) VALUES ('CONTA_INATIVA', 'BLOQUEIO', N'A conta escolhida está desativada.', 'idConta');
+
+        IF @Forma NOT IN ('PIX', 'BOLETO', 'TED', 'DOC', 'DEBITO', 'DINHEIRO', 'CHEQUE', 'PERMUTA', 'CARTAO', 'OUTRA')
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO) VALUES ('FORMA', 'BLOQUEIO', N'Escolha a forma de pagamento.', 'forma');
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'PARCELA_SITUACAO', 'BLOQUEIO',
+               N'Parcela ' + CONVERT(NVARCHAR(5), i.NUMERO) + N'/' + CONVERT(NVARCHAR(5), i.QTD) + N' de ' + ISNULL(i.PESSOA, N'')
+               + CASE WHEN i.SITUACAO_LANC = 'CANCELADO' OR i.SITUACAO = 'CANCELADA' THEN N': está cancelada.'
+                      WHEN SIS.fn_SIS_Na_Lixeira(N'FIN.Lancamento', i.ID_LANCAMENTO) = 1 THEN N': o lançamento está na lixeira.'
+                      WHEN i.PREVISAO = 1 THEN N': é uma previsão (tire a marca de previsão no lançamento antes de baixar).'
+                      ELSE N': não tem saldo em aberto.' END,
+               i.ID_PARCELA, 'itens'
+        FROM #I i
+        WHERE i.SITUACAO_LANC = 'CANCELADO' OR i.SITUACAO = 'CANCELADA' OR i.PREVISAO = 1 OR i.SALDO <= 0
+           OR SIS.fn_SIS_Na_Lixeira(N'FIN.Lancamento', i.ID_LANCAMENTO) = 1;
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'VALOR', 'BLOQUEIO',
+               N'Parcela ' + CONVERT(NVARCHAR(5), i.NUMERO) + N'/' + CONVERT(NVARCHAR(5), i.QTD) + N' de ' + ISNULL(i.PESSOA, N'')
+               + CASE WHEN ISNULL(i.PRINCIPAL, 0) <= 0 THEN N': informe o valor a baixar.'
+                      WHEN i.PRINCIPAL > i.SALDO THEN N': o valor ' + FORMAT(i.PRINCIPAL, 'N2', 'pt-BR') + N' passa do saldo em aberto ' + FORMAT(i.SALDO, 'N2', 'pt-BR') + N'.'
+                      WHEN i.ABATIMENTO > i.PRINCIPAL THEN N': o abatimento passa do valor baixado.'
+                      ELSE N': juros, multa, correção, desconto, abatimento, retenção e tarifa não podem ser negativos, e o valor líquido não pode ficar negativo.' END,
+               i.ID_PARCELA, 'itens'
+        FROM #I i
+        WHERE i.SALDO > 0
+          AND (ISNULL(i.PRINCIPAL, 0) <= 0 OR i.PRINCIPAL > i.SALDO OR i.ABATIMENTO > i.PRINCIPAL
+               OR i.JUROS < 0 OR i.MULTA < 0 OR i.CORRECAO < 0 OR i.DESCONTO < 0 OR i.ABATIMENTO < 0 OR i.RETENCAO < 0 OR i.TARIFA < 0
+               OR i.PRINCIPAL + i.JUROS + i.MULTA + i.CORRECAO - i.DESCONTO - i.ABATIMENTO - i.RETENCAO < 0);
+
+        -- mês fechado (conta contábil; regime de caixa: mês do pagamento)
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+        SELECT TOP 1 'MES_FECHADO', 'BLOQUEIO',
+               N'O mês ' + RIGHT('0' + CONVERT(NVARCHAR(2), MONTH(m.MES)), 2) + N'/' + CONVERT(NVARCHAR(4), YEAR(m.MES))
+               + N' está fechado para a empresa ' + ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL) + N' (conta contábil).', 'dtPagamento'
+        FROM #I i
+        INNER JOIN FIN.Mes_Fechado m  ON m.ID_EMPRESA = i.ID_EMPRESA AND m.MES = DATEFROMPARTS(YEAR(@DtPagamento), MONTH(@DtPagamento), 1) AND m.FECHADO = 1
+        INNER JOIN CAD.Plano_Conta pc ON pc.ID_PLANO_CONTA = i.ID_PLANO_CONTA AND pc.CONTABIL = 1
+        INNER JOIN CAD.Empresa e      ON e.ID_EMPRESA = i.ID_EMPRESA;
+
+        -- caixa fechado
+        IF BANCO.fn_BANCO_Caixa_Recusa(@IdConta, @DtPagamento) <> N''
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO) VALUES ('CAIXA_FECHADO', 'BLOQUEIO', BANCO.fn_BANCO_Caixa_Recusa(@IdConta, @DtPagamento), 'dtPagamento');
+
+        -- trava de datas
+        IF FIN.fn_FIN_Data_Recusa('BAIXA', @DtPagamento) <> N''
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('DATA_BAIXA', CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'LANCAR_RETROATIVO') = 1 THEN 'MOTIVO' ELSE 'BLOQUEIO' END,
+                    FIN.fn_FIN_Data_Recusa('BAIXA', @DtPagamento), 'dtPagamento');
+
+        -- pendência que bloqueia a baixa (P27): liberação com justificativa
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'PENDENCIA_BLOQUEIA',
+               CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'LIBERAR_PENDENCIA') = 1 THEN 'MOTIVO' ELSE 'BLOQUEIO' END,
+               LEFT(N'Parcela ' + CONVERT(NVARCHAR(5), i.NUMERO) + N'/' + CONVERT(NVARCHAR(5), i.QTD) + N' de ' + ISNULL(i.PESSOA, N'')
+                    + N': pendência que bloqueia a baixa (' + b.MOTIVO + N')'
+                    + CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'LIBERAR_PENDENCIA') = 1 THEN N'. Para liberar, informe a justificativa.'
+                           ELSE N'. Resolva a pendência ou peça a quem pode liberar.' END, 400),
+               i.ID_PARCELA, 'itens'
+        FROM #I i
+        CROSS APPLY FIN.fn_FIN_Pendencia_Bloqueia(i.ID_LANCAMENTO, i.ID_PARCELA) b
+        WHERE b.BLOQUEIA = 1;
+
+        -- desconto acima do limite (só a receber)
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'DESCONTO_LIMITE',
+               CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'DESCONTO_LIMITE') = 1 THEN 'MOTIVO' ELSE 'BLOQUEIO' END,
+               N'Parcela ' + CONVERT(NVARCHAR(5), i.NUMERO) + N'/' + CONVERT(NVARCHAR(5), i.QTD) + N': desconto de ' + FORMAT(i.DESCONTO, 'N2', 'pt-BR')
+               + N' passa do limite de ' + FORMAT(i.DESC_LIMITE, 'N2', 'pt-BR')
+               + CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'DESCONTO_LIMITE') = 1 THEN N'. Informe o motivo.' ELSE N'. Peça a quem pode dar desconto maior.' END,
+               i.ID_PARCELA, 'itens'
+        FROM #I i
+        WHERE i.DESC_LIMITE IS NOT NULL AND i.DESCONTO > i.DESC_LIMITE;
+
+        -- avisos
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'ENCARGO_AJUSTADO', 'AVISO',
+               N'Parcela ' + CONVERT(NVARCHAR(5), i.NUMERO) + N'/' + CONVERT(NVARCHAR(5), i.QTD) + N': juros e multa informados ('
+               + FORMAT(i.JUROS + i.MULTA, 'N2', 'pt-BR') + N') diferentes do calculado (' + FORMAT(i.SUG_JUROS + i.SUG_MULTA, 'N2', 'pt-BR') + N').',
+               i.ID_PARCELA, 'itens'
+        FROM #I i
+        WHERE i.CALCULA = 1 AND i.JUROS + i.MULTA <> i.SUG_JUROS + i.SUG_MULTA;
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+        SELECT TOP 1 'CONTA_OUTRA_EMPRESA', 'AVISO', N'A conta escolhida é de outra empresa do grupo que não a do lançamento.', 'idConta'
+        FROM #I i WHERE i.ID_EMPRESA <> @IdEmpresaConta;
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT TOP 1 'PAGTO_ANTES_EMISSAO', 'AVISO',
+               N'A data ' + CASE @Tipo WHEN 'P' THEN N'do pagamento' ELSE N'do recebimento' END + N' é anterior à emissão do lançamento ('
+               + CONVERT(NVARCHAR(10), i.DT_EMISSAO, 103) + N').', i.ID_PARCELA, 'dtPagamento'
+        FROM #I i WHERE @DtPagamento < i.DT_EMISSAO ORDER BY i.ORDEM;
+
+        ---------------------------------------------------------------------
+        -- 3) Resultado das regras
+        ---------------------------------------------------------------------
+        SET @Avisos = ISNULL((SELECT r.CODIGO AS codigo, r.NIVEL AS nivel, r.MENSAGEM AS mensagem, r.ID_REFERENCIA AS idReferencia, r.CAMPO AS campo
+                              FROM #Regra r
+                              ORDER BY CASE r.NIVEL WHEN 'BLOQUEIO' THEN 0 WHEN 'MOTIVO' THEN 1 ELSE 2 END, r.ORDEM
+                              FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]');
+
+        IF EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'BLOQUEIO')
+        BEGIN
+            SELECT TOP 1 @Recusa = r.MENSAGEM FROM #Regra r WHERE r.NIVEL = 'BLOQUEIO' ORDER BY r.ORDEM;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID,
+                   CAST(NULL AS BIGINT) AS ID_MOVIMENTO, CAST(NULL AS BIGINT) AS ID_LOTE, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #I;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        IF (EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'MOTIVO') AND LEN(@Motivo) < 5)
+           OR EXISTS (SELECT 1 FROM #Regra r WHERE r.NIVEL = 'AVISO'
+                        AND NOT EXISTS (SELECT 1 FROM STRING_SPLIT(@AvisosConfirmados, N',') s WHERE LTRIM(RTRIM(s.value)) = r.CODIGO))
+            SET @Pendente = 1;
+
+        IF @SomenteConferir = 1 OR @Pendente = 1
+        BEGIN
+            SELECT CAST(CASE WHEN @SomenteConferir = 1 THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+                   CAST(CASE WHEN @Pendente = 0 THEN N'Nada a confirmar.'
+                             WHEN EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'MOTIVO') AND LEN(@Motivo) < 5
+                                  THEN N'Informe o motivo (justificativa) para gravar a baixa.'
+                             ELSE N'Confira os avisos antes de gravar.' END AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS BIGINT) AS ID, CAST(NULL AS BIGINT) AS ID_MOVIMENTO, CAST(NULL AS BIGINT) AS ID_LOTE,
+                   @Pendente AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #I;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        ---------------------------------------------------------------------
+        -- 4) Gravação
+        ---------------------------------------------------------------------
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+        SET @N       = (SELECT COUNT(*) FROM #I);
+        SELECT @Liquido = SUM(i.PRINCIPAL + i.JUROS + i.MULTA + i.CORRECAO - i.DESCONTO - i.ABATIMENTO - i.RETENCAO), @Tarifa = SUM(i.TARIFA) FROM #I i;
+        SET @Historico = LEFT(CASE @Tipo WHEN 'P' THEN N'Pagamento' ELSE N'Recebimento' END
+                         + CASE WHEN @N = 1 THEN (SELECT N' - ' + ISNULL(i.PESSOA, N'') + N' - parc. ' + CONVERT(NVARCHAR(5), i.NUMERO) + N'/' + CONVERT(NVARCHAR(5), i.QTD)
+                                                  + CASE WHEN i.DOCUMENTO <> N'' THEN N' - doc. ' + i.DOCUMENTO ELSE N'' END FROM #I i)
+                                ELSE N' de ' + CONVERT(NVARCHAR(10), @N) + N' parcelas' END, 200);
+
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        EXEC SIS.SIS_Lote_Gerar @IdUsuario = @IdUsuario, @Origem = 'BAIXA', @Descricao = @Historico,
+             @TabelaReferencia = N'FIN.Baixa', @IdLote = @IdLote OUTPUT;
+
+        -- trava as parcelas e confere o saldo de novo (concorrência)
+        IF EXISTS (SELECT 1 FROM #I i INNER JOIN FIN.Parcela p WITH (UPDLOCK, HOLDLOCK) ON p.ID_PARCELA = i.ID_PARCELA
+                   WHERE p.SALDO < i.PRINCIPAL OR p.SITUACAO = 'CANCELADA')
+        BEGIN
+            ROLLBACK TRANSACTION;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Uma das parcelas foi alterada por outra pessoa. Abra a baixa de novo.' AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS BIGINT) AS ID, CAST(NULL AS BIGINT) AS ID_MOVIMENTO, CAST(NULL AS BIGINT) AS ID_LOTE, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #I;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        IF @Liquido <> 0
+        BEGIN
+            INSERT INTO BANCO.Movimento (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO, DOCUMENTO, ID_LOTE, USUARIO_CRIACAO)
+            VALUES (@IdConta, @DtPagamento, CASE @Tipo WHEN 'P' THEN -@Liquido ELSE @Liquido END, 'BAIXA', @Historico, @Documento, @IdLote, ISNULL(@Usuario, N'sistema'));
+            SET @IdMovimento = SCOPE_IDENTITY();
+        END;
+
+        IF @Tarifa > 0
+            INSERT INTO BANCO.Movimento (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO, DOCUMENTO, ID_LOTE, USUARIO_CRIACAO)
+            VALUES (@IdConta, @DtPagamento, -@Tarifa, 'TARIFA', LEFT(N'Tarifa - ' + @Historico, 200), @Documento, @IdLote, ISNULL(@Usuario, N'sistema'));
+
+        DECLARE @Ids TABLE (ID_BAIXA BIGINT NOT NULL, ID_PARCELA BIGINT NOT NULL);
+
+        INSERT INTO FIN.Baixa (ID_PARCELA, DT_PAGAMENTO, ID_CONTA, FORMA, VALOR_PRINCIPAL, JUROS, MULTA, CORRECAO, DESCONTO, ABATIMENTO,
+                               TARIFA, RETENCAO, ID_MOVIMENTO, COMPENSADO, OBSERVACAO, ID_LOTE, USUARIO_CRIACAO)
+        OUTPUT inserted.ID_BAIXA, inserted.ID_PARCELA INTO @Ids (ID_BAIXA, ID_PARCELA)
+        SELECT i.ID_PARCELA, @DtPagamento, @IdConta, @Forma, i.PRINCIPAL, i.JUROS, i.MULTA, i.CORRECAO, i.DESCONTO, i.ABATIMENTO,
+               i.TARIFA, i.RETENCAO, @IdMovimento, CASE WHEN @Forma = 'CHEQUE' THEN 0 ELSE 1 END, @Observacao, @IdLote, ISNULL(@Usuario, N'sistema')
+        FROM #I i
+        ORDER BY i.ORDEM;
+
+        UPDATE i SET i.ID_BAIXA = d.ID_BAIXA FROM #I i INNER JOIN @Ids d ON d.ID_PARCELA = i.ID_PARCELA;
+        SELECT TOP 1 @IdPrimeira = i.ID_BAIXA FROM #I i ORDER BY i.ORDEM;
+
+        -- avisos confirmados e motivos (na baixa da parcela citada; os gerais na primeira)
+        INSERT INTO SIS.Aviso_Confirmado (TABELA, ID_REGISTRO, CODIGO_REGRA, NIVEL, MENSAGEM, MOTIVO, ID_REFERENCIA, ID_USUARIO, USUARIO_CRIACAO)
+        SELECT N'FIN.Baixa', ISNULL(i.ID_BAIXA, @IdPrimeira), r.CODIGO, r.NIVEL, r.MENSAGEM,
+               CASE WHEN r.NIVEL = 'MOTIVO' THEN @Motivo ELSE N'' END, r.ID_REFERENCIA, @IdUsuario, ISNULL(@Usuario, N'sistema')
+        FROM #Regra r
+        LEFT JOIN #I i ON i.ID_PARCELA = r.ID_REFERENCIA
+        WHERE r.NIVEL IN ('AVISO', 'MOTIVO');
+
+        EXEC SIS.SIS_Lote_Concluir @IdLote = @IdLote, @QtdRegistros = @N;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(CASE WHEN @N = 1 THEN CASE @Tipo WHEN 'P' THEN N'Pagamento gravado.' ELSE N'Recebimento gravado.' END
+                         ELSE CONVERT(NVARCHAR(10), @N) + CASE @Tipo WHEN 'P' THEN N' pagamentos gravados.' ELSE N' recebimentos gravados.' END END AS NVARCHAR(400)) AS MENSAGEM,
+               @IdPrimeira AS ID, @IdMovimento AS ID_MOVIMENTO, @IdLote AS ID_LOTE, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+
+        DROP TABLE IF EXISTS #I;
+        DROP TABLE IF EXISTS #Regra;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        DROP TABLE IF EXISTS #I;
+        DROP TABLE IF EXISTS #Regra;
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar a baixa. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS BIGINT) AS ID, CAST(NULL AS BIGINT) AS ID_MOVIMENTO, CAST(NULL AS BIGINT) AS ID_LOTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Baixa_Estornar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Baixa_Estornar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : Estorna uma baixa (etapa 04g, aprovado em 26/11/2026). Nada é
+                apagado: cada baixa estornada ganha uma baixa com os valores
+                negativos (ID_BAIXA_ESTORNADA) e o movimento bancário ganha um
+                movimento inverso; original e inverso ficam com SITUACAO
+                ESTORNADO (o saldo soma os dois e zera). Pagamento em lote (um
+                movimento para várias baixas) estorna inteiro, com a tarifa do
+                mesmo lote. A parcela volta ao saldo anterior (gatilho do saldo).
+                @DtEstorno (padrão hoje): data do estorno no banco/caixa;
+                confere trava de datas (motivo com LANCAR_RETROATIVO), mês
+                fechado (conta contábil) e caixa fechado nessa data.
+                Motivo obrigatório (vai em OBSERVACAO das baixas de estorno e
+                em SIS.Aviso_Confirmado, código ESTORNO).
+                @SomenteConferir = 1: devolve, sem gravar, quantas baixas e o
+                valor que serão estornados (prévia da tela).
+                Permissão: ESTORNAR em FIN_PAGAR / FIN_RECEBER.
+                Devolve SUCESSO, MENSAGEM, ID (baixa informada), QTD_BAIXAS,
+                VALOR (líquido estornado), PENDENTE, AVISOS.
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04g).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Baixa_Estornar @IdUsuario = 2, @IdBaixa = 1, @Motivo = N'Baixa em dobro', @SomenteConferir = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Baixa_Estornar]
+    @IdUsuario        INT,
+    @IdBaixa          BIGINT,
+    @Motivo           NVARCHAR(400)  = NULL,
+    @DtEstorno        DATE           = NULL,
+    @SomenteConferir  BIT            = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc     NVARCHAR(128) = N'[FIN].[FIN_Baixa_Estornar]';
+    DECLARE @EtapaAtual   VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa       NVARCHAR(400) = N'';
+    DECLARE @Usuario      NVARCHAR(100);
+    DECLARE @Tipo         CHAR(1);
+    DECLARE @Item         VARCHAR(40);
+    DECLARE @IdMovimento  BIGINT;
+    DECLARE @IdLoteOrig   BIGINT;
+    DECLARE @OrigemLote   VARCHAR(30);
+    DECLARE @IdConta      INT;
+    DECLARE @Estornada    BIGINT;
+    DECLARE @IdLote       BIGINT;
+    DECLARE @Qtd          INT;
+    DECLARE @Valor        DECIMAL(18,2);
+    DECLARE @Avisos       NVARCHAR(MAX) = N'[]';
+    DECLARE @Pendente     BIT = 0;
+    DECLARE @PodeRetro    BIT;
+
+    CREATE TABLE #B (ID_BAIXA BIGINT NOT NULL PRIMARY KEY, ID_EMPRESA INT NULL, ID_PLANO_CONTA INT NULL, LIQUIDO DECIMAL(18,2) NOT NULL);
+    CREATE TABLE #M (ID_MOVIMENTO BIGINT NOT NULL PRIMARY KEY);
+    CREATE TABLE #Regra (ORDEM INT IDENTITY(1,1), CODIGO VARCHAR(40) NOT NULL, NIVEL VARCHAR(12) NOT NULL,
+                         MENSAGEM NVARCHAR(400) NOT NULL, ID_REFERENCIA BIGINT NULL, CAMPO VARCHAR(40) NOT NULL DEFAULT (''));
+
+    BEGIN TRY
+        SET @Motivo    = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+        SET @DtEstorno = ISNULL(@DtEstorno, CONVERT(DATE, SYSDATETIME()));
+
+        SELECT @Tipo = l.TIPO, @IdMovimento = b.ID_MOVIMENTO, @IdLoteOrig = b.ID_LOTE, @IdConta = b.ID_CONTA, @Estornada = b.ID_BAIXA_ESTORNADA
+        FROM FIN.Baixa b
+        INNER JOIN FIN.Parcela p    ON p.ID_PARCELA = b.ID_PARCELA
+        INNER JOIN FIN.Lancamento l ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
+        WHERE b.ID_BAIXA = @IdBaixa;
+        SET @Item = CASE @Tipo WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END;
+        SELECT @OrigemLote = x.ORIGEM FROM SIS.Lote x WHERE x.ID_LOTE = @IdLoteOrig;
+
+        IF @Tipo IS NULL
+            SET @Recusa = N'Baixa não encontrada.';
+        IF @Recusa = N'' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'ESTORNAR') = 0
+            SET @Recusa = N'Você não tem permissão para estornar baixas.';
+        IF @Recusa = N'' AND @Estornada IS NOT NULL
+            SET @Recusa = N'Este registro já é um estorno.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Baixa x WHERE x.ID_BAIXA_ESTORNADA = @IdBaixa)
+            SET @Recusa = N'Esta baixa já foi estornada.';
+        IF @Recusa = N'' AND @SomenteConferir = 0 AND LEN(@Motivo) < 5
+            SET @Recusa = N'Informe o motivo do estorno.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdBaixa AS ID, 0 AS QTD_BAIXAS,
+                   CAST(0 AS DECIMAL(18,2)) AS VALOR, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #B; DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        -- o que vai junto: as baixas do mesmo movimento (pagamento em lote) ainda não estornadas
+        INSERT INTO #B (ID_BAIXA, ID_EMPRESA, ID_PLANO_CONTA, LIQUIDO)
+        SELECT b.ID_BAIXA, l.ID_EMPRESA, l.ID_PLANO_CONTA, b.VALOR_LIQUIDO
+        FROM FIN.Baixa b
+        INNER JOIN FIN.Parcela p    ON p.ID_PARCELA = b.ID_PARCELA
+        INNER JOIN FIN.Lancamento l ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
+        WHERE (b.ID_BAIXA = @IdBaixa OR (@IdMovimento IS NOT NULL AND b.ID_MOVIMENTO = @IdMovimento))
+          AND b.ID_BAIXA_ESTORNADA IS NULL
+          AND NOT EXISTS (SELECT 1 FROM FIN.Baixa x WHERE x.ID_BAIXA_ESTORNADA = b.ID_BAIXA);
+
+        -- movimentos: o da baixa e a tarifa do mesmo lote de baixa
+        INSERT INTO #M (ID_MOVIMENTO)
+        SELECT m.ID_MOVIMENTO
+        FROM BANCO.Movimento m
+        WHERE m.SITUACAO = 'ATIVO'
+          AND (m.ID_MOVIMENTO = @IdMovimento
+               OR (@OrigemLote = 'BAIXA' AND m.ID_LOTE = @IdLoteOrig AND m.TIPO = 'TARIFA'));
+
+        SELECT @Qtd = COUNT(*), @Valor = SUM(LIQUIDO) FROM #B;
+
+        -- regras na data do estorno
+        SET @PodeRetro = SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'LANCAR_RETROATIVO');
+        IF FIN.fn_FIN_Data_Recusa('BAIXA', @DtEstorno) <> N''
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('DATA_BAIXA', CASE WHEN @PodeRetro = 1 THEN 'MOTIVO' ELSE 'BLOQUEIO' END, FIN.fn_FIN_Data_Recusa('BAIXA', @DtEstorno), 'dtEstorno');
+
+        IF BANCO.fn_BANCO_Caixa_Recusa(@IdConta, @DtEstorno) <> N''
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO) VALUES ('CAIXA_FECHADO', 'BLOQUEIO', BANCO.fn_BANCO_Caixa_Recusa(@IdConta, @DtEstorno), 'dtEstorno');
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+        SELECT TOP 1 'MES_FECHADO', 'BLOQUEIO',
+               N'O mês ' + RIGHT('0' + CONVERT(NVARCHAR(2), MONTH(m.MES)), 2) + N'/' + CONVERT(NVARCHAR(4), YEAR(m.MES)) + N' está fechado (conta contábil).', 'dtEstorno'
+        FROM #B b
+        INNER JOIN FIN.Mes_Fechado m  ON m.ID_EMPRESA = b.ID_EMPRESA AND m.MES = DATEFROMPARTS(YEAR(@DtEstorno), MONTH(@DtEstorno), 1) AND m.FECHADO = 1
+        INNER JOIN CAD.Plano_Conta pc ON pc.ID_PLANO_CONTA = b.ID_PLANO_CONTA AND pc.CONTABIL = 1;
+
+        IF @Qtd > 1
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('ESTORNO_LOTE', 'INFO', N'Esta baixa faz parte de um pagamento em lote: as ' + CONVERT(NVARCHAR(10), @Qtd)
+                    + N' baixas do mesmo movimento serão estornadas juntas (' + FORMAT(@Valor, 'N2', 'pt-BR') + N').', '');
+
+        SET @Avisos = ISNULL((SELECT r.CODIGO AS codigo, r.NIVEL AS nivel, r.MENSAGEM AS mensagem, r.ID_REFERENCIA AS idReferencia, r.CAMPO AS campo
+                              FROM #Regra r ORDER BY CASE r.NIVEL WHEN 'BLOQUEIO' THEN 0 WHEN 'MOTIVO' THEN 1 ELSE 2 END, r.ORDEM
+                              FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]');
+
+        IF EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'BLOQUEIO')
+        BEGIN
+            SELECT TOP 1 @Recusa = r.MENSAGEM FROM #Regra r WHERE r.NIVEL = 'BLOQUEIO' ORDER BY r.ORDEM;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdBaixa AS ID, @Qtd AS QTD_BAIXAS,
+                   @Valor AS VALOR, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #B; DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        IF @SomenteConferir = 1
+        BEGIN
+            SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Prévia do estorno.' AS NVARCHAR(400)) AS MENSAGEM, @IdBaixa AS ID, @Qtd AS QTD_BAIXAS,
+                   @Valor AS VALOR, CAST(CASE WHEN EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'MOTIVO') THEN 1 ELSE 0 END AS BIT) AS PENDENTE,
+                   CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #B; DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        ---------------------------------------------------------------------
+        -- Gravação
+        ---------------------------------------------------------------------
+        SET @Usuario = SIS.fn_SIS_Usuario_Login(@IdUsuario);
+        SET @EtapaAtual = 'Gravação';
+        BEGIN TRANSACTION;
+
+        EXEC SIS.SIS_Lote_Gerar @IdUsuario = @IdUsuario, @Origem = 'ESTORNO_BAIXA', @Descricao = @Motivo,
+             @TabelaReferencia = N'FIN.Baixa', @IdReferencia = @IdBaixa, @IdLote = @IdLote OUTPUT;
+
+        -- concorrência: alguém estornou no meio
+        IF EXISTS (SELECT 1 FROM #B b INNER JOIN FIN.Baixa x WITH (UPDLOCK, HOLDLOCK) ON x.ID_BAIXA_ESTORNADA = b.ID_BAIXA)
+        BEGIN
+            ROLLBACK TRANSACTION;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'A baixa foi estornada por outra pessoa. Abra a ficha de novo.' AS NVARCHAR(400)) AS MENSAGEM,
+                   @IdBaixa AS ID, 0 AS QTD_BAIXAS, CAST(0 AS DECIMAL(18,2)) AS VALOR, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #B; DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        DECLARE @Mov TABLE (ID_ORIGINAL BIGINT NOT NULL, ID_INVERSO BIGINT NOT NULL);
+
+        MERGE BANCO.Movimento AS t
+        USING (SELECT m.ID_MOVIMENTO, m.ID_CONTA, m.VALOR, m.TIPO, m.HISTORICO, m.DOCUMENTO
+               FROM BANCO.Movimento m INNER JOIN #M x ON x.ID_MOVIMENTO = m.ID_MOVIMENTO) AS s
+        ON 1 = 0
+        WHEN NOT MATCHED THEN
+            INSERT (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO, DOCUMENTO, SITUACAO, ID_LOTE, USUARIO_CRIACAO)
+            VALUES (s.ID_CONTA, @DtEstorno, -s.VALOR, s.TIPO, LEFT(N'Estorno: ' + s.HISTORICO, 200), s.DOCUMENTO, 'ESTORNADO', @IdLote, ISNULL(@Usuario, N'sistema'))
+        OUTPUT s.ID_MOVIMENTO, inserted.ID_MOVIMENTO INTO @Mov (ID_ORIGINAL, ID_INVERSO);
+
+        UPDATE m
+           SET m.SITUACAO = 'ESTORNADO', m.DT_ALTERACAO = SYSDATETIME(), m.USUARIO_ALTERACAO = @Usuario
+        FROM BANCO.Movimento m INNER JOIN #M x ON x.ID_MOVIMENTO = m.ID_MOVIMENTO;
+
+        INSERT INTO FIN.Baixa (ID_PARCELA, DT_PAGAMENTO, ID_CONTA, FORMA, VALOR_PRINCIPAL, JUROS, MULTA, CORRECAO, DESCONTO, ABATIMENTO,
+                               TARIFA, RETENCAO, ID_MOVIMENTO, COMPENSADO, DT_COMPENSACAO, ID_BAIXA_ESTORNADA, OBSERVACAO, ID_LOTE, USUARIO_CRIACAO)
+        SELECT b.ID_PARCELA, @DtEstorno, b.ID_CONTA, b.FORMA, -b.VALOR_PRINCIPAL, -b.JUROS, -b.MULTA, -b.CORRECAO, -b.DESCONTO, -b.ABATIMENTO,
+               -b.TARIFA, -b.RETENCAO, mv.ID_INVERSO, b.COMPENSADO, b.DT_COMPENSACAO, b.ID_BAIXA, LEFT(N'Estorno: ' + @Motivo, 400), @IdLote, ISNULL(@Usuario, N'sistema')
+        FROM FIN.Baixa b
+        INNER JOIN #B x ON x.ID_BAIXA = b.ID_BAIXA
+        LEFT  JOIN @Mov mv ON mv.ID_ORIGINAL = b.ID_MOVIMENTO;
+
+        INSERT INTO SIS.Aviso_Confirmado (TABELA, ID_REGISTRO, CODIGO_REGRA, NIVEL, MENSAGEM, MOTIVO, ID_REFERENCIA, ID_USUARIO, USUARIO_CRIACAO)
+        SELECT N'FIN.Baixa', b.ID_BAIXA, 'ESTORNO', 'MOTIVO', N'Baixa estornada em ' + CONVERT(NVARCHAR(10), @DtEstorno, 103) + N'.', @Motivo, NULL, @IdUsuario, ISNULL(@Usuario, N'sistema')
+        FROM #B b
+        UNION ALL
+        SELECT N'FIN.Baixa', @IdBaixa, r.CODIGO, r.NIVEL, r.MENSAGEM, @Motivo, NULL, @IdUsuario, ISNULL(@Usuario, N'sistema')
+        FROM #Regra r WHERE r.NIVEL = 'MOTIVO';
+
+        EXEC SIS.SIS_Lote_Concluir @IdLote = @IdLote, @QtdRegistros = @Qtd;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(CASE WHEN @Qtd = 1 THEN N'Baixa estornada.' ELSE CONVERT(NVARCHAR(10), @Qtd) + N' baixas estornadas.' END AS NVARCHAR(400)) AS MENSAGEM,
+               @IdBaixa AS ID, @Qtd AS QTD_BAIXAS, @Valor AS VALOR, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+
+        DROP TABLE IF EXISTS #B; DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        DROP TABLE IF EXISTS #B; DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível estornar a baixa. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               @IdBaixa AS ID, 0 AS QTD_BAIXAS, CAST(0 AS DECIMAL(18,2)) AS VALOR, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Baixa_Preparar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Baixa_Preparar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 26/11/2026
+  Descrição   : Janela de baixa (04g): dados das parcelas escolhidas para a
+                data de pagamento, com a sugestão de juros, multa e limite de
+                desconto (FIN.fn_FIN_Baixa_Sugerir), a pendência que bloqueia
+                (FIN.fn_FIN_Pendencia_Bloqueia), a conta prevista e o que o
+                usuário pode fazer (liberar pendência, desconto acima do
+                limite, data fora da trava). Só leitura.
+                @Parcelas: IDs separados por vírgula. @DtPagamento NULL = hoje.
+                Permissão: BAIXAR em FIN_PAGAR / FIN_RECEBER (parcelas de tipo
+                sem permissão não aparecem; nenhuma = erro 50001).
+  Changelog:
+    v1.0 (26/11/2026) - Criação (etapa 04g).
+    v1.1 (27/11/2026) - Etapa 04g3: ID_CONTA_SUGERIDA (conta prevista da
+                        parcela; senão a conta padrão da empresa; só conta
+                        ativa) e FORMA_PADRAO (parâmetro FIN_BAIXA_FORMA_PADRAO)
+                        para a janela de baixa já vir preenchida.
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Baixa_Preparar @IdUsuario = 2, @Parcelas = N'1,2', @DtPagamento = '2026-11-26';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Baixa_Preparar]
+    @IdUsuario    INT,
+    @Parcelas     NVARCHAR(4000),
+    @DtPagamento  DATE = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @PodeP BIT = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PAGAR', 'BAIXAR');
+    DECLARE @PodeR BIT = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_RECEBER', 'BAIXAR');
+    SET @DtPagamento = ISNULL(@DtPagamento, CONVERT(DATE, SYSDATETIME()));
+    DECLARE @Forma VARCHAR(12) = UPPER(LTRIM(RTRIM(ISNULL(CONVERT(VARCHAR(12), SIS.fn_SIS_Parametro('FIN_BAIXA_FORMA_PADRAO')), ''))));
+
+    IF @PodeP = 0 AND @PodeR = 0
+        THROW 50001, N'Você não tem permissão para baixar contas a pagar nem a receber.', 1;
+
+    SELECT p.ID_PARCELA, p.ID_LANCAMENTO, l.TIPO, l.ID_EMPRESA, ISNULL(NULLIF(pe.NOME_FANTASIA, N''), pe.NOME) AS PESSOA,
+           l.DOCUMENTO, l.HISTORICO, p.NUMERO, p.QTD_PARCELAS, p.DT_VENCIMENTO, p.VALOR, p.VALOR_BAIXADO, p.SALDO, p.SITUACAO,
+           l.SITUACAO AS SITUACAO_LANCAMENTO, l.PREVISAO, p.ID_CONTA_PREVISTA,
+           s.DIAS_ATRASO, s.CALCULA, s.MULTA, s.JUROS, s.DESCONTO_LIMITE, s.MULTA_PERC, s.JUROS_PERC, s.CARENCIA,
+           b.BLOQUEIA AS BLOQUEIA_BAIXA, b.MOTIVO AS MOTIVO_BLOQUEIO,
+           SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE l.TIPO WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'LIBERAR_PENDENCIA') AS PODE_LIBERAR_PENDENCIA,
+           SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE l.TIPO WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'DESCONTO_LIMITE') AS PODE_DESCONTO_LIMITE,
+           SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE l.TIPO WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'LANCAR_RETROATIVO') AS PODE_RETROATIVO,
+           cs.ID_CONTA AS ID_CONTA_SUGERIDA, @Forma AS FORMA_PADRAO
+    FROM (SELECT DISTINCT TRY_CONVERT(BIGINT, LTRIM(RTRIM(v.value))) AS ID FROM STRING_SPLIT(@Parcelas, N',') v) x
+    INNER JOIN FIN.Parcela p    ON p.ID_PARCELA = x.ID
+    INNER JOIN FIN.Lancamento l ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
+    LEFT  JOIN CAD.Pessoa pe    ON pe.ID_PESSOA = l.ID_PESSOA
+    CROSS APPLY FIN.fn_FIN_Baixa_Sugerir(p.ID_PARCELA, @DtPagamento, NULL) s
+    CROSS APPLY FIN.fn_FIN_Pendencia_Bloqueia(p.ID_LANCAMENTO, p.ID_PARCELA) b
+    LEFT  JOIN CAD.Empresa e    ON e.ID_EMPRESA = l.ID_EMPRESA
+    OUTER APPLY (SELECT TOP (1) c.ID_CONTA
+                 FROM BANCO.Conta c WITH (NOLOCK)
+                 WHERE c.ATIVO = 1 AND c.DT_EXCLUSAO IS NULL
+                   AND c.ID_CONTA IN (p.ID_CONTA_PREVISTA, e.ID_CONTA_BANCARIA_PADRAO)
+                 ORDER BY CASE WHEN c.ID_CONTA = p.ID_CONTA_PREVISTA THEN 0 ELSE 1 END) cs
+    WHERE (l.TIPO = 'P' AND @PodeP = 1) OR (l.TIPO = 'R' AND @PodeR = 1)
+    ORDER BY p.DT_VENCIMENTO, pe.NOME, p.NUMERO;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Transferencia_Gravar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Transferencia_Gravar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Transferência entre duas contas (etapa 04g2, desenho aprovado
+                em 26/11/2026). Gera um lote (origem TRANSFERENCIA), a
+                FIN.Transferencia e dois BANCO.Movimento TIPO TRANSFERENCIA
+                (saída na origem, entrada no destino). Tudo-ou-nada.
+                Regras (mesmo contrato da baixa: BLOQUEIO, MOTIVO, AVISO;
+                @SomenteConferir = 1 é a prévia), sempre nas duas pontas:
+                  BLOQUEIO  conta inexistente, desativada ou na lixeira;
+                            caixa fechado (BANCO.fn_BANCO_Caixa_Recusa); mês
+                            fechado da empresa da conta; trava de datas para
+                            quem não tem LANCAR_RETROATIVO; entre empresas
+                            com FIN_TRANSF_ENTRE_EMPRESAS = BLOQUEIO;
+                  MOTIVO    trava de datas com LANCAR_RETROATIVO;
+                  AVISO     entre empresas do grupo (ENTRE_EMPRESAS, com
+                            FIN_TRANSF_ENTRE_EMPRESAS = AVISO); saldo da
+                            origem na data, mais o limite, menor que o valor
+                            (SALDO_INSUFICIENTE).
+                Avisos e motivos em SIS.Aviso_Confirmado (TABELA
+                FIN.Transferencia).
+                Permissão: INCLUIR em BANCO_TRANSFERENCIA.
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID, ID_LOTE, PENDENTE,
+                AVISOS (JSON: codigo, nivel, mensagem, idReferencia, campo).
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Transferencia_Gravar @IdUsuario = 2, @DtTransferencia = '2026-11-27', @IdContaOrigem = 1,
+    --      @IdContaDestino = 2, @Valor = 100, @SomenteConferir = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Transferencia_Gravar]
+    @IdUsuario          INT,
+    @DtTransferencia    DATE            = NULL,
+    @IdContaOrigem      INT             = NULL,
+    @IdContaDestino     INT             = NULL,
+    @Valor              DECIMAL(18,2)   = NULL,
+    @Historico          NVARCHAR(200)   = NULL,
+    @Documento          NVARCHAR(40)    = NULL,
+    @AvisosConfirmados  NVARCHAR(1000)  = NULL,
+    @Motivo             NVARCHAR(400)   = NULL,
+    @SomenteConferir    BIT             = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc     NVARCHAR(128) = N'[FIN].[FIN_Transferencia_Gravar]';
+    DECLARE @EtapaAtual   VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa       NVARCHAR(400) = N'';
+    DECLARE @Usuario      NVARCHAR(100);
+    DECLARE @Avisos       NVARCHAR(MAX) = N'[]';
+    DECLARE @Pendente     BIT = 0;
+    DECLARE @EntreEmp     VARCHAR(10);
+    DECLARE @IdLote       BIGINT;
+    DECLARE @Id           BIGINT;
+    DECLARE @NomeOrigem   NVARCHAR(60);
+    DECLARE @NomeDestino  NVARCHAR(60);
+    DECLARE @HistOrigem   NVARCHAR(200);
+    DECLARE @HistDestino  NVARCHAR(200);
+    DECLARE @Saldo        DECIMAL(18,2);
+    DECLARE @Limite       DECIMAL(18,2);
+    DECLARE @TemSaldo     BIT;
+
+    CREATE TABLE #C (PONTA VARCHAR(7) NOT NULL PRIMARY KEY, ID_CONTA INT NULL, ID_EMPRESA INT NULL, DESCRICAO NVARCHAR(60) NULL,
+                     ATIVO BIT NULL, NA_LIXEIRA BIT NULL);
+    CREATE TABLE #Regra (ORDEM INT IDENTITY(1,1), CODIGO VARCHAR(40) NOT NULL, NIVEL VARCHAR(12) NOT NULL,
+                         MENSAGEM NVARCHAR(400) NOT NULL, ID_REFERENCIA BIGINT NULL, CAMPO VARCHAR(40) NOT NULL DEFAULT (''));
+
+    BEGIN TRY
+        SET @Historico         = LTRIM(RTRIM(ISNULL(@Historico, N'')));
+        SET @Documento         = LTRIM(RTRIM(ISNULL(@Documento, N'')));
+        SET @Motivo            = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+        SET @AvisosConfirmados = ISNULL(@AvisosConfirmados, N'');
+
+        INSERT INTO #C (PONTA, ID_CONTA, ID_EMPRESA, DESCRICAO, ATIVO, NA_LIXEIRA)
+        SELECT v.PONTA, c.ID_CONTA, c.ID_EMPRESA, c.DESCRICAO, c.ATIVO, CAST(CASE WHEN c.DT_EXCLUSAO IS NULL THEN 0 ELSE 1 END AS BIT)
+        FROM (VALUES (CAST('ORIGEM' AS VARCHAR(7)), @IdContaOrigem), ('DESTINO', @IdContaDestino)) v (PONTA, ID)
+        LEFT JOIN BANCO.Conta c ON c.ID_CONTA = v.ID;
+
+        SELECT @NomeOrigem  = ISNULL(DESCRICAO, N'') FROM #C WHERE PONTA = 'ORIGEM';
+        SELECT @NomeDestino = ISNULL(DESCRICAO, N'') FROM #C WHERE PONTA = 'DESTINO';
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_TRANSFERENCIA', 'INCLUIR') = 0
+            SET @Recusa = N'Você não tem permissão para incluir transferências.';
+        IF @Recusa = N'' AND @DtTransferencia IS NULL
+            SET @Recusa = N'Informe a data da transferência.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #C WHERE PONTA = 'ORIGEM' AND ID_CONTA IS NULL)
+            SET @Recusa = N'Escolha a conta de origem (de onde sai o dinheiro).';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #C WHERE PONTA = 'DESTINO' AND ID_CONTA IS NULL)
+            SET @Recusa = N'Escolha a conta de destino (para onde vai o dinheiro).';
+        IF @Recusa = N'' AND @IdContaOrigem = @IdContaDestino
+            SET @Recusa = N'A conta de origem e a de destino precisam ser diferentes.';
+        IF @Recusa = N'' AND ISNULL(@Valor, 0) <= 0
+            SET @Recusa = N'Informe o valor da transferência.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID,
+                   CAST(NULL AS BIGINT) AS ID_LOTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #C; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        ---------------------------------------------------------------------
+        -- Regras (nas duas pontas)
+        ---------------------------------------------------------------------
+        SET @EtapaAtual = 'Regras';
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'CONTA_INATIVA', 'BLOQUEIO',
+               N'A conta ' + c.DESCRICAO + CASE WHEN c.NA_LIXEIRA = 1 THEN N' está na lixeira.' ELSE N' está desativada.' END,
+               c.ID_CONTA, CASE c.PONTA WHEN 'ORIGEM' THEN 'idContaOrigem' ELSE 'idContaDestino' END
+        FROM #C c WHERE c.ATIVO = 0 OR c.NA_LIXEIRA = 1;
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'CAIXA_FECHADO', 'BLOQUEIO', BANCO.fn_BANCO_Caixa_Recusa(c.ID_CONTA, @DtTransferencia), c.ID_CONTA, 'dtTransferencia'
+        FROM #C c WHERE BANCO.fn_BANCO_Caixa_Recusa(c.ID_CONTA, @DtTransferencia) <> N'';
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'MES_FECHADO', 'BLOQUEIO',
+               N'O mês ' + RIGHT('0' + CONVERT(NVARCHAR(2), MONTH(m.MES)), 2) + N'/' + CONVERT(NVARCHAR(4), YEAR(m.MES))
+               + N' está fechado na empresa da conta ' + c.DESCRICAO + N'.', c.ID_CONTA, 'dtTransferencia'
+        FROM #C c
+        INNER JOIN FIN.Mes_Fechado m ON m.ID_EMPRESA = c.ID_EMPRESA AND m.FECHADO = 1
+                                    AND m.MES = DATEFROMPARTS(YEAR(@DtTransferencia), MONTH(@DtTransferencia), 1);
+
+        IF FIN.fn_FIN_Data_Recusa('BAIXA', @DtTransferencia) <> N''
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('DATA_TRANSFERENCIA',
+                    CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_TRANSFERENCIA', 'LANCAR_RETROATIVO') = 1 THEN 'MOTIVO' ELSE 'BLOQUEIO' END,
+                    REPLACE(FIN.fn_FIN_Data_Recusa('BAIXA', @DtTransferencia), N'de pagamento', N'da transferência'), 'dtTransferencia');
+
+        SET @EntreEmp = UPPER(ISNULL(NULLIF(LTRIM(RTRIM(SIS.fn_SIS_Parametro('FIN_TRANSF_ENTRE_EMPRESAS'))), N''), N'AVISO'));
+        IF @EntreEmp IN ('AVISO', 'BLOQUEIO')
+           AND (SELECT COUNT(DISTINCT ID_EMPRESA) FROM #C) > 1
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            SELECT 'ENTRE_EMPRESAS', @EntreEmp,
+                   CASE WHEN @EntreEmp = 'BLOQUEIO'
+                        THEN N'Transferência entre contas de empresas diferentes não é permitida (parâmetro FIN_TRANSF_ENTRE_EMPRESAS).'
+                        ELSE N'As contas são de empresas diferentes do grupo (' + ISNULL(NULLIF(eo.NOME_FANTASIA, N''), eo.RAZAO_SOCIAL) + N' → ' + ISNULL(NULLIF(ed.NOME_FANTASIA, N''), ed.RAZAO_SOCIAL)
+                             + N'). Confira com a contabilidade (empréstimo entre empresas).' END,
+                   'idContaDestino'
+            FROM #C o
+            INNER JOIN #C d ON d.PONTA = 'DESTINO'
+            LEFT  JOIN CAD.Empresa eo ON eo.ID_EMPRESA = o.ID_EMPRESA
+            LEFT  JOIN CAD.Empresa ed ON ed.ID_EMPRESA = d.ID_EMPRESA
+            WHERE o.PONTA = 'ORIGEM';
+
+        SELECT @Saldo = s.SALDO, @Limite = s.LIMITE_CREDITO, @TemSaldo = s.TEM_SALDO
+        FROM BANCO.fn_BANCO_Conta_Saldo(@IdContaOrigem, @DtTransferencia) s;
+        IF @TemSaldo = 1 AND @Saldo + ISNULL(@Limite, 0) < @Valor
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+            VALUES ('SALDO_INSUFICIENTE', 'AVISO',
+                    N'O saldo da conta ' + @NomeOrigem + N' em ' + CONVERT(NVARCHAR(10), @DtTransferencia, 103) + N' é de '
+                    + FORMAT(@Saldo, 'N2', 'pt-BR') + CASE WHEN ISNULL(@Limite, 0) > 0 THEN N' (limite ' + FORMAT(@Limite, 'N2', 'pt-BR') + N')' ELSE N'' END
+                    + N', menor que o valor transferido. A conta ficará negativa.', @IdContaOrigem, 'valor');
+
+        SET @Avisos = ISNULL((SELECT r.CODIGO AS codigo, r.NIVEL AS nivel, r.MENSAGEM AS mensagem, r.ID_REFERENCIA AS idReferencia, r.CAMPO AS campo
+                              FROM #Regra r
+                              ORDER BY CASE r.NIVEL WHEN 'BLOQUEIO' THEN 0 WHEN 'MOTIVO' THEN 1 ELSE 2 END, r.ORDEM
+                              FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]');
+
+        IF EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'BLOQUEIO')
+        BEGIN
+            SELECT TOP 1 @Recusa = r.MENSAGEM FROM #Regra r WHERE r.NIVEL = 'BLOQUEIO' ORDER BY r.ORDEM;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID,
+                   CAST(NULL AS BIGINT) AS ID_LOTE, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #C; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        IF (EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'MOTIVO') AND LEN(@Motivo) < 5)
+           OR EXISTS (SELECT 1 FROM #Regra r WHERE r.NIVEL = 'AVISO'
+                        AND NOT EXISTS (SELECT 1 FROM STRING_SPLIT(@AvisosConfirmados, N',') s WHERE LTRIM(RTRIM(s.value)) = r.CODIGO))
+            SET @Pendente = 1;
+
+        IF @SomenteConferir = 1 OR @Pendente = 1
+        BEGIN
+            SELECT CAST(CASE WHEN @SomenteConferir = 1 THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+                   CAST(CASE WHEN @Pendente = 0 THEN N'Nada a confirmar.'
+                             WHEN EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'MOTIVO') AND LEN(@Motivo) < 5
+                                  THEN N'Informe o motivo (justificativa) para gravar a transferência.'
+                             ELSE N'Confira os avisos antes de gravar.' END AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS BIGINT) AS ID, CAST(NULL AS BIGINT) AS ID_LOTE, @Pendente AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #C; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        ---------------------------------------------------------------------
+        -- Gravação
+        ---------------------------------------------------------------------
+        SET @EtapaAtual = 'Gravação';
+        SET @Usuario     = ISNULL(SIS.fn_SIS_Usuario_Login(@IdUsuario), N'sistema');
+        SET @HistOrigem  = LEFT(N'Transferência para ' + @NomeDestino + CASE WHEN @Historico <> N'' THEN N': ' + @Historico ELSE N'' END, 200);
+        SET @HistDestino = LEFT(N'Transferência de ' + @NomeOrigem + CASE WHEN @Historico <> N'' THEN N': ' + @Historico ELSE N'' END, 200);
+
+        BEGIN TRANSACTION;
+
+        EXEC SIS.SIS_Lote_Gerar @IdUsuario = @IdUsuario, @Origem = 'TRANSFERENCIA', @Descricao = @HistOrigem,
+             @TabelaReferencia = N'FIN.Transferencia', @IdReferencia = NULL, @IdLote = @IdLote OUTPUT;
+
+        INSERT INTO FIN.Transferencia (DT_TRANSFERENCIA, ID_CONTA_ORIGEM, ID_CONTA_DESTINO, VALOR, HISTORICO, DOCUMENTO, SITUACAO, ID_LOTE, USUARIO_CRIACAO)
+        VALUES (@DtTransferencia, @IdContaOrigem, @IdContaDestino, @Valor, @Historico, @Documento, 'ATIVA', @IdLote, @Usuario);
+        SET @Id = SCOPE_IDENTITY();
+
+        INSERT INTO BANCO.Movimento (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO, DOCUMENTO, ID_TRANSFERENCIA, SITUACAO, ID_LOTE, USUARIO_CRIACAO)
+        VALUES (@IdContaOrigem,  @DtTransferencia, -@Valor, 'TRANSFERENCIA', @HistOrigem,  @Documento, @Id, 'ATIVO', @IdLote, @Usuario),
+               (@IdContaDestino, @DtTransferencia,  @Valor, 'TRANSFERENCIA', @HistDestino, @Documento, @Id, 'ATIVO', @IdLote, @Usuario);
+
+        INSERT INTO SIS.Aviso_Confirmado (TABELA, ID_REGISTRO, CODIGO_REGRA, NIVEL, MENSAGEM, MOTIVO, ID_REFERENCIA, ID_USUARIO, USUARIO_CRIACAO)
+        SELECT N'FIN.Transferencia', @Id, r.CODIGO, r.NIVEL, r.MENSAGEM, CASE WHEN r.NIVEL = 'MOTIVO' THEN @Motivo ELSE N'' END,
+               r.ID_REFERENCIA, @IdUsuario, @Usuario
+        FROM #Regra r
+        WHERE r.NIVEL IN ('AVISO', 'MOTIVO');
+
+        EXEC SIS.SIS_Lote_Concluir @IdLote = @IdLote, @QtdRegistros = 1;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Transferência gravada.' AS NVARCHAR(400)) AS MENSAGEM, @Id AS ID, @IdLote AS ID_LOTE,
+               CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+
+        DROP TABLE IF EXISTS #C; DROP TABLE IF EXISTS #Regra;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        DROP TABLE IF EXISTS #C; DROP TABLE IF EXISTS #Regra;
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível gravar a transferência. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS BIGINT) AS ID, CAST(NULL AS BIGINT) AS ID_LOTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Transferencia_Estornar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Transferencia_Estornar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Estorna uma transferência (etapa 04g2). Nada é apagado: os
+                dois movimentos ganham um movimento inverso na data do estorno
+                (lote ESTORNO_TRANSFERENCIA); originais e inversos ficam
+                ESTORNADO (o saldo soma os quatro e zera) e a transferência
+                fica ESTORNADA com data, motivo e quem estornou.
+                @DtEstorno (padrão hoje): nas duas contas valem a trava de
+                datas (motivo com LANCAR_RETROATIVO), o caixa fechado e o mês
+                fechado da empresa. Movimento já conciliado bloqueia (desfazer
+                a conciliação antes). Motivo obrigatório.
+                @SomenteConferir = 1: prévia, sem gravar.
+                Permissão: ESTORNAR em BANCO_TRANSFERENCIA.
+                Devolve SUCESSO, MENSAGEM, ID, VALOR, PENDENTE, AVISOS.
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Transferencia_Estornar @IdUsuario = 2, @IdTransferencia = 1, @Motivo = N'Conta errada', @SomenteConferir = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Transferencia_Estornar]
+    @IdUsuario        INT,
+    @IdTransferencia  BIGINT,
+    @Motivo           NVARCHAR(400)  = NULL,
+    @DtEstorno        DATE           = NULL,
+    @SomenteConferir  BIT            = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[FIN].[FIN_Transferencia_Estornar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa      NVARCHAR(400) = N'';
+    DECLARE @Usuario     NVARCHAR(100);
+    DECLARE @Situacao    VARCHAR(10);
+    DECLARE @Valor       DECIMAL(18,2);
+    DECLARE @IdLote      BIGINT;
+    DECLARE @Avisos      NVARCHAR(MAX) = N'[]';
+    DECLARE @Linhas      INT;
+
+    CREATE TABLE #M (ID_MOVIMENTO BIGINT NOT NULL PRIMARY KEY, ID_CONTA INT NOT NULL, ID_EMPRESA INT NOT NULL, DESCRICAO NVARCHAR(60) NOT NULL, CONCILIADO BIT NOT NULL);
+    CREATE TABLE #Regra (ORDEM INT IDENTITY(1,1), CODIGO VARCHAR(40) NOT NULL, NIVEL VARCHAR(12) NOT NULL,
+                         MENSAGEM NVARCHAR(400) NOT NULL, ID_REFERENCIA BIGINT NULL, CAMPO VARCHAR(40) NOT NULL DEFAULT (''));
+
+    BEGIN TRY
+        SET @Motivo    = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+        SET @DtEstorno = ISNULL(@DtEstorno, CONVERT(DATE, SYSDATETIME()));
+
+        SELECT @Situacao = t.SITUACAO, @Valor = t.VALOR FROM FIN.Transferencia t WHERE t.ID_TRANSFERENCIA = @IdTransferencia;
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_TRANSFERENCIA', 'ESTORNAR') = 0
+            SET @Recusa = N'Você não tem permissão para estornar transferências.';
+        IF @Recusa = N'' AND @Situacao IS NULL
+            SET @Recusa = N'Transferência não encontrada.';
+        IF @Recusa = N'' AND @Situacao = 'ESTORNADA'
+            SET @Recusa = N'Esta transferência já foi estornada.';
+        IF @Recusa = N'' AND @SomenteConferir = 0 AND LEN(@Motivo) < 5
+            SET @Recusa = N'Informe o motivo do estorno.';
+
+        IF @Recusa = N''
+            INSERT INTO #M (ID_MOVIMENTO, ID_CONTA, ID_EMPRESA, DESCRICAO, CONCILIADO)
+            SELECT m.ID_MOVIMENTO, m.ID_CONTA, c.ID_EMPRESA, c.DESCRICAO, m.CONCILIADO
+            FROM BANCO.Movimento m
+            INNER JOIN BANCO.Conta c ON c.ID_CONTA = m.ID_CONTA
+            WHERE m.ID_TRANSFERENCIA = @IdTransferencia AND m.SITUACAO = 'ATIVO';
+
+        IF @Recusa = N'' AND NOT EXISTS (SELECT 1 FROM #M)
+            SET @Recusa = N'A transferência não tem movimentos ativos para estornar.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdTransferencia AS ID,
+                   CAST(ISNULL(@Valor, 0) AS DECIMAL(18,2)) AS VALOR, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        ---------------------------------------------------------------------
+        -- Regras na data do estorno, nas duas contas
+        ---------------------------------------------------------------------
+        SET @EtapaAtual = 'Regras';
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'CONCILIADO', 'BLOQUEIO', N'O movimento na conta ' + m.DESCRICAO + N' já foi conciliado com o extrato do banco: desfaça a conciliação antes de estornar.',
+               m.ID_CONTA, ''
+        FROM #M m WHERE m.CONCILIADO = 1;
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'CAIXA_FECHADO', 'BLOQUEIO', BANCO.fn_BANCO_Caixa_Recusa(m.ID_CONTA, @DtEstorno), m.ID_CONTA, 'dtEstorno'
+        FROM #M m WHERE BANCO.fn_BANCO_Caixa_Recusa(m.ID_CONTA, @DtEstorno) <> N'';
+
+        INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, ID_REFERENCIA, CAMPO)
+        SELECT 'MES_FECHADO', 'BLOQUEIO',
+               N'O mês ' + RIGHT('0' + CONVERT(NVARCHAR(2), MONTH(f.MES)), 2) + N'/' + CONVERT(NVARCHAR(4), YEAR(f.MES))
+               + N' está fechado na empresa da conta ' + m.DESCRICAO + N'.', m.ID_CONTA, 'dtEstorno'
+        FROM #M m
+        INNER JOIN FIN.Mes_Fechado f ON f.ID_EMPRESA = m.ID_EMPRESA AND f.FECHADO = 1
+                                    AND f.MES = DATEFROMPARTS(YEAR(@DtEstorno), MONTH(@DtEstorno), 1);
+
+        IF FIN.fn_FIN_Data_Recusa('BAIXA', @DtEstorno) <> N''
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('DATA_ESTORNO',
+                    CASE WHEN SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_TRANSFERENCIA', 'LANCAR_RETROATIVO') = 1 THEN 'MOTIVO' ELSE 'BLOQUEIO' END,
+                    REPLACE(FIN.fn_FIN_Data_Recusa('BAIXA', @DtEstorno), N'de pagamento', N'do estorno'), 'dtEstorno');
+
+        SET @Avisos = ISNULL((SELECT r.CODIGO AS codigo, r.NIVEL AS nivel, r.MENSAGEM AS mensagem, r.ID_REFERENCIA AS idReferencia, r.CAMPO AS campo
+                              FROM #Regra r ORDER BY CASE r.NIVEL WHEN 'BLOQUEIO' THEN 0 WHEN 'MOTIVO' THEN 1 ELSE 2 END, r.ORDEM
+                              FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]');
+
+        IF EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'BLOQUEIO')
+        BEGIN
+            SELECT TOP 1 @Recusa = r.MENSAGEM FROM #Regra r WHERE r.NIVEL = 'BLOQUEIO' ORDER BY r.ORDEM;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, @IdTransferencia AS ID,
+                   @Valor AS VALOR, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        IF @SomenteConferir = 1
+        BEGIN
+            SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Prévia do estorno.' AS NVARCHAR(400)) AS MENSAGEM, @IdTransferencia AS ID, @Valor AS VALOR,
+                   CAST(CASE WHEN EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'MOTIVO') THEN 1 ELSE 0 END AS BIT) AS PENDENTE,
+                   CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        ---------------------------------------------------------------------
+        -- Gravação
+        ---------------------------------------------------------------------
+        SET @EtapaAtual = 'Gravação';
+        SET @Usuario = ISNULL(SIS.fn_SIS_Usuario_Login(@IdUsuario), N'sistema');
+        BEGIN TRANSACTION;
+
+        -- concorrência: alguém estornou no meio
+        UPDATE t
+           SET t.SITUACAO = 'ESTORNADA', t.DT_ESTORNO = @DtEstorno, t.MOTIVO_ESTORNO = @Motivo, t.USUARIO_ESTORNO = @Usuario,
+               t.DT_HORA_ESTORNO = SYSDATETIME(), t.DT_ALTERACAO = SYSDATETIME(), t.USUARIO_ALTERACAO = @Usuario
+        FROM FIN.Transferencia t WITH (UPDLOCK, HOLDLOCK)
+        WHERE t.ID_TRANSFERENCIA = @IdTransferencia AND t.SITUACAO = 'ATIVA';
+        SET @Linhas = @@ROWCOUNT;
+
+        IF @Linhas = 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'A transferência foi estornada por outra pessoa. Abra a lista de novo.' AS NVARCHAR(400)) AS MENSAGEM,
+                   @IdTransferencia AS ID, @Valor AS VALOR, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        EXEC SIS.SIS_Lote_Gerar @IdUsuario = @IdUsuario, @Origem = 'ESTORNO_TRANSFERENCIA', @Descricao = @Motivo,
+             @TabelaReferencia = N'FIN.Transferencia', @IdReferencia = @IdTransferencia, @IdLote = @IdLote OUTPUT;
+
+        UPDATE t SET t.ID_LOTE_ESTORNO = @IdLote FROM FIN.Transferencia t WHERE t.ID_TRANSFERENCIA = @IdTransferencia;
+
+        INSERT INTO BANCO.Movimento (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO, DOCUMENTO, ID_TRANSFERENCIA, SITUACAO, ID_LOTE, USUARIO_CRIACAO)
+        SELECT m.ID_CONTA, @DtEstorno, -m.VALOR, m.TIPO, LEFT(N'Estorno: ' + m.HISTORICO, 200), m.DOCUMENTO, m.ID_TRANSFERENCIA, 'ESTORNADO', @IdLote, @Usuario
+        FROM BANCO.Movimento m INNER JOIN #M x ON x.ID_MOVIMENTO = m.ID_MOVIMENTO;
+
+        UPDATE m
+           SET m.SITUACAO = 'ESTORNADO', m.DT_ALTERACAO = SYSDATETIME(), m.USUARIO_ALTERACAO = @Usuario
+        FROM BANCO.Movimento m INNER JOIN #M x ON x.ID_MOVIMENTO = m.ID_MOVIMENTO;
+
+        INSERT INTO SIS.Aviso_Confirmado (TABELA, ID_REGISTRO, CODIGO_REGRA, NIVEL, MENSAGEM, MOTIVO, ID_REFERENCIA, ID_USUARIO, USUARIO_CRIACAO)
+        SELECT N'FIN.Transferencia', @IdTransferencia, 'ESTORNO', 'MOTIVO', N'Transferência estornada em ' + CONVERT(NVARCHAR(10), @DtEstorno, 103) + N'.',
+               @Motivo, NULL, @IdUsuario, @Usuario
+        UNION ALL
+        SELECT N'FIN.Transferencia', @IdTransferencia, r.CODIGO, r.NIVEL, r.MENSAGEM, @Motivo, r.ID_REFERENCIA, @IdUsuario, @Usuario
+        FROM #Regra r WHERE r.NIVEL = 'MOTIVO';
+
+        EXEC SIS.SIS_Lote_Concluir @IdLote = @IdLote, @QtdRegistros = 1;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Transferência estornada.' AS NVARCHAR(400)) AS MENSAGEM, @IdTransferencia AS ID, @Valor AS VALOR,
+               CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+
+        DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        DROP TABLE IF EXISTS #M; DROP TABLE IF EXISTS #Regra;
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível estornar a transferência. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               @IdTransferencia AS ID, CAST(0 AS DECIMAL(18,2)) AS VALOR, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/FIN/FIN.FIN_Transferencia_Listar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [FIN].[FIN_Transferencia_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Lista das transferências (tela Bancos › Transferências,
+                etapa 04g2). Filtros: período, conta (de um lado ou do outro),
+                empresa, situação (ATIVA, ESTORNADA ou todas), só entre
+                empresas, texto (histórico, documento, conta). Paginação
+                (@Pagina, @PorPagina; padrão FIN_LISTA_POR_PAGINA).
+                Cada linha traz TOTAL_LINHAS e TOTAL_VALOR (só das ativas) de
+                todo o filtro e PODE_ESTORNAR.
+                Permissão: VER em BANCO_TRANSFERENCIA (recusa por THROW 50001,
+                como as outras listas).
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC FIN.FIN_Transferencia_Listar @IdUsuario = 2, @DtDe = '2026-01-01', @DtAte = '2026-12-31';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [FIN].[FIN_Transferencia_Listar]
+    @IdUsuario       INT,
+    @DtDe            DATE           = NULL,
+    @DtAte           DATE           = NULL,
+    @IdConta         INT            = NULL,
+    @IdEmpresa       INT            = NULL,
+    @Situacao        VARCHAR(10)    = NULL,
+    @EntreEmpresas   BIT            = 0,
+    @Texto           NVARCHAR(100)  = NULL,
+    @Pagina          INT            = 1,
+    @PorPagina       INT            = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[FIN].[FIN_Transferencia_Listar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Permissão';
+    DECLARE @PodeEstornar BIT;
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_TRANSFERENCIA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver as transferências.', 1;
+
+        SET @EtapaAtual   = 'Consulta';
+        SET @PodeEstornar = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_TRANSFERENCIA', 'ESTORNAR');
+        SET @Situacao     = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@Situacao, '')))), '');
+        SET @Texto        = NULLIF(LTRIM(RTRIM(ISNULL(@Texto, N''))), N'');
+        SET @Pagina       = CASE WHEN ISNULL(@Pagina, 0) < 1 THEN 1 ELSE @Pagina END;
+        SET @PorPagina    = ISNULL(@PorPagina, ISNULL(SIS.fn_SIS_Parametro_Inteiro('FIN_LISTA_POR_PAGINA'), 100));
+        IF @PorPagina NOT BETWEEN 10 AND 1000 SET @PorPagina = 100;
+
+        ;WITH f AS
+        (
+            SELECT t.ID_TRANSFERENCIA, t.DT_TRANSFERENCIA, t.VALOR, t.SITUACAO, t.DT_CRIACAO,
+                   COUNT(*) OVER () AS TOTAL_LINHAS,
+                   SUM(CASE WHEN t.SITUACAO = 'ATIVA' THEN t.VALOR ELSE 0 END) OVER () AS TOTAL_VALOR
+            FROM FIN.Transferencia t WITH (NOLOCK)
+            INNER JOIN BANCO.Conta co WITH (NOLOCK) ON co.ID_CONTA = t.ID_CONTA_ORIGEM
+            INNER JOIN BANCO.Conta cd WITH (NOLOCK) ON cd.ID_CONTA = t.ID_CONTA_DESTINO
+            WHERE (@DtDe IS NULL OR t.DT_TRANSFERENCIA >= @DtDe)
+              AND (@DtAte IS NULL OR t.DT_TRANSFERENCIA <= @DtAte)
+              AND (@IdConta IS NULL OR t.ID_CONTA_ORIGEM = @IdConta OR t.ID_CONTA_DESTINO = @IdConta)
+              AND (@IdEmpresa IS NULL OR co.ID_EMPRESA = @IdEmpresa OR cd.ID_EMPRESA = @IdEmpresa)
+              AND (@Situacao IS NULL OR t.SITUACAO = @Situacao)
+              AND (ISNULL(@EntreEmpresas, 0) = 0 OR co.ID_EMPRESA <> cd.ID_EMPRESA)
+              AND (@Texto IS NULL OR t.HISTORICO LIKE N'%' + @Texto + N'%' OR t.DOCUMENTO LIKE N'%' + @Texto + N'%'
+                   OR co.DESCRICAO LIKE N'%' + @Texto + N'%' OR cd.DESCRICAO LIKE N'%' + @Texto + N'%')
+        ),
+        pag AS
+        (
+            SELECT f.* FROM f
+            ORDER BY f.DT_TRANSFERENCIA DESC, f.ID_TRANSFERENCIA DESC
+            OFFSET (@Pagina - 1) * @PorPagina ROWS FETCH NEXT @PorPagina ROWS ONLY
+        )
+        SELECT t.ID_TRANSFERENCIA, t.DT_TRANSFERENCIA,
+               t.ID_CONTA_ORIGEM,  co.DESCRICAO AS CONTA_ORIGEM,  co.ID_EMPRESA AS ID_EMPRESA_ORIGEM,
+               ISNULL(NULLIF(eo.NOME_FANTASIA, N''), eo.RAZAO_SOCIAL) AS EMPRESA_ORIGEM,
+               t.ID_CONTA_DESTINO, cd.DESCRICAO AS CONTA_DESTINO, cd.ID_EMPRESA AS ID_EMPRESA_DESTINO,
+               ISNULL(NULLIF(ed.NOME_FANTASIA, N''), ed.RAZAO_SOCIAL) AS EMPRESA_DESTINO,
+               CAST(CASE WHEN co.ID_EMPRESA <> cd.ID_EMPRESA THEN 1 ELSE 0 END AS BIT) AS ENTRE_EMPRESAS,
+               t.VALOR, t.HISTORICO, t.DOCUMENTO, t.SITUACAO,
+               ISNULL(CONVERT(VARCHAR(10), t.DT_ESTORNO, 23), '') AS DT_ESTORNO,
+               ISNULL(t.MOTIVO_ESTORNO, N'') AS MOTIVO_ESTORNO, ISNULL(t.USUARIO_ESTORNO, N'') AS USUARIO_ESTORNO,
+               t.USUARIO_CRIACAO, t.DT_CRIACAO, t.ID_LOTE,
+               CAST(CASE WHEN t.CODIGO_ACCESS IS NULL THEN 0 ELSE 1 END AS BIT) AS MIGRADA,
+               CAST(CASE WHEN @PodeEstornar = 1 AND t.SITUACAO = 'ATIVA' THEN 1 ELSE 0 END AS BIT) AS PODE_ESTORNAR,
+               p.TOTAL_LINHAS, CAST(p.TOTAL_VALOR AS DECIMAL(18,2)) AS TOTAL_VALOR
+        FROM pag p
+        INNER JOIN FIN.Transferencia t WITH (NOLOCK) ON t.ID_TRANSFERENCIA = p.ID_TRANSFERENCIA
+        INNER JOIN BANCO.Conta co WITH (NOLOCK) ON co.ID_CONTA = t.ID_CONTA_ORIGEM
+        INNER JOIN BANCO.Conta cd WITH (NOLOCK) ON cd.ID_CONTA = t.ID_CONTA_DESTINO
+        LEFT  JOIN CAD.Empresa eo WITH (NOLOCK) ON eo.ID_EMPRESA = co.ID_EMPRESA
+        LEFT  JOIN CAD.Empresa ed WITH (NOLOCK) ON ed.ID_EMPRESA = cd.ID_EMPRESA
+        ORDER BY t.DT_TRANSFERENCIA DESC, t.ID_TRANSFERENCIA DESC;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível listar as transferências. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/BANCO/BANCO.BANCO_Extrato_Listar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [BANCO].[BANCO_Extrato_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Extrato de uma conta no período (tela Bancos › Extrato e
+                saldos, etapa 04g2). A 1ª linha é sempre o SALDO ANTERIOR
+                (fim do dia anterior a @DtDe); se o saldo inicial da conta cai
+                dentro do período, entra uma linha SALDO_INICIAL nessa data.
+                Depois cada movimento, em ordem de data e de inclusão, com o
+                SALDO_ACUMULADO. Regra de 19/11/2026: movimento com data
+                anterior ao saldo inicial aparece como histórico
+                (CONTA_SALDO = 0) e não mexe no saldo. Estornos entram (o par
+                original + inverso zera); @OcultarEstornados = 1 só esconde
+                as linhas (o saldo continua contando tudo).
+                Origem de cada linha: baixa (lançamento, parceiro, quantas
+                parcelas no pagamento em lote), transferência (a outra conta)
+                ou o tipo do movimento.
+                ENTRADA/SAIDA e os totais só contam os movimentos (o saldo
+                inicial não é entrada). Todas as linhas trazem SALDO_ANTERIOR, TOTAL_ENTRADAS,
+                TOTAL_SAIDAS e SALDO_FINAL do período.
+                Período obrigatório, até BANCO_EXTRATO_MAX_DIAS dias.
+                Permissão: VER em BANCO_EXTRATO (recusa por THROW 50001).
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC BANCO.BANCO_Extrato_Listar @IdUsuario = 2, @IdConta = 1, @DtDe = '2026-11-01', @DtAte = '2026-11-30';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Extrato_Listar]
+    @IdUsuario          INT,
+    @IdConta            INT,
+    @DtDe               DATE           = NULL,
+    @DtAte              DATE           = NULL,
+    @OcultarEstornados  BIT            = 0,
+    @Texto              NVARCHAR(100)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc     NVARCHAR(128) = N'[BANCO].[BANCO_Extrato_Listar]';
+    DECLARE @EtapaAtual   VARCHAR(100)  = 'Permissão';
+    DECLARE @MaxDias      INT;
+    DECLARE @DtSaldoIni   DATE;
+    DECLARE @SaldoIni     DECIMAL(18,2);
+    DECLARE @SaldoAnt     DECIMAL(18,2);
+    DECLARE @DtAnterior   DATE;
+
+    DROP TABLE IF EXISTS #L;
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_EXTRATO', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver o extrato das contas.', 1;
+
+        SELECT @DtSaldoIni = c.DT_SALDO_INICIAL, @SaldoIni = c.SALDO_INICIAL FROM BANCO.Conta c WHERE c.ID_CONTA = @IdConta;
+        IF @SaldoIni IS NULL
+            THROW 50001, N'Escolha a conta.', 1;
+
+        SET @DtAte   = ISNULL(@DtAte, CONVERT(DATE, SYSDATETIME()));
+        SET @DtDe    = ISNULL(@DtDe, DATEFROMPARTS(YEAR(@DtAte), MONTH(@DtAte), 1));
+        SET @MaxDias = ISNULL(SIS.fn_SIS_Parametro_Inteiro('BANCO_EXTRATO_MAX_DIAS'), 400);
+        IF @DtDe > @DtAte
+            THROW 50001, N'A data inicial é depois da final.', 1;
+        IF DATEDIFF(DAY, @DtDe, @DtAte) + 1 > @MaxDias
+            THROW 50001, N'Período grande demais para o extrato: escolha no máximo o número de dias do parâmetro BANCO_EXTRATO_MAX_DIAS.', 1;
+
+        SET @Texto      = NULLIF(LTRIM(RTRIM(ISNULL(@Texto, N''))), N'');
+        SET @DtAnterior = DATEADD(DAY, -1, @DtDe);
+
+        SET @EtapaAtual = 'Saldo anterior';
+        SELECT @SaldoAnt = s.SALDO FROM BANCO.fn_BANCO_Conta_Saldo(@IdConta, @DtAnterior) s;
+        SET @SaldoAnt = ISNULL(@SaldoAnt, 0);
+
+        SET @EtapaAtual = 'Linhas';
+        CREATE TABLE #L
+        (
+            SEQ               INT            NOT NULL,
+            DT_MOVIMENTO      DATE           NOT NULL,
+            ID_MOVIMENTO      BIGINT         NULL,
+            TIPO              VARCHAR(15)    NOT NULL,
+            HISTORICO         NVARCHAR(200)  NOT NULL,
+            DOCUMENTO         NVARCHAR(40)   NOT NULL,
+            VALOR             DECIMAL(18,2)  NOT NULL,
+            CONTA_SALDO       BIT            NOT NULL,
+            SITUACAO          VARCHAR(10)    NOT NULL,
+            CONCILIADO        BIT            NOT NULL,
+            ID_TRANSFERENCIA  BIGINT         NULL,
+            ID_LOTE           BIGINT         NULL,
+            USUARIO_CRIACAO   NVARCHAR(100)  NOT NULL
+        );
+
+        INSERT INTO #L (SEQ, DT_MOVIMENTO, ID_MOVIMENTO, TIPO, HISTORICO, DOCUMENTO, VALOR, CONTA_SALDO, SITUACAO, CONCILIADO, ID_TRANSFERENCIA, ID_LOTE, USUARIO_CRIACAO)
+        SELECT 0, @DtAnterior, NULL, 'SALDO_ANTERIOR', N'Saldo anterior', N'', @SaldoAnt, 0, 'ATIVO', 0, NULL, NULL, N''
+        UNION ALL
+        SELECT 1, @DtSaldoIni, NULL, 'SALDO_INICIAL', N'Saldo inicial da conta', N'', @SaldoIni, 1, 'ATIVO', 0, NULL, NULL, N''
+        WHERE @DtSaldoIni BETWEEN @DtDe AND @DtAte
+        UNION ALL
+        SELECT 2, m.DT_MOVIMENTO, m.ID_MOVIMENTO, m.TIPO, m.HISTORICO, m.DOCUMENTO, m.VALOR,
+               CAST(CASE WHEN @DtSaldoIni IS NULL OR m.DT_MOVIMENTO >= @DtSaldoIni THEN 1 ELSE 0 END AS BIT),
+               m.SITUACAO, m.CONCILIADO, m.ID_TRANSFERENCIA, m.ID_LOTE, m.USUARIO_CRIACAO
+        FROM BANCO.Movimento m WITH (NOLOCK)
+        WHERE m.ID_CONTA = @IdConta AND m.DT_MOVIMENTO BETWEEN @DtDe AND @DtAte;
+
+        SET @EtapaAtual = 'Consulta';
+        ;WITH a AS
+        (
+            SELECT l.*,
+                   CAST(@SaldoAnt + SUM(CASE WHEN l.SEQ > 0 AND l.CONTA_SALDO = 1 THEN l.VALOR ELSE 0 END)
+                        OVER (ORDER BY l.DT_MOVIMENTO, l.SEQ, l.ID_MOVIMENTO ROWS UNBOUNDED PRECEDING) AS DECIMAL(18,2)) AS SALDO_ACUMULADO,
+                   CAST(SUM(CASE WHEN l.SEQ = 2 AND l.CONTA_SALDO = 1 AND l.VALOR > 0 THEN l.VALOR ELSE 0 END) OVER () AS DECIMAL(18,2)) AS TOTAL_ENTRADAS,
+                   CAST(SUM(CASE WHEN l.SEQ = 2 AND l.CONTA_SALDO = 1 AND l.VALOR < 0 THEN -l.VALOR ELSE 0 END) OVER () AS DECIMAL(18,2)) AS TOTAL_SAIDAS,
+                   CAST(@SaldoAnt + SUM(CASE WHEN l.SEQ > 0 AND l.CONTA_SALDO = 1 THEN l.VALOR ELSE 0 END) OVER () AS DECIMAL(18,2)) AS SALDO_FINAL
+            FROM #L l
+        )
+        SELECT a.DT_MOVIMENTO, a.ID_MOVIMENTO, a.TIPO, a.HISTORICO, a.DOCUMENTO, a.VALOR,
+               CAST(CASE WHEN a.SEQ = 2 AND a.VALOR > 0 THEN a.VALOR ELSE 0 END AS DECIMAL(18,2)) AS ENTRADA,
+               CAST(CASE WHEN a.SEQ = 2 AND a.VALOR < 0 THEN -a.VALOR ELSE 0 END AS DECIMAL(18,2)) AS SAIDA,
+               a.SALDO_ACUMULADO, a.CONTA_SALDO, a.SITUACAO, a.CONCILIADO, a.ID_TRANSFERENCIA, a.ID_LOTE, a.USUARIO_CRIACAO,
+               ISNULL(b.ID_LANCAMENTO, 0) AS ID_LANCAMENTO, ISNULL(b.LANC_TIPO, '') AS LANCAMENTO_TIPO, ISNULL(b.PESSOA, N'') AS PESSOA,
+               ISNULL(b.QTD, 0) AS QTD_BAIXAS, ISNULL(oc.DESCRICAO, N'') AS OUTRA_CONTA,
+               CAST(@SaldoAnt AS DECIMAL(18,2)) AS SALDO_ANTERIOR, a.TOTAL_ENTRADAS, a.TOTAL_SAIDAS, a.SALDO_FINAL
+        FROM a
+        OUTER APPLY (SELECT TOP 1 l.ID_LANCAMENTO, l.TIPO AS LANC_TIPO, ISNULL(NULLIF(pe.NOME_FANTASIA, N''), pe.NOME) AS PESSOA,
+                            COUNT(*) OVER () AS QTD
+                     FROM FIN.Baixa bx WITH (NOLOCK)
+                     INNER JOIN FIN.Parcela p    WITH (NOLOCK) ON p.ID_PARCELA = bx.ID_PARCELA
+                     INNER JOIN FIN.Lancamento l WITH (NOLOCK) ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
+                     LEFT  JOIN CAD.Pessoa pe    WITH (NOLOCK) ON pe.ID_PESSOA = l.ID_PESSOA
+                     WHERE a.ID_MOVIMENTO IS NOT NULL AND bx.ID_MOVIMENTO = a.ID_MOVIMENTO
+                     ORDER BY bx.ID_BAIXA) b
+        OUTER APPLY (SELECT TOP 1 c.DESCRICAO
+                     FROM FIN.Transferencia t WITH (NOLOCK)
+                     INNER JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = CASE WHEN t.ID_CONTA_ORIGEM = @IdConta THEN t.ID_CONTA_DESTINO ELSE t.ID_CONTA_ORIGEM END
+                     WHERE a.ID_TRANSFERENCIA IS NOT NULL AND t.ID_TRANSFERENCIA = a.ID_TRANSFERENCIA
+                     ORDER BY t.ID_TRANSFERENCIA) oc
+        WHERE a.SEQ < 2
+           OR ((ISNULL(@OcultarEstornados, 0) = 0 OR a.SITUACAO = 'ATIVO')
+               AND (@Texto IS NULL OR a.HISTORICO LIKE N'%' + @Texto + N'%' OR a.DOCUMENTO LIKE N'%' + @Texto + N'%'
+                    OR ISNULL(b.PESSOA, N'') LIKE N'%' + @Texto + N'%'))
+        ORDER BY a.DT_MOVIMENTO, a.SEQ, a.ID_MOVIMENTO;
+
+        DROP TABLE IF EXISTS #L;
+    END TRY
+    BEGIN CATCH
+        DROP TABLE IF EXISTS #L;
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível montar o extrato. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/BANCO/BANCO.BANCO_Saldo_Listar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [BANCO].[BANCO_Saldo_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Saldos por conta numa data (tela Bancos › Extrato e saldos,
+                etapa 04g2). Por padrão só as contas ativas marcadas "mostra
+                saldo"; @Todas = 1 traz também as outras ativas e
+                @IncluirInativas = 1 as desativadas. Saldo pela
+                BANCO.fn_BANCO_Conta_Saldo (fonte única), disponível = saldo +
+                limite, último movimento, movimentos não conciliados (contas
+                que conciliam) e, para os tipos de FIN_CAIXA_FECHAMENTO_TIPOS,
+                o último fechamento e se está atrasado (movimento em dia
+                ainda não fechado há mais de FIN_CAIXA_FECHAMENTO_ATRASO_DIAS
+                dias; 0 = não avisa).
+                Permissão: VER em BANCO_EXTRATO ou BANCO_CAIXA (recusa por
+                THROW 50001).
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC BANCO.BANCO_Saldo_Listar @IdUsuario = 2, @Data = '2026-11-27';
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Saldo_Listar]
+    @IdUsuario        INT,
+    @Data             DATE  = NULL,
+    @IdEmpresa        INT   = NULL,
+    @Todas            BIT   = 0,
+    @IncluirInativas  BIT   = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[BANCO].[BANCO_Saldo_Listar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Permissão';
+    DECLARE @Tipos       NVARCHAR(400);
+    DECLARE @Atraso      INT;
+    DECLARE @Hoje        DATE = CONVERT(DATE, SYSDATETIME());
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_EXTRATO', 'VER') = 0
+           AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os saldos das contas.', 1;
+
+        SET @Data   = ISNULL(@Data, @Hoje);
+        SET @Tipos  = N',' + REPLACE(UPPER(ISNULL(SIS.fn_SIS_Parametro('FIN_CAIXA_FECHAMENTO_TIPOS'), N'')), N' ', N'') + N',';
+        SET @Atraso = ISNULL(SIS.fn_SIS_Parametro_Inteiro('FIN_CAIXA_FECHAMENTO_ATRASO_DIAS'), 1);
+
+        SET @EtapaAtual = 'Consulta';
+        SELECT c.ID_CONTA, c.ID_EMPRESA, ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL) AS EMPRESA,
+               c.DESCRICAO, c.TIPO, ISNULL(b.NOME, N'') AS BANCO, c.AGENCIA, c.NUMERO, c.ORDEM, c.ATIVO, c.MOSTRA_SALDO, c.CONCILIA,
+               s.SALDO, s.LIMITE_CREDITO, CAST(s.SALDO + s.LIMITE_CREDITO AS DECIMAL(18,2)) AS DISPONIVEL, s.TEM_SALDO,
+               ISNULL(CONVERT(VARCHAR(10), s.DT_SALDO_INICIAL, 23), '') AS DT_SALDO_INICIAL,
+               ISNULL(CONVERT(VARCHAR(10), um.DT, 23), '') AS DT_ULTIMO_MOVIMENTO,
+               CAST(CASE WHEN c.CONCILIA = 1 THEN ISNULL(nc.QTD, 0) ELSE 0 END AS INT) AS QTD_NAO_CONCILIADOS,
+               CAST(CASE WHEN CHARINDEX(N',' + c.TIPO + N',', @Tipos) > 0 THEN 1 ELSE 0 END AS BIT) AS USA_FECHAMENTO,
+               ISNULL(CONVERT(VARCHAR(10), f.DT_FECHAMENTO, 23), '') AS DT_ULTIMO_FECHAMENTO,
+               CAST(CASE WHEN CHARINDEX(N',' + c.TIPO + N',', @Tipos) > 0 AND @Atraso > 0 AND pf.DT IS NOT NULL
+                              AND DATEDIFF(DAY, pf.DT, @Hoje) >= @Atraso THEN 1 ELSE 0 END AS BIT) AS FECHAMENTO_ATRASADO,
+               ISNULL(CONVERT(VARCHAR(10), pf.DT, 23), '') AS DT_PRIMEIRO_SEM_FECHAR
+        FROM BANCO.Conta c WITH (NOLOCK)
+        INNER JOIN CAD.Empresa e WITH (NOLOCK) ON e.ID_EMPRESA = c.ID_EMPRESA
+        LEFT  JOIN BANCO.Banco b WITH (NOLOCK) ON b.ID_BANCO = c.ID_BANCO
+        CROSS APPLY BANCO.fn_BANCO_Conta_Saldo(c.ID_CONTA, @Data) s
+        OUTER APPLY (SELECT MAX(m.DT_MOVIMENTO) AS DT FROM BANCO.Movimento m WITH (NOLOCK) WHERE m.ID_CONTA = c.ID_CONTA AND m.DT_MOVIMENTO <= @Data) um
+        OUTER APPLY (SELECT COUNT(*) AS QTD FROM BANCO.Movimento m WITH (NOLOCK)
+                     WHERE m.ID_CONTA = c.ID_CONTA AND m.CONCILIADO = 0 AND m.SITUACAO = 'ATIVO' AND m.DT_MOVIMENTO <= @Data
+                       AND (c.DT_SALDO_INICIAL IS NULL OR m.DT_MOVIMENTO >= c.DT_SALDO_INICIAL)) nc
+        OUTER APPLY (SELECT MAX(x.DT_FECHAMENTO) AS DT_FECHAMENTO FROM BANCO.Caixa_Fechamento x WITH (NOLOCK)
+                     WHERE x.ID_CONTA = c.ID_CONTA AND x.SITUACAO = 'FECHADO') f
+        OUTER APPLY (SELECT MIN(m.DT_MOVIMENTO) AS DT FROM BANCO.Movimento m WITH (NOLOCK)
+                     WHERE m.ID_CONTA = c.ID_CONTA AND m.DT_MOVIMENTO < @Hoje
+                       AND (f.DT_FECHAMENTO IS NULL OR m.DT_MOVIMENTO > f.DT_FECHAMENTO)
+                       AND (c.DT_SALDO_INICIAL IS NULL OR m.DT_MOVIMENTO >= c.DT_SALDO_INICIAL)) pf
+        WHERE c.DT_EXCLUSAO IS NULL
+          AND (@IdEmpresa IS NULL OR c.ID_EMPRESA = @IdEmpresa)
+          AND (c.ATIVO = 1 OR ISNULL(@IncluirInativas, 0) = 1)
+          AND (c.MOSTRA_SALDO = 1 OR ISNULL(@Todas, 0) = 1 OR ISNULL(@IncluirInativas, 0) = 1)
+        ORDER BY ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL), c.ORDEM, c.DESCRICAO;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível listar os saldos. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/BANCO/BANCO.BANCO_Caixa_Fechar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [BANCO].[BANCO_Caixa_Fechar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Fechamento de caixa de uma conta até uma data (etapa 04g2,
+                desenho aprovado em 26/11/2026). Compara o saldo do sistema
+                no fim do dia (BANCO.fn_BANCO_Conta_Saldo) com o saldo
+                contado. Diferença exige motivo; com @GerarAjuste = 1 (ação
+                AJUSTE_CAIXA) grava um movimento AJUSTE pela diferença na
+                data do fechamento, e o saldo do sistema passa a ser o
+                contado. Fechado, a conta não aceita baixa, estorno,
+                transferência nem ajuste com data até a do fechamento
+                (BANCO.fn_BANCO_Caixa_Recusa).
+                Regras: só os tipos de conta de FIN_CAIXA_FECHAMENTO_TIPOS;
+                conta ativa; data até hoje, depois do último fechamento e não
+                anterior ao saldo inicial; o ajuste segue a trava de datas.
+                Mesmo contrato da baixa (BLOQUEIO, MOTIVO; @SomenteConferir = 1
+                é a prévia: com @SaldoContado vazio devolve só o saldo do
+                sistema e o movimento desde o último fechamento).
+                Motivo e ajuste em SIS.Aviso_Confirmado (TABELA
+                BANCO.Caixa_Fechamento, código DIFERENCA_CAIXA).
+                Permissão: INCLUIR em BANCO_CAIXA (+ AJUSTE_CAIXA para o
+                ajuste).
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID, SALDO_SISTEMA,
+                SALDO_CONTADO, DIFERENCA, DT_ULTIMO_FECHAMENTO, ENTRADAS,
+                SAIDAS, QTD_MOVIMENTOS (desde o último fechamento), PODE_AJUSTE,
+                ID_MOVIMENTO_AJUSTE, PENDENTE, AVISOS.
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = 2, @IdConta = 1, @DtFechamento = '2026-11-26', @SomenteConferir = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Caixa_Fechar]
+    @IdUsuario        INT,
+    @IdConta          INT,
+    @DtFechamento     DATE            = NULL,
+    @SaldoContado     DECIMAL(18,2)   = NULL,
+    @Motivo           NVARCHAR(400)   = NULL,
+    @GerarAjuste      BIT             = 0,
+    @Observacao       NVARCHAR(400)   = NULL,
+    @SomenteConferir  BIT             = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[BANCO].[BANCO_Caixa_Fechar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa      NVARCHAR(400) = N'';
+    DECLARE @Usuario     NVARCHAR(100);
+    DECLARE @Hoje        DATE = CONVERT(DATE, SYSDATETIME());
+    DECLARE @Tipos       NVARCHAR(400);
+    DECLARE @TipoConta   VARCHAR(10);
+    DECLARE @Ativa       BIT;
+    DECLARE @NaLixeira   BIT;
+    DECLARE @NomeConta   NVARCHAR(60);
+    DECLARE @Ultimo      DATE;
+    DECLARE @Sistema     DECIMAL(18,2);
+    DECLARE @TemSaldo    BIT;
+    DECLARE @Diferenca   DECIMAL(18,2) = 0;
+    DECLARE @Entradas    DECIMAL(18,2) = 0;
+    DECLARE @Saidas      DECIMAL(18,2) = 0;
+    DECLARE @QtdMov      INT = 0;
+    DECLARE @PodeAjuste  BIT;
+    DECLARE @Avisos      NVARCHAR(MAX) = N'[]';
+    DECLARE @Pendente    BIT = 0;
+    DECLARE @IdLote      BIGINT;
+    DECLARE @IdAjuste    BIGINT;
+    DECLARE @Id          BIGINT;
+    DECLARE @Hist        NVARCHAR(200);
+
+    CREATE TABLE #Regra (ORDEM INT IDENTITY(1,1), CODIGO VARCHAR(40) NOT NULL, NIVEL VARCHAR(12) NOT NULL,
+                         MENSAGEM NVARCHAR(400) NOT NULL, ID_REFERENCIA BIGINT NULL, CAMPO VARCHAR(40) NOT NULL DEFAULT (''));
+
+    BEGIN TRY
+        SET @Motivo      = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+        SET @Observacao  = LTRIM(RTRIM(ISNULL(@Observacao, N'')));
+        SET @GerarAjuste = ISNULL(@GerarAjuste, 0);
+        SET @Tipos       = N',' + REPLACE(UPPER(ISNULL(SIS.fn_SIS_Parametro('FIN_CAIXA_FECHAMENTO_TIPOS'), N'')), N' ', N'') + N',';
+        SET @PodeAjuste  = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'AJUSTE_CAIXA');
+
+        SELECT @TipoConta = c.TIPO, @Ativa = c.ATIVO, @NomeConta = c.DESCRICAO, @NaLixeira = CAST(CASE WHEN c.DT_EXCLUSAO IS NULL THEN 0 ELSE 1 END AS BIT)
+        FROM BANCO.Conta c WHERE c.ID_CONTA = @IdConta;
+        SELECT @Ultimo = MAX(f.DT_FECHAMENTO) FROM BANCO.Caixa_Fechamento f WHERE f.ID_CONTA = @IdConta AND f.SITUACAO = 'FECHADO';
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'INCLUIR') = 0
+            SET @Recusa = N'Você não tem permissão para fechar o caixa.';
+        IF @Recusa = N'' AND @TipoConta IS NULL
+            SET @Recusa = N'Escolha a conta.';
+        IF @Recusa = N'' AND CHARINDEX(N',' + @TipoConta + N',', @Tipos) = 0
+            SET @Recusa = N'Esta conta não usa o fechamento de caixa (tipos no parâmetro FIN_CAIXA_FECHAMENTO_TIPOS).';
+        IF @Recusa = N'' AND (@Ativa = 0 OR @NaLixeira = 1)
+            SET @Recusa = N'A conta ' + @NomeConta + N' está desativada.';
+        IF @Recusa = N'' AND @DtFechamento IS NULL
+            SET @Recusa = N'Informe a data do fechamento.';
+        IF @Recusa = N'' AND @DtFechamento > @Hoje
+            SET @Recusa = N'Não dá para fechar o caixa de um dia que ainda não chegou.';
+        IF @Recusa = N'' AND @Ultimo IS NOT NULL AND @DtFechamento <= @Ultimo
+            SET @Recusa = N'O caixa da conta ' + @NomeConta + N' já está fechado até ' + CONVERT(NVARCHAR(10), @Ultimo, 103) + N'.';
+
+        IF @Recusa = N''
+        BEGIN
+            SELECT @Sistema = s.SALDO, @TemSaldo = s.TEM_SALDO FROM BANCO.fn_BANCO_Conta_Saldo(@IdConta, @DtFechamento) s;
+            IF @TemSaldo = 0
+                SET @Recusa = N'A data é anterior ao saldo inicial da conta: não há saldo oficial para fechar.';
+        END;
+
+        IF @Recusa = N'' AND @SomenteConferir = 0 AND @SaldoContado IS NULL
+            SET @Recusa = N'Informe o saldo contado.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID,
+                   CAST(ISNULL(@Sistema, 0) AS DECIMAL(18,2)) AS SALDO_SISTEMA, CAST(ISNULL(@SaldoContado, 0) AS DECIMAL(18,2)) AS SALDO_CONTADO,
+                   CAST(0 AS DECIMAL(18,2)) AS DIFERENCA, ISNULL(CONVERT(VARCHAR(10), @Ultimo, 23), '') AS DT_ULTIMO_FECHAMENTO,
+                   CAST(0 AS DECIMAL(18,2)) AS ENTRADAS, CAST(0 AS DECIMAL(18,2)) AS SAIDAS, 0 AS QTD_MOVIMENTOS, ISNULL(@PodeAjuste, CAST(0 AS BIT)) AS PODE_AJUSTE,
+                   CAST(NULL AS BIGINT) AS ID_MOVIMENTO_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        -- movimento desde o último fechamento (ou do saldo inicial)
+        SELECT @Entradas = ISNULL(SUM(CASE WHEN m.VALOR > 0 THEN m.VALOR ELSE 0 END), 0),
+               @Saidas   = ISNULL(SUM(CASE WHEN m.VALOR < 0 THEN -m.VALOR ELSE 0 END), 0),
+               @QtdMov   = COUNT(*)
+        FROM BANCO.Movimento m
+        INNER JOIN BANCO.Conta c ON c.ID_CONTA = m.ID_CONTA
+        WHERE m.ID_CONTA = @IdConta AND m.DT_MOVIMENTO <= @DtFechamento
+          AND (@Ultimo IS NULL OR m.DT_MOVIMENTO > @Ultimo)
+          AND (c.DT_SALDO_INICIAL IS NULL OR m.DT_MOVIMENTO >= c.DT_SALDO_INICIAL);
+
+        SET @Diferenca = CAST(ISNULL(@SaldoContado, @Sistema) - @Sistema AS DECIMAL(18,2));
+        IF @Diferenca = 0 SET @GerarAjuste = 0;
+
+        ---------------------------------------------------------------------
+        -- Regras
+        ---------------------------------------------------------------------
+        SET @EtapaAtual = 'Regras';
+        IF @Diferenca <> 0
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('DIFERENCA_CAIXA', 'MOTIVO',
+                    N'Diferença de ' + FORMAT(@Diferenca, 'N2', 'pt-BR') + N' entre o saldo contado (' + FORMAT(@SaldoContado, 'N2', 'pt-BR')
+                    + N') e o do sistema (' + FORMAT(@Sistema, 'N2', 'pt-BR') + N'): informe o motivo.', 'saldoContado');
+
+        IF @GerarAjuste = 1 AND @PodeAjuste = 0
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('AJUSTE_SEM_PERMISSAO', 'BLOQUEIO', N'Você não tem permissão para ajustar a diferença do caixa: feche sem o ajuste ou peça a um administrador.', 'gerarAjuste');
+
+        IF @GerarAjuste = 1 AND FIN.fn_FIN_Data_Recusa('BAIXA', @DtFechamento) <> N''
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('DATA_AJUSTE', 'BLOQUEIO', REPLACE(FIN.fn_FIN_Data_Recusa('BAIXA', @DtFechamento), N'de pagamento', N'do ajuste'), 'dtFechamento');
+
+        SET @Avisos = ISNULL((SELECT r.CODIGO AS codigo, r.NIVEL AS nivel, r.MENSAGEM AS mensagem, r.ID_REFERENCIA AS idReferencia, r.CAMPO AS campo
+                              FROM #Regra r ORDER BY CASE r.NIVEL WHEN 'BLOQUEIO' THEN 0 WHEN 'MOTIVO' THEN 1 ELSE 2 END, r.ORDEM
+                              FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]');
+
+        IF EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'BLOQUEIO')
+            SELECT TOP 1 @Recusa = r.MENSAGEM FROM #Regra r WHERE r.NIVEL = 'BLOQUEIO' ORDER BY r.ORDEM;
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'MOTIVO') AND LEN(@Motivo) < 5
+            SET @Pendente = 1;
+
+        IF @Recusa <> N'' OR @SomenteConferir = 1 OR @Pendente = 1
+        BEGIN
+            SELECT CAST(CASE WHEN @Recusa = N'' AND @SomenteConferir = 1 THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+                   CAST(CASE WHEN @Recusa <> N'' THEN @Recusa
+                             WHEN @Pendente = 1 THEN N'Informe o motivo da diferença para fechar o caixa.'
+                             ELSE N'Prévia do fechamento.' END AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS BIGINT) AS ID, @Sistema AS SALDO_SISTEMA, CAST(ISNULL(@SaldoContado, @Sistema) AS DECIMAL(18,2)) AS SALDO_CONTADO,
+                   @Diferenca AS DIFERENCA, ISNULL(CONVERT(VARCHAR(10), @Ultimo, 23), '') AS DT_ULTIMO_FECHAMENTO,
+                   CAST(@Entradas AS DECIMAL(18,2)) AS ENTRADAS, CAST(@Saidas AS DECIMAL(18,2)) AS SAIDAS, @QtdMov AS QTD_MOVIMENTOS, @PodeAjuste AS PODE_AJUSTE,
+                   CAST(NULL AS BIGINT) AS ID_MOVIMENTO_AJUSTE, @Pendente AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        ---------------------------------------------------------------------
+        -- Gravação
+        ---------------------------------------------------------------------
+        SET @EtapaAtual = 'Gravação';
+        SET @Usuario = ISNULL(SIS.fn_SIS_Usuario_Login(@IdUsuario), N'sistema');
+        SET @Hist    = LEFT(N'Ajuste do fechamento de caixa de ' + CONVERT(NVARCHAR(10), @DtFechamento, 103) + N': ' + @Motivo, 200);
+
+        BEGIN TRANSACTION;
+
+        -- concorrência: outro fechamento da mesma conta no meio
+        IF EXISTS (SELECT 1 FROM BANCO.Caixa_Fechamento f WITH (UPDLOCK, HOLDLOCK)
+                   WHERE f.ID_CONTA = @IdConta AND f.SITUACAO = 'FECHADO' AND f.DT_FECHAMENTO >= @DtFechamento)
+        BEGIN
+            ROLLBACK TRANSACTION;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'O caixa desta conta acabou de ser fechado por outra pessoa. Abra a tela de novo.' AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS BIGINT) AS ID, @Sistema AS SALDO_SISTEMA, @SaldoContado AS SALDO_CONTADO, @Diferenca AS DIFERENCA,
+                   ISNULL(CONVERT(VARCHAR(10), @Ultimo, 23), '') AS DT_ULTIMO_FECHAMENTO, CAST(@Entradas AS DECIMAL(18,2)) AS ENTRADAS,
+                   CAST(@Saidas AS DECIMAL(18,2)) AS SAIDAS, @QtdMov AS QTD_MOVIMENTOS, @PodeAjuste AS PODE_AJUSTE,
+                   CAST(NULL AS BIGINT) AS ID_MOVIMENTO_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        EXEC SIS.SIS_Lote_Gerar @IdUsuario = @IdUsuario, @Origem = 'CAIXA_FECHAMENTO', @Descricao = @NomeConta,
+             @TabelaReferencia = N'BANCO.Caixa_Fechamento', @IdReferencia = NULL, @IdLote = @IdLote OUTPUT;
+
+        IF @GerarAjuste = 1
+        BEGIN
+            INSERT INTO BANCO.Movimento (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO, SITUACAO, ID_LOTE, USUARIO_CRIACAO)
+            VALUES (@IdConta, @DtFechamento, @Diferenca, 'AJUSTE', @Hist, 'ATIVO', @IdLote, @Usuario);
+            SET @IdAjuste = SCOPE_IDENTITY();
+        END;
+
+        INSERT INTO BANCO.Caixa_Fechamento (ID_CONTA, DT_FECHAMENTO, SALDO_SISTEMA, SALDO_CONTADO, MOTIVO_DIFERENCA, ID_MOVIMENTO_AJUSTE, OBSERVACAO, SITUACAO, USUARIO_CRIACAO)
+        VALUES (@IdConta, @DtFechamento, @Sistema, @SaldoContado, CASE WHEN @Diferenca <> 0 THEN @Motivo ELSE N'' END, @IdAjuste, @Observacao, 'FECHADO', @Usuario);
+        SET @Id = SCOPE_IDENTITY();
+
+        INSERT INTO SIS.Aviso_Confirmado (TABELA, ID_REGISTRO, CODIGO_REGRA, NIVEL, MENSAGEM, MOTIVO, ID_REFERENCIA, ID_USUARIO, USUARIO_CRIACAO)
+        SELECT N'BANCO.Caixa_Fechamento', @Id, r.CODIGO, r.NIVEL,
+               LEFT(r.MENSAGEM + CASE WHEN @IdAjuste IS NOT NULL THEN N' Ajuste gravado.' ELSE N' Sem ajuste.' END, 400),
+               @Motivo, @IdAjuste, @IdUsuario, @Usuario
+        FROM #Regra r WHERE r.NIVEL = 'MOTIVO';
+
+        EXEC SIS.SIS_Lote_Concluir @IdLote = @IdLote, @QtdRegistros = 1;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(N'Caixa da conta ' + @NomeConta + N' fechado até ' + CONVERT(NVARCHAR(10), @DtFechamento, 103)
+                    + CASE WHEN @IdAjuste IS NOT NULL THEN N', com ajuste de ' + FORMAT(@Diferenca, 'N2', 'pt-BR') ELSE N'' END + N'.' AS NVARCHAR(400)) AS MENSAGEM,
+               @Id AS ID, @Sistema AS SALDO_SISTEMA, @SaldoContado AS SALDO_CONTADO, @Diferenca AS DIFERENCA,
+               ISNULL(CONVERT(VARCHAR(10), @Ultimo, 23), '') AS DT_ULTIMO_FECHAMENTO, CAST(@Entradas AS DECIMAL(18,2)) AS ENTRADAS,
+               CAST(@Saidas AS DECIMAL(18,2)) AS SAIDAS, @QtdMov AS QTD_MOVIMENTOS, @PodeAjuste AS PODE_AJUSTE,
+               @IdAjuste AS ID_MOVIMENTO_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+
+        DROP TABLE IF EXISTS #Regra;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        DROP TABLE IF EXISTS #Regra;
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível fechar o caixa. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS BIGINT) AS ID, CAST(0 AS DECIMAL(18,2)) AS SALDO_SISTEMA, CAST(0 AS DECIMAL(18,2)) AS SALDO_CONTADO,
+               CAST(0 AS DECIMAL(18,2)) AS DIFERENCA, CAST('' AS VARCHAR(10)) AS DT_ULTIMO_FECHAMENTO, CAST(0 AS DECIMAL(18,2)) AS ENTRADAS,
+               CAST(0 AS DECIMAL(18,2)) AS SAIDAS, 0 AS QTD_MOVIMENTOS, CAST(0 AS BIT) AS PODE_AJUSTE,
+               CAST(NULL AS BIGINT) AS ID_MOVIMENTO_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/BANCO/BANCO.BANCO_Caixa_Reabrir.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [BANCO].[BANCO_Caixa_Reabrir]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Reabre um fechamento de caixa (etapa 04g2). Só o último
+                fechamento da conta (para voltar mais, reabrir um de cada
+                vez, do mais novo para o mais antigo). Motivo obrigatório.
+                Se o fechamento gravou um AJUSTE, o ajuste é desfeito
+                (movimento inverso na mesma data; os dois ficam ESTORNADO),
+                para o próximo fechamento partir do saldo real. Ajuste já
+                conciliado bloqueia. O registro fica REABERTO com data, quem
+                e motivo (nada é apagado).
+                @SomenteConferir = 1: prévia (diz se há ajuste a desfazer).
+                Permissão: REABRIR em BANCO_CAIXA.
+                Devolve SUCESSO, MENSAGEM, ID, VALOR_AJUSTE, PENDENTE, AVISOS.
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC BANCO.BANCO_Caixa_Reabrir @IdUsuario = 2, @IdCaixaFechamento = 1, @Motivo = N'Recebimento esquecido', @SomenteConferir = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Caixa_Reabrir]
+    @IdUsuario          INT,
+    @IdCaixaFechamento  BIGINT,
+    @Motivo             NVARCHAR(400)  = NULL,
+    @SomenteConferir    BIT            = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[BANCO].[BANCO_Caixa_Reabrir]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa      NVARCHAR(400) = N'';
+    DECLARE @Usuario     NVARCHAR(100);
+    DECLARE @IdConta     INT;
+    DECLARE @Data        DATE;
+    DECLARE @Situacao    VARCHAR(10);
+    DECLARE @IdAjuste    BIGINT;
+    DECLARE @ValorAjuste DECIMAL(18,2) = 0;
+    DECLARE @AjusteConc  BIT = 0;
+    DECLARE @AjusteSit   VARCHAR(10);
+    DECLARE @IdLote      BIGINT;
+    DECLARE @Linhas      INT;
+    DECLARE @Avisos      NVARCHAR(MAX) = N'[]';
+
+    BEGIN TRY
+        SET @Motivo = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+
+        SELECT @IdConta = f.ID_CONTA, @Data = f.DT_FECHAMENTO, @Situacao = f.SITUACAO, @IdAjuste = f.ID_MOVIMENTO_AJUSTE
+        FROM BANCO.Caixa_Fechamento f WHERE f.ID_CAIXA_FECHAMENTO = @IdCaixaFechamento;
+        SELECT @ValorAjuste = m.VALOR, @AjusteConc = m.CONCILIADO, @AjusteSit = m.SITUACAO FROM BANCO.Movimento m WHERE m.ID_MOVIMENTO = @IdAjuste;
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'REABRIR') = 0
+            SET @Recusa = N'Você não tem permissão para reabrir o caixa.';
+        IF @Recusa = N'' AND @Situacao IS NULL
+            SET @Recusa = N'Fechamento não encontrado.';
+        IF @Recusa = N'' AND @Situacao = 'REABERTO'
+            SET @Recusa = N'Este fechamento já foi reaberto.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM BANCO.Caixa_Fechamento f WHERE f.ID_CONTA = @IdConta AND f.SITUACAO = 'FECHADO' AND f.DT_FECHAMENTO > @Data)
+            SET @Recusa = N'Há um fechamento mais novo nesta conta: reabra primeiro o mais novo.';
+        IF @Recusa = N'' AND @AjusteConc = 1
+            SET @Recusa = N'O ajuste deste fechamento já foi conciliado: desfaça a conciliação antes de reabrir.';
+        IF @Recusa = N'' AND @SomenteConferir = 0 AND LEN(@Motivo) < 5
+            SET @Recusa = N'Informe o motivo da reabertura.';
+
+        IF @AjusteSit = 'ESTORNADO' SET @ValorAjuste = 0;
+
+        IF @Recusa = N'' AND @ValorAjuste <> 0
+            SET @Avisos = (SELECT 'AJUSTE_DESFEITO' AS codigo, 'INFO' AS nivel,
+                                  N'O ajuste de ' + FORMAT(@ValorAjuste, 'N2', 'pt-BR') + N' gravado neste fechamento será desfeito.' AS mensagem,
+                                  @IdAjuste AS idReferencia, '' AS campo
+                           FOR JSON PATH, INCLUDE_NULL_VALUES);
+
+        IF @Recusa <> N'' OR @SomenteConferir = 1
+        BEGIN
+            SELECT CAST(CASE WHEN @Recusa = N'' THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+                   CAST(CASE WHEN @Recusa <> N'' THEN @Recusa ELSE N'Prévia da reabertura.' END AS NVARCHAR(400)) AS MENSAGEM,
+                   @IdCaixaFechamento AS ID, CAST(ISNULL(@ValorAjuste, 0) AS DECIMAL(18,2)) AS VALOR_AJUSTE, CAST(0 AS BIT) AS PENDENTE,
+                   CAST(ISNULL(@Avisos, N'[]') AS NVARCHAR(MAX)) AS AVISOS;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        SET @Usuario = ISNULL(SIS.fn_SIS_Usuario_Login(@IdUsuario), N'sistema');
+        BEGIN TRANSACTION;
+
+        UPDATE f
+           SET f.SITUACAO = 'REABERTO', f.DT_REABERTURA = SYSDATETIME(), f.USUARIO_REABERTURA = @Usuario, f.MOTIVO_REABERTURA = @Motivo,
+               f.DT_ALTERACAO = SYSDATETIME(), f.USUARIO_ALTERACAO = @Usuario
+        FROM BANCO.Caixa_Fechamento f WITH (UPDLOCK, HOLDLOCK)
+        WHERE f.ID_CAIXA_FECHAMENTO = @IdCaixaFechamento AND f.SITUACAO = 'FECHADO';
+        SET @Linhas = @@ROWCOUNT;
+
+        IF @Linhas = 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'O fechamento foi reaberto por outra pessoa. Abra a tela de novo.' AS NVARCHAR(400)) AS MENSAGEM,
+                   @IdCaixaFechamento AS ID, CAST(0 AS DECIMAL(18,2)) AS VALOR_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+            RETURN;
+        END;
+
+        IF @ValorAjuste <> 0
+        BEGIN
+            EXEC SIS.SIS_Lote_Gerar @IdUsuario = @IdUsuario, @Origem = 'CAIXA_REABERTURA', @Descricao = @Motivo,
+                 @TabelaReferencia = N'BANCO.Caixa_Fechamento', @IdReferencia = @IdCaixaFechamento, @IdLote = @IdLote OUTPUT;
+
+            INSERT INTO BANCO.Movimento (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO, SITUACAO, ID_LOTE, USUARIO_CRIACAO)
+            SELECT m.ID_CONTA, m.DT_MOVIMENTO, -m.VALOR, m.TIPO, LEFT(N'Estorno (caixa reaberto): ' + m.HISTORICO, 200), 'ESTORNADO', @IdLote, @Usuario
+            FROM BANCO.Movimento m WHERE m.ID_MOVIMENTO = @IdAjuste;
+
+            UPDATE m SET m.SITUACAO = 'ESTORNADO', m.DT_ALTERACAO = SYSDATETIME(), m.USUARIO_ALTERACAO = @Usuario
+            FROM BANCO.Movimento m WHERE m.ID_MOVIMENTO = @IdAjuste;
+
+            EXEC SIS.SIS_Lote_Concluir @IdLote = @IdLote, @QtdRegistros = 1;
+        END;
+
+        INSERT INTO SIS.Aviso_Confirmado (TABELA, ID_REGISTRO, CODIGO_REGRA, NIVEL, MENSAGEM, MOTIVO, ID_REFERENCIA, ID_USUARIO, USUARIO_CRIACAO)
+        VALUES (N'BANCO.Caixa_Fechamento', @IdCaixaFechamento, 'REABERTURA_CAIXA', 'MOTIVO',
+                N'Caixa reaberto (fechamento de ' + CONVERT(NVARCHAR(10), @Data, 103) + N')' + CASE WHEN @ValorAjuste <> 0 THEN N', ajuste desfeito.' ELSE N'.' END,
+                @Motivo, @IdAjuste, @IdUsuario, @Usuario);
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Caixa reaberto.' AS NVARCHAR(400)) AS MENSAGEM, @IdCaixaFechamento AS ID,
+               CAST(@ValorAjuste AS DECIMAL(18,2)) AS VALOR_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(ISNULL(@Avisos, N'[]') AS NVARCHAR(MAX)) AS AVISOS;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível reabrir o caixa. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               @IdCaixaFechamento AS ID, CAST(0 AS DECIMAL(18,2)) AS VALOR_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+    END CATCH;
+END;
+GO
+GO
+
+-- -----------------------------------------------------------------------------
+-- Arquivo: sql/objetos/BANCO/BANCO.BANCO_Caixa_Listar.sql
+-- -----------------------------------------------------------------------------
+/*******************************************************************************
+  Objeto      : [BANCO].[BANCO_Caixa_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Histórico dos fechamentos de caixa (tela Bancos › Fechamento
+                de caixa, etapa 04g2): conta, data, saldo do sistema,
+                contado, diferença com motivo, ajuste, quem fechou e a
+                reabertura. Filtros: conta, empresa, período, situação
+                (FECHADO, REABERTO ou todos), só com diferença.
+                PODE_REABRIR: o último fechamento FECHADO da conta, para
+                quem tem REABRIR. As contas que faltam fechar vêm da
+                BANCO_Saldo_Listar (FECHAMENTO_ATRASADO).
+                Permissão: VER em BANCO_CAIXA (recusa por THROW 50001).
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC BANCO.BANCO_Caixa_Listar @IdUsuario = 2;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Caixa_Listar]
+    @IdUsuario       INT,
+    @IdConta         INT          = NULL,
+    @IdEmpresa       INT          = NULL,
+    @DtDe            DATE         = NULL,
+    @DtAte           DATE         = NULL,
+    @Situacao        VARCHAR(10)  = NULL,
+    @SoComDiferenca  BIT          = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc     NVARCHAR(128) = N'[BANCO].[BANCO_Caixa_Listar]';
+    DECLARE @EtapaAtual   VARCHAR(100)  = 'Permissão';
+    DECLARE @PodeReabrir  BIT;
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os fechamentos de caixa.', 1;
+
+        SET @EtapaAtual  = 'Consulta';
+        SET @PodeReabrir = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'REABRIR');
+        SET @Situacao    = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@Situacao, '')))), '');
+
+        SELECT f.ID_CAIXA_FECHAMENTO, f.ID_CONTA, c.DESCRICAO AS CONTA, c.ID_EMPRESA, ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL) AS EMPRESA,
+               f.DT_FECHAMENTO, f.SALDO_SISTEMA, f.SALDO_CONTADO, f.DIFERENCA, f.MOTIVO_DIFERENCA, f.OBSERVACAO,
+               ISNULL(f.ID_MOVIMENTO_AJUSTE, 0) AS ID_MOVIMENTO_AJUSTE, CAST(ISNULL(m.VALOR, 0) AS DECIMAL(18,2)) AS VALOR_AJUSTE,
+               CAST(CASE WHEN m.SITUACAO = 'ESTORNADO' THEN 1 ELSE 0 END AS BIT) AS AJUSTE_DESFEITO,
+               f.SITUACAO, f.USUARIO_CRIACAO, f.DT_CRIACAO,
+               ISNULL(CONVERT(VARCHAR(19), f.DT_REABERTURA, 120), '') AS DT_REABERTURA, ISNULL(f.USUARIO_REABERTURA, N'') AS USUARIO_REABERTURA,
+               ISNULL(f.MOTIVO_REABERTURA, N'') AS MOTIVO_REABERTURA,
+               CAST(CASE WHEN @PodeReabrir = 1 AND f.SITUACAO = 'FECHADO'
+                              AND NOT EXISTS (SELECT 1 FROM BANCO.Caixa_Fechamento x WITH (NOLOCK)
+                                              WHERE x.ID_CONTA = f.ID_CONTA AND x.SITUACAO = 'FECHADO' AND x.DT_FECHAMENTO > f.DT_FECHAMENTO)
+                         THEN 1 ELSE 0 END AS BIT) AS PODE_REABRIR
+        FROM BANCO.Caixa_Fechamento f WITH (NOLOCK)
+        INNER JOIN BANCO.Conta c   WITH (NOLOCK) ON c.ID_CONTA = f.ID_CONTA
+        INNER JOIN CAD.Empresa e   WITH (NOLOCK) ON e.ID_EMPRESA = c.ID_EMPRESA
+        LEFT  JOIN BANCO.Movimento m WITH (NOLOCK) ON m.ID_MOVIMENTO = f.ID_MOVIMENTO_AJUSTE
+        WHERE (@IdConta IS NULL OR f.ID_CONTA = @IdConta)
+          AND (@IdEmpresa IS NULL OR c.ID_EMPRESA = @IdEmpresa)
+          AND (@DtDe IS NULL OR f.DT_FECHAMENTO >= @DtDe)
+          AND (@DtAte IS NULL OR f.DT_FECHAMENTO <= @DtAte)
+          AND (@Situacao IS NULL OR f.SITUACAO = @Situacao)
+          AND (ISNULL(@SoComDiferenca, 0) = 0 OR f.DIFERENCA <> 0)
+        ORDER BY f.DT_FECHAMENTO DESC, c.DESCRICAO, f.ID_CAIXA_FECHAMENTO DESC;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível listar os fechamentos de caixa. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+GO
+
 -- =============================================================================
 -- 8. TRIGGERS
 -- =============================================================================
@@ -23123,6 +25466,12 @@ GO
                         datas do financeiro, com motivo; decisão de 18/11/2026).
     v1.5 (26/11/2026) - Etapa 04f2c (P27): PENDENCIA (incluir, resolver e
                         reabrir pendências dos lançamentos).
+    v1.6 (26/11/2026) - Etapa 04g: LIBERAR_PENDENCIA (baixar parcela com
+                        pendência que bloqueia, com justificativa) e
+                        DESCONTO_LIMITE (desconto na baixa acima do
+                        limite do parâmetro, com motivo).
+    v1.7 (27/11/2026) - Etapa 04g2: AJUSTE_CAIXA (gerar o movimento de
+                        ajuste da diferença no fechamento de caixa).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -23152,7 +25501,10 @@ FROM (VALUES
         ('RECUPERAR',        N'Recuperar da lixeira',       180),
         ('ESVAZIAR',         N'Esvaziar a lixeira (apagar de vez)', 190),
         ('LANCAR_RETROATIVO', N'Lançar fora da trava de datas (com motivo)', 200),
-        ('PENDENCIA',        N'Pendências (incluir, resolver, reabrir)', 210)
+        ('PENDENCIA',        N'Pendências (incluir, resolver, reabrir)', 210),
+        ('LIBERAR_PENDENCIA', N'Baixar com pendência que bloqueia (com justificativa)', 220),
+        ('DESCONTO_LIMITE', N'Desconto na baixa acima do limite (com motivo)', 230),
+        ('AJUSTE_CAIXA',     N'Ajustar a diferença no fechamento de caixa', 240)
      ) v (CODIGO, NOME, ORDEM)
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Acao a WHERE a.CODIGO = v.CODIGO);
 GO
@@ -23820,6 +26172,20 @@ GO
                         nas telas de pagar e receber, dada (só quando nasce) a
                         quem já tinha ALTERAR; FIN.Lancamento_Pendencia nas
                         tabelas das duas telas.
+    v1.3 (26/11/2026) - Etapa 04g: ações BAIXAR e ESTORNAR nas telas de
+                        pagar e receber, dadas (só quando nascem) a quem já
+                        tinha ALTERAR; LIBERAR_PENDENCIA e
+                        DESCONTO_LIMITE nascem sem ninguém (os
+                        administradores dão pela tela Perfis e permissões);
+                        FIN.Baixa nas tabelas das duas telas.
+    v1.4 (27/11/2026) - Etapa 04g2: telas do módulo Bancos "Transferências"
+                        (BANCO_TRANSFERENCIA), "Extrato e saldos"
+                        (BANCO_EXTRATO) e "Fechamento de caixa"
+                        (BANCO_CAIXA), nascem desabilitadas. Ações do dia a
+                        dia (ver, incluir, estornar, exportar, fechar o
+                        caixa) dadas, só quando nascem, a quem já tinha
+                        ALTERAR em Contas a pagar; LANCAR_RETROATIVO,
+                        REABRIR e AJUSTE_CAIXA nascem sem ninguém.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -23905,6 +26271,100 @@ SELECT up.ID_USUARIO, n.ID_ITEM_ACAO, up.TIPO, N'instalacao'
 FROM @NovosPendencia n
 INNER JOIN SIS.Item_Acao ia ON ia.ID_ITEM = n.ID_ITEM AND ia.ID_ACAO = @IdAlterar
 INNER JOIN SIS.Usuario_Permissao up ON up.ID_ITEM_ACAO = ia.ID_ITEM_ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Usuario_Permissao x WHERE x.ID_USUARIO = up.ID_USUARIO AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+GO
+
+-- Etapa 04g: baixa e estorno nas telas de pagar e receber
+UPDATE i
+   SET i.TABELAS_DA_TELA = 'FIN.Lancamento,FIN.Parcela,FIN.Lancamento_Pendencia,FIN.Baixa', i.DT_ALTERACAO = SYSDATETIME(), i.USUARIO_ALTERACAO = N'instalacao'
+FROM SIS.Item i
+WHERE i.CODIGO IN ('FIN_PAGAR', 'FIN_RECEBER')
+  AND i.TABELAS_DA_TELA <> 'FIN.Lancamento,FIN.Parcela,FIN.Lancamento_Pendencia,FIN.Baixa';
+GO
+
+-- BAIXAR e ESTORNAR: quem tinha ALTERAR recebe, só quando a ação nasce na tela
+DECLARE @NovosBaixa TABLE (ID_ITEM_ACAO INT NOT NULL, ID_ITEM INT NOT NULL, ACAO VARCHAR(20) NOT NULL);
+DECLARE @IdAlterar INT = (SELECT a.ID_ACAO FROM SIS.Acao a WHERE a.CODIGO = 'ALTERAR');
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+OUTPUT inserted.ID_ITEM_ACAO, inserted.ID_ITEM, '' INTO @NovosBaixa (ID_ITEM_ACAO, ID_ITEM, ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('FIN_PAGAR' AS VARCHAR(40))), ('FIN_RECEBER')) t (ITEM)
+CROSS JOIN (VALUES (CAST('BAIXAR' AS VARCHAR(20))), ('ESTORNAR')) v (ACAO)
+INNER JOIN SIS.Item i ON i.CODIGO = t.ITEM
+INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+
+INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO, USUARIO_CRIACAO)
+SELECT DISTINCT pp.ID_PERFIL, n.ID_ITEM_ACAO, N'instalacao'
+FROM @NovosBaixa n
+INNER JOIN SIS.Item_Acao ia ON ia.ID_ITEM = n.ID_ITEM AND ia.ID_ACAO = @IdAlterar
+INNER JOIN SIS.Perfil_Permissao pp ON pp.ID_ITEM_ACAO = ia.ID_ITEM_ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao x WHERE x.ID_PERFIL = pp.ID_PERFIL AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+
+INSERT INTO SIS.Usuario_Permissao (ID_USUARIO, ID_ITEM_ACAO, TIPO, USUARIO_CRIACAO)
+SELECT DISTINCT up.ID_USUARIO, n.ID_ITEM_ACAO, up.TIPO, N'instalacao'
+FROM @NovosBaixa n
+INNER JOIN SIS.Item_Acao ia ON ia.ID_ITEM = n.ID_ITEM AND ia.ID_ACAO = @IdAlterar
+INNER JOIN SIS.Usuario_Permissao up ON up.ID_ITEM_ACAO = ia.ID_ITEM_ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Usuario_Permissao x WHERE x.ID_USUARIO = up.ID_USUARIO AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+GO
+
+-- LIBERAR_PENDENCIA e DESCONTO_LIMITE: nascem sem ninguém
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('FIN_PAGAR' AS VARCHAR(40))), ('FIN_RECEBER')) t (ITEM)
+CROSS JOIN (VALUES (CAST('LIBERAR_PENDENCIA' AS VARCHAR(20))), ('DESCONTO_LIMITE')) v (ACAO)
+INNER JOIN SIS.Item i ON i.CODIGO = t.ITEM
+INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+GO
+
+-- 04g2: telas do módulo Bancos
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, NULL, v.CODIGO, v.NOME, 'TELA', v.CAMINHO, v.ORDEM, 0, 0, v.TABELAS
+FROM (VALUES (CAST('BANCO_TRANSFERENCIA' AS VARCHAR(40)), CAST(N'Transferências' AS NVARCHAR(80)), CAST('banco/transferencias.html' AS VARCHAR(200)), CAST(30 AS SMALLINT), CAST('FIN.Transferencia,BANCO.Movimento' AS VARCHAR(400))),
+             ('BANCO_EXTRATO', N'Extrato e saldos',    'banco/extrato.html', 40, 'BANCO.Movimento'),
+             ('BANCO_CAIXA',   N'Fechamento de caixa', 'banco/caixa.html',   50, 'BANCO.Caixa_Fechamento')) v (CODIGO, NOME, CAMINHO, ORDEM, TABELAS)
+INNER JOIN SIS.Modulo m ON m.CODIGO = 'BANCO'
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = v.CODIGO);
+GO
+
+DECLARE @NovosBanco TABLE (ID_ITEM_ACAO INT NOT NULL, ITEM VARCHAR(40) NULL, ACAO VARCHAR(20) NULL);
+DECLARE @IdAlterarPagar INT = (SELECT ia.ID_ITEM_ACAO FROM SIS.Item_Acao ia
+                               INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM AND i.CODIGO = 'FIN_PAGAR'
+                               INNER JOIN SIS.Acao a ON a.ID_ACAO = ia.ID_ACAO AND a.CODIGO = 'ALTERAR');
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+OUTPUT inserted.ID_ITEM_ACAO, NULL, NULL INTO @NovosBanco (ID_ITEM_ACAO, ITEM, ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('BANCO_TRANSFERENCIA' AS VARCHAR(40)), CAST('VER' AS VARCHAR(20))), ('BANCO_TRANSFERENCIA', 'INCLUIR'),
+             ('BANCO_TRANSFERENCIA', 'ESTORNAR'), ('BANCO_TRANSFERENCIA', 'EXPORTAR'), ('BANCO_TRANSFERENCIA', 'LANCAR_RETROATIVO'),
+             ('BANCO_EXTRATO', 'VER'), ('BANCO_EXTRATO', 'EXPORTAR'),
+             ('BANCO_CAIXA', 'VER'), ('BANCO_CAIXA', 'INCLUIR'), ('BANCO_CAIXA', 'EXPORTAR'), ('BANCO_CAIXA', 'REABRIR'),
+             ('BANCO_CAIXA', 'AJUSTE_CAIXA')) v (ITEM, ACAO)
+INNER JOIN SIS.Item i ON i.CODIGO = v.ITEM
+INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+
+UPDATE n SET n.ITEM = i.CODIGO, n.ACAO = a.CODIGO
+FROM @NovosBanco n
+INNER JOIN SIS.Item_Acao ia ON ia.ID_ITEM_ACAO = n.ID_ITEM_ACAO
+INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM
+INNER JOIN SIS.Acao a ON a.ID_ACAO = ia.ID_ACAO;
+
+DELETE FROM @NovosBanco WHERE ACAO IN ('LANCAR_RETROATIVO', 'REABRIR', 'AJUSTE_CAIXA');
+
+INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO, USUARIO_CRIACAO)
+SELECT pp.ID_PERFIL, n.ID_ITEM_ACAO, N'instalacao'
+FROM @NovosBanco n
+INNER JOIN SIS.Perfil_Permissao pp ON pp.ID_ITEM_ACAO = @IdAlterarPagar
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao x WHERE x.ID_PERFIL = pp.ID_PERFIL AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+
+INSERT INTO SIS.Usuario_Permissao (ID_USUARIO, ID_ITEM_ACAO, TIPO, USUARIO_CRIACAO)
+SELECT up.ID_USUARIO, n.ID_ITEM_ACAO, up.TIPO, N'instalacao'
+FROM @NovosBanco n
+INNER JOIN SIS.Usuario_Permissao up ON up.ID_ITEM_ACAO = @IdAlterarPagar
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Usuario_Permissao x WHERE x.ID_USUARIO = up.ID_USUARIO AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
 GO
 GO
@@ -24031,6 +26491,7 @@ GO
     v1.0 (17/11/2026) - Criação (etapa 03c).
     v1.1 (26/11/2026) - Etapa 04f2c (P27): FIN.Pendencia_Tipo e
                         FIN.Lancamento_Pendencia.
+    v1.2 (26/11/2026) - Etapa 04g: BANCO.Caixa_Fechamento.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -24046,6 +26507,7 @@ EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Parcela',          @Criar =
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Baixa',            @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Pendencia_Tipo',   @Criar = 1;
 EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'FIN.Lancamento_Pendencia', @Criar = 1;
+EXEC SIS.SIS_Auditoria_Trigger_Gerar @Tabela = N'BANCO.Caixa_Fechamento', @Criar = 1;
 GO
 GO
 
@@ -24188,6 +26650,10 @@ GO
                         (liberável por perfil; decisão do Celso).
     v1.2 (25/11/2026) - Etapa 04f: Financeiro também não recebe
                         LANCAR_RETROATIVO (por padrão só os administradores).
+    v1.3 (27/11/2026) - Etapa 04g2: Financeiro também não recebe
+                        LIBERAR_PENDENCIA, DESCONTO_LIMITE e AJUSTE_CAIXA
+                        (decisão de 26/11/2026: nascem sem ninguém; os
+                        administradores dão pela tela Perfis e permissões).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -24216,7 +26682,7 @@ INNER JOIN SIS.Acao   a ON a.ID_ACAO   = ia.ID_ACAO
 WHERE ia.ATIVO = 1
   AND m.CODIGO <> 'SIS'
   AND (   (n.NOME = N'Consulta'   AND a.CODIGO = 'VER')
-       OR (n.NOME = N'Financeiro' AND m.CODIGO IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO NOT IN ('REABRIR', 'DESFAZER', 'LANCAR_RETROATIVO'))
+       OR (n.NOME = N'Financeiro' AND m.CODIGO IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO NOT IN ('REABRIR', 'DESFAZER', 'LANCAR_RETROATIVO', 'LIBERAR_PENDENCIA', 'DESCONTO_LIMITE', 'AJUSTE_CAIXA'))
        OR (n.NOME = N'Financeiro' AND m.CODIGO NOT IN ('CAD', 'FIN', 'BANCO', 'COBR') AND a.CODIGO = 'VER'))
   AND NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao pp WHERE pp.ID_PERFIL = n.ID_PERFIL AND pp.ID_ITEM_ACAO = ia.ID_ITEM_ACAO);
 GO
@@ -24340,7 +26806,7 @@ GO
                 Sincroniza a tabela com o .md (as notas são do sistema, não da
                 CMJ): inclui o que falta, acerta o texto do que mudou e tira o
                 item que saiu do .md. Idempotente.
-                Versões no arquivo: 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
+                Versões no arquivo: 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
   Changelog:
     v1.0 (23/11/2026) - Criação (etapa 04c, P22).
 *******************************************************************************/
@@ -24352,8 +26818,29 @@ DROP TABLE IF EXISTS #CargaNota;
 SELECT v.VERSAO, SIS.fn_SIS_Versao_Numero(v.VERSAO) AS VERSAO_NUMERO, v.DT_VERSAO, v.ORDEM, v.TIPO, v.PUBLICO, v.TEXTO, v.TEXTO_HTML
 INTO #CargaNota
 FROM (VALUES
-       (CAST('2.5' AS VARCHAR(20)), CAST('2026-11-26' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
-         CAST(N'telas Contas a pagar e Contas a receber (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.' AS NVARCHAR(2000)), CAST(N'telas <b>Contas a pagar</b> e <b>Contas a receber</b> (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.' AS NVARCHAR(4000)))
+       (CAST('2.6' AS VARCHAR(20)), CAST('2026-11-27' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
+         CAST(N'pagar e receber (baixa): na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.' AS NVARCHAR(2000)), CAST(N'<b>pagar e receber (baixa)</b>: na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.' AS NVARCHAR(4000)))
+      ,('2.6', '2026-11-27', 2, 'NOVO', 'TODOS',
+         N'proteções na baixa: data fora do período liberado, mês fechado, caixa já fechado, pendência que bloqueia o pagamento e desconto acima do limite só passam com a permissão certa e um motivo, que fica registrado.',
+         N'proteções na baixa: data fora do período liberado, mês fechado, caixa já fechado, pendência que bloqueia o pagamento e desconto acima do limite só passam com a permissão certa e um motivo, que fica registrado.')
+      ,('2.6', '2026-11-27', 3, 'NOVO', 'TODOS',
+         N'estornar uma baixa pela aba Baixas da ficha, com data e motivo; quando o pagamento foi feito em lote, o sistema avisa e estorna o lote inteiro, com a tarifa.',
+         N'<b>estornar uma baixa</b> pela aba Baixas da ficha, com data e motivo; quando o pagamento foi feito em lote, o sistema avisa e estorna o lote inteiro, com a tarifa.')
+      ,('2.6', '2026-11-27', 4, 'MELHORIA', 'TODOS',
+         N'uma baixa estornada não trava mais o lançamento: dá para alterar a parcela e o valor e para cancelar. Excluir continua proibido para quem já teve qualquer baixa, para guardar o histórico.',
+         N'uma baixa <b>estornada</b> não trava mais o lançamento: dá para alterar a parcela e o valor e para cancelar. Excluir continua proibido para quem já teve qualquer baixa, para guardar o histórico.')
+      ,('2.6', '2026-11-27', 5, 'NOVO', 'TODOS',
+         N'tela Extrato e saldos (Bancos): o saldo de cada conta numa data (saldo, limite, disponível, último movimento, fechamento de caixa atrasado) e o extrato da conta com o saldo linha a linha; clique na origem para abrir o lançamento ou a transferência. Na ficha e na lista de contas há o atalho "Ver extrato".',
+         N'tela <b>Extrato e saldos</b> (Bancos): o saldo de cada conta numa data (saldo, limite, disponível, último movimento, fechamento de caixa atrasado) e o extrato da conta com o saldo linha a linha; clique na origem para abrir o lançamento ou a transferência. Na ficha e na lista de contas há o atalho "Ver extrato".')
+      ,('2.6', '2026-11-27', 6, 'NOVO', 'TODOS',
+         N'tela Transferências (Bancos): transferir entre contas com aviso de saldo insuficiente, de transferência entre empresas e de data retroativa; estornar com prévia.',
+         N'tela <b>Transferências</b> (Bancos): transferir entre contas com aviso de saldo insuficiente, de transferência entre empresas e de data retroativa; estornar com prévia.')
+      ,('2.6', '2026-11-27', 7, 'NOVO', 'TODOS',
+         N'tela Fechamento de caixa (Bancos): o sistema mostra o saldo calculado, você digita o valor contado ou conta pelas cédulas e moedas, e a diferença aparece na hora; com diferença, informa o motivo e, se tiver permissão, lança o ajuste. O último fechamento pode ser reaberto com motivo (o ajuste é desfeito).',
+         N'tela <b>Fechamento de caixa</b> (Bancos): o sistema mostra o saldo calculado, você digita o valor contado ou conta pelas cédulas e moedas, e a diferença aparece na hora; com diferença, informa o motivo e, se tiver permissão, lança o ajuste. O último fechamento pode ser reaberto com motivo (o ajuste é desfeito).')
+      ,('2.5', '2026-11-26', 1, 'NOVO', 'TODOS',
+         N'telas Contas a pagar e Contas a receber (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.',
+         N'telas <b>Contas a pagar</b> e <b>Contas a receber</b> (Financeiro), com os contadores no topo (vencidas, vencem hoje, a vencer e total em aberto; clique para filtrar), busca, filtros por situação, período (vencimento, emissão ou competência), empresa, parceiro, centro de custo, conta do plano e documento, visão por parcela ou por lançamento e o total do filtro.')
       ,('2.5', '2026-11-26', 2, 'NOVO', 'TODOS',
          N'Meus filtros: cada usuário salva os filtros que usa sempre (ex.: "Vencidos da CMJ") e pode marcar um para a tela já abrir com ele. Sem filtro marcado, a tela abre com os últimos filtros usados.',
          N'<b>Meus filtros</b>: cada usuário salva os filtros que usa sempre (ex.: "Vencidos da CMJ") e pode marcar um para a tela já abrir com ele. Sem filtro marcado, a tela abre com os últimos filtros usados.')
@@ -24627,6 +27114,16 @@ GO
                         FIN_PEND_* (todas só para lançamentos em aberto;
                         data de corte e valor do anexo alteráveis pela
                         administradora, pedido do Celso em 26/11/2026).
+    v1.3 (26/11/2026) - Etapa 04g: baixa (juros, multa, carência, cálculo
+                        no a pagar, limite de desconto) e fechamento de caixa
+                        (tipos de conta, aviso na transferência entre
+                        empresas). Aprovado pelo Celso em 26/11/2026.
+    v1.4 (27/11/2026) - Etapa 04g2: BANCO_EXTRATO_MAX_DIAS (período máximo do
+                        extrato) e FIN_CAIXA_FECHAMENTO_ATRASO_DIAS (dias sem
+                        fechar o caixa até a conta aparecer como atrasada).
+    v1.5 (27/11/2026) - Etapa 04g3: FIN_BAIXA_FORMA_PADRAO (forma de pagamento
+                        que a janela de baixa já traz escolhida). Aprovado
+                        pelo Celso em 27/11/2026.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -24697,7 +27194,27 @@ FROM (VALUES
         ('FIN_PEND_VENCIDA_DIAS', N'30', 'INTEIRO',
          N'Pendência automática: parcela em aberto vencida há mais destes dias. 0 = desligada.', 1, N''),
         ('FIN_PEND_A_PARTIR_DE', N'2022-01-01', 'DATA',
-         N'As pendências automáticas só olham os lançamentos em aberto com emissão a partir desta data. 01/01/2022 (início dos dados migrados) = todos.', 1, N'')
+         N'As pendências automáticas só olham os lançamentos em aberto com emissão a partir desta data. 01/01/2022 (início dos dados migrados) = todos.', 1, N''),
+        ('FIN_BAIXA_MULTA_PERC', N'2.00', 'DECIMAL',
+         N'Baixa com atraso: multa sugerida, em % do saldo da parcela (uma vez). 0 = sem multa.', 1, N''),
+        ('FIN_BAIXA_JUROS_MES_PERC', N'1.00', 'DECIMAL',
+         N'Baixa com atraso: juros sugeridos, em % ao mês, proporcionais aos dias de atraso (pro rata). 0 = sem juros.', 1, N''),
+        ('FIN_BAIXA_CARENCIA_DIAS', N'0', 'INTEIRO',
+         N'Baixa: dias depois do vencimento sem multa nem juros. Passou da carência, conta desde o vencimento.', 1, N''),
+        ('FIN_BAIXA_CALCULA_PAGAR', N'N', 'SN',
+         N'Calcular juros e multa também nas contas a pagar (N = o valor informado pelo fornecedor é digitado).', 1, N''),
+        ('FIN_BAIXA_DESCONTO_LIMITE_PERC', N'5.00', 'DECIMAL',
+         N'Desconto máximo na baixa a receber, em % do saldo da parcela. Acima disso, só com a ação "Desconto acima do limite" e motivo. 0 = sem limite.', 1, N''),
+        ('FIN_CAIXA_FECHAMENTO_TIPOS', N'CAIXA', 'TEXTO',
+         N'Tipos de conta que usam o fechamento de caixa, separados por vírgula (CAIXA, CORRENTE, POUPANCA, APLICACAO, PERMUTA). Vazio = nenhum.', 1, N''),
+        ('FIN_TRANSF_ENTRE_EMPRESAS', N'AVISO', 'TEXTO',
+         N'Transferência entre contas de empresas diferentes do grupo: AVISO (pede confirmação), BLOQUEIO (não deixa) ou NAO (sem aviso).', 1, N'AVISO;BLOQUEIO;NAO'),
+        ('BANCO_EXTRATO_MAX_DIAS', N'400', 'INTEIRO',
+         N'Extrato da conta: período máximo de uma consulta, em dias.', 1, N''),
+        ('FIN_CAIXA_FECHAMENTO_ATRASO_DIAS', N'1', 'INTEIRO',
+         N'Fechamento de caixa: dias com movimento sem fechar até a conta aparecer como "fechamento atrasado". 0 = não avisa.', 1, N''),
+        ('FIN_BAIXA_FORMA_PADRAO', N'PIX', 'TEXTO',
+         N'Janela de baixa: forma de pagamento que já vem escolhida (o usuário pode trocar).', 1, N'PIX;BOLETO;TED;DOC;DEBITO;DINHEIRO;CHEQUE;PERMUTA;CARTAO;OUTRA')
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, NIVEL, OPCOES);
 
 INSERT INTO SIS.Parametro (CHAVE, VALOR, VALOR_PADRAO, TIPO, DESCRICAO, ID_MODULO, EDITAVEL_ADMIN, NIVEL_MINIMO, OPCOES)
@@ -24843,19 +27360,20 @@ GO
                       2.3 (25/11/2026) Parceiros: tipos, CEP/CNPJ, pendências de cobrança e anexos (P10, P12; etapas 04d e 04d2).
                       2.4 (25/11/2026) empresas, contas bancárias, bancos, centros de custo, plano de contas em árvore e escolha com busca (P11; etapa 04e).
                       2.5 (26/11/2026) contas a pagar e a receber, pendências dos lançamentos (P17, P27), movimentação do Parceiro e parâmetros de uso (etapas 04f a 04f2e).
+                      2.6 (27/11/2026) baixa e estorno, transferências, extrato e saldos, fechamento de caixa; baixa estornada não trava o lançamento (etapas 04g a 04g5).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-DECLARE @Versao VARCHAR(20) = '2.5';
+DECLARE @Versao VARCHAR(20) = '2.6';
 INSERT INTO SIS.Versao_Banco (VERSAO, ORIGEM)
 VALUES (@Versao, CASE WHEN DB_NAME() LIKE N'%[_]LOCAL' THEN 'PACOTE_LOCAL' ELSE 'MASTER' END);
 PRINT N'Versão do banco registrada: ' + @Versao;
 GO
 GO
 
-PRINT N'MASTER v2.5 concluido sem erro.';
+PRINT N'MASTER v2.6 concluido sem erro.';
 GO
 
 SET NOEXEC OFF;

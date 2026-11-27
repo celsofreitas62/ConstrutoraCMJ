@@ -18,7 +18,7 @@ namespace SistemaCMJ.Api.Infra;
 
 public sealed class VersaoBanco(Banco banco, ILogger<VersaoBanco> logger)
 {
-    public const string VersaoExigida = "2.5";   // 2.5: contas a pagar e a receber, pendências P27, movimentação do Parceiro e parâmetros de uso (26/11/2026, 04f a 04f2e); 2.4: empresas, contas, centros, plano em árvore e escolha com busca (25/11/2026, 04e); 2.3: Parceiros, tipos, CEP/CNPJ e anexos, P10/P12 (25/11/2026, 04d2); 2.2: Versões e O que há de novo, P22 (25/11/2026, 04c2); 2.1: telas da lixeira, histórico e auditoria (23/11/2026, 04b2); 2.0: desfazer e lixeira, P20 (22/11/2026, 04b); 1.9: Usuários e Perfis (04a)
+    public const string VersaoExigida = "2.6";   // 2.6: baixa e estorno, transferências, extrato e saldos, fechamento de caixa (27/11/2026, 04g a 04g5); 2.5: contas a pagar e a receber, pendências P27, movimentação do Parceiro e parâmetros de uso (26/11/2026, 04f a 04f2e); 2.4: empresas, contas, centros, plano em árvore e escolha com busca (25/11/2026, 04e); 2.3: Parceiros, tipos, CEP/CNPJ e anexos, P10/P12 (25/11/2026, 04d2); 2.2: Versões e O que há de novo, P22 (25/11/2026, 04c2); 2.1: telas da lixeira, histórico e auditoria (23/11/2026, 04b2); 2.0: desfazer e lixeira, P20 (22/11/2026, 04b); 1.9: Usuários e Perfis (04a)
 
     private readonly SemaphoreSlim trava = new(1, 1);
     private DateTime conferidaEm = DateTime.MinValue;
