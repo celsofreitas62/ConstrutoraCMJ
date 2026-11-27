@@ -22,6 +22,8 @@
                04g3a: baixa pela aba Parcelas (botão Pagar/Receber em cada
                parcela em aberto e "Baixar marcadas"; janela js/fin/baixa.js),
                só com a ação BAIXAR, lançamento ativo e que não é previsão.
+               04g3b: botão Estornar em cada baixa da aba Baixas (ação ESTORNAR;
+               janela Baixa.estornar com data, motivo e prévia).
    ========================================================================== */
 'use strict';
 
@@ -50,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let parcelas = [];        // [{ id, vencimento, valor, idContaPrevista, contaPrevista, valorBaixado, saldo, situacao, travada }]
   let temBaixa = false;
   let podeBaixar = false;   // 04g3a: ação BAIXAR, lançamento ativo e que não é previsão
+  let podeEstornar = false; // 04g3b: ação ESTORNAR e lançamento fora da lixeira
   const marcadas = new Set(); // ID_PARCELA marcados para "Baixar marcadas"
   const carregadas = new Set();
 
@@ -297,13 +300,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // ---------- Baixas (consulta) ----------
+  async function estornarBaixa(b) {
+    if (sujo) { await Mensagens.alerta('Há alterações na ficha que ainda não foram gravadas. Grave (ou descarte) antes de estornar.', 'ATENCAO'); return; }
+    const descricao = 'parcela ' + b.parcela + ', ' + Util.dataIso(b.data).split('-').reverse().join('/') + ', ' + Util.moeda(b.liquido) + (b.conta ? ', ' + b.conta : '');
+    if (await Baixa.estornar({ idBaixa: b.id, descricao })) Util.recarregar(fichaUrl(idLancamento) + '#baixas');
+  }
+
   function desenharBaixas(baixas) {
     const corpo = $('linhas-baixas');
     corpo.replaceChildren();
     if (!baixas.length) {
       const tr = Util.el('tr');
       const td = Util.el('td', 'vazio', 'Nenhuma baixa.');
-      td.colSpan = 9;
+      td.colSpan = 10;
       tr.append(td);
       corpo.append(tr);
     }
@@ -315,6 +324,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       tr.append(Util.el('td', null, Util.data(b.data)), Util.el('td', 'numero', b.parcela), Util.el('td', null, b.conta || ''),
         Util.el('td', null, b.forma || ''), Util.el('td', 'numero', Util.moeda(b.principal)), Util.el('td', 'numero', acrescimo ? Util.moeda(acrescimo) : ''),
         Util.el('td', 'numero', desconto ? Util.moeda(desconto) : ''), Util.el('td', 'numero forte', Util.moeda(b.liquido)), Util.el('td', null, sit));
+      const tdEstornar = Util.el('td', 'col-baixar');
+      if (podeEstornar && !b.estornada && !b.idBaixaEstornada) {
+        const bt = Util.el('button', 'botao botao-pequeno', 'Estornar');
+        bt.type = 'button';
+        bt.dataset.dica = 'Desfaz esta baixa com data e motivo: a parcela volta a ficar em aberto e a conta ganha o movimento inverso. Pagamento em lote estorna inteiro.';
+        bt.addEventListener('click', () => estornarBaixa(b));
+        tdEstornar.append(bt);
+      }
+      tr.append(tdEstornar);
       if (b.observacao) tr.title = b.observacao;
       corpo.append(tr);
     }
@@ -472,6 +490,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       temBaixa = !!l.TEM_BAIXA;
       podeEditar = !!l.PODE_ALTERAR;
       podeBaixar = acoes.has('BAIXAR') && !l.NA_LIXEIRA && l.SITUACAO !== 'CANCELADO' && !l.PREVISAO;
+      podeEstornar = acoes.has('ESTORNAR') && !l.NA_LIXEIRA;
       $('tabela-parcelas').classList.toggle('sem-baixa', !podeBaixar);
       $('botao-baixar-marcadas').hidden = !podeBaixar;
       desenharBaixas(Array.isArray(l.BAIXAS) ? l.BAIXAS : []);

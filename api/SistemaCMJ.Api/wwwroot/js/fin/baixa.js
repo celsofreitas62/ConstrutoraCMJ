@@ -23,7 +23,12 @@
                › "Concluído". Regras e travas ficam no banco
                (FIN_Baixa_Preparar / FIN_Baixa_Gravar).
                Ctrl+S baixa; Esc fecha (pergunta se algo foi mudado).
+               04g3b: Baixa.estornar = janela do estorno (data, padrão hoje;
+               motivo obrigatório; prévia pelo /estornar/conferir: quantas
+               baixas e o valor; pagamento em lote estorna inteiro, com a
+               tarifa; bloqueio aparece na janela e não deixa confirmar).
    Uso       : const gravou = await Baixa.abrir({ parcelas: [12, 13] });
+               const estornou = await Baixa.estornar({ idBaixa: 7, descricao: 'parcela 2/5, 10/11/2026, 1.000,00' });
    ========================================================================== */
 'use strict';
 
@@ -334,5 +339,106 @@ const Baixa = (() => {
     });
   }
 
-  return { abrir };
+  // ---------- 04g3b: estorno ----------
+  async function estornar({ idBaixa, descricao }) {
+    let previa = null;   // { qtd, valor, motivoRetro, bloqueio }
+    return new Promise((resolver) => {
+      const janela = document.createElement('dialog');
+      janela.className = 'janela janela-larga';
+      janela.setAttribute('aria-labelledby', 'janela-estorno-titulo');
+      const topo = Util.el('div', 'janela-topo');
+      const h2 = Util.el('h2', null, 'Estornar baixa');
+      h2.id = 'janela-estorno-titulo';
+      topo.append(h2);
+      const explica = Util.el('p', 'janela-texto', 'Baixa: ' + (descricao || 'nº ' + idBaixa) + '. Nada é apagado: a baixa ganha um lançamento de estorno, o movimento da conta ganha um movimento inverso e a parcela volta a ficar em aberto.');
+      const grade = Util.el('div', 'grade');
+      const dt = document.createElement('input');
+      dt.type = 'date';
+      dt.value = hojeIso();
+      const labDt = Util.el('label', 'campo', 'Data do estorno *');
+      labDt.dataset.dica = 'Dia em que o estorno entra no extrato da conta. Obrigatória (padrão hoje). Valem as travas de data, de mês fechado e de caixa fechado nesse dia.';
+      labDt.append(dt);
+      const motivo = document.createElement('textarea');
+      motivo.rows = 3;
+      motivo.maxLength = 400;
+      const labMot = Util.el('label', 'campo s-3', 'Motivo *');
+      labMot.dataset.dica = 'Por que a baixa está sendo estornada (ex.: baixa em dobro, valor errado, cheque devolvido). Obrigatório, pelo menos 5 letras. Fica registrado.';
+      labMot.append(motivo);
+      grade.append(labDt, labMot);
+      const info = Util.el('div', 'aviso-faixa');
+      info.hidden = true;
+      const erro = Util.el('div', 'aviso-revisar');
+      erro.hidden = true;
+      const barra = Util.el('div', 'janela-botoes');
+      const cancelar = Util.el('button', 'botao', 'Cancelar');
+      cancelar.type = 'button';
+      cancelar.dataset.dica = 'Fecha sem estornar (Esc).';
+      const ok = Util.el('button', 'botao botao-perigo', 'Estornar');
+      ok.type = 'button';
+      ok.dataset.dica = 'Confere e grava o estorno (pede confirmação antes).';
+      barra.append(cancelar, ok);
+      const fechar = (v) => { janela.close(); janela.remove(); resolver(v); };
+      cancelar.addEventListener('click', () => fechar(false));
+      janela.addEventListener('cancel', (e) => { e.preventDefault(); fechar(false); });
+
+      async function conferir() {
+        erro.hidden = true;
+        info.hidden = true;
+        ok.disabled = true;
+        previa = null;
+        if (!dt.value) { erro.textContent = 'Informe a data do estorno.'; erro.hidden = false; return; }
+        const r = await Api.post('/api/fin/baixas/' + idBaixa + '/estornar/conferir', { motivo: motivo.value.trim() || null, dtEstorno: dt.value });
+        const d = r.dados || {};
+        const avisos = Array.isArray(d.avisos) ? d.avisos : [];
+        const bloqueio = avisos.find((a) => a.nivel === 'BLOQUEIO');
+        if (!r.sucesso && (bloqueio || !avisos.length)) {
+          if (!avisos.length && r.tipo !== 'ATENCAO' && r.tipo !== 'PENDENTE') { await Mensagens.tratar(r); fechar(false); return; }
+          erro.textContent = bloqueio ? bloqueio.mensagem : (r.mensagem || 'Não dá para estornar esta baixa.');
+          erro.hidden = false;
+          return;
+        }
+        previa = { qtd: Number(d.qtdBaixas || 1), valor: Number(d.valor || 0), motivoRetro: avisos.some((a) => a.nivel === 'MOTIVO') };
+        const partes = [];
+        if (previa.qtd > 1) partes.push('Esta baixa foi paga junto com outras (pagamento em lote): as ' + previa.qtd + ' baixas do mesmo pagamento, inclusive de outros lançamentos, e a tarifa serão estornadas juntas.');
+        partes.push('Valor estornado: ' + Util.moeda(previa.valor) + '.');
+        if (previa.motivoRetro) partes.push('A data está fora da trava de datas: o motivo do estorno fica registrado também como justificativa.');
+        info.textContent = partes.join(' ');
+        info.hidden = false;
+        ok.disabled = false;
+      }
+      dt.addEventListener('change', conferir);
+
+      ok.addEventListener('click', async () => {
+        const m = motivo.value.trim();
+        if (m.length < 5) { erro.textContent = 'Informe o motivo do estorno (pelo menos 5 letras).'; erro.hidden = false; motivo.focus(); return; }
+        if (!previa) return;
+        const texto = 'Confirma o estorno de ' + Util.moeda(previa.valor) + (previa.qtd > 1 ? ' (' + previa.qtd + ' baixas do mesmo pagamento)' : '')
+          + ' com data de ' + dataBr(dt.value) + '? A parcela volta a ficar em aberto.';
+        if (!(await Mensagens.confirmar('Estornar?', texto, 'Estornar'))) return;
+        ok.disabled = true;
+        try {
+          const r = await Api.post('/api/fin/baixas/' + idBaixa + '/estornar', { motivo: m, dtEstorno: dt.value });
+          if (!r.sucesso) {
+            const avisos = r.dados && Array.isArray(r.dados.avisos) ? r.dados.avisos : [];
+            if (avisos.length) { erro.textContent = avisos.map((a) => a.mensagem).join(' '); erro.hidden = false; }
+            else await Mensagens.tratar(r);
+            return;
+          }
+          janela.close(); janela.remove();
+          await Mensagens.concluido(r.mensagem || 'Baixa estornada.');
+          resolver(true);
+        } finally {
+          ok.disabled = !previa;
+        }
+      });
+
+      janela.append(topo, explica, grade, info, erro, barra);
+      document.body.append(janela);
+      janela.showModal();
+      motivo.focus();
+      conferir();
+    });
+  }
+
+  return { abrir, estornar };
 })();
