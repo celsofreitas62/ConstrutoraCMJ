@@ -15,6 +15,8 @@
 # v2.1 (26/11/2026) - Etapa 04f2e: pacotes 04f, 04f2a, 04f2c e 04f2d (contas a pagar/receber, pendencias P27,
 #                     movimentacao do Parceiro e parametros de uso; banco 2.5). ANTES: function que outra chama
 #                     entra antes dela, mesmo vindo de um pacote mais novo.
+# v2.3 (27/11/2026) - Etapa 04h4: pacotes 04h e 04h4 (agenda financeira, preferencias do usuario; banco 2.7). A
+#                     function nova fn_SIS_Preferencia_Valor so e chamada por procedures: nao precisa de ANTES.
 # v2.2 (27/11/2026) - Etapa 04g5: pacotes 04g e 04g5 (baixa e estorno, transferencias, extrato e saldos, fechamento
 #                     de caixa; banco 2.6). As functions novas da 04g so sao chamadas por procedures (parte 7, depois
 #                     das functions): nao precisam de ANTES.
@@ -29,7 +31,7 @@ subprocess.run([_sys.executable, os.path.join(BASE, 'ferramentas', 'montar_notas
 src = open(os.path.join(BASE, 'ferramentas', 'montar_pacote.py'), encoding='utf-8').read()
 ns = {}
 exec(src.split('PARTE = sys.argv')[0], ns)
-PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2', 'ORDEM_04C', 'ORDEM_04C2', 'ORDEM_04D', 'ORDEM_04D2', 'ORDEM_04E', 'ORDEM_04F', 'ORDEM_04F2A', 'ORDEM_04F2C', 'ORDEM_04F2D', 'ORDEM_04F2E', 'ORDEM_04G', 'ORDEM_04G5']
+PACOTES = ['ORDEM_02A', 'ORDEM_02B', 'ORDEM_02B2', 'ORDEM_02C', 'ORDEM_02D', 'ORDEM_03A', 'ORDEM_03C', 'ORDEM_03C2', 'ORDEM_03C2B', 'ORDEM_03D', 'ORDEM_03G', 'ORDEM_03H', 'ORDEM_04A', 'ORDEM_04B', 'ORDEM_04B2', 'ORDEM_04C', 'ORDEM_04C2', 'ORDEM_04D', 'ORDEM_04D2', 'ORDEM_04E', 'ORDEM_04F', 'ORDEM_04F2A', 'ORDEM_04F2C', 'ORDEM_04F2D', 'ORDEM_04F2E', 'ORDEM_04G', 'ORDEM_04G5', 'ORDEM_04H', 'ORDEM_04H4']
 ordem = []
 for k in PACOTES:
     for f in ns[k]:
@@ -74,7 +76,7 @@ cab = """/**********************************************************************
   Autor       : Celso de Freitas
   Refatorado  : Claude
   Gerado em   : """ + hoje + """ por sql/ferramentas/montar_master.py, juntando os
-                arquivos de sql/objetos aprovados (pacotes 02a a 04g5), sem o schema
+                arquivos de sql/objetos aprovados (pacotes 02a a 04h4), sem o schema
                 MIG (regra 60). NAO EDITAR ESTE ARQUIVO: corrigir o arquivo do
                 objeto e gerar o MASTER de novo.
   Descricao   : Instala (ou atualiza) TODO o banco do SisCMJ no servidor do

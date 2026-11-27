@@ -9,7 +9,7 @@
                 Sincroniza a tabela com o .md (as notas são do sistema, não da
                 CMJ): inclui o que falta, acerta o texto do que mudou e tira o
                 item que saiu do .md. Idempotente.
-                Versões no arquivo: 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
+                Versões no arquivo: 2.7, 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8.
   Changelog:
     v1.0 (23/11/2026) - Criação (etapa 04c, P22).
 *******************************************************************************/
@@ -21,8 +21,47 @@ DROP TABLE IF EXISTS #CargaNota;
 SELECT v.VERSAO, SIS.fn_SIS_Versao_Numero(v.VERSAO) AS VERSAO_NUMERO, v.DT_VERSAO, v.ORDEM, v.TIPO, v.PUBLICO, v.TEXTO, v.TEXTO_HTML
 INTO #CargaNota
 FROM (VALUES
-       (CAST('2.6' AS VARCHAR(20)), CAST('2026-11-27' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
-         CAST(N'pagar e receber (baixa): na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.' AS NVARCHAR(2000)), CAST(N'<b>pagar e receber (baixa)</b>: na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.' AS NVARCHAR(4000)))
+       (CAST('2.7' AS VARCHAR(20)), CAST('2026-11-27' AS DATE), CAST(1 AS SMALLINT), CAST('NOVO' AS VARCHAR(10)), CAST('TODOS' AS VARCHAR(10)),
+         CAST(N'tela inicial = Agenda financeira: o que vence a pagar e a receber no período (semana, quinzena, mês, bimestre, trimestre, quadrimestre, ano, vários anos ou datas escolhidas), com as setas para andar de período e o botão Hoje. A barra mostra D (a pagar, em vermelho), C (a receber, em azul), o Saldo e o saldo previsto no fim do período.' AS NVARCHAR(2000)), CAST(N'<b>tela inicial = Agenda financeira</b>: o que vence a pagar e a receber no período (semana, quinzena, mês, bimestre, trimestre, quadrimestre, ano, vários anos ou datas escolhidas), com as setas para andar de período e o botão Hoje. A barra mostra <b>D</b> (a pagar, em vermelho), <b>C</b> (a receber, em azul), o <b>Saldo</b> e o <b>saldo previsto</b> no fim do período.' AS NVARCHAR(4000)))
+      ,('2.7', '2026-11-27', 2, 'NOVO', 'TODOS',
+         N'quadro Em atraso (o que venceu e não foi pago ou recebido, de qualquer data): clique para ver só ele.',
+         N'quadro <b>Em atraso</b> (o que venceu e não foi pago ou recebido, de qualquer data): clique para ver só ele.')
+      ,('2.7', '2026-11-27', 3, 'NOVO', 'TODOS',
+         N'lista da agenda por dia, com o dia de hoje em destaque e os totais de cada dia; clique na linha para abrir o lançamento, e o Voltar da ficha traz de volta ao mesmo ponto da agenda. Exportar Excel de todo o período.',
+         N'lista da agenda por dia, com o dia de hoje em destaque e os totais de cada dia; clique na linha para abrir o lançamento, e o Voltar da ficha traz de volta ao mesmo ponto da agenda. Exportar Excel de todo o período.')
+      ,('2.7', '2026-11-27', 4, 'NOVO', 'TODOS',
+         N'calendário da agenda: os botões Lista | Calendário mostram os totais D, C e S de cada dia (semana, quinzena, mês) ou de cada mês (bimestre ao ano, e uma faixa por ano em vários anos), com hoje em destaque, as vencidas marcadas e o fundo mais forte nos dias de maior saída. Passe o mouse para ver as 3 maiores contas e clique no quadro para ver a lista dele; o Voltar sobe um nível por vez até o calendário. Em Minhas preferências, escolha se a tela inicial abre em lista ou em calendário.',
+         N'<b>calendário da agenda</b>: os botões Lista | Calendário mostram os totais D, C e S de cada dia (semana, quinzena, mês) ou de cada mês (bimestre ao ano, e uma faixa por ano em vários anos), com hoje em destaque, as vencidas marcadas e o fundo mais forte nos dias de maior saída. Passe o mouse para ver as 3 maiores contas e clique no quadro para ver a lista dele; o Voltar sobe um nível por vez até o calendário. Em Minhas preferências, escolha se a tela inicial abre em lista ou em calendário.')
+      ,('2.7', '2026-11-27', 5, 'NOVO', 'TODOS',
+         N'atalhos rápidos na tela inicial (+ conta a pagar, + conta a receber, extrato, fechamento de caixa, transferência), só para quem tem a permissão.',
+         N'<b>atalhos rápidos</b> na tela inicial (+ conta a pagar, + conta a receber, extrato, fechamento de caixa, transferência), só para quem tem a permissão.')
+      ,('2.7', '2026-11-27', 6, 'NOVO', 'TODOS',
+         N'permissão Ver totais da agenda: sem ela, a pessoa vê as contas uma a uma, mas não os valores somados.',
+         N'permissão <b>Ver totais</b> da agenda: sem ela, a pessoa vê as contas uma a uma, mas não os valores somados.')
+      ,('2.7', '2026-11-27', 7, 'NOVO', 'TODOS',
+         N'Minhas preferências (botão ⚙ no alto de qualquer tela): cada pessoa escolhe como a tela inicial abre (período, mostrar também o já pago, saldo previsto). O padrão da empresa fica em Parâmetros de uso.',
+         N'<b>Minhas preferências</b> (botão ⚙ no alto de qualquer tela): cada pessoa escolhe como a tela inicial abre (período, mostrar também o já pago, saldo previsto). O padrão da empresa fica em Parâmetros de uso.')
+      ,('2.7', '2026-11-27', 8, 'MELHORIA', 'TODOS',
+         N'a agenda lembra neste computador o último período usado e se atualiza sozinha de tempos em tempos enquanto está aberta.',
+         N'a agenda lembra neste computador o último período usado e se atualiza sozinha de tempos em tempos enquanto está aberta.')
+      ,('2.7', '2026-11-27', 9, 'MELHORIA', 'TODOS',
+         N'voltar ao início de qualquer tela pelo item 🏠 Início no alto do menu; o caminho acima do título (ex.: Início › Sistema › Configuração) virou atalho: clique num pedaço para abrir aquele grupo no menu.',
+         N'<b>voltar ao início de qualquer tela</b> pelo item 🏠 Início no alto do menu; o caminho acima do título (ex.: Início › Sistema › Configuração) virou atalho: clique num pedaço para abrir aquele grupo no menu.')
+      ,('2.7', '2026-11-27', 10, 'NOVO', 'TODOS',
+         N'tamanho das letras em Minhas preferências (Pequeno, Normal, Grande, Muito grande), para cada pessoa.',
+         N'<b>tamanho das letras</b> em Minhas preferências (Pequeno, Normal, Grande, Muito grande), para cada pessoa.')
+      ,('2.7', '2026-11-27', 11, 'NOVO', 'TODOS',
+         N'botão ☰ no alto para recolher o menu lateral e deixar a tela mais larga (útil em notebook); o sistema lembra a escolha no computador.',
+         N'botão <b>☰</b> no alto para recolher o menu lateral e deixar a tela mais larga (útil em notebook); o sistema lembra a escolha no computador.')
+      ,('2.7', '2026-11-27', 12, 'NOVO', 'TODOS',
+         N'tema claro ou escuro em Minhas preferências: seguir o Windows (troca sozinho junto com ele), sempre claro ou sempre escuro, para cada pessoa. Na impressão e no PDF vale sempre o claro.',
+         N'<b>tema claro ou escuro</b> em Minhas preferências: seguir o Windows (troca sozinho junto com ele), sempre claro ou sempre escuro, para cada pessoa. Na impressão e no PDF vale sempre o claro.')
+      ,('2.7', '2026-11-27', 13, 'MELHORIA', 'TODOS',
+         N'cores revistas para leitura mais fácil (contraste conferido nos dois temas); o vermelho dos valores a pagar ficou um pouco mais escuro.',
+         N'cores revistas para leitura mais fácil (contraste conferido nos dois temas); o vermelho dos valores a pagar ficou um pouco mais escuro.')
+      ,('2.6', '2026-11-27', 1, 'NOVO', 'TODOS',
+         N'pagar e receber (baixa): na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.',
+         N'<b>pagar e receber (baixa)</b>: na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.')
       ,('2.6', '2026-11-27', 2, 'NOVO', 'TODOS',
          N'proteções na baixa: data fora do período liberado, mês fechado, caixa já fechado, pendência que bloqueia o pagamento e desconto acima do limite só passam com a permissão certa e um motivo, que fica registrado.',
          N'proteções na baixa: data fora do período liberado, mês fechado, caixa já fechado, pendência que bloqueia o pagamento e desconto acima do limite só passam com a permissão certa e um motivo, que fica registrado.')

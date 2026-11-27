@@ -4,7 +4,7 @@ Fonte única das notas de cada versão (o que foi corrigido e o que é novo), em
 O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.txt`; o `atualizar.cmd` mostra e grava no banco (`SIS.Atualizacao`), base da futura tela **Sistema › Versões** (pedido P22).
 **Regra**: toda versão nova ganha a sua seção aqui **antes** de publicar (o publicar recusa pacote sem nota). Título da seção = versão do banco (`## 1.8 (22/11/2026)`). Itens começam por **Novo:**, **Melhoria:** ou **Correção:**.
 
-## 2.7 (em preparação)
+## 2.7 (27/11/2026)
 - Novo: **tela inicial = Agenda financeira**: o que vence a pagar e a receber no período (semana, quinzena, mês, bimestre, trimestre, quadrimestre, ano, vários anos ou datas escolhidas), com as setas para andar de período e o botão Hoje. A barra mostra **D** (a pagar, em vermelho), **C** (a receber, em azul), o **Saldo** e o **saldo previsto** no fim do período.
 - Novo: quadro **Em atraso** (o que venceu e não foi pago ou recebido, de qualquer data): clique para ver só ele.
 - Novo: lista da agenda por dia, com o dia de hoje em destaque e os totais de cada dia; clique na linha para abrir o lançamento, e o Voltar da ficha traz de volta ao mesmo ponto da agenda. Exportar Excel de todo o período.
