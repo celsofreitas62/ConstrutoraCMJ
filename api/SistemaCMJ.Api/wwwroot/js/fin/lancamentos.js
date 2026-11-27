@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const { sessao, acoes } = await Layout.iniciar();
   const $ = (id) => document.getElementById(id);
   $('titulo').textContent = nomeTela;
-  $('caminho').textContent = 'Financeiro › ' + nomeTela;
+  // caminho acima do título: montado pelo menu (js/layout.js, 04h2)
   $('rotulo-parceiro').textContent = pagar ? 'Fornecedor (parceiro)' : 'Cliente (parceiro)';
   $('coluna-parceiro').textContent = pagar ? 'Fornecedor' : 'Cliente';
   $('coluna-baixado').textContent = pagar ? 'Pago' : 'Recebido';

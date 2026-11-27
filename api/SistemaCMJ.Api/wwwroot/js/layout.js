@@ -15,6 +15,10 @@
                Layout.iniciar() devolve { sessao, acoes } -- acoes = ações
                permitidas na tela (Set: VER, INCLUIR, ALTERAR, EXCLUIR...),
                para esconder os botões (a procedure confere de novo).
+               04h2 (pedido do Celso, 27/11/2026): item fixo "Início" no alto
+               do menu e o caminho acima do título (.caminho) montado pelo
+               menu, com cada pedaço clicável: Início volta à tela inicial e
+               cada grupo abre aquele nível no menu lateral.
                Layout.acoesDe(caminho) = ações em OUTRA tela do menu (ex.: o
                atalho "Lixeira desta tela" só aparece para quem vê a Lixeira).
    ========================================================================== */
@@ -121,6 +125,13 @@ const Layout = (() => {
     menu.replaceChildren();
     menu.setAttribute('aria-label', 'Menu do sistema');
     menu.append(Util.el('div', 'menu-titulo', 'Menu'));
+    // Início sempre à mão, em qualquer nível do menu (04h2).
+    const inicio = Util.el('a', 'menu-item nivel-0 menu-inicio');
+    inicio.href = '/';
+    inicio.dataset.dica = 'Volta para a tela inicial (agenda financeira).';
+    if (telaMenu === 'index.html' && (location.pathname === '/' || location.pathname === '/index.html')) { inicio.classList.add('ativo'); inicio.setAttribute('aria-current', 'page'); }
+    inicio.append(Util.el('span', null, '🏠 Início'));
+    menu.append(inicio);
 
     const raiz = filhosDe('');
     if (raiz.length === 0) menu.append(Util.el('div', 'menu-rodape', 'Nenhuma tela liberada para o seu usuário.'));
@@ -174,6 +185,41 @@ const Layout = (() => {
     sessionStorage.setItem(CHAVE_ABERTOS, JSON.stringify([...abertos]));
     desenharMenu();
     document.querySelector('#menu [data-chave="' + n.CHAVE + '"]')?.focus();
+  }
+
+  /* Caminho acima do título (04h2): Início › módulo › grupo, montado pelo menu
+     (nada escrito à mão nas telas). Clicar num grupo abre aquele nível no menu. */
+  function montarCaminho(tela) {
+    const caixa = document.querySelector('.cabecalho .caminho');
+    if (!caixa || !tela || location.pathname === '/' || location.pathname === '/index.html') return;
+    const cadeia = [];
+    for (let pai = nos.get(tela.CHAVE_PAI); pai; pai = nos.get(pai.CHAVE_PAI)) cadeia.unshift(pai);
+    const sep = () => Util.el('span', 'caminho-sep', ' › ');
+    caixa.replaceChildren();
+    const inicio = Util.el('a', 'caminho-link', 'Início');
+    inicio.href = '/';
+    inicio.dataset.dica = 'Volta para a tela inicial.';
+    caixa.append(inicio);
+    cadeia.forEach((n, i) => {
+      const b = Util.el('button', 'caminho-link', n.NOME);
+      b.type = 'button';
+      b.dataset.dica = 'Abre "' + n.NOME + '" no menu ao lado, para escolher outra tela.';
+      b.addEventListener('click', () => {
+        abertos = new Set(cadeia.slice(0, i + 1).map((x) => x.CHAVE));
+        sessionStorage.setItem(CHAVE_ABERTOS, JSON.stringify([...abertos]));
+        desenharMenu();
+        const alvo = document.querySelector('#menu [data-chave="' + n.CHAVE + '"]');
+        if (alvo) { alvo.scrollIntoView({ block: 'nearest' }); alvo.focus(); }
+      });
+      caixa.append(sep(), b);
+    });
+    // Ficha aberta pela lista (ex.: lançamento): o último pedaço leva de volta à lista.
+    const caminhoTela = '/' + String(tela.CAMINHO).split('?')[0];
+    if (location.pathname !== caminhoTela) {
+      const lista = Util.el('a', 'caminho-link', tela.NOME);
+      lista.href = '/' + tela.CAMINHO;
+      caixa.append(sep(), lista);
+    }
   }
 
   function ligarAjuda() {
@@ -297,6 +343,7 @@ const Layout = (() => {
         sessionStorage.setItem(CHAVE_ABERTOS, JSON.stringify([...abertos]));
       }
       desenharMenu();
+      montarCaminho(tela);
     } else {
       await Mensagens.tratar(rMenu);
     }

@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const ROTULO = (sessao && sessao.parceiroRotuloPlural) || 'Parceiros';
   document.title = 'SistemaCMJ – ' + ROTULO;
   document.getElementById('titulo').textContent = ROTULO;
-  document.getElementById('caminho').textContent = 'Cadastros › ' + ROTULO;
+  // caminho acima do título: montado pelo menu (js/layout.js, 04h2)
 
   const busca = document.getElementById('busca');
   const tipo = document.getElementById('tipo');

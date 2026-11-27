@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const titulo = 'Tipos de ' + ROTULO.toLowerCase();
   document.title = 'SistemaCMJ – ' + titulo;
   document.getElementById('titulo').textContent = titulo;
-  document.getElementById('caminho').textContent = 'Cadastros › ' + titulo;
+  // caminho acima do título: montado pelo menu (js/layout.js, 04h2)
 
   const busca = document.getElementById('busca');
   const inativos = document.getElementById('inativos');

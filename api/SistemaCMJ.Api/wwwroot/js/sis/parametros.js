@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const { acoes } = await Layout.iniciar();
   const $ = (id) => document.getElementById(id);
   $('titulo').textContent = nomeTela;
-  $('caminho').textContent = 'Sistema › Configuração › ' + nomeTela;
+  // caminho acima do título: montado pelo menu (js/layout.js, 04h2)
   $('botao-exportar').hidden = !acoes.has('EXPORTAR');
   const podeAlterar = acoes.has('ALTERAR');
   const caixa = $('grupos');

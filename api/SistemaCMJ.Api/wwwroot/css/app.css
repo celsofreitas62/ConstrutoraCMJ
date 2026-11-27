@@ -604,3 +604,8 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .linha-preferencia { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
 .linha-preferencia .campo { flex: 0 1 340px; }
 .info-preferencia { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-height: 36px; font-size: 13px; }
+/* 04h2: Início fixo no menu e caminho clicável acima do título */
+.menu-inicio { font-weight: 600; margin-bottom: 6px; }
+.caminho-link { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: none; }
+.caminho-link:hover, .caminho-link:focus-visible { color: var(--cor-principal); text-decoration: underline; }
+.caminho-sep { color: var(--texto-suave); }
