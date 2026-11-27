@@ -23,6 +23,11 @@
                (classe fonte-* no <html>, guardada na sessão do navegador
                para não piscar; Layout.aplicarAparencia(true) relê) e botão
                ☰ que recolhe o menu lateral (lembrado neste computador).
+               04h4 (P06): tema claro/escuro pela preferência TEMA (SISTEMA =
+               segue o Windows e troca sozinho quando o Windows muda; CLARO;
+               ESCURO) no atributo data-tema do <html>. A escolha fica também
+               neste computador (localStorage cmj.tema) para a tela não piscar
+               e para o login abrir no tema de quem usou por último.
                Layout.acoesDe(caminho) = ações em OUTRA tela do menu (ex.: o
                atalho "Lixeira desta tela" só aparece para quem vê a Lixeira).
    ========================================================================== */
@@ -34,7 +39,8 @@ const Layout = (() => {
   let abertos = new Set();
   let telaMenu = '';
 
-  const CHAVE_APARENCIA = 'cmj.aparencia';        // sessionStorage: { fonte }
+  const CHAVE_APARENCIA = 'cmj.aparencia';        // sessionStorage: { fonte, tema }
+  const CHAVE_TEMA = 'cmj.tema';                  // localStorage: SISTEMA | CLARO | ESCURO
   const CHAVE_MENU_RECOLHIDO = 'cmj.menu.recolhido'; // localStorage: '1' = recolhido
   const CLASSES_FONTE = { PEQUENA: 'fonte-pequena', GRANDE: 'fonte-grande', MUITO_GRANDE: 'fonte-muito-grande' };
 
@@ -43,19 +49,34 @@ const Layout = (() => {
     for (const c of Object.values(CLASSES_FONTE)) html.classList.remove(c);
     if (CLASSES_FONTE[fonte]) html.classList.add(CLASSES_FONTE[fonte]);
   }
+  // Tema (04h4): SISTEMA segue o Windows (prefers-color-scheme) e acompanha a troca.
+  let temaEscolhido = 'SISTEMA';
+  const escuroDoWindows = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function aplicarTema(tema) {
+    temaEscolhido = ['CLARO', 'ESCURO', 'SISTEMA'].includes(tema) ? tema : 'SISTEMA';
+    const escuro = temaEscolhido === 'ESCURO' || (temaEscolhido === 'SISTEMA' && !!(escuroDoWindows && escuroDoWindows.matches));
+    document.documentElement.dataset.tema = escuro ? 'escuro' : 'claro';
+    try { localStorage.setItem(CHAVE_TEMA, temaEscolhido); } catch { /* sem armazenamento */ }
+  }
+  if (escuroDoWindows) escuroDoWindows.addEventListener('change', () => { if (temaEscolhido === 'SISTEMA') aplicarTema('SISTEMA'); });
+
   // Já ao carregar o script (antes da tela aparecer), para não piscar.
+  try { aplicarTema(localStorage.getItem(CHAVE_TEMA) || 'SISTEMA'); } catch { aplicarTema('SISTEMA'); }
   try { aplicarFonte((JSON.parse(sessionStorage.getItem(CHAVE_APARENCIA) || 'null') || {}).fonte); } catch { /* sem armazenamento */ }
   try { if (localStorage.getItem(CHAVE_MENU_RECOLHIDO) === '1') document.documentElement.classList.add('menu-recolhido'); } catch { /* idem */ }
 
   async function aplicarAparencia(reler) {
     let guardada = null;
     try { guardada = JSON.parse(sessionStorage.getItem(CHAVE_APARENCIA) || 'null'); } catch { guardada = null; }
-    if (guardada && !reler) { aplicarFonte(guardada.fonte); return; }
+    if (guardada && guardada.tema && !reler) { aplicarFonte(guardada.fonte); aplicarTema(guardada.tema); return; }
     const r = await Api.get('/api/sis/preferencias', { grupo: 'Aparência' });
     if (!r.sucesso) return;
-    const fonte = ((r.dados || []).find((p) => p.CODIGO === 'FONTE_TAMANHO') || {}).VALOR || 'NORMAL';
-    try { sessionStorage.setItem(CHAVE_APARENCIA, JSON.stringify({ fonte })); } catch { /* sem armazenamento */ }
+    const valor = (codigo, padrao) => ((r.dados || []).find((p) => p.CODIGO === codigo) || {}).VALOR || padrao;
+    const fonte = valor('FONTE_TAMANHO', 'NORMAL');
+    const tema = valor('TEMA', 'SISTEMA');
+    try { sessionStorage.setItem(CHAVE_APARENCIA, JSON.stringify({ fonte, tema })); } catch { /* sem armazenamento */ }
     aplicarFonte(fonte);
+    aplicarTema(tema);
   }
 
   const SETA_ABRIR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';

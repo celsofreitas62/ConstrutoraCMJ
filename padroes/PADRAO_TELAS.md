@@ -47,6 +47,13 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 16c. **Tamanho das letras** pela preferência `FONTE_TAMANHO` (classe `fonte-*` no `<html>`, com `zoom`); medidas que dependem da altura da janela usam `calc(100vh / var(--zoom, 1) ...)`.
 16d. **☰ recolhe o menu lateral** (classe `menu-recolhido` no `<html>`, lembrada no computador). Toda tela tem de caber em **1366 × 768 e 1280 × 720**, com o menu aberto e recolhido: tabelas largas rolam dentro de `.rolagem`, nunca a página para o lado (passo 15 dos testes das telas).
 
+## 7b. Cores e tema claro/escuro (P06, aprovado pelo Celso, 27/11/2026, 04h4)
+
+16e. **Nenhuma cor fixa nas regras do `app.css`**: toda cor vem de uma variável com nome de função, definida no `:root` do início (`--texto`, `--texto-suave`, `--branco` = superfície, `--superficie-suave`, `--borda`, `--verde-fundo`/`--verde-texto`, `--vermelho-*`, `--laranja-*`, `--amarelo-*`, `--azul-*`, `--roxo`, `--calor-d-*`/`--calor-c-*`, `--cor-principal-texto` para texto na cor da empresa, `--texto-sobre-cor` para texto em cima da cor da empresa...). O tema escuro só troca os valores (`html[data-tema="escuro"]`, no fim do `app.css`). Cor nova = variável nova nos dois blocos.
+16f. **Tema** pela preferência `TEMA` (SISTEMA segue o Windows, CLARO, ESCURO), aplicado por `js/layout.js` no `data-tema` do `<html>` e guardado no computador (`localStorage` `cmj.tema`) para não piscar e para o login.
+16g. **Contraste WCAG AA**: texto comum 4,5:1, texto grande 3:1, nos dois temas (conferido nos testes das telas).
+16h. **Impressão e PDF sempre no claro** (o escuro fica dentro de `@media screen`). A **prévia do e-mail** aparece sempre clara, como o e-mail sai. **Logomarca** no escuro ganha uma placa clara (`--placa-logo`).
+
 ## 8. Testes automáticos das telas (aprovado pelo Celso na 03h; feito na 04a, 22/11/2026)
 
 17. Toda tela nova entra sozinha nos testes automáticos (`testes/telas`, Playwright + Edge invisível): o teste abre cada tela do menu e confere que carrega, tem título (`h1`), não abre janela de erro ou recusa, não tem erro de JavaScript e nenhuma chamada da API responde 500. **Ficha** que não fica no menu (aberta pela lista) vai na lista `fichasSemMenu` do `testes/telas/config.json`.

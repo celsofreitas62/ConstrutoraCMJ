@@ -16,6 +16,8 @@ O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.
 - Melhoria: **voltar ao início de qualquer tela** pelo item 🏠 Início no alto do menu; o caminho acima do título (ex.: Início › Sistema › Configuração) virou atalho: clique num pedaço para abrir aquele grupo no menu.
 - Novo: **tamanho das letras** em Minhas preferências (Pequeno, Normal, Grande, Muito grande), para cada pessoa.
 - Novo: botão **☰** no alto para recolher o menu lateral e deixar a tela mais larga (útil em notebook); o sistema lembra a escolha no computador.
+- Novo: **tema claro ou escuro** em Minhas preferências: seguir o Windows (troca sozinho junto com ele), sempre claro ou sempre escuro, para cada pessoa. Na impressão e no PDF vale sempre o claro.
+- Melhoria: cores revistas para leitura mais fácil (contraste conferido nos dois temas); o vermelho dos valores a pagar ficou um pouco mais escuro.
 
 ## 2.6 (27/11/2026)
 - Novo: **pagar e receber (baixa)**: na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.

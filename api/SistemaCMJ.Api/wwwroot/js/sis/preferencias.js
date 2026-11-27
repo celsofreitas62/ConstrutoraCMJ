@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // O que ainda não funciona nesta versão (some quando a etapa chegar).
   const EM_BREVE_OPCAO = {};
-  const EM_BREVE_PREF = new Set(['TEMA']);
+  const EM_BREVE_PREF = new Set();   // TEMA ficou pronto na 04h4
 
   const rotulo = (v) => Rotulos.de('preferencia', v);
   const opcoes = (p) => (p.OPCOES || '').split(';').map((o) => o.trim()).filter(Boolean);
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!(await Mensagens.tratar(r, { foco: $('pref-' + (mudou[0] || {}).codigo) }))) return;
     // A agenda deste computador passa a abrir pela preferência nova.
     try { localStorage.removeItem('cmj.inicio.estado'); } catch { /* sem armazenamento */ }
-    await Layout.aplicarAparencia(true);   // tamanho das letras vale na hora
+    await Layout.aplicarAparencia(true);   // tamanho das letras e tema valem na hora
     await Mensagens.concluido('Preferências gravadas.');
     await carregar();
   });
