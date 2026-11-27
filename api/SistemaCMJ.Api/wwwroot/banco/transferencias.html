@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Transferências</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/seletor.js" defer></script>
+  <script src="/js/banco/transferencias.js" defer></script>
+</head>
+<body data-tela="banco/transferencias.html" data-ajuda="banco-transferencias" data-exige-tela>
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <div class="caminho">Bancos › Transferências</div>
+          <h1>Transferências</h1>
+        </div>
+        <a data-dica="Abre a tela de extrato e saldos das contas." class="botao" href="/banco/extrato.html" id="link-extrato" hidden>Extrato e saldos</a>
+        <button data-dica="Baixa todas as transferências do filtro num arquivo que o Excel abre." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
+        <button data-dica="Abre a janela para transferir dinheiro de uma conta ou caixa para outra." type="button" class="botao botao-principal" id="botao-incluir" hidden>+ Transferir</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <form class="cartao filtros" id="filtros" role="search">
+        <label data-dica="Primeiro dia do período (data da transferência)." class="campo f-1">De
+          <input type="date" id="de">
+        </label>
+        <label data-dica="Último dia do período (data da transferência)." class="campo f-1">Até
+          <input type="date" id="ate">
+        </label>
+        <div class="campo f-2" data-dica="Mostra só as transferências que saíram ou entraram nesta conta. Em branco: todas as contas.">Conta<div id="seletor-conta"></div></div>
+        <label data-dica="Ativas, estornadas ou todas." class="campo f-1">Situação
+          <select id="situacao">
+            <option value="ATIVA">Ativas</option>
+            <option value="ESTORNADA">Estornadas</option>
+            <option value="">Todas</option>
+          </select>
+        </label>
+        <label data-dica="Procura no histórico, no documento ou na descrição das contas." class="campo f-2">Procurar
+          <input type="search" id="texto" maxlength="100" placeholder="Ex.: aplicação" autocomplete="off">
+        </label>
+        <label data-dica="Mostra só as transferências entre contas de empresas diferentes." class="marcacao">
+          <input type="checkbox" id="entre-empresas"> Só entre empresas
+        </label>
+      </form>
+
+      <div class="area-lista">
+        <div class="cartao">
+          <div class="rolagem">
+            <table class="tabela tabela-larga tabela-transferencias">
+              <thead>
+                <tr>
+                  <th scope="col">Data</th>
+                  <th scope="col">De (saiu)</th>
+                  <th scope="col">Para (entrou)</th>
+                  <th scope="col" class="numero">Valor</th>
+                  <th scope="col">Histórico</th>
+                  <th scope="col">Documento</th>
+                  <th scope="col">Situação</th>
+                  <th scope="col">Incluída por</th>
+                  <th scope="col" class="col-acao-lista" id="coluna-estornar" hidden></th>
+                </tr>
+              </thead>
+              <tbody id="linhas"></tbody>
+              <tfoot id="total"></tfoot>
+            </table>
+          </div>
+          <div class="rodape-lista">
+            <span id="contagem" aria-live="polite"></span>
+            <span class="paginacao" id="paginacao" hidden>
+              <button type="button" class="botao" id="pagina-anterior" data-dica="Página anterior.">‹</button>
+              <span id="pagina-texto"></span>
+              <button type="button" class="botao" id="pagina-proxima" data-dica="Próxima página.">›</button>
+            </span>
+          </div>
+        </div>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

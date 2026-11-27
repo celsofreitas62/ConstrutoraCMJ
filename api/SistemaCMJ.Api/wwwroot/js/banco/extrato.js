@@ -168,7 +168,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (sub) td.append(Util.el('span', 'sub', sub));
     } else if (l.ID_TRANSFERENCIA) {
       const a = Util.el('a', null, 'Transferência ' + (Number(l.VALOR) < 0 ? 'para ' : 'de ') + (l.OUTRA_CONTA || 'outra conta'));
-      a.href = '/banco/transferencias.html?id=' + encodeURIComponent(l.ID_TRANSFERENCIA);
+      const dia = Util.dataIso(l.DT_MOVIMENTO);
+      a.href = '/banco/transferencias.html?idConta=' + encodeURIComponent(seletor.valor()) + '&de=' + dia + '&ate=' + dia + '&destacar=' + encodeURIComponent(l.ID_TRANSFERENCIA);
       a.dataset.dica = 'Abre a tela de transferências mostrando esta transferência.';
       td.append(a);
     } else if (l.TIPO !== 'SALDO_ANTERIOR' && l.TIPO !== 'SALDO_INICIAL') {

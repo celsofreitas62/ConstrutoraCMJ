@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Ajuda: Transferências</title>
+</head>
+<body>
+  <p><strong>Para que serve:</strong> registrar o dinheiro que passa de uma conta ou caixa para outra (ex.: saque para o caixa, depósito do caixa no banco, aplicação, transferência entre empresas) e consultar ou estornar as transferências já feitas.</p>
+  <h2>Como usar</h2>
+  <ul>
+    <li><strong>+ Transferir</strong>: informe a data, o valor, a conta de <strong>origem</strong> (de onde sai) e a de <strong>destino</strong> (para onde vai). Ao escolher a origem, aparece o saldo dela no dia. Documento e histórico são opcionais; o histórico aparece no extrato das duas contas.</li>
+    <li>Antes de gravar o sistema confere e pode mostrar avisos: <strong>saldo insuficiente</strong> na origem, transferência <strong>entre empresas</strong> (aviso ou bloqueio, pelo parâmetro FIN_TRANSF_ENTRE_EMPRESAS) e data fora da <strong>trava de datas</strong> (só com a permissão de lançar retroativo e com o motivo).</li>
+    <li>A lista mostra as transferências do período, com filtros de conta, situação, só entre empresas e procurar. O total no rodapé soma só as ativas de todo o filtro.</li>
+    <li><strong>Estornar</strong>: informe a data e o motivo. As duas contas ganham o movimento inverso; nada é apagado, e a transferência fica como <strong>Estornada</strong> (passe o mouse na etiqueta para ver quem estornou e por quê).</li>
+    <li><strong>Exportar Excel</strong> baixa todas as transferências do filtro, não só a página da tela.</li>
+  </ul>
+  <h2>Cuidados</h2>
+  <ul>
+    <li>Não dá para transferir nem estornar numa data com o <strong>caixa fechado</strong> ou o <strong>mês fechado</strong> em qualquer uma das duas contas.</li>
+    <li>Transferência com movimento já <strong>conciliado</strong> com o extrato do banco não pode ser estornada.</li>
+    <li>A transferência não é receita nem despesa: não use para pagar fornecedor ou receber de cliente (isso é a baixa, nas contas a pagar e a receber).</li>
+    <li>Só aparecem os botões que o seu usuário pode usar.</li>
+  </ul>
+</body>
+</html>

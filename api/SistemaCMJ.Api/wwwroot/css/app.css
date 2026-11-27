@@ -541,3 +541,12 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .etiqueta-estornado { background: #EFEFED; color: #555555; text-decoration: line-through; }
 .etiqueta-conciliado { background: #E7F3E8; color: #1E6B22; }
 .col-extrato { width: 80px; text-align: center; }
+
+/* 04g4b: Transferências (banco/transferencias.html) */
+.tabela-transferencias td.numero, .tabela-transferencias th.numero { text-align: right; white-space: nowrap; }
+.tabela-transferencias .sub { display: block; font-size: 11px; font-weight: 400; color: var(--texto-suave); margin-top: 2px; }
+.tabela-transferencias tr.linha-estornada td { color: var(--texto-suave); }
+.tabela-transferencias tr.linha-marcada td { background: #EEF3FB; }
+.tabela-transferencias tfoot td { border-top: 2px solid var(--borda); background: #FAFAF9; }
+.col-acao-lista { width: 90px; text-align: center; }
+.saldo-origem { grid-column: span 2; align-self: end; padding-bottom: 8px; }
