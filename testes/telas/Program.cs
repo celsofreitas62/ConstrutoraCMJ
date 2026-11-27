@@ -30,6 +30,8 @@
 //                12) baixa e estorno (04g3d): receber 0,10 do lançamento fixo de
 //                   teste pela janela de baixa, estornar pela aba Baixas e
 //                   marcar a parcela na lista ("Baixar marcadas" abre a janela).
+//                13) caixa (04g4d): transferir 0,10 entre as contas de teste e estornar,
+//                   extrato do dia, fechar o caixa B com a contagem por cedulas e reabrir.
 //              Resultado: uma linha por conferência, "RESULTADO: OK" ou
 //              "RESULTADO: FALHAS (n)" no fim; código de saída = falhas.
 //              Foto da tela em cada falha em %LOCALAPPDATA%\SistemaCMJ\testes_telas.
@@ -840,6 +842,196 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     catch (Exception erro) { motivo12 = erro.Message.Split('\n')[0]; }
     Linha(motivo12.Length == 0, "baixa e estorno: receber 0,10 pela ficha, estornar, marcar na lista (" + relogio12.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo12);
     if (motivo12.Length > 0) await Foto("fin_baixa");
+}
+
+// ---------------------------------------------------------------- 13) Caixa: transferência, extrato e fechamento (04g4d, 27/11/2026)
+// Contas fixas do LOCAL (sql/local/04g3_Lancamento_Teste_Telas_LOCAL.sql v1.1): "Caixa Teste telas" e
+// "Caixa Teste telas B". + Transferir 0,10 de uma para a outra (avisos, se vierem: saldo insuficiente) >
+// Concluído; Estornar pela lista (data e motivo, prévia) > Concluído; extrato do dia mostra a transferência
+// estornada; fechamento do caixa B com a contagem por cédulas (1 moeda de 0,10 = sobra de 0,10, motivo, sem
+// ajuste) > Concluído; Reabrir esse fechamento > Concluído (o caixa B fica aberto para a próxima rodada).
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    var relogio13 = Stopwatch.StartNew();
+    var motivo13 = "";
+    var hoje13 = DateTime.Today.ToString("yyyy-MM-dd");
+    try
+    {
+        async Task<JsonElement> Post(string caminho, string corpo) =>
+            await pagina.EvaluateAsync<JsonElement>("async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'X-CMJ': '1', 'Content-Type': 'application/json' }, credentials: 'same-origin', body: b })).json()", new object[] { caminho, corpo });
+        // espera a próxima janela depois da confirmação; trata os avisos (Estou ciente + motivo) e fecha o "Concluído"
+        async Task<string> Concluir13(string acao, string confirmacao)
+        {
+            await pagina.WaitForFunctionAsync("(t) => { const d = [...document.querySelectorAll('dialog.janela')].pop(); return d && d.querySelector('h2').textContent === t; }", confirmacao, new() { Timeout = 10000 });
+            await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+            try
+            {
+                await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); if (!d) return false; if (d.classList.contains('janela-avisos')) return true; const h = d.querySelector('h2'); return h && ['Concluído', 'Atenção', 'Erro'].includes(h.textContent.trim()); }", null, new() { Timeout = 15000 });
+            }
+            catch (TimeoutException) { }
+            var avisos = pagina.Locator("dialog.janela-avisos");
+            if (await avisos.CountAsync() > 0)
+            {
+                if ((await avisos.Locator("h2").InnerTextAsync()).Trim() == "Não dá para gravar")
+                    return acao + ": bloqueio: " + (await avisos.Locator(".lista-avisos").InnerTextAsync()).Replace("\n", " | ");
+                var marcas = avisos.Locator(".aviso-aviso input[type=checkbox]");
+                for (var i = 0; i < await marcas.CountAsync(); i++) await marcas.Nth(i).SetCheckedAsync(true);
+                if (await avisos.Locator("textarea").CountAsync() > 0) await avisos.Locator("textarea").FillAsync("Teste automatico das telas");
+                await avisos.Locator(".botao-principal").ClickAsync();
+            }
+            try
+            {
+                await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); const h = d && d.querySelector('h2'); return h && h.textContent === 'Concluído'; }", null, new() { Timeout = 15000 });
+            }
+            catch (TimeoutException)
+            {
+                var j = await JanelaAberta();
+                return acao + ": nao chegou ao Concluido" + (j is null ? "" : " (" + j.Value.Titulo + ": " + j.Value.Texto + ")");
+            }
+            await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await pagina.WaitForTimeoutAsync(500);
+            return "";
+        }
+        async Task Escolher13(string seletor, string descricao)
+        {
+            var campo = pagina.Locator(seletor + " input.seletor-campo");
+            await campo.ClickAsync();
+            await campo.FillAsync(descricao);
+            var opcao = pagina.Locator(seletor + " .seletor-opcao").Filter(new() { Has = pagina.Locator(".seletor-descricao", new() { HasTextRegex = new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(descricao) + "$") }) });
+            await opcao.First.WaitForAsync(new() { Timeout = 10000 });
+            await opcao.First.DispatchEventAsync("mousedown");
+        }
+
+        long idA = 0, idB = 0;
+        var saldos = await Api("/api/banco/saldos?todas=true&inativas=true");
+        foreach (var s in saldos.GetProperty("dados").EnumerateArray())
+        {
+            var d = s.GetProperty("DESCRICAO").GetString();
+            if (d == "Caixa Teste telas") idA = s.GetProperty("ID_CONTA").GetInt64();
+            if (d == "Caixa Teste telas B") idB = s.GetProperty("ID_CONTA").GetInt64();
+        }
+        if (idA == 0 || idB == 0) motivo13 = "contas de teste nao encontradas: rodar sql/local/04g3_Lancamento_Teste_Telas_LOCAL.sql (v1.1)";
+
+        // limpeza de uma rodada que parou no meio: caixa B fechado volta a abrir
+        if (motivo13.Length == 0)
+        {
+            var abertos = await Api("/api/banco/caixa?idConta=" + idB + "&situacao=FECHADO");
+            foreach (var f in abertos.GetProperty("dados").EnumerateArray())
+                if (f.GetProperty("PODE_REABRIR").GetBoolean())
+                    await Post("/api/banco/caixa/" + f.GetProperty("ID_CAIXA_FECHAMENTO").GetInt64() + "/reabrir", "{\"motivo\":\"Teste automatico das telas (limpeza)\"}");
+        }
+
+        // a) + Transferir
+        long idTransf = 0;
+        if (motivo13.Length == 0)
+        {
+            await pagina.GotoAsync(endereco + "/banco/transferencias.html?idConta=" + idA + "&de=" + hoje13 + "&ate=" + hoje13, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.Locator("#botao-incluir").ClickAsync();
+            var janela = pagina.Locator("dialog.janela", new() { HasText = "Nova transferência" });
+            await janela.WaitForAsync(new() { Timeout = 10000 });
+            await pagina.WaitForFunctionAsync("() => { const c = document.querySelector('#tr-origem input.seletor-campo'); return c && c.value.trim().length > 0; }", null, new() { Timeout = 10000 });
+            if ((await pagina.Locator("#tr-origem input.seletor-campo").InputValueAsync()).Trim() != "Caixa Teste telas") await Escolher13("#tr-origem", "Caixa Teste telas");
+            await Escolher13("#tr-destino", "Caixa Teste telas B");
+            await janela.Locator("#tr-valor").FillAsync("0,10");
+            await janela.Locator("#tr-historico").FillAsync("Teste automatico das telas");
+            await janela.Locator(".janela-botoes .botao-principal").ClickAsync();
+            motivo13 = await Concluir13("transferencia", "Gravar?");
+            if (motivo13.Length == 0)
+            {
+                var lista = await Api("/api/banco/transferencias?idConta=" + idA + "&de=" + hoje13 + "&ate=" + hoje13 + "&situacao=ATIVA&texto=" + Uri.EscapeDataString("Teste automatico das telas"));
+                var dados = lista.GetProperty("dados");
+                if (dados.GetArrayLength() == 0) motivo13 = "a transferencia nao apareceu na lista";
+                else
+                {
+                    idTransf = dados[0].GetProperty("ID_TRANSFERENCIA").GetInt64();
+                    if (dados[0].GetProperty("VALOR").GetDecimal() != 0.10m || dados[0].GetProperty("ID_CONTA_DESTINO").GetInt64() != idB) motivo13 = "a transferencia gravada nao bate (valor ou destino)";
+                }
+            }
+        }
+
+        // b) Estornar pela lista
+        if (motivo13.Length == 0)
+        {
+            await pagina.GotoAsync(endereco + "/banco/transferencias.html?idConta=" + idA + "&de=" + hoje13 + "&ate=" + hoje13, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.Locator("#linhas tr.linha-marcada, #linhas tr").Filter(new() { HasText = "Teste automatico das telas" }).Locator(".botao", new() { HasText = "Estornar" }).First.ClickAsync();
+            var janela = pagina.Locator("dialog.janela", new() { HasText = "Estornar transferência" });
+            await janela.WaitForAsync(new() { Timeout = 10000 });
+            await janela.Locator("textarea").FillAsync("Teste automatico das telas");
+            await pagina.WaitForFunctionAsync("() => { const b = document.querySelector('dialog.janela .botao-perigo'); return b && !b.disabled; }", null, new() { Timeout = 10000 });
+            await janela.Locator(".botao-perigo").ClickAsync();
+            motivo13 = await Concluir13("estorno da transferencia", "Estornar?");
+            if (motivo13.Length == 0)
+            {
+                var lista = await Api("/api/banco/transferencias?idConta=" + idA + "&de=" + hoje13 + "&ate=" + hoje13 + "&situacao=ESTORNADA&texto=" + Uri.EscapeDataString("Teste automatico das telas"));
+                var achou = lista.GetProperty("dados").EnumerateArray().Any(t => t.GetProperty("ID_TRANSFERENCIA").GetInt64() == idTransf);
+                if (!achou) motivo13 = "depois do estorno, a transferencia nao ficou ESTORNADA";
+            }
+        }
+
+        // c) Extrato do dia da conta de origem
+        if (motivo13.Length == 0)
+        {
+            await pagina.GotoAsync(endereco + "/banco/extrato.html?conta=" + idA + "&de=" + hoje13 + "&ate=" + hoje13, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.Locator("#extrato-resumo").WaitForAsync(new() { Timeout = 10000 });
+            var texto = await pagina.Locator("#extrato").InnerTextAsync();
+            if (!texto.Contains("Saldo anterior")) motivo13 = "extrato: sem a linha de saldo anterior";
+            else if (!texto.Contains("Transferência para Caixa Teste telas B")) motivo13 = "extrato: a transferencia nao apareceu";
+            else if (!texto.Contains("Estornado")) motivo13 = "extrato: a etiqueta Estornado nao apareceu";
+            else if ((await pagina.Locator("#saldos tr").CountAsync()) == 0) motivo13 = "extrato: o quadro de saldos ficou vazio";
+        }
+
+        // d) Fechamento do caixa B com a contagem por cédulas (sobra de 0,10, sem ajuste)
+        if (motivo13.Length == 0)
+        {
+            await pagina.GotoAsync(endereco + "/banco/caixa.html?conta=" + idB, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.WaitForFunctionAsync("() => !document.getElementById('previa').hidden || !document.getElementById('previa-erro').hidden", null, new() { Timeout = 10000 });
+            if (await pagina.Locator("#previa-erro").IsVisibleAsync()) motivo13 = "fechamento: " + await pagina.Locator("#previa-erro").InnerTextAsync();
+            else
+            {
+                var sistema = (await pagina.Locator("#p-sistema").InnerTextAsync()).Trim();
+                await pagina.Locator("#usar-contagem").CheckAsync();
+                var moeda10 = pagina.Locator("input[aria-label='Quantidade: Moeda de 0,10']");
+                await moeda10.FillAsync("1");
+                await moeda10.DispatchEventAsync("input");
+                var contado = await pagina.Locator("#saldoContado").InputValueAsync();
+                if (contado != "0,10") motivo13 = "fechamento: a contagem nao levou 0,10 ao saldo contado (" + contado + ")";
+                else
+                {
+                    if (sistema != "0,10") await pagina.Locator("#motivo").FillAsync("Teste automatico das telas");
+                    await pagina.Locator("#botao-fechar").ClickAsync();
+                    motivo13 = await Concluir13("fechamento", "Gravar?");
+                }
+                if (motivo13.Length == 0)
+                {
+                    var f = (await Api("/api/banco/caixa?idConta=" + idB + "&situacao=FECHADO")).GetProperty("dados");
+                    if (f.GetArrayLength() == 0) motivo13 = "fechamento: nao apareceu na lista";
+                    else if (f[0].GetProperty("SALDO_CONTADO").GetDecimal() != 0.10m || !(f[0].GetProperty("OBSERVACAO").GetString() ?? "").StartsWith("Contagem:"))
+                        motivo13 = "fechamento: contado ou contagem nao gravados";
+                }
+            }
+        }
+
+        // e) Reabrir o fechamento pela lista
+        if (motivo13.Length == 0)
+        {
+            await pagina.Locator("#linhas .botao", new() { HasText = "Reabrir" }).First.ClickAsync();
+            var janela = pagina.Locator("dialog.janela", new() { HasText = "Reabrir fechamento de caixa" });
+            await janela.WaitForAsync(new() { Timeout = 10000 });
+            await janela.Locator("textarea").FillAsync("Teste automatico das telas");
+            await pagina.WaitForFunctionAsync("() => { const b = document.querySelector('dialog.janela .botao-perigo'); return b && !b.disabled; }", null, new() { Timeout = 10000 });
+            await janela.Locator(".botao-perigo").ClickAsync();
+            motivo13 = await Concluir13("reabertura", "Reabrir?");
+            if (motivo13.Length == 0 && (await Api("/api/banco/caixa?idConta=" + idB + "&situacao=FECHADO")).GetProperty("dados").GetArrayLength() > 0)
+                motivo13 = "reabertura: o caixa B continua fechado";
+        }
+        if (motivo13.Length == 0 && errosJs.Count > 0) motivo13 = "erro de JavaScript: " + errosJs[0];
+        if (motivo13.Length == 0 && errosApi.Count > 0) motivo13 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo13 = erro.Message.Split('\n')[0]; }
+    Linha(motivo13.Length == 0, "caixa: transferir 0,10 e estornar, extrato, fechar o caixa com a contagem e reabrir (" + relogio13.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo13);
+    if (motivo13.Length > 0) await Foto("banco_caixa");
 }
 
 // ---------------------------------------------------------------- Fim

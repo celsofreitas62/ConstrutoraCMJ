@@ -164,16 +164,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       const dt = document.createElement('input');
       dt.type = 'date';
       dt.value = hojeIso();
+      dt.id = 'tr-data';
       campoJanela(grade, 'Data *', dt, null, 'Dia em que o dinheiro saiu de uma conta e entrou na outra. Obrigatória (padrão hoje). Valem a trava de datas, o mês fechado e o caixa fechado nas duas contas.');
       const valor = document.createElement('input');
       valor.inputMode = 'decimal';
       valor.placeholder = '0,00';
+      valor.id = 'tr-valor';
       campoJanela(grade, 'Valor *', valor, null, 'Valor transferido, maior que zero. Com vírgula nos centavos (ex.: 1.500,00).');
       const caixaOrigem = Util.el('div');
+      caixaOrigem.id = 'tr-origem';
       campoJanela(grade, 'De (conta de origem) *', caixaOrigem, 's-2', 'Conta ou caixa de onde sai o dinheiro. Obrigatória.');
       const saldoOrigem = Util.el('div', 'subtitulo saldo-origem');
       grade.append(saldoOrigem);
       const caixaDestino = Util.el('div');
+      caixaDestino.id = 'tr-destino';
       campoJanela(grade, 'Para (conta de destino) *', caixaDestino, 's-2', 'Conta ou caixa para onde vai o dinheiro. Obrigatória e diferente da origem.');
       const doc = document.createElement('input');
       doc.maxLength = 40;
@@ -181,6 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const hist = document.createElement('input');
       hist.maxLength = 200;
       hist.placeholder = 'Ex.: reforço do caixa';
+      hist.id = 'tr-historico';
       campoJanela(grade, 'Histórico', hist, 's-3', 'Complemento que aparece no extrato das duas contas, depois de "Transferência para/de <conta>" (opcional).');
       const erro = Util.el('div', 'aviso-revisar');
       erro.hidden = true;
