@@ -31,6 +31,14 @@
                         caixa) dadas, só quando nascem, a quem já tinha
                         ALTERAR em Contas a pagar; LANCAR_RETROATIVO,
                         REABRIR e AJUSTE_CAIXA nascem sem ninguém.
+    v1.5 (27/11/2026) - Etapa 04h1 (P03, P04): tela "Agenda financeira"
+                        (FIN_AGENDA = a tela inicial, index.html), nasce
+                        desabilitada, com VER, EXPORTAR e VER_TOTAIS. Só
+                        quando nascem: VER para quem já via Contas a pagar
+                        ou a receber e EXPORTAR para quem já exportava
+                        numa delas (perfil e permissão individual);
+                        VER_TOTAIS nasce sem ninguém (P04: dada pelos
+                        administradores).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -211,4 +219,50 @@ SELECT up.ID_USUARIO, n.ID_ITEM_ACAO, up.TIPO, N'instalacao'
 FROM @NovosBanco n
 INNER JOIN SIS.Usuario_Permissao up ON up.ID_ITEM_ACAO = @IdAlterarPagar
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Usuario_Permissao x WHERE x.ID_USUARIO = up.ID_USUARIO AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+GO
+
+-- 04h1: tela inicial = Agenda financeira (P03, P04)
+INSERT INTO SIS.Item (ID_MODULO, ID_ITEM_PAI, CODIGO, NOME, TIPO, CAMINHO, ORDEM, EXCLUSIVO_GERAL, HABILITADO, TABELAS_DA_TELA)
+SELECT m.ID_MODULO, NULL, 'FIN_AGENDA', N'Agenda financeira', 'TELA', 'index.html', 5, 0, 0, ''
+FROM SIS.Modulo m
+WHERE m.CODIGO = 'FIN'
+  AND NOT EXISTS (SELECT 1 FROM SIS.Item i WHERE i.CODIGO = 'FIN_AGENDA');
+GO
+
+DECLARE @NovosAgenda TABLE (ID_ITEM_ACAO INT NOT NULL, ACAO VARCHAR(20) NULL);
+
+INSERT INTO SIS.Item_Acao (ID_ITEM, ID_ACAO)
+OUTPUT inserted.ID_ITEM_ACAO, NULL INTO @NovosAgenda (ID_ITEM_ACAO, ACAO)
+SELECT i.ID_ITEM, a.ID_ACAO
+FROM (VALUES (CAST('VER' AS VARCHAR(20))), ('EXPORTAR'), ('VER_TOTAIS')) v (ACAO)
+INNER JOIN SIS.Item i ON i.CODIGO = 'FIN_AGENDA'
+INNER JOIN SIS.Acao a ON a.CODIGO = v.ACAO
+WHERE NOT EXISTS (SELECT 1 FROM SIS.Item_Acao ia WHERE ia.ID_ITEM = i.ID_ITEM AND ia.ID_ACAO = a.ID_ACAO);
+
+UPDATE n SET n.ACAO = a.CODIGO
+FROM @NovosAgenda n
+INNER JOIN SIS.Item_Acao ia ON ia.ID_ITEM_ACAO = n.ID_ITEM_ACAO
+INNER JOIN SIS.Acao a ON a.ID_ACAO = ia.ID_ACAO;
+
+-- VER e EXPORTAR: para quem já tinha a mesma ação em Contas a pagar ou a receber (só quando nascem)
+INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO, USUARIO_CRIACAO)
+SELECT DISTINCT pp.ID_PERFIL, n.ID_ITEM_ACAO, N'instalacao'
+FROM @NovosAgenda n
+INNER JOIN SIS.Acao a ON a.CODIGO = n.ACAO
+INNER JOIN SIS.Item_Acao iaf ON iaf.ID_ACAO = a.ID_ACAO
+INNER JOIN SIS.Item i ON i.ID_ITEM = iaf.ID_ITEM AND i.CODIGO IN ('FIN_PAGAR', 'FIN_RECEBER')
+INNER JOIN SIS.Perfil_Permissao pp ON pp.ID_ITEM_ACAO = iaf.ID_ITEM_ACAO
+WHERE n.ACAO IN ('VER', 'EXPORTAR')
+  AND NOT EXISTS (SELECT 1 FROM SIS.Perfil_Permissao x WHERE x.ID_PERFIL = pp.ID_PERFIL AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO);
+
+INSERT INTO SIS.Usuario_Permissao (ID_USUARIO, ID_ITEM_ACAO, TIPO, USUARIO_CRIACAO)
+SELECT up.ID_USUARIO, n.ID_ITEM_ACAO, 'C', N'instalacao'
+FROM @NovosAgenda n
+INNER JOIN SIS.Acao a ON a.CODIGO = n.ACAO
+INNER JOIN SIS.Item_Acao iaf ON iaf.ID_ACAO = a.ID_ACAO
+INNER JOIN SIS.Item i ON i.ID_ITEM = iaf.ID_ITEM AND i.CODIGO IN ('FIN_PAGAR', 'FIN_RECEBER')
+INNER JOIN SIS.Usuario_Permissao up ON up.ID_ITEM_ACAO = iaf.ID_ITEM_ACAO AND up.TIPO = 'C'
+WHERE n.ACAO IN ('VER', 'EXPORTAR')
+  AND NOT EXISTS (SELECT 1 FROM SIS.Usuario_Permissao x WHERE x.ID_USUARIO = up.ID_USUARIO AND x.ID_ITEM_ACAO = n.ID_ITEM_ACAO)
+GROUP BY up.ID_USUARIO, n.ID_ITEM_ACAO;
 GO

@@ -24,6 +24,8 @@
                         limite do parâmetro, com motivo).
     v1.7 (27/11/2026) - Etapa 04g2: AJUSTE_CAIXA (gerar o movimento de
                         ajuste da diferença no fechamento de caixa).
+    v1.8 (27/11/2026) - Etapa 04h1 (P04): VER_TOTAIS (ver os totais D/C/Saldo
+                        e o saldo previsto na tela inicial).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -56,7 +58,8 @@ FROM (VALUES
         ('PENDENCIA',        N'Pendências (incluir, resolver, reabrir)', 210),
         ('LIBERAR_PENDENCIA', N'Baixar com pendência que bloqueia (com justificativa)', 220),
         ('DESCONTO_LIMITE', N'Desconto na baixa acima do limite (com motivo)', 230),
-        ('AJUSTE_CAIXA',     N'Ajustar a diferença no fechamento de caixa', 240)
+        ('AJUSTE_CAIXA',     N'Ajustar a diferença no fechamento de caixa', 240),
+        ('VER_TOTAIS',       N'Ver totais e saldos (tela inicial)', 250)
      ) v (CODIGO, NOME, ORDEM)
 WHERE NOT EXISTS (SELECT 1 FROM SIS.Acao a WHERE a.CODIGO = v.CODIGO);
 GO

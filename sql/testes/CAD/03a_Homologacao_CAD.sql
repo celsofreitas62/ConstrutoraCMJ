@@ -23,6 +23,9 @@
                         criadas na 03c (movimento e extrato).
     v1.3 (25/11/2026) - Etapa 04d: colunas novas do CAD_Pessoa_Obter/Listar e limpeza de CAD.Pessoa_Tipo.
     v1.4 (25/11/2026) - Etapa 04e: colunas novas do CAD_Centro_Custo_Listar (encerramento) e do CAD_Plano_Conta_Listar (QTD_LANCAMENTOS).
+    v1.5 (27/11/2026) - Etapa 04h1: contagens de estrutura atualizadas com o que a 04g
+                        criou no BANCO (Caixa_Fechamento e a trigger dela, 5 procedures
+                        de extrato, saldos e caixa, 3 telas novas).
     v1.2 (22/11/2026) - Etapa 04b: coluna NA_LIXEIRA do CAD_Pessoa_Obter e ações
                         DESATIVAR (5 telas) e DESFAZER (6 telas): 40.
 
@@ -118,17 +121,17 @@ EXEC SIS.SIS_Contexto_Gravar @IdUsuario = @IdCelso, @Estacao = N'HOMOLOGACAO-03A
 
 -- 1) Objetos e cargas
 INSERT INTO #Teste (TESTE, ESPERADO, OBTIDO) VALUES
- (N'Tabelas CAD + BANCO (14 desde a 04d)', N'14', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.tables t WHERE SCHEMA_NAME(t.schema_id) IN ('CAD', 'BANCO')
+ (N'Tabelas CAD + BANCO (15 desde a 04g)', N'15', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.tables t WHERE SCHEMA_NAME(t.schema_id) IN ('CAD', 'BANCO')
                                                     AND t.name NOT IN ('Movimento', 'Extrato_Arquivo', 'Extrato_Linha')))),
- (N'Procedures CAD + BANCO (28 desde a 04e)', N'28', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.procedures p WHERE SCHEMA_NAME(p.schema_id) IN ('CAD', 'BANCO')))),
+ (N'Procedures CAD + BANCO (33 desde a 04g)', N'33', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.procedures p WHERE SCHEMA_NAME(p.schema_id) IN ('CAD', 'BANCO')))),
  (N'Functions + view do CAD', N'3|1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.objects o WHERE SCHEMA_NAME(o.schema_id) = 'CAD' AND o.type = 'FN')) + N'|'
                                     + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.views v WHERE SCHEMA_NAME(v.schema_id) = 'CAD'))),
- (N'Triggers de auditoria CAD + BANCO (13 desde a 04d)', N'13', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t INNER JOIN sys.tables b ON b.object_id = t.parent_id
+ (N'Triggers de auditoria CAD + BANCO (14 desde a 04g)', N'14', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.triggers t INNER JOIN sys.tables b ON b.object_id = t.parent_id
                                                                       WHERE SCHEMA_NAME(b.schema_id) IN ('CAD', 'BANCO')
                                                                         AND b.name NOT IN ('Movimento', 'Extrato_Arquivo', 'Extrato_Linha')))),
  (N'FK da conta padrão da empresa', N'1', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM sys.foreign_keys f WHERE f.name = 'FK_Empresa_Conta_Padrao'))),
  (N'Carga de bancos (Sicredi 748 e Itaú 341)', N'Sicredi|Itaú Unibanco', (SELECT b.NOME FROM BANCO.Banco b WHERE b.CODIGO = '748') + N'|' + (SELECT b.NOME FROM BANCO.Banco b WHERE b.CODIGO = '341')),
- (N'Telas no menu (CAD 5 desde a 04d, BANCO 2)', N'5|2', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Item i INNER JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO WHERE m.CODIGO = 'CAD' AND i.TIPO = 'TELA')) + N'|'
+ (N'Telas no menu (CAD 5 desde a 04d, BANCO 5 desde a 04g)', N'5|5', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Item i INNER JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO WHERE m.CODIGO = 'CAD' AND i.TIPO = 'TELA')) + N'|'
                                                 + CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Item i INNER JOIN SIS.Modulo m ON m.ID_MODULO = i.ID_MODULO WHERE m.CODIGO = 'BANCO' AND i.TIPO = 'TELA'))),
  (N'Ações das 6 telas (29 + DESATIVAR e DESFAZER da 04b)', N'40', CONVERT(NVARCHAR(5), (SELECT COUNT(*) FROM SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM
                                                       WHERE i.CODIGO IN ('CAD_EMPRESA', 'CAD_PESSOA', 'CAD_CENTRO_CUSTO', 'CAD_PLANO_CONTA', 'BANCO_CONTA', 'BANCO_BANCO'))));
