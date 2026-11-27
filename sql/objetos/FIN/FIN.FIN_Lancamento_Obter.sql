@@ -18,6 +18,10 @@
                         automáticas e manuais), QTD_PENDENCIAS, PODE_PENDENCIA,
                         BLOQUEIA_BAIXA e MOTIVO_BLOQUEIO (FIN.fn_FIN_Pendencia_Bloqueia).
 
+    v1.2 (27/11/2026) - Etapa 04g4: TEM_BAIXA e "travada" contam só a baixa
+                        viva (fn_FIN_Parcela_Baixa_Viva); TEM_HISTORICO_BAIXA e
+                        "fixa" (parcela que não sai) contam qualquer baixa;
+                        excluir continua proibido com qualquer baixa.
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Obter @IdUsuario = 2, @IdLancamento = 1;
 *******************************************************************************/
@@ -38,6 +42,7 @@ BEGIN
     DECLARE @Tipo       CHAR(1);
     DECLARE @Item       VARCHAR(40);
     DECLARE @TemBaixa   BIT = 0;
+    DECLARE @TemHistBaixa BIT = 0;
     DECLARE @NaLixeira  BIT = 0;
     DECLARE @MesFechado BIT = 0;
     DECLARE @Editavel   BIT = 0;
@@ -52,9 +57,11 @@ BEGIN
             THROW 50001, N'Você não tem permissão para ver este lançamento.', 1;
 
         SET @EtapaAtual = 'Situação';
+        IF EXISTS (SELECT 1 FROM FIN.Parcela p WITH (NOLOCK) WHERE p.ID_LANCAMENTO = @IdLancamento AND EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA)))
+            SET @TemBaixa = 1;
         IF EXISTS (SELECT 1 FROM FIN.Baixa b WITH (NOLOCK) INNER JOIN FIN.Parcela p WITH (NOLOCK) ON p.ID_PARCELA = b.ID_PARCELA
                    WHERE p.ID_LANCAMENTO = @IdLancamento)
-            SET @TemBaixa = 1;
+            SET @TemHistBaixa = 1;
         SET @NaLixeira = SIS.fn_SIS_Na_Lixeira(N'FIN.Lancamento', @IdLancamento);
         IF EXISTS (SELECT 1 FROM FIN.Lancamento l WITH (NOLOCK)
                    INNER JOIN FIN.Mes_Fechado m  WITH (NOLOCK) ON m.ID_EMPRESA = l.ID_EMPRESA AND m.MES = l.DT_COMPETENCIA AND m.FECHADO = 1
@@ -78,12 +85,13 @@ BEGIN
                @TemBaixa AS TEM_BAIXA, @NaLixeira AS NA_LIXEIRA, @MesFechado AS MES_FECHADO,
                CAST(CASE WHEN @Editavel = 1 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'ALTERAR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_ALTERAR,
                CAST(CASE WHEN @Editavel = 1 AND @TemBaixa = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'CANCELAR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_CANCELAR,
-               CAST(CASE WHEN @Editavel = 1 AND @TemBaixa = 0 AND l.ORIGEM = 'MANUAL' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'EXCLUIR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_EXCLUIR,
+               CAST(CASE WHEN @Editavel = 1 AND @TemHistBaixa = 0 AND l.ORIGEM = 'MANUAL' AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'EXCLUIR') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_EXCLUIR,
                ISNULL((SELECT p.ID_PARCELA AS id, p.NUMERO AS numero, p.QTD_PARCELAS AS qtdParcelas, p.DT_VENCIMENTO AS vencimento,
                               p.VALOR AS valor, p.VALOR_BAIXADO AS valorBaixado, p.SALDO AS saldo, p.SITUACAO AS situacao,
                               p.ID_CONTA_PREVISTA AS idContaPrevista, ISNULL(c.DESCRICAO, N'') AS contaPrevista, p.ID_LOTE AS idLote,
                               (SELECT COUNT(*) FROM FIN.Baixa b WITH (NOLOCK) WHERE b.ID_PARCELA = p.ID_PARCELA) AS qtdBaixas,
-                              CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.Baixa b WITH (NOLOCK) WHERE b.ID_PARCELA = p.ID_PARCELA) THEN 1 ELSE 0 END AS BIT) AS travada
+                              CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA)) THEN 1 ELSE 0 END AS BIT) AS travada,
+                              CAST(CASE WHEN EXISTS (SELECT 1 FROM FIN.Baixa b WITH (NOLOCK) WHERE b.ID_PARCELA = p.ID_PARCELA) THEN 1 ELSE 0 END AS BIT) AS fixa
                        FROM FIN.Parcela p WITH (NOLOCK)
                        LEFT JOIN BANCO.Conta c WITH (NOLOCK) ON c.ID_CONTA = p.ID_CONTA_PREVISTA
                        WHERE p.ID_LANCAMENTO = l.ID_LANCAMENTO
@@ -116,7 +124,7 @@ BEGIN
                        FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]') AS PENDENCIAS,
                (SELECT COUNT(*) FROM FIN.fn_FIN_Lancamento_Pendencias(l.ID_LANCAMENTO) pc) AS QTD_PENDENCIAS,
                CAST(CASE WHEN @NaLixeira = 0 AND SIS.fn_SIS_Tem_Permissao(@IdUsuario, @Item, 'PENDENCIA') = 1 THEN 1 ELSE 0 END AS BIT) AS PODE_PENDENCIA,
-               bq.BLOQUEIA AS BLOQUEIA_BAIXA, bq.MOTIVO AS MOTIVO_BLOQUEIO
+               bq.BLOQUEIA AS BLOQUEIA_BAIXA, bq.MOTIVO AS MOTIVO_BLOQUEIO, @TemHistBaixa AS TEM_HISTORICO_BAIXA
         FROM FIN.Lancamento l WITH (NOLOCK)
         INNER JOIN CAD.Empresa e            WITH (NOLOCK) ON e.ID_EMPRESA = l.ID_EMPRESA
         LEFT  JOIN CAD.Centro_Custo cc      WITH (NOLOCK) ON cc.ID_CENTRO_CUSTO = l.ID_CENTRO_CUSTO

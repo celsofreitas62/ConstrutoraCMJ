@@ -14,6 +14,8 @@
   Changelog:
     v1.0 (25/11/2026) - Criação (etapa 04f).
 
+    v1.1 (27/11/2026) - Etapa 04g4: só a baixa viva (não estornada) impede o
+                        cancelamento (fn_FIN_Parcela_Baixa_Viva).
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Cancelar @IdUsuario = 2, @IdLancamento = 1, @Motivo = N'Lançado em dobro';
 *******************************************************************************/
@@ -55,7 +57,7 @@ BEGIN
             SET @Recusa = N'O lançamento já está cancelado.';
         IF @Recusa = N'' AND @Origem NOT IN ('MANUAL', 'MIGRACAO')
             SET @Recusa = N'Este lançamento foi gerado por outra rotina (' + CONVERT(NVARCHAR(15), @Origem) + N'): cancele pela tela de origem.';
-        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Baixa b INNER JOIN FIN.Parcela p ON p.ID_PARCELA = b.ID_PARCELA WHERE p.ID_LANCAMENTO = @IdLancamento)
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Parcela p WHERE p.ID_LANCAMENTO = @IdLancamento AND EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA)))
             SET @Recusa = N'O lançamento tem pagamento ou recebimento: estorne as baixas antes de cancelar.';
         IF @Recusa = N'' AND EXISTS (SELECT 1 FROM FIN.Lancamento l
                                      INNER JOIN FIN.Mes_Fechado m  ON m.ID_EMPRESA = l.ID_EMPRESA AND m.MES = l.DT_COMPETENCIA AND m.FECHADO = 1

@@ -9,7 +9,7 @@
                 @Parcelas: JSON [{"id":null|ID_PARCELA,"vencimento":"aaaa-mm-dd",
                 "valor":100.00,"idContaPrevista":null}]; a numeração é refeita
                 pela ordem de vencimento. Parcela existente fora da lista é
-                retirada (só sem baixa). Empresa vem do centro de custo.
+                retirada (só sem nenhuma baixa, nem estornada). Empresa vem do centro de custo.
                 Proteções contra erro de digitação (P17), conferidas aqui e na
                 prévia (@SomenteConferir = 1, usada por FIN_Lancamento_Conferir):
                   BLOQUEIO  não grava (fixos: parceiro/centro/conta inativos,
@@ -36,6 +36,9 @@
     v1.1 (26/11/2026) - Etapa 04f2b: integração em branco vale COMPLETA (a API
                         manda texto vazio quando a ficha não informa).
 
+    v1.2 (27/11/2026) - Etapa 04g4: só a baixa viva (não estornada) trava
+                        parceiro, valor total e parcela (fn_FIN_Parcela_Baixa_Viva);
+                        parcela só com baixa estornada muda, mas não sai.
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Lancamento_Gravar @IdUsuario = 2, @Tipo = 'P', @IdCentroCusto = 1, @IdPessoa = 1, @IdPlanoConta = 1,
     --      @DtEmissao = '2026-11-25', @ValorTotal = 100, @Parcelas = N'[{"vencimento":"2026-12-10","valor":100}]', @SomenteConferir = 1;
@@ -131,7 +134,8 @@ BEGIN
             ELSE
                 SET @Tipo = @aTipo;
 
-            IF EXISTS (SELECT 1 FROM FIN.Baixa b INNER JOIN FIN.Parcela p ON p.ID_PARCELA = b.ID_PARCELA WHERE p.ID_LANCAMENTO = @IdLancamento)
+            -- só baixa viva (não estornada) trava o lançamento (04g4)
+            IF EXISTS (SELECT 1 FROM FIN.Parcela p WHERE p.ID_LANCAMENTO = @IdLancamento AND EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA)))
                 SET @TemBaixa = 1;
         END;
 
@@ -251,12 +255,18 @@ BEGIN
             FROM #P x
             INNER JOIN FIN.Parcela p ON p.ID_PARCELA = x.ID_PARCELA;
 
-            -- parcelas com baixa: não mudam e não saem
+            -- parcelas com baixa viva: não mudam e não saem
             IF EXISTS (SELECT 1 FROM FIN.Parcela p
                        WHERE p.ID_LANCAMENTO = @IdLancamento
-                         AND EXISTS (SELECT 1 FROM FIN.Baixa b WHERE b.ID_PARCELA = p.ID_PARCELA)
+                         AND EXISTS (SELECT 1 FROM FIN.fn_FIN_Parcela_Baixa_Viva(p.ID_PARCELA))
                          AND NOT EXISTS (SELECT 1 FROM #P x WHERE x.ID_PARCELA = p.ID_PARCELA AND x.MUDOU = 0))
                 SET @Recusa = N'Parcela com pagamento ou recebimento não pode mudar de vencimento ou valor, nem ser retirada.';
+            -- parcela só com baixa estornada: pode mudar, mas não sai (guarda o histórico)
+            ELSE IF EXISTS (SELECT 1 FROM FIN.Parcela p
+                            WHERE p.ID_LANCAMENTO = @IdLancamento
+                              AND EXISTS (SELECT 1 FROM FIN.Baixa b WHERE b.ID_PARCELA = p.ID_PARCELA)
+                              AND NOT EXISTS (SELECT 1 FROM #P x WHERE x.ID_PARCELA = p.ID_PARCELA))
+                SET @Recusa = N'Parcela com baixa estornada não pode ser retirada (guarda o histórico); mude o vencimento ou o valor dela.';
         END;
 
         IF @Recusa <> N''

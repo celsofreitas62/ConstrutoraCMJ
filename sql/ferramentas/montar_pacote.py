@@ -240,11 +240,13 @@ ORDEM_04G = ['objetos/SIS/Carga_SIS_Acao.sql', 'objetos/FIN/Carga_FIN_Parametro.
              'objetos/FIN/FIN.FIN_Baixa_Gravar.sql', 'objetos/FIN/FIN.FIN_Baixa_Estornar.sql', 'objetos/FIN/FIN.FIN_Baixa_Preparar.sql',
              'objetos/FIN/FIN.FIN_Transferencia_Gravar.sql', 'objetos/FIN/FIN.FIN_Transferencia_Estornar.sql', 'objetos/FIN/FIN.FIN_Transferencia_Listar.sql',
              'objetos/BANCO/BANCO.BANCO_Extrato_Listar.sql', 'objetos/BANCO/BANCO.BANCO_Saldo_Listar.sql',
-             'objetos/BANCO/BANCO.BANCO_Caixa_Fechar.sql', 'objetos/BANCO/BANCO.BANCO_Caixa_Reabrir.sql', 'objetos/BANCO/BANCO.BANCO_Caixa_Listar.sql']
+             'objetos/BANCO/BANCO.BANCO_Caixa_Fechar.sql', 'objetos/BANCO/BANCO.BANCO_Caixa_Reabrir.sql', 'objetos/BANCO/BANCO.BANCO_Caixa_Listar.sql',
+             'objetos/FIN/FIN.fn_FIN_Parcela_Baixa_Viva.sql', 'objetos/FIN/FIN.FIN_Lancamento_Gravar.sql', 'objetos/FIN/FIN.FIN_Lancamento_Cancelar.sql',
+             'objetos/FIN/FIN.FIN_Lancamento_Obter.sql']
 PARTE = sys.argv[1] if len(sys.argv) > 1 else '02a'
 
 ORDEM = {'02a': ORDEM_02A, '02b': ORDEM_02B, '02b2': ORDEM_02B2, '02c': ORDEM_02C, '02d': ORDEM_02D, '03a': ORDEM_03A, '03c': ORDEM_03C, '03c_mig': ORDEM_03C_MIG, '03c2': ORDEM_03C2, '03c2b': ORDEM_03C2B, '03d': ORDEM_03D, '03g': ORDEM_03G, '03h': ORDEM_03H, '04a': ORDEM_04A, '04b': ORDEM_04B, '04b2': ORDEM_04B2, '04c': ORDEM_04C, '04c2': ORDEM_04C2, '04d': ORDEM_04D, '04d2': ORDEM_04D2, '04e': ORDEM_04E, '04f': ORDEM_04F, '04f2a': ORDEM_04F2A, '04f2c': ORDEM_04F2C, '04f2d': ORDEM_04F2D, '04f2e': ORDEM_04F2E, '04g': ORDEM_04G}[PARTE]
-TITULO = {'04g': '04g - baixa, caixa e transferencia: baixa e estorno (04g1), transferencia, extrato e fechamento de caixa (04g2), acoes, parametros; banco continua 2.5 ate a 04g5',
+TITULO = {'04g': '04g - baixa, caixa e transferencia: baixa e estorno (04g1), transferencia, extrato e fechamento de caixa (04g2), acoes, parametros, baixa estornada nao trava o lancamento (04g4); banco continua 2.5 ate a 04g5',
           '04f2e': '04f2e - nota da versao 2.5 e registro da versao do banco; banco 2.5',
           '04f2d': '04f2d - movimentacao do Parceiro (resumo por tipo com media mensal) e parametros de uso; banco continua 2.4 ate a 04f2e',
           '04f2c': '04f2c - pendencias dos lancamentos (P27): tipos, pendencias manuais, regras automaticas e parametros; banco continua 2.4 ate a 04f2e',

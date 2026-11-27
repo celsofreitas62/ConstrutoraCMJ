@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         tdBaixar.append(b);
       }
       const tdAcao = Util.el('td', 'col-acao');
-      if (!travada) {
+      if (!travada && !p.fixa) {
         const tirar = Util.el('button', 'botao botao-icone', '×');
         tirar.type = 'button';
         tirar.setAttribute('aria-label', 'Tirar a parcela ' + numero.get(i));
@@ -248,7 +248,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!(qtd >= 1 && qtd <= 360)) { await Mensagens.alerta('Informe o nº de parcelas (de 1 a 360).', 'ATENCAO', { foco: $('qtdParcelas') }); return; }
     if (!primeiro) { await Mensagens.alerta('Informe o 1º vencimento.', 'ATENCAO', { foco: $('primeiroVencimento') }); return; }
     const fixas = parcelas.filter((p) => p.travada);
-    const livres = parcelas.filter((p) => !p.travada && p.id);
+    // parcela só com baixa estornada (fixa) é reaproveitada primeiro: ela muda, mas não pode sair
+    const livres = parcelas.filter((p) => !p.travada && p.id).sort((a, b) => (b.fixa ? 1 : 0) - (a.fixa ? 1 : 0));
     const restante = centavos(total) - fixas.reduce((s, p) => s + centavos(p.valor), 0);
     const novas = qtd - fixas.length;
     if (fixas.length && novas < 1) {
@@ -265,7 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const reaproveitar = livres[n];
       geradas.push({ id: reaproveitar ? reaproveitar.id : null, vencimento: somarData(primeiro, $('intervalo').value, n + fixas.length), valor,
         idContaPrevista: reaproveitar ? reaproveitar.idContaPrevista : null, contaPrevista: reaproveitar ? reaproveitar.contaPrevista : '',
-        valorBaixado: 0, saldo: valor, situacao: 'ABERTA', travada: false });
+        valorBaixado: 0, saldo: valor, situacao: 'ABERTA', travada: false, fixa: reaproveitar ? !!reaproveitar.fixa : false });
     }
     parcelas = [...fixas, ...geradas];
     sujo = true;
@@ -425,7 +426,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     parcelas = lista.map((p) => ({
       id: copia ? null : p.id, vencimento: Util.dataIso(p.vencimento), valor: Number(p.valor), idContaPrevista: p.idContaPrevista,
       contaPrevista: p.contaPrevista || '', valorBaixado: copia ? 0 : Number(p.valorBaixado || 0), saldo: copia ? Number(p.valor) : Number(p.saldo || 0),
-      situacao: copia ? 'ABERTA' : p.situacao, travada: copia ? false : !!p.travada
+      situacao: copia ? 'ABERTA' : p.situacao, travada: copia ? false : !!p.travada, fixa: copia ? false : !!p.fixa
     }));
     $('qtdParcelas').value = Math.max(1, parcelas.length);
     const primeira = parcelas.map((p) => p.vencimento).filter(Boolean).sort()[0];

@@ -1,4 +1,4 @@
-/*******************************************************************************
+﻿/*******************************************************************************
   Script      : lançamento fixo para o teste da baixa nas telas (SÓ LOCAL)
   Autor       : Celso de Freitas
   Refatorado  : Claude
