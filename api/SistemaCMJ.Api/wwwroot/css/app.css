@@ -18,7 +18,7 @@
   --cor-principal: #D43414;
   --cor-principal-escura: color-mix(in srgb, var(--cor-principal) 80%, #000000);
   --cor-principal-clara: color-mix(in srgb, var(--cor-principal) 12%, #FFFFFF);
-  --cor-principal-texto: var(--cor-principal);
+  --cor-principal-texto: var(--cor-principal-escura);
   --cor-principal-hover: color-mix(in srgb, var(--cor-principal) 80%, #000000);
   --principal-borda: #E3B4A8;
   --link-hover: #8A220C;

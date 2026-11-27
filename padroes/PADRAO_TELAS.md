@@ -51,7 +51,7 @@ Regras para toda tela do sistema. Criado em 16/11/2026 com os pedidos do Celso; 
 
 16e. **Nenhuma cor fixa nas regras do `app.css`**: toda cor vem de uma variável com nome de função, definida no `:root` do início (`--texto`, `--texto-suave`, `--branco` = superfície, `--superficie-suave`, `--borda`, `--verde-fundo`/`--verde-texto`, `--vermelho-*`, `--laranja-*`, `--amarelo-*`, `--azul-*`, `--roxo`, `--calor-d-*`/`--calor-c-*`, `--cor-principal-texto` para texto na cor da empresa, `--texto-sobre-cor` para texto em cima da cor da empresa...). O tema escuro só troca os valores (`html[data-tema="escuro"]`, no fim do `app.css`). Cor nova = variável nova nos dois blocos.
 16f. **Tema** pela preferência `TEMA` (SISTEMA segue o Windows, CLARO, ESCURO), aplicado por `js/layout.js` no `data-tema` do `<html>` e guardado no computador (`localStorage` `cmj.tema`) para não piscar e para o login.
-16g. **Contraste WCAG AA**: texto comum 4,5:1, texto grande 3:1, nos dois temas (conferido nos testes das telas).
+16g. **Contraste WCAG AA**: texto comum 4,5:1, texto grande 3:1, nos dois temas (passo 17 dos testes das telas; o passo 18 confere que toda tela tem a sua ajuda e que os links das ajudas existem).
 16h. **Impressão e PDF sempre no claro** (o escuro fica dentro de `@media screen`). A **prévia do e-mail** aparece sempre clara, como o e-mail sai. **Logomarca** no escuro ganha uma placa clara (`--placa-logo`).
 
 ## 8. Testes automáticos das telas (aprovado pelo Celso na 03h; feito na 04a, 22/11/2026)

@@ -32,6 +32,9 @@
 //                   marcar a parcela na lista ("Baixar marcadas" abre a janela).
 //                13) caixa (04g4d): transferir 0,10 entre as contas de teste e estornar,
 //                   extrato do dia, fechar o caixa B com a contagem por cedulas e reabrir.
+//                17) tema claro/escuro (04h4): contraste WCAG AA nas telas principais nos dois
+//                   temas, impressao sempre clara, preferencia Tema pelo caminho do usuario;
+//                18) ajudas (04h4): toda tela tem a sua ajuda e os links das ajudas existem.
 //              Resultado: uma linha por conferência, "RESULTADO: OK" ou
 //              "RESULTADO: FALHAS (n)" no fim; código de saída = falhas.
 //              Foto da tela em cada falha em %LOCALAPPDATA%\SistemaCMJ\testes_telas.
@@ -1322,6 +1325,138 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     catch (Exception erro) { motivo16 = erro.Message.Split('\n')[0]; }
     Linha(motivo16.Length == 0, "calendario da agenda: mes, clique no quadro, voltar por nivel, ano e varios anos (" + relogio16.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo16);
     if (motivo16.Length > 0) await Foto("calendario");
+}
+
+// ---------------------------------------------------------------- 17) Tema claro/escuro e contraste (04h4, 27/11/2026)
+// Cada tela principal, nos dois temas: todo texto visível tem contraste WCAG AA com o fundo real atrás dele
+// (4,5:1 texto comum, 3:1 texto grande). Depois, a preferência Tema = Sempre escuro pelo caminho do usuário põe
+// data-tema="escuro" na tela (fotos no escuro) e "Voltar ao padrão" devolve. Na impressão vale sempre o claro.
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    var relogio17 = Stopwatch.StartNew();
+    var motivo17 = "";
+    const string auditoria17 = """
+        () => {
+          const rgb = (s) => { const m = s.match(/[\d.]+/g); if (!m) return null; const v = m.map(Number);
+            if (s.startsWith('color(')) { const a = v.slice(0, 3).map((x) => x * 255); return v.length > 3 ? [...a, v[3]] : a; } return v; };
+          const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+          const L = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+          const fundo = (el) => { for (let e = el; e; e = e.parentElement) { const b = rgb(getComputedStyle(e).backgroundColor); if (b && (b.length < 4 || b[3] > 0.5)) return b; } return [255, 255, 255]; };
+          for (const el of document.querySelectorAll('body *')) {
+            if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+            const cs = getComputedStyle(el); const r = el.getBoundingClientRect();
+            if (cs.visibility === 'hidden' || cs.display === 'none' || r.width === 0 || r.height === 0 || +cs.opacity < 0.6) continue;
+            if (el.closest('[disabled], .cal-fora, .cal-zero, option, .linha-estornada, .plano-inativo')) continue;
+            const a = L(rgb(cs.color)), c = L(fundo(el)); const razao = (Math.max(a, c) + 0.05) / (Math.min(a, c) + 0.05);
+            const grande = parseFloat(cs.fontSize) >= 18.6 || (parseFloat(cs.fontSize) >= 14 && +cs.fontWeight >= 700);
+            if (razao < (grande ? 3 : 4.5)) return '"' + el.textContent.trim().slice(0, 30) + '" (' + (String(el.className) || el.tagName) + ') contraste ' + razao.toFixed(2);
+          }
+          return '';
+        }
+        """;
+    try
+    {
+        var telas17 = new[] { "/", "/fin/lancamentos.html?tipo=P", "/fin/lancamentos.html?tipo=R", "/fin/lancamento.html?tipo=R", "/banco/extrato.html", "/banco/transferencias.html", "/banco/caixa.html", "/cad/pessoas.html", "/cad/plano-contas.html", "/sis/usuarios.html", "/sis/parametros.html?uso=1", "/sis/versoes.html", "/sis/preferencias.html" };
+        foreach (var tela in telas17)
+        {
+            await pagina.GotoAsync(endereco + tela, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.WaitForTimeoutAsync(300);
+            foreach (var tema in new[] { "claro", "escuro" })
+            {
+                await pagina.EvaluateAsync("(t) => document.documentElement.dataset.tema = t", tema);
+                var achado = await pagina.EvaluateAsync<string>(auditoria17);
+                if (achado.Length > 0 && motivo17.Length == 0) motivo17 = tela + " no tema " + tema + ": " + achado;
+            }
+        }
+        // impressão: o escuro só vale na tela
+        if (motivo17.Length == 0)
+        {
+            await pagina.EmulateMediaAsync(new() { Media = Media.Print });
+            var fundoImpresso = await pagina.EvaluateAsync<string>("() => getComputedStyle(document.body).backgroundColor");
+            await pagina.EmulateMediaAsync(new() { Media = Media.Screen });
+            if (fundoImpresso != "rgb(244, 244, 243)") motivo17 = "impressao no tema escuro nao saiu clara (fundo " + fundoImpresso + ")";
+        }
+        // preferência Tema = Sempre escuro, pelo caminho do usuário, e volta ao padrão
+        async Task<string> Ok17(string acao)
+        {
+            await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); return d && d.querySelector('h2').textContent === 'Gravar?'; }", null, new() { Timeout = 10000 });
+            await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+            try { await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); const h = d && d.querySelector('h2'); return h && h.textContent === 'Concluído'; }", null, new() { Timeout = 15000 }); }
+            catch (TimeoutException) { return acao + ": nao chegou ao Concluido"; }
+            await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            return "";
+        }
+        if (motivo17.Length == 0)
+        {
+            await pagina.EmulateMediaAsync(new() { ColorScheme = ColorScheme.Light });
+            await pagina.GotoAsync(endereco + "/sis/preferencias.html", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.Locator("#pref-TEMA").SelectOptionAsync("ESCURO");
+            await pagina.Locator("#botao-gravar").ClickAsync();
+            motivo17 = await Ok17("tema escuro");
+            if (motivo17.Length == 0 && await pagina.EvaluateAsync<string>("() => document.documentElement.dataset.tema") != "escuro") motivo17 = "tema escuro: a tela nao trocou ao gravar";
+        }
+        if (motivo17.Length == 0)
+        {
+            foreach (var (tela, foto) in new[] { ("/", "visual_escuro_inicio"), ("/fin/lancamentos.html?tipo=R", "visual_escuro_lista"), ("/fin/lancamento.html?tipo=R", "visual_escuro_ficha") })
+            {
+                await pagina.GotoAsync(endereco + tela, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+                if (await pagina.EvaluateAsync<string>("() => document.documentElement.dataset.tema") != "escuro" && motivo17.Length == 0) motivo17 = tela + ": abriu fora do tema escuro";
+                await Foto(foto);
+            }
+            await pagina.GotoAsync(endereco + "/sis/preferencias.html", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.Locator(".linha-preferencia", new() { Has = pagina.Locator("#pref-TEMA") }).Locator(".botao", new() { HasText = "Voltar ao padrão" }).ClickAsync();
+            await pagina.Locator("#botao-gravar").ClickAsync();
+            var volta = await Ok17("tema ao padrao");
+            if (motivo17.Length == 0) motivo17 = volta;
+            if (motivo17.Length == 0 && await pagina.EvaluateAsync<string>("() => document.documentElement.dataset.tema") != "claro") motivo17 = "voltar ao padrao (Windows claro): a tela continuou escura";
+        }
+        if (motivo17.Length == 0 && errosJs.Count > 0) motivo17 = "erro de JavaScript: " + errosJs[0];
+        if (motivo17.Length == 0 && errosApi.Count > 0) motivo17 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo17 = erro.Message.Split('\n')[0]; }
+    Linha(motivo17.Length == 0, "tema claro/escuro: contraste em " + 13 + " telas nos dois temas, impressao clara, preferencia Tema (" + relogio17.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo17);
+    if (motivo17.Length > 0) await Foto("tema");
+}
+
+// ---------------------------------------------------------------- 18) Ajudas e links (04h4, 27/11/2026)
+// Toda tela do menu e toda ficha tem a sua ajuda (data-ajuda no <body>) e o arquivo existe; os links dentro das
+// ajudas levam a uma página que existe. A ajuda exclusiva do administrador geral (geral:...) sai pela API e fica fora.
+{
+    var relogio18 = Stopwatch.StartNew();
+    var motivos18 = new List<string>();
+    try
+    {
+        var ajudas = new HashSet<string>();
+        foreach (var tela in telas)
+        {
+            var caminho = "/" + tela.Split('?')[0];
+            var ajuda = await pagina.EvaluateAsync<string>("""
+                async (u) => { const t = await (await fetch(u)).text(); const m = t.match(/<body[^>]*data-ajuda="([^"]*)"/); return m ? m[1] : ''; }
+                """, caminho);
+            if (ajuda.Length == 0) motivos18.Add(caminho + " sem ajuda (data-ajuda)");
+            else if (!ajuda.StartsWith("geral:")) ajudas.Add(ajuda);
+        }
+        foreach (var ajuda in ajudas)
+        {
+            var erro = await pagina.EvaluateAsync<string>("""
+                async (nome) => {
+                  const r = await fetch('/ajuda/' + nome + '.html'); if (!r.ok) return 'ajuda ' + nome + ' nao existe (' + r.status + ')';
+                  const t = await r.text(); const ruins = [];
+                  for (const m of t.matchAll(/href="([^"#]+)/g)) {
+                    const u = m[1]; if (/^(https?:|mailto:)/.test(u)) continue;
+                    const alvo = new URL(u, location.origin + '/ajuda/').pathname;
+                    const s = await fetch(alvo, { method: 'HEAD' }); if (!s.ok) ruins.push(u);
+                  }
+                  return ruins.length ? 'ajuda ' + nome + ': link quebrado ' + ruins.join(', ') : '';
+                }
+                """, ajuda);
+            if (erro.Length > 0) motivos18.Add(erro);
+        }
+        Linha(motivos18.Count == 0, "ajudas: " + telas.Count + " telas com ajuda, " + ajudas.Count + " paginas e seus links (" + relogio18.Elapsed.TotalSeconds.ToString("0.0") + " s)", string.Join("; ", motivos18));
+    }
+    catch (Exception erro) { Linha(false, "ajudas e links", erro.Message.Split('\n')[0]); }
 }
 
 // ---------------------------------------------------------------- Fim
