@@ -494,3 +494,21 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .tabela-parametros input[type="color"] { min-width: 4em; height: 32px; padding: 2px; }
 .tabela-parametros .acoes-linha { white-space: nowrap; display: flex; gap: 6px; flex-wrap: wrap; }
 .parametro-alterado td:first-child { border-left: 3px solid var(--atencao); }
+
+/* 04g3a: janela de baixa (js/fin/baixa.js) e baixa pela aba Parcelas */
+.janela-baixa { width: min(1100px, calc(100vw - 32px)); }
+.janela-baixa .grade { margin-bottom: 12px; }
+.janela-baixa .rolagem { max-height: 46vh; overflow: auto; }
+.tabela-baixa td.numero, .tabela-baixa th.numero { text-align: right; white-space: nowrap; }
+.tabela-baixa input { width: 7.5em; text-align: right; box-sizing: border-box; }
+.tabela-baixa .baixa-parcela { min-width: 13em; }
+.tabela-baixa .baixa-parcela .sub { display: block; font-size: 11px; color: var(--texto-suave); margin-top: 2px; }
+.tabela-baixa .baixa-total-linha { font-weight: 600; }
+.tabela-baixa tr.linha-bloqueada td { background: #FFF6F5; }
+.baixa-rodape { display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: flex-end; margin: 10px 0 4px; font-size: 13px; }
+.baixa-rodape .baixa-liquido strong { font-size: 15px; color: var(--cor-principal); }
+.janela-baixa .aviso-bloqueio-baixa { margin: 0 0 10px; }
+.tabela-parcelas .col-marcar { width: 34px; text-align: center; }
+.tabela-parcelas .col-marcar input { width: auto; }
+.tabela-parcelas .col-baixar { width: 80px; text-align: center; }
+.tabela-parcelas.sem-baixa .col-marcar, .tabela-parcelas.sem-baixa .col-baixar { display: none; }

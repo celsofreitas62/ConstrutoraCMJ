@@ -13,6 +13,7 @@
   <script src="/js/historico.js" defer></script>
   <script src="/js/anexos.js" defer></script>
   <script src="/js/fin/pendencias.js" defer></script>
+  <script src="/js/fin/baixa.js" defer></script>
   <script src="/js/fin/lancamento.js" defer></script>
 </head>
 <body data-tela="fin/lancamentos.html?tipo=P" data-menu="fin/lancamentos.html?tipo=P" data-ajuda="fin-lancamento" data-exige-tela>
@@ -108,11 +109,12 @@
           <section class="painel-aba" role="tabpanel" id="painel-parcelas" aria-labelledby="aba-parcelas" hidden>
             <div class="barra-lista">
               <span class="suave" id="parcelas-explica">Vencimento e valor de cada parcela. A numeração segue a ordem de vencimento ao gravar. Parcela com baixa não muda.</span>
+              <button data-dica="Abre a janela de baixa com as parcelas marcadas na primeira coluna (Ctrl+S grava a baixa)." type="button" class="botao botao-principal" id="botao-baixar-marcadas" hidden>Baixar marcadas</button>
               <button data-dica="Acrescenta uma parcela em branco no fim (preencha o vencimento e o valor)." type="button" class="botao botao-contorno" id="botao-mais-parcela">+ Parcela</button>
             </div>
             <div class="rolagem">
-              <table class="tabela tabela-larga tabela-parcelas">
-                <thead><tr><th scope="col" class="col-numero">Nº</th><th scope="col">Vencimento</th><th scope="col">Valor</th><th scope="col">Conta prevista</th><th scope="col" id="coluna-baixado">Baixado</th><th scope="col">Saldo</th><th scope="col">Situação</th><th scope="col" class="col-acao" aria-label="Tirar parcela"></th></tr></thead>
+              <table class="tabela tabela-larga tabela-parcelas sem-baixa" id="tabela-parcelas">
+                <thead><tr><th scope="col" class="col-marcar"><input type="checkbox" id="marcar-todas" aria-label="Marcar todas as parcelas em aberto" data-dica="Marca ou desmarca todas as parcelas em aberto, para baixar juntas."></th><th scope="col" class="col-numero">Nº</th><th scope="col">Vencimento</th><th scope="col">Valor</th><th scope="col">Conta prevista</th><th scope="col" id="coluna-baixado">Baixado</th><th scope="col">Saldo</th><th scope="col">Situação</th><th scope="col" class="col-baixar" aria-label="Baixar"></th><th scope="col" class="col-acao" aria-label="Tirar parcela"></th></tr></thead>
                 <tbody id="linhas-parcelas"></tbody>
               </table>
             </div>
@@ -123,7 +125,7 @@
           </section>
 
           <section class="painel-aba" role="tabpanel" id="painel-baixas" aria-labelledby="aba-baixas" hidden>
-            <p class="suave">Pagamentos e recebimentos deste lançamento (só consulta; a baixa é feita na tela de baixas).</p>
+            <p class="suave">Pagamentos e recebimentos deste lançamento (a baixa é feita na aba Parcelas, botão Baixar).</p>
             <div class="rolagem">
               <table class="tabela tabela-larga">
                 <thead><tr><th scope="col">Data</th><th scope="col">Parcela</th><th scope="col">Conta</th><th scope="col">Forma</th><th scope="col">Principal</th><th scope="col">Juros/multa</th><th scope="col">Desconto</th><th scope="col">Líquido</th><th scope="col">Situação</th></tr></thead>

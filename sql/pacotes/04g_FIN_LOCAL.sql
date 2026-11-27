@@ -122,6 +122,9 @@ GO
     v1.4 (27/11/2026) - Etapa 04g2: BANCO_EXTRATO_MAX_DIAS (período máximo do
                         extrato) e FIN_CAIXA_FECHAMENTO_ATRASO_DIAS (dias sem
                         fechar o caixa até a conta aparecer como atrasada).
+    v1.5 (27/11/2026) - Etapa 04g3: FIN_BAIXA_FORMA_PADRAO (forma de pagamento
+                        que a janela de baixa já traz escolhida). Aprovado
+                        pelo Celso em 27/11/2026.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -210,7 +213,9 @@ FROM (VALUES
         ('BANCO_EXTRATO_MAX_DIAS', N'400', 'INTEIRO',
          N'Extrato da conta: período máximo de uma consulta, em dias.', 1, N''),
         ('FIN_CAIXA_FECHAMENTO_ATRASO_DIAS', N'1', 'INTEIRO',
-         N'Fechamento de caixa: dias com movimento sem fechar até a conta aparecer como "fechamento atrasado". 0 = não avisa.', 1, N'')
+         N'Fechamento de caixa: dias com movimento sem fechar até a conta aparecer como "fechamento atrasado". 0 = não avisa.', 1, N''),
+        ('FIN_BAIXA_FORMA_PADRAO', N'PIX', 'TEXTO',
+         N'Janela de baixa: forma de pagamento que já vem escolhida (o usuário pode trocar).', 1, N'PIX;BOLETO;TED;DOC;DEBITO;DINHEIRO;CHEQUE;PERMUTA;CARTAO;OUTRA')
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, NIVEL, OPCOES);
 
 INSERT INTO SIS.Parametro (CHAVE, VALOR, VALOR_PADRAO, TIPO, DESCRICAO, ID_MODULO, EDITAVEL_ADMIN, NIVEL_MINIMO, OPCOES)
@@ -1424,6 +1429,10 @@ GO
                 sem permissão não aparecem; nenhuma = erro 50001).
   Changelog:
     v1.0 (26/11/2026) - Criação (etapa 04g).
+    v1.1 (27/11/2026) - Etapa 04g3: ID_CONTA_SUGERIDA (conta prevista da
+                        parcela; senão a conta padrão da empresa; só conta
+                        ativa) e FORMA_PADRAO (parâmetro FIN_BAIXA_FORMA_PADRAO)
+                        para a janela de baixa já vir preenchida.
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Baixa_Preparar @IdUsuario = 2, @Parcelas = N'1,2', @DtPagamento = '2026-11-26';
 *******************************************************************************/
@@ -1442,6 +1451,7 @@ BEGIN
     DECLARE @PodeP BIT = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PAGAR', 'BAIXAR');
     DECLARE @PodeR BIT = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_RECEBER', 'BAIXAR');
     SET @DtPagamento = ISNULL(@DtPagamento, CONVERT(DATE, SYSDATETIME()));
+    DECLARE @Forma VARCHAR(12) = UPPER(LTRIM(RTRIM(ISNULL(CONVERT(VARCHAR(12), SIS.fn_SIS_Parametro('FIN_BAIXA_FORMA_PADRAO')), ''))));
 
     IF @PodeP = 0 AND @PodeR = 0
         THROW 50001, N'Você não tem permissão para baixar contas a pagar nem a receber.', 1;
@@ -1453,13 +1463,20 @@ BEGIN
            b.BLOQUEIA AS BLOQUEIA_BAIXA, b.MOTIVO AS MOTIVO_BLOQUEIO,
            SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE l.TIPO WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'LIBERAR_PENDENCIA') AS PODE_LIBERAR_PENDENCIA,
            SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE l.TIPO WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'DESCONTO_LIMITE') AS PODE_DESCONTO_LIMITE,
-           SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE l.TIPO WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'LANCAR_RETROATIVO') AS PODE_RETROATIVO
+           SIS.fn_SIS_Tem_Permissao(@IdUsuario, CASE l.TIPO WHEN 'P' THEN 'FIN_PAGAR' ELSE 'FIN_RECEBER' END, 'LANCAR_RETROATIVO') AS PODE_RETROATIVO,
+           cs.ID_CONTA AS ID_CONTA_SUGERIDA, @Forma AS FORMA_PADRAO
     FROM (SELECT DISTINCT TRY_CONVERT(BIGINT, LTRIM(RTRIM(v.value))) AS ID FROM STRING_SPLIT(@Parcelas, N',') v) x
     INNER JOIN FIN.Parcela p    ON p.ID_PARCELA = x.ID
     INNER JOIN FIN.Lancamento l ON l.ID_LANCAMENTO = p.ID_LANCAMENTO
     LEFT  JOIN CAD.Pessoa pe    ON pe.ID_PESSOA = l.ID_PESSOA
     CROSS APPLY FIN.fn_FIN_Baixa_Sugerir(p.ID_PARCELA, @DtPagamento, NULL) s
     CROSS APPLY FIN.fn_FIN_Pendencia_Bloqueia(p.ID_LANCAMENTO, p.ID_PARCELA) b
+    LEFT  JOIN CAD.Empresa e    ON e.ID_EMPRESA = l.ID_EMPRESA
+    OUTER APPLY (SELECT TOP (1) c.ID_CONTA
+                 FROM BANCO.Conta c WITH (NOLOCK)
+                 WHERE c.ATIVO = 1 AND c.DT_EXCLUSAO IS NULL
+                   AND c.ID_CONTA IN (p.ID_CONTA_PREVISTA, e.ID_CONTA_BANCARIA_PADRAO)
+                 ORDER BY CASE WHEN c.ID_CONTA = p.ID_CONTA_PREVISTA THEN 0 ELSE 1 END) cs
     WHERE (l.TIPO = 'P' AND @PodeP = 1) OR (l.TIPO = 'R' AND @PodeR = 1)
     ORDER BY p.DT_VENCIMENTO, pe.NOME, p.NUMERO;
 END;

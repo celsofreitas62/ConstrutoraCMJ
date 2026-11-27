@@ -26,6 +26,9 @@
     v1.4 (27/11/2026) - Etapa 04g2: BANCO_EXTRATO_MAX_DIAS (período máximo do
                         extrato) e FIN_CAIXA_FECHAMENTO_ATRASO_DIAS (dias sem
                         fechar o caixa até a conta aparecer como atrasada).
+    v1.5 (27/11/2026) - Etapa 04g3: FIN_BAIXA_FORMA_PADRAO (forma de pagamento
+                        que a janela de baixa já traz escolhida). Aprovado
+                        pelo Celso em 27/11/2026.
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -114,7 +117,9 @@ FROM (VALUES
         ('BANCO_EXTRATO_MAX_DIAS', N'400', 'INTEIRO',
          N'Extrato da conta: período máximo de uma consulta, em dias.', 1, N''),
         ('FIN_CAIXA_FECHAMENTO_ATRASO_DIAS', N'1', 'INTEIRO',
-         N'Fechamento de caixa: dias com movimento sem fechar até a conta aparecer como "fechamento atrasado". 0 = não avisa.', 1, N'')
+         N'Fechamento de caixa: dias com movimento sem fechar até a conta aparecer como "fechamento atrasado". 0 = não avisa.', 1, N''),
+        ('FIN_BAIXA_FORMA_PADRAO', N'PIX', 'TEXTO',
+         N'Janela de baixa: forma de pagamento que já vem escolhida (o usuário pode trocar).', 1, N'PIX;BOLETO;TED;DOC;DEBITO;DINHEIRO;CHEQUE;PERMUTA;CARTAO;OUTRA')
      ) v (CHAVE, VALOR, TIPO, DESCRICAO, NIVEL, OPCOES);
 
 INSERT INTO SIS.Parametro (CHAVE, VALOR, VALOR_PADRAO, TIPO, DESCRICAO, ID_MODULO, EDITAVEL_ADMIN, NIVEL_MINIMO, OPCOES)

@@ -19,6 +19,9 @@
                das abas, com atalho para o campo de cada pendência automática
                e a faixa vermelha quando alguma bloqueia a baixa.
                04f2d: ?idPessoa= já escolhe o parceiro (vem da aba Movimentação).
+               04g3a: baixa pela aba Parcelas (botão Pagar/Receber em cada
+               parcela em aberto e "Baixar marcadas"; janela js/fin/baixa.js),
+               só com a ação BAIXAR, lançamento ativo e que não é previsão.
    ========================================================================== */
 'use strict';
 
@@ -46,6 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let lanc = null;          // lançamento carregado (alteração)
   let parcelas = [];        // [{ id, vencimento, valor, idContaPrevista, contaPrevista, valorBaixado, saldo, situacao, travada }]
   let temBaixa = false;
+  let podeBaixar = false;   // 04g3a: ação BAIXAR, lançamento ativo e que não é previsão
+  const marcadas = new Set(); // ID_PARCELA marcados para "Baixar marcadas"
   const carregadas = new Set();
 
   // ---------- Abas ----------
@@ -125,13 +130,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   const centavos = (v) => Math.round(Number(v || 0) * 100);
 
+  const baixavel = (p) => podeBaixar && !!p.id && Number(p.saldo) > 0 && (p.situacao === 'ABERTA' || p.situacao === 'PARCIAL');
+
+  async function baixar(ids) {
+    if (sujo) { await Mensagens.alerta('Há alterações na ficha que ainda não foram gravadas. Grave (ou descarte) antes de baixar.', 'ATENCAO'); return; }
+    if (await Baixa.abrir({ parcelas: ids })) Util.recarregar(fichaUrl(idLancamento) + '#baixas');
+  }
+
+  function atualizarMarcadas() {
+    const validas = parcelas.filter(baixavel).map((p) => p.id);
+    for (const id of [...marcadas]) if (!validas.includes(id)) marcadas.delete(id);
+    const botao = $('botao-baixar-marcadas');
+    botao.textContent = 'Baixar marcadas' + (marcadas.size ? ' (' + marcadas.size + ')' : '');
+    botao.disabled = !marcadas.size;
+    const todas = $('marcar-todas');
+    todas.checked = validas.length > 0 && marcadas.size === validas.length;
+    todas.disabled = !validas.length;
+  }
+
   function desenharParcelas() {
     const corpo = $('linhas-parcelas');
     corpo.replaceChildren();
     if (!parcelas.length) {
       const tr = Util.el('tr');
       const td = Util.el('td', 'vazio', 'Nenhuma parcela. Informe o valor total e clique em "Gerar parcelas" na aba Dados principais, ou em "+ Parcela".');
-      td.colSpan = 8;
+      td.colSpan = 10;
       tr.append(td);
       corpo.append(tr);
     }
@@ -165,6 +188,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       const tdSit = Util.el('td');
       if (p.id) tdSit.append(Util.el('span', 'situacao situacao-' + String(p.situacao || 'aberta').toLowerCase(), textoSituacao(p.situacao)));
       else tdSit.append(Util.el('span', 'suave', 'nova'));
+      const tdMarcar = Util.el('td', 'col-marcar');
+      const tdBaixar = Util.el('td', 'col-baixar');
+      if (baixavel(p)) {
+        const marca = Util.el('input');
+        marca.type = 'checkbox';
+        marca.checked = marcadas.has(p.id);
+        marca.setAttribute('aria-label', 'Marcar a parcela ' + numero.get(i) + ' para baixar');
+        marca.dataset.dica = 'Marca a parcela para baixar junto com outras (botão "Baixar marcadas").';
+        marca.addEventListener('change', () => { if (marca.checked) marcadas.add(p.id); else marcadas.delete(p.id); atualizarMarcadas(); });
+        tdMarcar.append(marca);
+        const b = Util.el('button', 'botao botao-pequeno', pagar ? 'Pagar' : 'Receber');
+        b.type = 'button';
+        b.dataset.dica = 'Abre a janela de baixa desta parcela (' + (pagar ? 'pagamento' : 'recebimento') + ' total ou parcial).';
+        b.addEventListener('click', () => baixar([p.id]));
+        tdBaixar.append(b);
+      }
       const tdAcao = Util.el('td', 'col-acao');
       if (!travada) {
         const tirar = Util.el('button', 'botao botao-icone', '×');
@@ -174,12 +213,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         tirar.addEventListener('click', () => { parcelas.splice(i, 1); sujo = true; desenharParcelas(); });
         tdAcao.append(tirar);
       }
-      tr.append(Util.el('td', 'numero col-numero', numero.get(i) + '/' + parcelas.length), tdVenc, tdValor,
+      tr.append(tdMarcar, Util.el('td', 'numero col-numero', numero.get(i) + '/' + parcelas.length), tdVenc, tdValor,
         Util.el('td', null, p.contaPrevista || ''), Util.el('td', 'numero', p.id ? Util.moeda(p.valorBaixado) : ''),
-        Util.el('td', 'numero', p.id ? Util.moeda(p.saldo) : ''), tdSit, tdAcao);
+        Util.el('td', 'numero', p.id ? Util.moeda(p.saldo) : ''), tdSit, tdBaixar, tdAcao);
       corpo.append(tr);
     });
     $('aba-parcelas').textContent = 'Parcelas' + (parcelas.length ? ' (' + parcelas.length + ')' : '');
+    atualizarMarcadas();
     atualizarSoma();
   }
 
@@ -230,6 +270,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     Mensagens.sucesso(geradas.length + ' parcela(s) gerada(s). Confira na aba Parcelas.');
   }
   $('botao-gerar').addEventListener('click', gerarParcelas);
+  $('marcar-todas').addEventListener('change', () => {
+    marcadas.clear();
+    if ($('marcar-todas').checked) for (const p of parcelas.filter(baixavel)) marcadas.add(p.id);
+    desenharParcelas();
+  });
+  $('botao-baixar-marcadas').addEventListener('click', () => { if (marcadas.size) baixar([...marcadas]); });
   $('botao-mais-parcela').addEventListener('click', () => {
     const ultima = parcelas.map((p) => p.vencimento).filter(Boolean).sort().pop();
     parcelas.push({ id: null, vencimento: ultima ? somarData(Util.dataIso(ultima), 'M1', 1) : ($('primeiroVencimento').value || ''), valor: '',
@@ -425,6 +471,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       lanc = l;
       temBaixa = !!l.TEM_BAIXA;
       podeEditar = !!l.PODE_ALTERAR;
+      podeBaixar = acoes.has('BAIXAR') && !l.NA_LIXEIRA && l.SITUACAO !== 'CANCELADO' && !l.PREVISAO;
+      $('tabela-parcelas').classList.toggle('sem-baixa', !podeBaixar);
+      $('botao-baixar-marcadas').hidden = !podeBaixar;
       desenharBaixas(Array.isArray(l.BAIXAS) ? l.BAIXAS : []);
       desenharConfirmados(Array.isArray(l.AVISOS_CONFIRMADOS) ? l.AVISOS_CONFIRMADOS : []);
       for (const id of ['aba-baixas', 'aba-anexos', 'aba-historico']) $(id).hidden = false;
