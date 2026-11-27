@@ -616,3 +616,50 @@ html.fonte-muito-grande { zoom: 1.3; --zoom: 1.3; }
 /* 04h2e: botão ☰ recolhe o menu lateral */
 .topo-menu { min-width: 36px; padding: 0 8px; font-size: 18px; line-height: 1; justify-content: center; }
 html.menu-recolhido .menu { display: none; }
+/* 04h3: visão calendário da agenda (js/agenda-calendario.js). Calor por classe (CSP). */
+.alternar-visao { display: inline-flex; align-self: flex-end; }
+.alternar-visao .botao { border-radius: 0; }
+.alternar-visao .botao:first-child { border-radius: var(--raio) 0 0 var(--raio); }
+.alternar-visao .botao:last-child { border-radius: 0 var(--raio) var(--raio) 0; margin-left: -1px; }
+.alternar-visao .botao[aria-pressed="true"] { background: var(--cor-principal); border-color: var(--cor-principal); color: #FFFFFF; }
+.calendario-agenda { padding: 12px; }
+.cal-grade { display: grid; gap: 6px; }
+.cal-grade-dias { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-cabeca { font-size: 12px; font-weight: 600; color: var(--texto-suave); text-align: center; padding: 2px 0; }
+.cal-quadro { display: flex; flex-direction: column; gap: 3px; min-height: 92px; padding: 6px 8px; background: var(--branco); border: 1px solid var(--borda); border-radius: var(--raio); font: inherit; color: var(--texto); text-align: left; font-variant-numeric: tabular-nums; min-width: 0; }
+button.cal-quadro { cursor: pointer; }
+button.cal-quadro:hover, button.cal-quadro:focus-visible { border-color: var(--cor-principal); box-shadow: 0 0 0 1px var(--cor-principal) inset; }
+.cal-fora { background: #F4F4F2; color: #B8B8B4; border-style: dashed; font-size: 12px; }
+.cal-fim-semana { background: #FBFBFA; }
+.cal-passado .cal-titulo { color: var(--texto-suave); }
+.cal-hoje { border-color: var(--cor-principal); box-shadow: inset 0 3px 0 var(--cor-principal); }
+.cal-tem-vencida { border-color: var(--erro); border-left: 4px solid var(--erro); }
+.cal-topo { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.cal-titulo { font-size: 13px; font-weight: 600; }
+.cal-topo .etiqueta-hoje { margin-left: 0; }
+.cal-valores { display: flex; flex-direction: column; gap: 1px; font-size: 12px; }
+.cal-linha { display: flex; justify-content: space-between; gap: 4px; }
+.cal-letra { font-weight: 600; }
+.cal-numero { text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-saldo { border-top: 1px solid var(--borda); padding-top: 1px; font-weight: 600; }
+.cal-qtd { font-size: 11px; color: var(--texto-suave); }
+.cal-marcas { display: flex; flex-wrap: wrap; gap: 3px; }
+.cal-marca { font-size: 10px; padding: 0 5px; border-radius: 8px; }
+.cal-marca-vencida { background: #FDE7E4; color: var(--erro); }
+.cal-marca-previsao { background: #EFEAF7; color: #6B4FA0; font-style: italic; }
+.cal-previsto { font-size: 10.5px; color: #6B4FA0; text-align: right; margin-top: auto; }
+.cal-previsto.valor-d { color: var(--cor-debito); }
+.cal-quadro.calor-1 { background: #FDF6F5; }
+.cal-quadro.calor-2 { background: #FBECE9; }
+.cal-quadro.calor-3 { background: #F8DFDA; }
+.cal-quadro.calor-4 { background: #F4CFC8; }
+.cal-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 10px; font-size: 12px; color: var(--texto-suave); }
+.cal-legenda-calor, .cal-legenda-vencida { display: inline-block; width: 22px; height: 12px; border-radius: 3px; border: 1px solid var(--borda); }
+.cal-legenda-calor { background: linear-gradient(90deg, #FDF6F5, #F4CFC8); }
+.cal-legenda-vencida { border-left: 4px solid var(--erro); margin-left: 8px; }
+@media (max-width: 760px) { .cal-grade-dias { gap: 3px; } .cal-quadro { min-height: 64px; padding: 4px; } .cal-valores, .cal-qtd, .cal-marcas, .cal-previsto { display: none; } }
+.cal-calor-c .cal-quadro.calor-1 { background: #F5F8FD; }
+.cal-calor-c .cal-quadro.calor-2 { background: #E9F0FA; }
+.cal-calor-c .cal-quadro.calor-3 { background: #DAE6F6; }
+.cal-calor-c .cal-quadro.calor-4 { background: #C9DAF1; }
+.cal-linha.cal-zero { color: #B8B8B4; }

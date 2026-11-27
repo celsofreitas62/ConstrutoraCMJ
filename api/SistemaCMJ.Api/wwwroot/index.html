@@ -9,6 +9,7 @@
   <script src="/js/mensagens.js" defer></script>
   <script src="/js/dicas.js" defer></script>
   <script src="/js/layout.js" defer></script>
+  <script src="/js/agenda-calendario.js" defer></script>
   <script src="/js/inicio.js" defer></script>
 </head>
 <body data-tela="index.html" data-ajuda="inicio">
@@ -70,6 +71,10 @@
             <button type="button" class="botao" id="periodo-proximo" aria-label="Próximo período" data-dica="Avança um período. Atalho: seta para a direita (fora dos campos).">▶</button>
             <button type="button" class="botao" id="periodo-hoje" data-dica="Volta para o período de hoje.">Hoje</button>
           </div>
+          <div class="alternar-visao" role="group" aria-label="Como mostrar a agenda">
+            <button type="button" class="botao" id="visao-lista" aria-pressed="true" data-dica="Mostra a agenda em lista, dia por dia.">Lista</button>
+            <button type="button" class="botao" id="visao-calendario" aria-pressed="false" data-dica="Mostra a agenda em calendário, com D, C e S de cada dia ou mês. Clique num quadro para ver a lista dele.">Calendário</button>
+          </div>
           <label data-dica="Mostra só as contas a pagar, só as a receber ou as duas." class="campo f-1" id="campo-tipo">Mostrar
             <select id="tipo">
               <option value="">Pagar e receber</option>
@@ -77,7 +82,7 @@
               <option value="R">Só a receber</option>
             </select>
           </label>
-          <label data-dica="Digite parte do histórico, do documento, do nome do parceiro, o CPF/CNPJ (5 dígitos ou mais) ou o número do lançamento. A lista atualiza sozinha." class="campo f-2">Buscar
+          <label data-dica="Digite parte do histórico, do documento, do nome do parceiro, o CPF/CNPJ (5 dígitos ou mais) ou o número do lançamento. A lista atualiza sozinha." class="campo f-2" id="campo-texto">Buscar
             <input type="search" id="texto" maxlength="100" placeholder="Ex.: cimento, NF 123, Silva" autocomplete="off">
           </label>
         </form>
@@ -102,7 +107,14 @@
         </div>
 
         <div class="area-lista">
-          <div class="cartao">
+          <div class="cartao cartao-calendario" id="cartao-calendario" hidden>
+            <div class="calendario-agenda" id="calendario" aria-live="polite"></div>
+            <div class="rodape-lista">
+              <span id="contagem-calendario"></span>
+              <span class="suave" id="atualizada-calendario"></span>
+            </div>
+          </div>
+          <div class="cartao" id="cartao-lista">
             <div class="barra-atraso" id="barra-atraso" role="status" hidden>
               <span>Mostrando só o que está <strong>em atraso</strong> (vencido antes de hoje e ainda em aberto).</span>
               <button type="button" class="botao botao-pequeno" id="botao-sair-atraso" data-dica="Volta para a agenda do período. Atalho: Esc.">‹ Voltar ao período</button>

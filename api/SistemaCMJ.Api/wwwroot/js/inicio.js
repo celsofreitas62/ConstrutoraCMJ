@@ -20,10 +20,12 @@
                  aprovada na 04h2);
                - atualiza sozinha a cada AGENDA_ATUALIZAR_MIN minutos
                  (0 = não atualiza; sugestão aprovada na 04h2).
-               O calendário (preferência "Abrir em: Calendário") chega na
-               04h3; até lá a tela abre sempre em lista.
+               - visão Lista ou Calendário (04h3; js/agenda-calendario.js):
+                 dia a dia na semana, quinzena e mês; a escolha fica
+                 lembrada neste computador.
    Changelog:
      v2.0 (27/11/2026) - Agenda financeira (etapa 04h2).
+     v2.1 (27/11/2026) - Visão calendário da semana, quinzena e mês (04h3a).
    ========================================================================== */
 'use strict';
 
@@ -62,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const mesAno = (d) => MESES[d.getMonth()].substring(0, 3) + '/' + d.getFullYear();
 
   // ---------- estado ----------
-  let estado = { periodo: 'MES', ref: iso(hoje()), anos: 2, de: '', ate: '', tipo: '', texto: '' };
+  let estado = { visao: 'LISTA', periodo: 'MES', ref: iso(hoje()), anos: 2, de: '', ate: '', tipo: '', texto: '' };
   let soAtraso = false;
   let pagina = 1;
   let resumo = null;        // última resposta do resumo
@@ -177,7 +179,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       campos.ate.value = estado.ate;
     }
     $('periodo-texto').textContent = textoPeriodo(intervalo());
+    const cal = estado.visao === 'CALENDARIO';
+    $('visao-lista').setAttribute('aria-pressed', String(!cal));
+    $('visao-calendario').setAttribute('aria-pressed', String(cal));
+    $('campo-texto').hidden = cal;
   }
+
+  // ---------- Lista ou Calendário ----------
+  function trocarVisao(visao) {
+    if (estado.visao === visao) return;
+    estado.visao = visao;
+    soAtraso = false;
+    pagina = 1;
+    guardarEstado();
+    mostrarCampos();
+    carregarCorpo();
+  }
+  $('visao-lista').addEventListener('click', () => trocarVisao('LISTA'));
+  $('visao-calendario').addEventListener('click', () => trocarVisao('CALENDARIO'));
 
   function mudouPeriodo() {
     pagina = 1;
@@ -238,9 +257,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('quadro-atraso').addEventListener('click', () => {
     soAtraso = !soAtraso;
     pagina = 1;
-    carregarLista();
+    carregarCorpo();
   });
-  function sairAtraso() { soAtraso = false; pagina = 1; carregarLista(); }
+  function sairAtraso() { soAtraso = false; pagina = 1; carregarCorpo(); }
   $('botao-sair-atraso').addEventListener('click', sairAtraso);
 
   // ---------- pedidos à API ----------
@@ -426,10 +445,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('atualizada').textContent = 'Atualizada às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  async function carregarLista() {
-    const meu = ++pedido;
+  /** Qual área aparece: o atraso é sempre em lista. */
+  function mostrarArea() {
+    const cal = estado.visao === 'CALENDARIO' && !soAtraso;
+    $('cartao-calendario').hidden = !cal;
+    $('cartao-lista').hidden = cal;
     $('barra-atraso').hidden = !soAtraso;
     $('quadro-atraso').classList.toggle('ativo', soAtraso);
+    return cal;
+  }
+
+  // ---------- calendário ----------
+  /** Como agrupar os quadros do período: dia a dia, por mês ou por grupo de meses. */
+  function agrupamento() {
+    return { modo: 'DIA', meses: null };
+  }
+
+  async function carregarCalendario() {
+    const meu = ++pedido;
+    const [ini, fim] = intervalo();
+    if (!ini || !fim) return;
+    const ag = agrupamento();
+    $('contagem-calendario').textContent = 'Buscando…';
+    const r = await Api.get('/api/fin/agenda/periodos', { de: iso(ini), ate: iso(fim), agrupamento: ag.modo, mesesGrupo: ag.meses || '' });
+    if (meu !== pedido) return;
+    if (!(await Mensagens.tratar(r))) { $('contagem-calendario').textContent = ''; return; }
+    const quadros = r.dados || [];
+    AgendaCalendario.desenhar($('calendario'), { quadros, modo: ag.modo, ini: iso(ini), fim: iso(fim), resumo: resumo || {}, tipo: estado.tipo });
+    const qp = resumo && resumo.VER_PAGAR && estado.tipo !== 'R' ? quadros.reduce((t, q) => t + (Number(q.QTD_PAGAR) || 0), 0) : 0;
+    const qr = resumo && resumo.VER_RECEBER && estado.tipo !== 'P' ? quadros.reduce((t, q) => t + (Number(q.QTD_RECEBER) || 0), 0) : 0;
+    $('contagem-calendario').textContent = qtdTexto(qp + qr, 'parcela', 'parcelas') + ' no período';
+    $('atualizada-calendario').textContent = 'Atualizada às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function carregarCorpo() {
+    return mostrarArea() ? carregarCalendario() : carregarLista();
+  }
+
+  async function carregarLista() {
+    mostrarArea();
+    const meu = ++pedido;
     $('contagem').textContent = 'Buscando…';
     const p = pedidoLista(pagina);
     if (!soAtraso && (!p.de || !p.ate)) { $('contagem').textContent = ''; return; }
@@ -445,7 +500,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function carregarTudo() {
-    if (await carregarResumo()) await carregarLista();
+    if (await carregarResumo()) await carregarCorpo();
   }
 
   $('pagina-anterior').addEventListener('click', () => { if (pagina > 1) { pagina--; carregarLista(); } });
