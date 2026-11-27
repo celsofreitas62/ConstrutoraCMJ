@@ -5,7 +5,9 @@
                 trava de datas, gravação com dois movimentos, estorno das
                 duas pontas, estorno repetido, lista); extrato (saldo anterior,
                 saldo inicial, histórico, estornos); saldos por conta;
-                permissões.
+                fechamento de caixa (prévia, tipos, datas, diferença com
+                motivo, ajuste com permissão, reabrir o último com o ajuste
+                desfeito, lista); permissões.
   Autor       : Celso de Freitas / Refatorado: Claude
   Criação     : 27/11/2026 (v1.0). Roda no SISTEMACMJ_LOCAL e no banco do MASTER
                 (no banco sem empresa ou sem o usuário de teste, os casos com
@@ -21,6 +23,11 @@ DECLARE @Fin INT = (SELECT ID_USUARIO FROM SIS.Usuario WHERE LOGIN = 'teste.tela
 DECLARE @Hoje DATE = CONVERT(DATE, SYSDATETIME());
 DECLARE @Ontem DATE = DATEADD(DAY, -1, CONVERT(DATE, SYSDATETIME()));
 DECLARE @Empresa INT, @Empresa2 INT, @CxA INT, @CxB INT, @BcC INT, @Tr BIGINT, @Saldo DECIMAL(18,2);
+DECLARE @f TABLE (SUCESSO BIT, MENSAGEM NVARCHAR(400), ID BIGINT, SALDO_SISTEMA DECIMAL(18,2), SALDO_CONTADO DECIMAL(18,2), DIFERENCA DECIMAL(18,2),
+                  DT_ULTIMO_FECHAMENTO VARCHAR(10), ENTRADAS DECIMAL(18,2), SAIDAS DECIMAL(18,2), QTD_MOVIMENTOS INT, PODE_AJUSTE BIT,
+                  ID_MOVIMENTO_AJUSTE BIGINT, PENDENTE BIT, AVISOS NVARCHAR(MAX));
+DECLARE @ra TABLE (SUCESSO BIT, MENSAGEM NVARCHAR(400), ID BIGINT, VALOR_AJUSTE DECIMAL(18,2), PENDENTE BIT, AVISOS NVARCHAR(MAX));
+DECLARE @FOntem BIGINT, @FHoje BIGINT, @Amanha DATE = DATEADD(DAY, 1, CONVERT(DATE, SYSDATETIME())), @Perm INT;
 
 -- estrutura e cargas
 INSERT @r SELECT N'colunas novas de FIN.Transferencia', N'6', CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.columns
@@ -177,6 +184,59 @@ BEGIN
     INSERT @sal EXEC BANCO.BANCO_Saldo_Listar @IdUsuario = @Fin, @IdEmpresa = @Empresa;
     INSERT @r SELECT N'saldos: conta A', N'-4000.00/1/0', (SELECT CONCAT(CONVERT(NVARCHAR(20), SALDO), '/', CAST(USA_FECHAMENTO AS INT), '/', CAST(FECHAMENTO_ATRASADO AS INT)) FROM @sal WHERE ID_CONTA = @CxA);
     INSERT @r SELECT N'saldos: conta B com movimento de ontem sem fechar', N'5050.00/1', (SELECT CONCAT(CONVERT(NVARCHAR(20), SALDO), '/', CAST(FECHAMENTO_ATRASADO AS INT)) FROM @sal WHERE ID_CONTA = @CxB);
+
+    -- fechamento de caixa
+    INSERT INTO BANCO.Conta (ID_EMPRESA, DESCRICAO, TIPO) VALUES (@Empresa, N'Permuta Teste 04g2', 'PERMUTA');
+    SET @Perm = SCOPE_IDENTITY();
+    INSERT @f EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = @Fin, @IdConta = @Perm, @DtFechamento = @Ontem, @SaldoContado = 0;
+    INSERT @r SELECT N'caixa: tipo de conta fora do parâmetro recusado', N'0/1', (SELECT CONCAT(CAST(SUCESSO AS INT), '/', CASE WHEN MENSAGEM LIKE N'%não usa%' THEN 1 ELSE 0 END) FROM @f); DELETE @f;
+    INSERT @f EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = @Fin, @IdConta = @CxA, @DtFechamento = @Ontem, @SomenteConferir = 1;
+    INSERT @r SELECT N'caixa: prévia de ontem com o saldo do sistema', N'1/1000.00', (SELECT CONCAT(CAST(SUCESSO AS INT), '/', CONVERT(NVARCHAR(20), SALDO_SISTEMA)) FROM @f); DELETE @f;
+    INSERT @f EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = @Fin, @IdConta = @CxA, @DtFechamento = @Amanha, @SaldoContado = 0;
+    INSERT @r SELECT N'caixa: dia que não chegou recusado', N'0', (SELECT CAST(SUCESSO AS NVARCHAR(1)) FROM @f); DELETE @f;
+    INSERT @f EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = @Fin, @IdConta = @CxA, @DtFechamento = @Ontem, @SaldoContado = 1000.00;
+    SELECT @FOntem = ID FROM @f;
+    INSERT @r SELECT N'caixa: ontem fechado sem diferença', N'1/0.00', (SELECT CONCAT(CAST(SUCESSO AS INT), '/', CONVERT(NVARCHAR(20), DIFERENCA)) FROM @f); DELETE @f;
+    INSERT @f EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = @Fin, @IdConta = @CxA, @DtFechamento = @Ontem, @SaldoContado = 1000.00;
+    INSERT @r SELECT N'caixa: mesma data de novo recusada', N'0/1', (SELECT CONCAT(CAST(SUCESSO AS INT), '/', CASE WHEN MENSAGEM LIKE N'%já está fechado%' THEN 1 ELSE 0 END) FROM @f); DELETE @f;
+    INSERT @r SELECT N'caixa: baixa/transferência de ontem bloqueada', N'1', CASE WHEN BANCO.fn_BANCO_Caixa_Recusa(@CxA, @Ontem) <> N'' THEN N'1' ELSE N'0' END;
+    INSERT @f EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = @Fin, @IdConta = @CxA, @DtFechamento = @Hoje, @SaldoContado = -3990.00;
+    INSERT @r SELECT N'caixa: diferença sem motivo pede o motivo', N'0/1/10.00', (SELECT CONCAT(CAST(SUCESSO AS INT), '/', CAST(PENDENTE AS INT), '/', CONVERT(NVARCHAR(20), DIFERENCA)) FROM @f);
+    INSERT @r SELECT N'caixa: entradas e saídas desde o último fechamento', N'300.00/5300.00', (SELECT CONCAT(CONVERT(NVARCHAR(20), ENTRADAS), '/', CONVERT(NVARCHAR(20), SAIDAS)) FROM @f); DELETE @f;
+    INSERT @f EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = @Fin, @IdConta = @CxA, @DtFechamento = @Hoje, @SaldoContado = -3990.00, @Motivo = N'Sobra de troco', @GerarAjuste = 1;
+    INSERT @r SELECT N'caixa: ajuste sem a permissão recusado', N'0/1', (SELECT CONCAT(CAST(SUCESSO AS INT), '/', CASE WHEN AVISOS LIKE N'%AJUSTE_SEM_PERMISSAO%' THEN 1 ELSE 0 END) FROM @f); DELETE @f;
+    INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO)
+    SELECT u.ID_PERFIL, ia.ID_ITEM_ACAO FROM SIS.Usuario u CROSS JOIN SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM AND i.CODIGO = 'BANCO_CAIXA'
+    INNER JOIN SIS.Acao a ON a.ID_ACAO = ia.ID_ACAO AND a.CODIGO = 'AJUSTE_CAIXA' WHERE u.ID_USUARIO = @Fin;
+    INSERT @f EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = @Fin, @IdConta = @CxA, @DtFechamento = @Hoje, @SaldoContado = -3990.00, @Motivo = N'Sobra de troco', @GerarAjuste = 1;
+    SELECT @FHoje = ID FROM @f;
+    INSERT @r SELECT N'caixa: fechado com ajuste (movimento de 10,00)', N'1/10.00', CONCAT((SELECT CAST(SUCESSO AS INT) FROM @f), '/', (SELECT CONVERT(NVARCHAR(20), m.VALOR) FROM BANCO.Movimento m INNER JOIN @f x ON x.ID_MOVIMENTO_AJUSTE = m.ID_MOVIMENTO)); DELETE @f;
+    INSERT @r SELECT N'caixa: saldo do sistema = contado depois do ajuste', N'-3990.00', (SELECT CONVERT(NVARCHAR(20), SALDO) FROM BANCO.fn_BANCO_Conta_Saldo(@CxA, @Hoje));
+    INSERT @r SELECT N'caixa: motivo da diferença registrado', N'1', CAST((SELECT COUNT(*) FROM SIS.Aviso_Confirmado WHERE TABELA = N'BANCO.Caixa_Fechamento' AND ID_REGISTRO = @FHoje AND CODIGO_REGRA = 'DIFERENCA_CAIXA') AS NVARCHAR(5));
+
+    INSERT @ra EXEC BANCO.BANCO_Caixa_Reabrir @IdUsuario = @Fin, @IdCaixaFechamento = @FHoje, @Motivo = N'Recebimento esquecido';
+    INSERT @r SELECT N'reabrir sem a permissão REABRIR: recusado', N'0', (SELECT CAST(SUCESSO AS NVARCHAR(1)) FROM @ra); DELETE @ra;
+    INSERT INTO SIS.Perfil_Permissao (ID_PERFIL, ID_ITEM_ACAO)
+    SELECT u.ID_PERFIL, ia.ID_ITEM_ACAO FROM SIS.Usuario u CROSS JOIN SIS.Item_Acao ia INNER JOIN SIS.Item i ON i.ID_ITEM = ia.ID_ITEM AND i.CODIGO = 'BANCO_CAIXA'
+    INNER JOIN SIS.Acao a ON a.ID_ACAO = ia.ID_ACAO AND a.CODIGO = 'REABRIR' WHERE u.ID_USUARIO = @Fin;
+    INSERT @ra EXEC BANCO.BANCO_Caixa_Reabrir @IdUsuario = @Fin, @IdCaixaFechamento = @FOntem, @Motivo = N'Recebimento esquecido';
+    INSERT @r SELECT N'reabrir o mais antigo antes do mais novo: recusado', N'0/1', (SELECT CONCAT(CAST(SUCESSO AS INT), '/', CASE WHEN MENSAGEM LIKE N'%mais novo%' THEN 1 ELSE 0 END) FROM @ra); DELETE @ra;
+    INSERT @ra EXEC BANCO.BANCO_Caixa_Reabrir @IdUsuario = @Fin, @IdCaixaFechamento = @FHoje;
+    INSERT @r SELECT N'reabrir sem motivo: recusado', N'0', (SELECT CAST(SUCESSO AS NVARCHAR(1)) FROM @ra); DELETE @ra;
+    INSERT @ra EXEC BANCO.BANCO_Caixa_Reabrir @IdUsuario = @Fin, @IdCaixaFechamento = @FHoje, @Motivo = N'Recebimento esquecido', @SomenteConferir = 1;
+    INSERT @r SELECT N'prévia da reabertura avisa o ajuste', N'1/10.00/1', (SELECT CONCAT(CAST(SUCESSO AS INT), '/', CONVERT(NVARCHAR(20), VALOR_AJUSTE), '/', CASE WHEN AVISOS LIKE N'%AJUSTE_DESFEITO%' THEN 1 ELSE 0 END) FROM @ra); DELETE @ra;
+    INSERT @ra EXEC BANCO.BANCO_Caixa_Reabrir @IdUsuario = @Fin, @IdCaixaFechamento = @FHoje, @Motivo = N'Recebimento esquecido';
+    INSERT @r SELECT N'reaberto', N'1/REABERTO', CONCAT((SELECT CAST(SUCESSO AS INT) FROM @ra), '/', (SELECT SITUACAO FROM BANCO.Caixa_Fechamento WHERE ID_CAIXA_FECHAMENTO = @FHoje)); DELETE @ra;
+    INSERT @r SELECT N'reaberto: ajuste desfeito, saldo volta', N'-4000.00', (SELECT CONVERT(NVARCHAR(20), SALDO) FROM BANCO.fn_BANCO_Conta_Saldo(@CxA, @Hoje));
+    INSERT @r SELECT N'reaberto: hoje aceita movimento de novo', N'', BANCO.fn_BANCO_Caixa_Recusa(@CxA, @Hoje);
+
+    DECLARE @cx TABLE (ID_CAIXA_FECHAMENTO BIGINT, ID_CONTA INT, CONTA NVARCHAR(60), ID_EMPRESA INT, EMPRESA NVARCHAR(150), DT_FECHAMENTO DATE,
+                       SALDO_SISTEMA DECIMAL(18,2), SALDO_CONTADO DECIMAL(18,2), DIFERENCA DECIMAL(18,2), MOTIVO_DIFERENCA NVARCHAR(400), OBSERVACAO NVARCHAR(400),
+                       ID_MOVIMENTO_AJUSTE BIGINT, VALOR_AJUSTE DECIMAL(18,2), AJUSTE_DESFEITO BIT, SITUACAO VARCHAR(10), USUARIO_CRIACAO NVARCHAR(100),
+                       DT_CRIACAO DATETIME2(0), DT_REABERTURA VARCHAR(19), USUARIO_REABERTURA NVARCHAR(100), MOTIVO_REABERTURA NVARCHAR(400), PODE_REABRIR BIT);
+    INSERT @cx EXEC BANCO.BANCO_Caixa_Listar @IdUsuario = @Fin, @IdConta = @CxA;
+    INSERT @r SELECT N'lista do caixa: 2 fechamentos, ontem pode reabrir', N'2/1/1', CONCAT((SELECT COUNT(*) FROM @cx), '/', (SELECT CAST(PODE_REABRIR AS INT) FROM @cx WHERE ID_CAIXA_FECHAMENTO = @FOntem),
+           '/', (SELECT CAST(AJUSTE_DESFEITO AS INT) FROM @cx WHERE ID_CAIXA_FECHAMENTO = @FHoje));
 
     -- sem a ação INCLUIR
     DELETE pp FROM SIS.Perfil_Permissao pp

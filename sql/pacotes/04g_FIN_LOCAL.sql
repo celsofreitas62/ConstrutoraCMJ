@@ -2299,6 +2299,500 @@ BEGIN
 END;
 GO
 
+-- =============================================================================
+-- Arquivo: sql/objetos/BANCO/BANCO.BANCO_Caixa_Fechar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [BANCO].[BANCO_Caixa_Fechar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Fechamento de caixa de uma conta até uma data (etapa 04g2,
+                desenho aprovado em 26/11/2026). Compara o saldo do sistema
+                no fim do dia (BANCO.fn_BANCO_Conta_Saldo) com o saldo
+                contado. Diferença exige motivo; com @GerarAjuste = 1 (ação
+                AJUSTE_CAIXA) grava um movimento AJUSTE pela diferença na
+                data do fechamento, e o saldo do sistema passa a ser o
+                contado. Fechado, a conta não aceita baixa, estorno,
+                transferência nem ajuste com data até a do fechamento
+                (BANCO.fn_BANCO_Caixa_Recusa).
+                Regras: só os tipos de conta de FIN_CAIXA_FECHAMENTO_TIPOS;
+                conta ativa; data até hoje, depois do último fechamento e não
+                anterior ao saldo inicial; o ajuste segue a trava de datas.
+                Mesmo contrato da baixa (BLOQUEIO, MOTIVO; @SomenteConferir = 1
+                é a prévia: com @SaldoContado vazio devolve só o saldo do
+                sistema e o movimento desde o último fechamento).
+                Motivo e ajuste em SIS.Aviso_Confirmado (TABELA
+                BANCO.Caixa_Fechamento, código DIFERENCA_CAIXA).
+                Permissão: INCLUIR em BANCO_CAIXA (+ AJUSTE_CAIXA para o
+                ajuste).
+                Devolve 1 linha: SUCESSO, MENSAGEM, ID, SALDO_SISTEMA,
+                SALDO_CONTADO, DIFERENCA, DT_ULTIMO_FECHAMENTO, ENTRADAS,
+                SAIDAS, QTD_MOVIMENTOS (desde o último fechamento), PODE_AJUSTE,
+                ID_MOVIMENTO_AJUSTE, PENDENTE, AVISOS.
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC BANCO.BANCO_Caixa_Fechar @IdUsuario = 2, @IdConta = 1, @DtFechamento = '2026-11-26', @SomenteConferir = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Caixa_Fechar]
+    @IdUsuario        INT,
+    @IdConta          INT,
+    @DtFechamento     DATE            = NULL,
+    @SaldoContado     DECIMAL(18,2)   = NULL,
+    @Motivo           NVARCHAR(400)   = NULL,
+    @GerarAjuste      BIT             = 0,
+    @Observacao       NVARCHAR(400)   = NULL,
+    @SomenteConferir  BIT             = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[BANCO].[BANCO_Caixa_Fechar]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa      NVARCHAR(400) = N'';
+    DECLARE @Usuario     NVARCHAR(100);
+    DECLARE @Hoje        DATE = CONVERT(DATE, SYSDATETIME());
+    DECLARE @Tipos       NVARCHAR(400);
+    DECLARE @TipoConta   VARCHAR(10);
+    DECLARE @Ativa       BIT;
+    DECLARE @NaLixeira   BIT;
+    DECLARE @NomeConta   NVARCHAR(60);
+    DECLARE @Ultimo      DATE;
+    DECLARE @Sistema     DECIMAL(18,2);
+    DECLARE @TemSaldo    BIT;
+    DECLARE @Diferenca   DECIMAL(18,2) = 0;
+    DECLARE @Entradas    DECIMAL(18,2) = 0;
+    DECLARE @Saidas      DECIMAL(18,2) = 0;
+    DECLARE @QtdMov      INT = 0;
+    DECLARE @PodeAjuste  BIT;
+    DECLARE @Avisos      NVARCHAR(MAX) = N'[]';
+    DECLARE @Pendente    BIT = 0;
+    DECLARE @IdLote      BIGINT;
+    DECLARE @IdAjuste    BIGINT;
+    DECLARE @Id          BIGINT;
+    DECLARE @Hist        NVARCHAR(200);
+
+    CREATE TABLE #Regra (ORDEM INT IDENTITY(1,1), CODIGO VARCHAR(40) NOT NULL, NIVEL VARCHAR(12) NOT NULL,
+                         MENSAGEM NVARCHAR(400) NOT NULL, ID_REFERENCIA BIGINT NULL, CAMPO VARCHAR(40) NOT NULL DEFAULT (''));
+
+    BEGIN TRY
+        SET @Motivo      = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+        SET @Observacao  = LTRIM(RTRIM(ISNULL(@Observacao, N'')));
+        SET @GerarAjuste = ISNULL(@GerarAjuste, 0);
+        SET @Tipos       = N',' + REPLACE(UPPER(ISNULL(SIS.fn_SIS_Parametro('FIN_CAIXA_FECHAMENTO_TIPOS'), N'')), N' ', N'') + N',';
+        SET @PodeAjuste  = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'AJUSTE_CAIXA');
+
+        SELECT @TipoConta = c.TIPO, @Ativa = c.ATIVO, @NomeConta = c.DESCRICAO, @NaLixeira = CAST(CASE WHEN c.DT_EXCLUSAO IS NULL THEN 0 ELSE 1 END AS BIT)
+        FROM BANCO.Conta c WHERE c.ID_CONTA = @IdConta;
+        SELECT @Ultimo = MAX(f.DT_FECHAMENTO) FROM BANCO.Caixa_Fechamento f WHERE f.ID_CONTA = @IdConta AND f.SITUACAO = 'FECHADO';
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'INCLUIR') = 0
+            SET @Recusa = N'Você não tem permissão para fechar o caixa.';
+        IF @Recusa = N'' AND @TipoConta IS NULL
+            SET @Recusa = N'Escolha a conta.';
+        IF @Recusa = N'' AND CHARINDEX(N',' + @TipoConta + N',', @Tipos) = 0
+            SET @Recusa = N'Esta conta não usa o fechamento de caixa (tipos no parâmetro FIN_CAIXA_FECHAMENTO_TIPOS).';
+        IF @Recusa = N'' AND (@Ativa = 0 OR @NaLixeira = 1)
+            SET @Recusa = N'A conta ' + @NomeConta + N' está desativada.';
+        IF @Recusa = N'' AND @DtFechamento IS NULL
+            SET @Recusa = N'Informe a data do fechamento.';
+        IF @Recusa = N'' AND @DtFechamento > @Hoje
+            SET @Recusa = N'Não dá para fechar o caixa de um dia que ainda não chegou.';
+        IF @Recusa = N'' AND @Ultimo IS NOT NULL AND @DtFechamento <= @Ultimo
+            SET @Recusa = N'O caixa da conta ' + @NomeConta + N' já está fechado até ' + CONVERT(NVARCHAR(10), @Ultimo, 103) + N'.';
+
+        IF @Recusa = N''
+        BEGIN
+            SELECT @Sistema = s.SALDO, @TemSaldo = s.TEM_SALDO FROM BANCO.fn_BANCO_Conta_Saldo(@IdConta, @DtFechamento) s;
+            IF @TemSaldo = 0
+                SET @Recusa = N'A data é anterior ao saldo inicial da conta: não há saldo oficial para fechar.';
+        END;
+
+        IF @Recusa = N'' AND @SomenteConferir = 0 AND @SaldoContado IS NULL
+            SET @Recusa = N'Informe o saldo contado.';
+
+        IF @Recusa <> N''
+        BEGIN
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(@Recusa AS NVARCHAR(400)) AS MENSAGEM, CAST(NULL AS BIGINT) AS ID,
+                   CAST(ISNULL(@Sistema, 0) AS DECIMAL(18,2)) AS SALDO_SISTEMA, CAST(ISNULL(@SaldoContado, 0) AS DECIMAL(18,2)) AS SALDO_CONTADO,
+                   CAST(0 AS DECIMAL(18,2)) AS DIFERENCA, ISNULL(CONVERT(VARCHAR(10), @Ultimo, 23), '') AS DT_ULTIMO_FECHAMENTO,
+                   CAST(0 AS DECIMAL(18,2)) AS ENTRADAS, CAST(0 AS DECIMAL(18,2)) AS SAIDAS, 0 AS QTD_MOVIMENTOS, ISNULL(@PodeAjuste, CAST(0 AS BIT)) AS PODE_AJUSTE,
+                   CAST(NULL AS BIGINT) AS ID_MOVIMENTO_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        -- movimento desde o último fechamento (ou do saldo inicial)
+        SELECT @Entradas = ISNULL(SUM(CASE WHEN m.VALOR > 0 THEN m.VALOR ELSE 0 END), 0),
+               @Saidas   = ISNULL(SUM(CASE WHEN m.VALOR < 0 THEN -m.VALOR ELSE 0 END), 0),
+               @QtdMov   = COUNT(*)
+        FROM BANCO.Movimento m
+        INNER JOIN BANCO.Conta c ON c.ID_CONTA = m.ID_CONTA
+        WHERE m.ID_CONTA = @IdConta AND m.DT_MOVIMENTO <= @DtFechamento
+          AND (@Ultimo IS NULL OR m.DT_MOVIMENTO > @Ultimo)
+          AND (c.DT_SALDO_INICIAL IS NULL OR m.DT_MOVIMENTO >= c.DT_SALDO_INICIAL);
+
+        SET @Diferenca = CAST(ISNULL(@SaldoContado, @Sistema) - @Sistema AS DECIMAL(18,2));
+        IF @Diferenca = 0 SET @GerarAjuste = 0;
+
+        ---------------------------------------------------------------------
+        -- Regras
+        ---------------------------------------------------------------------
+        SET @EtapaAtual = 'Regras';
+        IF @Diferenca <> 0
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('DIFERENCA_CAIXA', 'MOTIVO',
+                    N'Diferença de ' + FORMAT(@Diferenca, 'N2', 'pt-BR') + N' entre o saldo contado (' + FORMAT(@SaldoContado, 'N2', 'pt-BR')
+                    + N') e o do sistema (' + FORMAT(@Sistema, 'N2', 'pt-BR') + N'): informe o motivo.', 'saldoContado');
+
+        IF @GerarAjuste = 1 AND @PodeAjuste = 0
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('AJUSTE_SEM_PERMISSAO', 'BLOQUEIO', N'Você não tem permissão para ajustar a diferença do caixa: feche sem o ajuste ou peça a um administrador.', 'gerarAjuste');
+
+        IF @GerarAjuste = 1 AND FIN.fn_FIN_Data_Recusa('BAIXA', @DtFechamento) <> N''
+            INSERT INTO #Regra (CODIGO, NIVEL, MENSAGEM, CAMPO)
+            VALUES ('DATA_AJUSTE', 'BLOQUEIO', REPLACE(FIN.fn_FIN_Data_Recusa('BAIXA', @DtFechamento), N'de pagamento', N'do ajuste'), 'dtFechamento');
+
+        SET @Avisos = ISNULL((SELECT r.CODIGO AS codigo, r.NIVEL AS nivel, r.MENSAGEM AS mensagem, r.ID_REFERENCIA AS idReferencia, r.CAMPO AS campo
+                              FROM #Regra r ORDER BY CASE r.NIVEL WHEN 'BLOQUEIO' THEN 0 WHEN 'MOTIVO' THEN 1 ELSE 2 END, r.ORDEM
+                              FOR JSON PATH, INCLUDE_NULL_VALUES), N'[]');
+
+        IF EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'BLOQUEIO')
+            SELECT TOP 1 @Recusa = r.MENSAGEM FROM #Regra r WHERE r.NIVEL = 'BLOQUEIO' ORDER BY r.ORDEM;
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM #Regra WHERE NIVEL = 'MOTIVO') AND LEN(@Motivo) < 5
+            SET @Pendente = 1;
+
+        IF @Recusa <> N'' OR @SomenteConferir = 1 OR @Pendente = 1
+        BEGIN
+            SELECT CAST(CASE WHEN @Recusa = N'' AND @SomenteConferir = 1 THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+                   CAST(CASE WHEN @Recusa <> N'' THEN @Recusa
+                             WHEN @Pendente = 1 THEN N'Informe o motivo da diferença para fechar o caixa.'
+                             ELSE N'Prévia do fechamento.' END AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS BIGINT) AS ID, @Sistema AS SALDO_SISTEMA, CAST(ISNULL(@SaldoContado, @Sistema) AS DECIMAL(18,2)) AS SALDO_CONTADO,
+                   @Diferenca AS DIFERENCA, ISNULL(CONVERT(VARCHAR(10), @Ultimo, 23), '') AS DT_ULTIMO_FECHAMENTO,
+                   CAST(@Entradas AS DECIMAL(18,2)) AS ENTRADAS, CAST(@Saidas AS DECIMAL(18,2)) AS SAIDAS, @QtdMov AS QTD_MOVIMENTOS, @PodeAjuste AS PODE_AJUSTE,
+                   CAST(NULL AS BIGINT) AS ID_MOVIMENTO_AJUSTE, @Pendente AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        ---------------------------------------------------------------------
+        -- Gravação
+        ---------------------------------------------------------------------
+        SET @EtapaAtual = 'Gravação';
+        SET @Usuario = ISNULL(SIS.fn_SIS_Usuario_Login(@IdUsuario), N'sistema');
+        SET @Hist    = LEFT(N'Ajuste do fechamento de caixa de ' + CONVERT(NVARCHAR(10), @DtFechamento, 103) + N': ' + @Motivo, 200);
+
+        BEGIN TRANSACTION;
+
+        -- concorrência: outro fechamento da mesma conta no meio
+        IF EXISTS (SELECT 1 FROM BANCO.Caixa_Fechamento f WITH (UPDLOCK, HOLDLOCK)
+                   WHERE f.ID_CONTA = @IdConta AND f.SITUACAO = 'FECHADO' AND f.DT_FECHAMENTO >= @DtFechamento)
+        BEGIN
+            ROLLBACK TRANSACTION;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'O caixa desta conta acabou de ser fechado por outra pessoa. Abra a tela de novo.' AS NVARCHAR(400)) AS MENSAGEM,
+                   CAST(NULL AS BIGINT) AS ID, @Sistema AS SALDO_SISTEMA, @SaldoContado AS SALDO_CONTADO, @Diferenca AS DIFERENCA,
+                   ISNULL(CONVERT(VARCHAR(10), @Ultimo, 23), '') AS DT_ULTIMO_FECHAMENTO, CAST(@Entradas AS DECIMAL(18,2)) AS ENTRADAS,
+                   CAST(@Saidas AS DECIMAL(18,2)) AS SAIDAS, @QtdMov AS QTD_MOVIMENTOS, @PodeAjuste AS PODE_AJUSTE,
+                   CAST(NULL AS BIGINT) AS ID_MOVIMENTO_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+            DROP TABLE IF EXISTS #Regra;
+            RETURN;
+        END;
+
+        EXEC SIS.SIS_Lote_Gerar @IdUsuario = @IdUsuario, @Origem = 'CAIXA_FECHAMENTO', @Descricao = @NomeConta,
+             @TabelaReferencia = N'BANCO.Caixa_Fechamento', @IdReferencia = NULL, @IdLote = @IdLote OUTPUT;
+
+        IF @GerarAjuste = 1
+        BEGIN
+            INSERT INTO BANCO.Movimento (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO, SITUACAO, ID_LOTE, USUARIO_CRIACAO)
+            VALUES (@IdConta, @DtFechamento, @Diferenca, 'AJUSTE', @Hist, 'ATIVO', @IdLote, @Usuario);
+            SET @IdAjuste = SCOPE_IDENTITY();
+        END;
+
+        INSERT INTO BANCO.Caixa_Fechamento (ID_CONTA, DT_FECHAMENTO, SALDO_SISTEMA, SALDO_CONTADO, MOTIVO_DIFERENCA, ID_MOVIMENTO_AJUSTE, OBSERVACAO, SITUACAO, USUARIO_CRIACAO)
+        VALUES (@IdConta, @DtFechamento, @Sistema, @SaldoContado, CASE WHEN @Diferenca <> 0 THEN @Motivo ELSE N'' END, @IdAjuste, @Observacao, 'FECHADO', @Usuario);
+        SET @Id = SCOPE_IDENTITY();
+
+        INSERT INTO SIS.Aviso_Confirmado (TABELA, ID_REGISTRO, CODIGO_REGRA, NIVEL, MENSAGEM, MOTIVO, ID_REFERENCIA, ID_USUARIO, USUARIO_CRIACAO)
+        SELECT N'BANCO.Caixa_Fechamento', @Id, r.CODIGO, r.NIVEL,
+               LEFT(r.MENSAGEM + CASE WHEN @IdAjuste IS NOT NULL THEN N' Ajuste gravado.' ELSE N' Sem ajuste.' END, 400),
+               @Motivo, @IdAjuste, @IdUsuario, @Usuario
+        FROM #Regra r WHERE r.NIVEL = 'MOTIVO';
+
+        EXEC SIS.SIS_Lote_Concluir @IdLote = @IdLote, @QtdRegistros = 1;
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO,
+               CAST(N'Caixa da conta ' + @NomeConta + N' fechado até ' + CONVERT(NVARCHAR(10), @DtFechamento, 103)
+                    + CASE WHEN @IdAjuste IS NOT NULL THEN N', com ajuste de ' + FORMAT(@Diferenca, 'N2', 'pt-BR') ELSE N'' END + N'.' AS NVARCHAR(400)) AS MENSAGEM,
+               @Id AS ID, @Sistema AS SALDO_SISTEMA, @SaldoContado AS SALDO_CONTADO, @Diferenca AS DIFERENCA,
+               ISNULL(CONVERT(VARCHAR(10), @Ultimo, 23), '') AS DT_ULTIMO_FECHAMENTO, CAST(@Entradas AS DECIMAL(18,2)) AS ENTRADAS,
+               CAST(@Saidas AS DECIMAL(18,2)) AS SAIDAS, @QtdMov AS QTD_MOVIMENTOS, @PodeAjuste AS PODE_AJUSTE,
+               @IdAjuste AS ID_MOVIMENTO_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(@Avisos AS NVARCHAR(MAX)) AS AVISOS;
+
+        DROP TABLE IF EXISTS #Regra;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        DROP TABLE IF EXISTS #Regra;
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível fechar o caixa. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               CAST(NULL AS BIGINT) AS ID, CAST(0 AS DECIMAL(18,2)) AS SALDO_SISTEMA, CAST(0 AS DECIMAL(18,2)) AS SALDO_CONTADO,
+               CAST(0 AS DECIMAL(18,2)) AS DIFERENCA, CAST('' AS VARCHAR(10)) AS DT_ULTIMO_FECHAMENTO, CAST(0 AS DECIMAL(18,2)) AS ENTRADAS,
+               CAST(0 AS DECIMAL(18,2)) AS SAIDAS, 0 AS QTD_MOVIMENTOS, CAST(0 AS BIT) AS PODE_AJUSTE,
+               CAST(NULL AS BIGINT) AS ID_MOVIMENTO_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/BANCO/BANCO.BANCO_Caixa_Reabrir.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [BANCO].[BANCO_Caixa_Reabrir]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Reabre um fechamento de caixa (etapa 04g2). Só o último
+                fechamento da conta (para voltar mais, reabrir um de cada
+                vez, do mais novo para o mais antigo). Motivo obrigatório.
+                Se o fechamento gravou um AJUSTE, o ajuste é desfeito
+                (movimento inverso na mesma data; os dois ficam ESTORNADO),
+                para o próximo fechamento partir do saldo real. Ajuste já
+                conciliado bloqueia. O registro fica REABERTO com data, quem
+                e motivo (nada é apagado).
+                @SomenteConferir = 1: prévia (diz se há ajuste a desfazer).
+                Permissão: REABRIR em BANCO_CAIXA.
+                Devolve SUCESSO, MENSAGEM, ID, VALOR_AJUSTE, PENDENTE, AVISOS.
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC BANCO.BANCO_Caixa_Reabrir @IdUsuario = 2, @IdCaixaFechamento = 1, @Motivo = N'Recebimento esquecido', @SomenteConferir = 1;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Caixa_Reabrir]
+    @IdUsuario          INT,
+    @IdCaixaFechamento  BIGINT,
+    @Motivo             NVARCHAR(400)  = NULL,
+    @SomenteConferir    BIT            = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc    NVARCHAR(128) = N'[BANCO].[BANCO_Caixa_Reabrir]';
+    DECLARE @EtapaAtual  VARCHAR(100)  = 'Validação';
+    DECLARE @Recusa      NVARCHAR(400) = N'';
+    DECLARE @Usuario     NVARCHAR(100);
+    DECLARE @IdConta     INT;
+    DECLARE @Data        DATE;
+    DECLARE @Situacao    VARCHAR(10);
+    DECLARE @IdAjuste    BIGINT;
+    DECLARE @ValorAjuste DECIMAL(18,2) = 0;
+    DECLARE @AjusteConc  BIT = 0;
+    DECLARE @AjusteSit   VARCHAR(10);
+    DECLARE @IdLote      BIGINT;
+    DECLARE @Linhas      INT;
+    DECLARE @Avisos      NVARCHAR(MAX) = N'[]';
+
+    BEGIN TRY
+        SET @Motivo = LTRIM(RTRIM(ISNULL(@Motivo, N'')));
+
+        SELECT @IdConta = f.ID_CONTA, @Data = f.DT_FECHAMENTO, @Situacao = f.SITUACAO, @IdAjuste = f.ID_MOVIMENTO_AJUSTE
+        FROM BANCO.Caixa_Fechamento f WHERE f.ID_CAIXA_FECHAMENTO = @IdCaixaFechamento;
+        SELECT @ValorAjuste = m.VALOR, @AjusteConc = m.CONCILIADO, @AjusteSit = m.SITUACAO FROM BANCO.Movimento m WHERE m.ID_MOVIMENTO = @IdAjuste;
+
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'REABRIR') = 0
+            SET @Recusa = N'Você não tem permissão para reabrir o caixa.';
+        IF @Recusa = N'' AND @Situacao IS NULL
+            SET @Recusa = N'Fechamento não encontrado.';
+        IF @Recusa = N'' AND @Situacao = 'REABERTO'
+            SET @Recusa = N'Este fechamento já foi reaberto.';
+        IF @Recusa = N'' AND EXISTS (SELECT 1 FROM BANCO.Caixa_Fechamento f WHERE f.ID_CONTA = @IdConta AND f.SITUACAO = 'FECHADO' AND f.DT_FECHAMENTO > @Data)
+            SET @Recusa = N'Há um fechamento mais novo nesta conta: reabra primeiro o mais novo.';
+        IF @Recusa = N'' AND @AjusteConc = 1
+            SET @Recusa = N'O ajuste deste fechamento já foi conciliado: desfaça a conciliação antes de reabrir.';
+        IF @Recusa = N'' AND @SomenteConferir = 0 AND LEN(@Motivo) < 5
+            SET @Recusa = N'Informe o motivo da reabertura.';
+
+        IF @AjusteSit = 'ESTORNADO' SET @ValorAjuste = 0;
+
+        IF @Recusa = N'' AND @ValorAjuste <> 0
+            SET @Avisos = (SELECT 'AJUSTE_DESFEITO' AS codigo, 'INFO' AS nivel,
+                                  N'O ajuste de ' + FORMAT(@ValorAjuste, 'N2', 'pt-BR') + N' gravado neste fechamento será desfeito.' AS mensagem,
+                                  @IdAjuste AS idReferencia, '' AS campo
+                           FOR JSON PATH, INCLUDE_NULL_VALUES);
+
+        IF @Recusa <> N'' OR @SomenteConferir = 1
+        BEGIN
+            SELECT CAST(CASE WHEN @Recusa = N'' THEN 1 ELSE 0 END AS BIT) AS SUCESSO,
+                   CAST(CASE WHEN @Recusa <> N'' THEN @Recusa ELSE N'Prévia da reabertura.' END AS NVARCHAR(400)) AS MENSAGEM,
+                   @IdCaixaFechamento AS ID, CAST(ISNULL(@ValorAjuste, 0) AS DECIMAL(18,2)) AS VALOR_AJUSTE, CAST(0 AS BIT) AS PENDENTE,
+                   CAST(ISNULL(@Avisos, N'[]') AS NVARCHAR(MAX)) AS AVISOS;
+            RETURN;
+        END;
+
+        SET @EtapaAtual = 'Gravação';
+        SET @Usuario = ISNULL(SIS.fn_SIS_Usuario_Login(@IdUsuario), N'sistema');
+        BEGIN TRANSACTION;
+
+        UPDATE f
+           SET f.SITUACAO = 'REABERTO', f.DT_REABERTURA = SYSDATETIME(), f.USUARIO_REABERTURA = @Usuario, f.MOTIVO_REABERTURA = @Motivo,
+               f.DT_ALTERACAO = SYSDATETIME(), f.USUARIO_ALTERACAO = @Usuario
+        FROM BANCO.Caixa_Fechamento f WITH (UPDLOCK, HOLDLOCK)
+        WHERE f.ID_CAIXA_FECHAMENTO = @IdCaixaFechamento AND f.SITUACAO = 'FECHADO';
+        SET @Linhas = @@ROWCOUNT;
+
+        IF @Linhas = 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+            SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'O fechamento foi reaberto por outra pessoa. Abra a tela de novo.' AS NVARCHAR(400)) AS MENSAGEM,
+                   @IdCaixaFechamento AS ID, CAST(0 AS DECIMAL(18,2)) AS VALOR_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+            RETURN;
+        END;
+
+        IF @ValorAjuste <> 0
+        BEGIN
+            EXEC SIS.SIS_Lote_Gerar @IdUsuario = @IdUsuario, @Origem = 'CAIXA_REABERTURA', @Descricao = @Motivo,
+                 @TabelaReferencia = N'BANCO.Caixa_Fechamento', @IdReferencia = @IdCaixaFechamento, @IdLote = @IdLote OUTPUT;
+
+            INSERT INTO BANCO.Movimento (ID_CONTA, DT_MOVIMENTO, VALOR, TIPO, HISTORICO, SITUACAO, ID_LOTE, USUARIO_CRIACAO)
+            SELECT m.ID_CONTA, m.DT_MOVIMENTO, -m.VALOR, m.TIPO, LEFT(N'Estorno (caixa reaberto): ' + m.HISTORICO, 200), 'ESTORNADO', @IdLote, @Usuario
+            FROM BANCO.Movimento m WHERE m.ID_MOVIMENTO = @IdAjuste;
+
+            UPDATE m SET m.SITUACAO = 'ESTORNADO', m.DT_ALTERACAO = SYSDATETIME(), m.USUARIO_ALTERACAO = @Usuario
+            FROM BANCO.Movimento m WHERE m.ID_MOVIMENTO = @IdAjuste;
+
+            EXEC SIS.SIS_Lote_Concluir @IdLote = @IdLote, @QtdRegistros = 1;
+        END;
+
+        INSERT INTO SIS.Aviso_Confirmado (TABELA, ID_REGISTRO, CODIGO_REGRA, NIVEL, MENSAGEM, MOTIVO, ID_REFERENCIA, ID_USUARIO, USUARIO_CRIACAO)
+        VALUES (N'BANCO.Caixa_Fechamento', @IdCaixaFechamento, 'REABERTURA_CAIXA', 'MOTIVO',
+                N'Caixa reaberto (fechamento de ' + CONVERT(NVARCHAR(10), @Data, 103) + N')' + CASE WHEN @ValorAjuste <> 0 THEN N', ajuste desfeito.' ELSE N'.' END,
+                @Motivo, @IdAjuste, @IdUsuario, @Usuario);
+
+        COMMIT TRANSACTION;
+
+        SELECT CAST(1 AS BIT) AS SUCESSO, CAST(N'Caixa reaberto.' AS NVARCHAR(400)) AS MENSAGEM, @IdCaixaFechamento AS ID,
+               CAST(@ValorAjuste AS DECIMAL(18,2)) AS VALOR_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(ISNULL(@Avisos, N'[]') AS NVARCHAR(MAX)) AS AVISOS;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        SELECT CAST(0 AS BIT) AS SUCESSO, CAST(N'Não foi possível reabrir o caixa. O erro foi registrado para análise.' AS NVARCHAR(400)) AS MENSAGEM,
+               @IdCaixaFechamento AS ID, CAST(0 AS DECIMAL(18,2)) AS VALOR_AJUSTE, CAST(0 AS BIT) AS PENDENTE, CAST(N'[]' AS NVARCHAR(MAX)) AS AVISOS;
+    END CATCH;
+END;
+GO
+
+-- =============================================================================
+-- Arquivo: sql/objetos/BANCO/BANCO.BANCO_Caixa_Listar.sql
+-- =============================================================================
+/*******************************************************************************
+  Objeto      : [BANCO].[BANCO_Caixa_Listar]
+  Autor       : Celso de Freitas
+  Refatorado  : Claude
+  Criação     : 27/11/2026
+  Descrição   : Histórico dos fechamentos de caixa (tela Bancos › Fechamento
+                de caixa, etapa 04g2): conta, data, saldo do sistema,
+                contado, diferença com motivo, ajuste, quem fechou e a
+                reabertura. Filtros: conta, empresa, período, situação
+                (FECHADO, REABERTO ou todos), só com diferença.
+                PODE_REABRIR: o último fechamento FECHADO da conta, para
+                quem tem REABRIR. As contas que faltam fechar vêm da
+                BANCO_Saldo_Listar (FECHAMENTO_ATRASADO).
+                Permissão: VER em BANCO_CAIXA (recusa por THROW 50001).
+  Changelog:
+    v1.0 (27/11/2026) - Criação (etapa 04g2).
+
+  Homologação (LOCAL):
+    -- EXEC BANCO.BANCO_Caixa_Listar @IdUsuario = 2;
+*******************************************************************************/
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+CREATE OR ALTER PROCEDURE [BANCO].[BANCO_Caixa_Listar]
+    @IdUsuario       INT,
+    @IdConta         INT          = NULL,
+    @IdEmpresa       INT          = NULL,
+    @DtDe            DATE         = NULL,
+    @DtAte           DATE         = NULL,
+    @Situacao        VARCHAR(10)  = NULL,
+    @SoComDiferenca  BIT          = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @NomeProc     NVARCHAR(128) = N'[BANCO].[BANCO_Caixa_Listar]';
+    DECLARE @EtapaAtual   VARCHAR(100)  = 'Permissão';
+    DECLARE @PodeReabrir  BIT;
+
+    BEGIN TRY
+        IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'VER') = 0
+            THROW 50001, N'Você não tem permissão para ver os fechamentos de caixa.', 1;
+
+        SET @EtapaAtual  = 'Consulta';
+        SET @PodeReabrir = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'BANCO_CAIXA', 'REABRIR');
+        SET @Situacao    = NULLIF(UPPER(LTRIM(RTRIM(ISNULL(@Situacao, '')))), '');
+
+        SELECT f.ID_CAIXA_FECHAMENTO, f.ID_CONTA, c.DESCRICAO AS CONTA, c.ID_EMPRESA, ISNULL(NULLIF(e.NOME_FANTASIA, N''), e.RAZAO_SOCIAL) AS EMPRESA,
+               f.DT_FECHAMENTO, f.SALDO_SISTEMA, f.SALDO_CONTADO, f.DIFERENCA, f.MOTIVO_DIFERENCA, f.OBSERVACAO,
+               ISNULL(f.ID_MOVIMENTO_AJUSTE, 0) AS ID_MOVIMENTO_AJUSTE, CAST(ISNULL(m.VALOR, 0) AS DECIMAL(18,2)) AS VALOR_AJUSTE,
+               CAST(CASE WHEN m.SITUACAO = 'ESTORNADO' THEN 1 ELSE 0 END AS BIT) AS AJUSTE_DESFEITO,
+               f.SITUACAO, f.USUARIO_CRIACAO, f.DT_CRIACAO,
+               ISNULL(CONVERT(VARCHAR(19), f.DT_REABERTURA, 120), '') AS DT_REABERTURA, ISNULL(f.USUARIO_REABERTURA, N'') AS USUARIO_REABERTURA,
+               ISNULL(f.MOTIVO_REABERTURA, N'') AS MOTIVO_REABERTURA,
+               CAST(CASE WHEN @PodeReabrir = 1 AND f.SITUACAO = 'FECHADO'
+                              AND NOT EXISTS (SELECT 1 FROM BANCO.Caixa_Fechamento x WITH (NOLOCK)
+                                              WHERE x.ID_CONTA = f.ID_CONTA AND x.SITUACAO = 'FECHADO' AND x.DT_FECHAMENTO > f.DT_FECHAMENTO)
+                         THEN 1 ELSE 0 END AS BIT) AS PODE_REABRIR
+        FROM BANCO.Caixa_Fechamento f WITH (NOLOCK)
+        INNER JOIN BANCO.Conta c   WITH (NOLOCK) ON c.ID_CONTA = f.ID_CONTA
+        INNER JOIN CAD.Empresa e   WITH (NOLOCK) ON e.ID_EMPRESA = c.ID_EMPRESA
+        LEFT  JOIN BANCO.Movimento m WITH (NOLOCK) ON m.ID_MOVIMENTO = f.ID_MOVIMENTO_AJUSTE
+        WHERE (@IdConta IS NULL OR f.ID_CONTA = @IdConta)
+          AND (@IdEmpresa IS NULL OR c.ID_EMPRESA = @IdEmpresa)
+          AND (@DtDe IS NULL OR f.DT_FECHAMENTO >= @DtDe)
+          AND (@DtAte IS NULL OR f.DT_FECHAMENTO <= @DtAte)
+          AND (@Situacao IS NULL OR f.SITUACAO = @Situacao)
+          AND (ISNULL(@SoComDiferenca, 0) = 0 OR f.DIFERENCA <> 0)
+        ORDER BY f.DT_FECHAMENTO DESC, c.DESCRICAO, f.ID_CAIXA_FECHAMENTO DESC;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 50001 THROW;
+
+        IF XACT_STATE() <> -1
+            INSERT INTO SIS.Log_Erro (ROTINA, ETAPA, NUMERO_ERRO, MENSAGEM, LINHA, DT_ERRO)
+            VALUES (@NomeProc, @EtapaAtual, ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), SYSDATETIME());
+
+        THROW 50001, N'Não foi possível listar os fechamentos de caixa. O erro foi registrado para análise.', 1;
+    END CATCH;
+END;
+GO
+
 PRINT N'Pacote 04g concluído sem erro.';
 GO
 
