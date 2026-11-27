@@ -2,20 +2,42 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>Ajuda: Início</title>
+  <title>Ajuda: Início (Agenda financeira)</title>
 </head>
 <body>
-  <p><strong>Para que serve:</strong> ponto de partida do sistema.</p>
-  <h2>Menu</h2>
+  <p><strong>Para que serve:</strong> ponto de partida do sistema. Para quem tem acesso, mostra a <strong>agenda financeira</strong>: o que vence a pagar e a receber no período escolhido, os totais e o que está em atraso.</p>
+  <h2>Período</h2>
   <ul>
-    <li>Clique no módulo (por exemplo, Cadastros) para ver as telas dele. Use <strong>Voltar</strong> para subir um nível.</li>
-    <li>Só aparecem os módulos e as telas liberados para o seu usuário.</li>
+    <li>Escolha <strong>Semana</strong>, <strong>Quinzena</strong>, <strong>Mês</strong> ou <strong>Ano</strong> (seguem o calendário), <strong>Bimestre</strong>, <strong>Trimestre</strong> ou <strong>Quadrimestre</strong> (começam no mês mostrado; por exemplo, nov/dez/jan e depois fev/mar/abr), <strong>Vários anos</strong> ou <strong>Datas escolhidas</strong>.</li>
+    <li>As setas <strong>◀ ▶</strong> andam um período para trás ou para a frente (no teclado, as setas para a esquerda e para a direita, fora dos campos). <strong>Hoje</strong> volta ao período de hoje.</li>
+    <li>O sistema lembra neste computador o último período usado. No primeiro acesso do dia, abre como está nas suas <strong>Preferências</strong> (botão ⚙ no alto).</li>
   </ul>
-  <h2>Em toda tela</h2>
+  <h2>Totais</h2>
   <ul>
-    <li>O botão <strong>?</strong> abre a ajuda daquela tela.</li>
-    <li>Quando algo não pode ser feito, abre uma janela explicando; clique em <strong>OK</strong> para continuar.</li>
-    <li>Para trocar a sua senha, use o link <strong>Trocar senha</strong> no alto, ao lado do seu nome.</li>
+    <li><strong>D</strong> (em vermelho) é o que há a pagar no período, <strong>C</strong> (em azul) o que há a receber e <strong>S</strong> o saldo (C menos D), azul se positivo e vermelho se negativo.</li>
+    <li>Normalmente a agenda mostra só o que está <strong>em aberto</strong> (o saldo de cada parcela). Nas Preferências dá para mostrar também o que já foi pago ou recebido.</li>
+    <li><strong>Saldo previsto no fim</strong>: saldo de hoje nas contas mais o que está em aberto de hoje até o fim do período. Só fica certo quando o saldo de cada conta for o oficial do extrato.</li>
+    <li><strong>Em atraso</strong>: parcelas em aberto que venceram antes de hoje, de qualquer data. Clique para ver só elas; <strong>Voltar ao período</strong> (ou Esc) volta à agenda.</li>
+    <li>Quem não tem a permissão <strong>Ver totais</strong> vê as contas uma a uma, mas não os valores somados.</li>
+    <li>Cada pessoa só vê o lado que pode ver (contas a pagar, a receber ou as duas).</li>
+  </ul>
+  <h2>Lista</h2>
+  <ul>
+    <li>As parcelas aparecem por dia de vencimento. Cada dia mostra o seu D, C e S e, se a opção estiver ligada, o saldo previsto até aquele dia. O dia de hoje fica em destaque.</li>
+    <li>Clique numa linha para abrir o lançamento. O <strong>Voltar</strong> da ficha traz você de volta para cá, no mesmo período, página e ponto da lista.</li>
+    <li><strong>Mostrar</strong> filtra só a pagar ou só a receber; <strong>Buscar</strong> procura no histórico, no documento, no nome do parceiro, no CPF/CNPJ ou no número do lançamento.</li>
+    <li><strong>Exportar Excel</strong> baixa todas as linhas do período (ou do atraso), não só a página da tela.</li>
+    <li>Com a tela aberta, a agenda se atualiza sozinha de tempos em tempos (prazo no parâmetro AGENDA_ATUALIZAR_MIN). O horário da última atualização aparece no rodapé da lista.</li>
+  </ul>
+  <h2>Atalhos rápidos</h2>
+  <ul>
+    <li>Os botões no alto da agenda abrem uma conta a pagar ou a receber nova, o extrato, o fechamento de caixa e a transferência. Só aparecem os que você tem permissão para usar.</li>
+  </ul>
+  <h2>Menu e todas as telas</h2>
+  <ul>
+    <li>Clique no módulo (por exemplo, Cadastros) para ver as telas dele. Só aparecem os módulos e as telas liberados para o seu usuário.</li>
+    <li>O botão <strong>?</strong> abre a ajuda daquela tela. Quando algo não pode ser feito, abre uma janela explicando; clique em <strong>OK</strong> para continuar.</li>
+    <li>No alto, ao lado do seu nome: <strong>Trocar senha</strong>, o número da versão (o que mudou) e <strong>⚙</strong> (suas preferências).</li>
     <li>Depois de um tempo sem uso, o sistema pede o login de novo.</li>
   </ul>
 </body>

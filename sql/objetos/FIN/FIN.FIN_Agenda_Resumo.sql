@@ -22,6 +22,8 @@
                 Permissão: VER em FIN_AGENDA. Padrão "Listar": THROW 50001.
   Changelog:
     v1.0 (27/11/2026) - Criação (etapa 04h1).
+    v1.1 (27/11/2026) - PERIODO_MAX_DIAS e ATUALIZAR_MINUTOS (parâmetro
+                        AGENDA_ATUALIZAR_MIN), para a tela (etapa 04h2).
 
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Agenda_Resumo @IdUsuario = 2, @De = '2026-11-01', @Ate = '2026-11-30';
@@ -54,6 +56,7 @@ BEGIN
     DECLARE @AtrasoQtdP   INT = 0, @AtrasoQtdR INT = 0;
     DECLARE @AtrasoD      DECIMAL(18,2) = 0, @AtrasoC DECIMAL(18,2) = 0;
     DECLARE @Ontem        DATE;
+    DECLARE @AtualizarMin INT;
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_AGENDA', 'VER') = 0
@@ -68,6 +71,9 @@ BEGIN
         IF @MaxDias NOT BETWEEN 31 AND 7400 SET @MaxDias = 3700;
         IF DATEDIFF(DAY, @De, @Ate) + 1 > @MaxDias
             THROW 50001, N'Período longo demais para a agenda. Escolha um período menor.', 1;
+
+        SET @AtualizarMin = ISNULL(SIS.fn_SIS_Parametro_Inteiro('AGENDA_ATUALIZAR_MIN'), 5);
+        IF @AtualizarMin NOT BETWEEN 0 AND 240 SET @AtualizarMin = 5;
 
         SET @EtapaAtual = 'Permissões e preferências';
         SET @VerPagar   = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PAGAR', 'VER');
@@ -111,6 +117,8 @@ BEGIN
         SELECT @De                                                                          AS DE,
                @Ate                                                                         AS ATE,
                @Hoje                                                                        AS HOJE,
+               @MaxDias                                                                     AS PERIODO_MAX_DIAS,
+               @AtualizarMin                                                                AS ATUALIZAR_MINUTOS,
                @VerPagar                                                                    AS VER_PAGAR,
                @VerReceber                                                                  AS VER_RECEBER,
                @VerTotais                                                                   AS VER_TOTAIS,

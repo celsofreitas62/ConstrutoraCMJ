@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SistemaCMJ – Preferências</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js" defer></script>
+  <script src="/js/mensagens.js" defer></script>
+  <script src="/js/dicas.js" defer></script>
+  <script src="/js/layout.js" defer></script>
+  <script src="/js/cad/rotulos.js" defer></script>
+  <script src="/js/sis/preferencias.js" defer></script>
+</head>
+<body data-tela="sis/preferencias.html" data-menu="index.html" data-ajuda="sis-preferencias">
+  <header class="topo" id="topo"></header>
+  <div class="corpo">
+    <nav class="menu" id="menu"></nav>
+    <main class="conteudo">
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">
+          <a href="/" id="link-voltar">‹ Voltar para o início</a>
+          <h1>Minhas preferências</h1>
+        </div>
+        <button data-dica="Volta para o início sem gravar (avisa se houver alteração). Atalho: Esc." type="button" class="botao" id="botao-voltar">Voltar</button>
+        <button data-dica="Grava as suas escolhas. Atalho: Ctrl+S." type="submit" form="form-preferencias" class="botao botao-principal" id="botao-gravar">Gravar</button>
+        <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
+      </div>
+
+      <div class="area-lista">
+        <form class="cartao painel-aba form-preferencias" id="form-preferencias" novalidate>
+          <p class="suave">Cada pessoa escolhe as suas. O que você não mudar segue o <strong>padrão da empresa</strong>, que os administradores definem em Parâmetros de uso.</p>
+          <div id="grupos" aria-live="polite"></div>
+        </form>
+        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

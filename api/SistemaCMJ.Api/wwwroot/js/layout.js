@@ -4,7 +4,7 @@
    Refatorado: Claude
    Criação   : 16/11/2026 (fase 3b)
    Descrição : Moldura de toda tela do sistema (esboço aprovado em 16/11/2026):
-               topo (logomarca, busca geral, usuário, Sair), menu lateral em
+               topo (logomarca, busca geral, usuário, ⚙ Preferências (04h2), Sair), menu lateral em
                árvore (CLAUDE.md seção 3 item 8) e painel de ajuda "?".
                A página informa no <body>:
                  data-tela   = tela de origem (auditoria/log), ex.: cad/pessoas.html
@@ -80,6 +80,11 @@ const Layout = (() => {
       detalhe.append(' · ', linkVersao);
     }
     nome.append(Util.el('strong', null, sessao.nome || sessao.login), detalhe);
+    // Minhas preferências (04h2, P03): para todos os usuários.
+    const preferencias = Util.el('a', 'botao topo-preferencias', '⚙');
+    preferencias.href = '/sis/preferencias.html';
+    preferencias.setAttribute('aria-label', 'Minhas preferências');
+    preferencias.dataset.dica = 'Minhas preferências: como a tela inicial abre (lista, período) e outras escolhas suas.';
     const sair = Util.el('button', 'botao', 'Sair');
     sair.type = 'button';
     sair.addEventListener('click', async () => {
@@ -88,7 +93,7 @@ const Layout = (() => {
       sessionStorage.removeItem('cmj.novidades.conferidas');
       location.href = '/login.html';
     });
-    usuario.append(nome, sair);
+    usuario.append(nome, preferencias, sair);
 
     topo.append(linkInicio, busca, usuario);
   }

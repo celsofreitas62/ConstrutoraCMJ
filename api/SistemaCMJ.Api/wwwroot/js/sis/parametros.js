@@ -41,12 +41,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     [/^FIN_(REGRA_|VALOR_FORA_|DUPLIC_)/, 'Financeiro › Avisos ao lançar (proteção contra erro de digitação)'],
     [/^FIN_PEND_/, 'Financeiro › Pendências automáticas dos lançamentos'],
     [/^FIN_(TRAVA_|DATA_|EMISSAO_|VENCIMENTO_|BAIXA_|COMPETENCIA_|DIAS_TOLERANCIA)/, 'Financeiro › Trava de datas'],
-    [/^FIN_LISTA_/, 'Financeiro › Lista de contas a pagar e a receber']
+    [/^FIN_LISTA_/, 'Financeiro › Lista de contas a pagar e a receber'],
+    [/^(INICIO_|AGENDA_|TEMA_PADRAO)/, 'Tela inicial e aparência (padrão das Preferências de cada usuário)']
   ];
   const assunto = (p) => (ASSUNTOS.find(([re]) => re.test(p.CHAVE)) || [null, p.MODULO_NOME])[1];
   const ROTULO_OPCAO = { AVISO: 'Avisa (pede "Estou ciente")', BLOQUEIO: 'Bloqueia', NAO: 'Não confere', S: 'Sim', N: 'Não',
     P: 'Só contas a pagar', R: 'Só contas a receber', A: 'Pagar e receber', EM_ABERTO: 'Em aberto', VENCIDA: 'Vencidas', HOJE: 'Vencem hoje',
-    A_VENCER: 'A vencer', TODAS: 'Todas', PARCELA: 'Por parcela', LANCAMENTO: 'Por lançamento' };
+    A_VENCER: 'A vencer', TODAS: 'Todas', PARCELA: 'Por parcela', LANCAMENTO: 'Por lançamento', ...Rotulos.preferencia };
   const opcoes = (p) => (p.OPCOES || '').split(';').map((o) => o.trim()).filter(Boolean);
 
   // ---------- valor <-> tela ----------

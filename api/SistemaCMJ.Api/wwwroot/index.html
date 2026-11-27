@@ -18,17 +18,123 @@
     <main class="conteudo">
       <div class="cabecalho">
         <div class="cabecalho-titulo">
-          <div class="caminho">Início</div>
-          <h1 id="boas-vindas">Bem-vindo</h1>
+          <div class="caminho" id="boas-vindas">Início</div>
+          <h1 id="titulo">Bem-vindo</h1>
         </div>
+        <button data-dica="Baixa num arquivo que o Excel abre todas as linhas da agenda no período (não só a página que está na tela)." type="button" class="botao" id="botao-exportar" hidden>Exportar Excel</button>
         <button type="button" class="botao botao-ajuda" id="botao-ajuda" aria-label="Ajuda desta tela">?</button>
       </div>
-      <div class="area-lista">
-        <section class="cartao painel-aba">
-          <p>Escolha no menu à esquerda o módulo e a tela que quer usar.</p>
-          <p class="suave">A agenda da semana (contas a pagar e a receber) vai aparecer aqui a partir da fase 4.</p>
-        </section>
-        <aside class="cartao ajuda" id="ajuda" hidden></aside>
+
+      <!-- Sem acesso à agenda: só as boas-vindas -->
+      <section class="cartao painel-aba" id="sem-agenda" hidden>
+        <p>Escolha no menu à esquerda o módulo e a tela que quer usar.</p>
+      </section>
+
+      <div id="agenda" hidden>
+        <!-- Atalhos rápidos (só os que a pessoa pode usar) -->
+        <nav class="atalhos" id="atalhos" aria-label="Atalhos rápidos" hidden>
+          <a class="botao" id="atalho-pagar" href="/fin/lancamento.html?tipo=P&amp;voltar=%2F" data-dica="Abre a ficha de uma conta a pagar nova." hidden>+ Conta a pagar</a>
+          <a class="botao" id="atalho-receber" href="/fin/lancamento.html?tipo=R&amp;voltar=%2F" data-dica="Abre a ficha de uma conta a receber nova." hidden>+ Conta a receber</a>
+          <a class="botao" id="atalho-extrato" href="/banco/extrato.html" data-dica="Abre Bancos › Extrato e saldos." hidden>Extrato e saldos</a>
+          <a class="botao" id="atalho-caixa" href="/banco/caixa.html" data-dica="Abre Bancos › Fechamento de caixa." hidden>Fechamento de caixa</a>
+          <a class="botao" id="atalho-transferir" href="/banco/transferencias.html?transferir=1" data-dica="Abre Bancos › Transferências, já na janela de transferir." hidden>Transferir</a>
+        </nav>
+
+        <!-- Escolha do período -->
+        <form class="cartao filtros periodo-agenda" id="form-periodo" role="search">
+          <label data-dica="Quanto tempo a agenda mostra. Semana, quinzena, mês e ano seguem o calendário; bimestre, trimestre e quadrimestre começam no mês escolhido. As setas andam um período para trás ou para a frente." class="campo f-1">Período
+            <select id="periodo">
+              <option value="SEMANA">Semana</option>
+              <option value="QUINZENA">Quinzena</option>
+              <option value="MES">Mês</option>
+              <option value="BIMESTRE">Bimestre</option>
+              <option value="TRIMESTRE">Trimestre</option>
+              <option value="QUADRIMESTRE">Quadrimestre</option>
+              <option value="ANO">Ano</option>
+              <option value="ANOS">Vários anos</option>
+              <option value="LIVRE">Datas escolhidas</option>
+            </select>
+          </label>
+          <label data-dica="Quantos anos em &quot;Vários anos&quot; (de 2 a 10), a partir de janeiro do ano mostrado." class="campo campo-curto" id="campo-anos" hidden>Anos
+            <input type="number" id="anos" min="2" max="10" step="1">
+          </label>
+          <label data-dica="Começo do período escolhido. Obrigatório." class="campo f-1" id="campo-de" hidden>De *
+            <input type="date" id="de">
+          </label>
+          <label data-dica="Fim do período escolhido. Obrigatório." class="campo f-1" id="campo-ate" hidden>Até *
+            <input type="date" id="ate">
+          </label>
+          <div class="navegar-periodo" id="navegar">
+            <button type="button" class="botao" id="periodo-anterior" aria-label="Período anterior" data-dica="Volta um período. Atalho: seta para a esquerda (fora dos campos).">◀</button>
+            <strong id="periodo-texto" aria-live="polite"></strong>
+            <button type="button" class="botao" id="periodo-proximo" aria-label="Próximo período" data-dica="Avança um período. Atalho: seta para a direita (fora dos campos).">▶</button>
+            <button type="button" class="botao" id="periodo-hoje" data-dica="Volta para o período de hoje.">Hoje</button>
+          </div>
+          <label data-dica="Mostra só as contas a pagar, só as a receber ou as duas." class="campo f-1" id="campo-tipo">Mostrar
+            <select id="tipo">
+              <option value="">Pagar e receber</option>
+              <option value="P">Só a pagar</option>
+              <option value="R">Só a receber</option>
+            </select>
+          </label>
+          <label data-dica="Digite parte do histórico, do documento, do nome do parceiro, o CPF/CNPJ (5 dígitos ou mais) ou o número do lançamento. A lista atualiza sozinha." class="campo f-2">Buscar
+            <input type="search" id="texto" maxlength="100" placeholder="Ex.: cimento, NF 123, Silva" autocomplete="off">
+          </label>
+        </form>
+
+        <!-- Barra de totais (P03) e quadro Em atraso -->
+        <div class="contadores agenda-totais" id="totais" aria-live="polite">
+          <div class="contador contador-fixo contador-debito" id="quadro-d" data-dica="D = a pagar no período (só o que está em aberto, a não ser que as Preferências mandem mostrar também o que já foi pago).">
+            <span class="contador-rotulo">D · A pagar</span><span class="contador-valor valor-d" id="valor-d">–</span><span class="contador-qtd" id="qtd-d"></span>
+          </div>
+          <div class="contador contador-fixo contador-credito" id="quadro-c" data-dica="C = a receber no período (só o que está em aberto, a não ser que as Preferências mandem mostrar também o que já foi recebido).">
+            <span class="contador-rotulo">C · A receber</span><span class="contador-valor valor-c" id="valor-c">–</span><span class="contador-qtd" id="qtd-c"></span>
+          </div>
+          <div class="contador contador-fixo contador-saldo" id="quadro-s" data-dica="S = C menos D no período.">
+            <span class="contador-rotulo">S · Saldo do período</span><span class="contador-valor" id="valor-s">–</span><span class="contador-qtd" id="qtd-s"></span>
+          </div>
+          <div class="contador contador-fixo contador-previsto" id="quadro-previsto" data-dica="Saldo de hoje nas contas mais o que está em aberto de hoje até o fim do período (o atraso não entra). Só fica certo quando o saldo de cada conta for o oficial do extrato." hidden>
+            <span class="contador-rotulo">Saldo previsto no fim</span><span class="contador-valor" id="valor-previsto">–</span><span class="contador-qtd" id="qtd-previsto"></span>
+          </div>
+          <button type="button" class="contador contador-vencidas" id="quadro-atraso" data-dica="Parcelas em aberto vencidas antes de hoje, de qualquer data (fora do período escolhido). Clique para ver só elas.">
+            <span class="contador-rotulo">Em atraso</span><span class="contador-valor" id="valor-atraso">–</span><span class="contador-qtd" id="qtd-atraso"></span>
+          </button>
+        </div>
+
+        <div class="area-lista">
+          <div class="cartao">
+            <div class="barra-atraso" id="barra-atraso" role="status" hidden>
+              <span>Mostrando só o que está <strong>em atraso</strong> (vencido antes de hoje e ainda em aberto).</span>
+              <button type="button" class="botao botao-pequeno" id="botao-sair-atraso" data-dica="Volta para a agenda do período. Atalho: Esc.">‹ Voltar ao período</button>
+            </div>
+            <div class="rolagem">
+              <table class="tabela tabela-larga tabela-lancamentos tabela-agenda" id="tabela-agenda">
+                <thead>
+                  <tr>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Parceiro</th>
+                    <th scope="col">Histórico / documento</th>
+                    <th scope="col">Parcela</th>
+                    <th scope="col">Centro de custo</th>
+                    <th scope="col" class="numero">Valor</th>
+                    <th scope="col">Situação</th>
+                  </tr>
+                </thead>
+                <tbody id="linhas"></tbody>
+              </table>
+            </div>
+            <div class="rodape-lista">
+              <span id="contagem" aria-live="polite"></span>
+              <span class="suave" id="atualizada"></span>
+              <span class="paginacao" id="paginacao" hidden>
+                <button type="button" class="botao" id="pagina-anterior" data-dica="Página anterior.">‹ Anterior</button>
+                <span id="pagina-texto"></span>
+                <button type="button" class="botao" id="pagina-proxima" data-dica="Próxima página.">Próxima ›</button>
+              </span>
+            </div>
+          </div>
+          <aside class="cartao ajuda" id="ajuda" hidden></aside>
+        </div>
       </div>
     </main>
   </div>

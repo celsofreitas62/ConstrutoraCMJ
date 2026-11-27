@@ -24,6 +24,8 @@
                só com a ação BAIXAR, lançamento ativo e que não é previsão.
                04g3b: botão Estornar em cada baixa da aba Baixas (ação ESTORNAR;
                janela Baixa.estornar com data, motivo e prévia).
+               04h2: ?voltar=/ (vem da agenda da tela inicial): o Voltar, o
+               Esc e o fim de uma exclusão devolvem à agenda, no mesmo ponto.
    ========================================================================== */
 'use strict';
 
@@ -33,7 +35,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tipo = (Util.parametro('tipo') || 'P').toUpperCase() === 'R' ? 'R' : 'P';
   const pagar = tipo === 'P';
   const item = pagar ? 'FIN_PAGAR' : 'FIN_RECEBER';
-  const lista = '/fin/lancamentos.html?tipo=' + tipo;
+  // Endereço de volta: só caminhos do próprio sistema (começa com "/" e não com "//").
+  const voltar = Util.parametro('voltar');
+  const voltarValido = voltar && voltar.startsWith('/') && !voltar.startsWith('//') ? voltar : null;
+  const lista = voltarValido || '/fin/lancamentos.html?tipo=' + tipo;
   const nomeTipo = pagar ? 'conta a pagar' : 'conta a receber';
   const rotuloParceiro = pagar ? 'Fornecedor' : 'Cliente';
   document.body.dataset.menu = 'fin/lancamentos.html?tipo=' + tipo;
@@ -42,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const { acoes } = await Layout.iniciar();
   const $ = (id) => document.getElementById(id);
   $('link-voltar').href = lista;
-  $('link-voltar').textContent = '‹ Voltar para ' + (pagar ? 'Contas a pagar' : 'Contas a receber');
+  $('link-voltar').textContent = '‹ Voltar para ' + (voltarValido ? (voltarValido === '/' || voltarValido === '/index.html' ? 'a agenda' : 'a tela anterior') : (pagar ? 'Contas a pagar' : 'Contas a receber'));
   $('rotulo-parceiro').textContent = rotuloParceiro + ' (parceiro) *';
   $('coluna-baixado').textContent = pagar ? 'Pago' : 'Recebido';
 
@@ -409,7 +414,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     quadroPendencias.carregar();
   }
 
-  const fichaUrl = (id) => '/fin/lancamento.html?tipo=' + tipo + '&id=' + encodeURIComponent(id);
+  const fichaUrl = (id) => '/fin/lancamento.html?tipo=' + tipo + '&id=' + encodeURIComponent(id) + (voltarValido ? '&voltar=' + encodeURIComponent(voltarValido) : '');
 
   // ---------- Carga ----------
   async function preencher(l, copia) {

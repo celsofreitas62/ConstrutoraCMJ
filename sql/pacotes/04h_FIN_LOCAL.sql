@@ -470,7 +470,9 @@ GO
                 inicial e P06 tema, aprovados pelo Celso em 27/11/2026, etapa
                 04h) e os parâmetros com o padrão de cada uma (nível 1: os dois
                 administradores mudam pela tela Parâmetros de uso). Também o
-                período máximo da agenda (AGENDA_PERIODO_MAX_DIAS).
+                período máximo da agenda (AGENDA_PERIODO_MAX_DIAS) e de quanto
+                em quanto tempo a tela inicial se atualiza sozinha
+                (AGENDA_ATUALIZAR_MIN).
                 Parâmetros: só insere o que falta (regra 39); NIVEL_MINIMO,
                 OPCOES e DESCRICAO são da instalação e são acertados sempre.
                 Catálogo: insere o que falta e acerta nome, descrição, grupo,
@@ -478,6 +480,7 @@ GO
                 usuário); as escolhas dos usuários ficam intocadas.
   Changelog:
     v1.0 (27/11/2026) - Criação (etapa 04h1).
+    v1.1 (27/11/2026) - AGENDA_ATUALIZAR_MIN (sugestão aprovada na 04h2).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -508,6 +511,8 @@ VALUES
      N'Tela inicial: mostra o saldo previsto acumulado (saldo de hoje nas contas mais o que vence até cada dia). Só para quem pode ver os totais.', 'FIN', N''),
     ('AGENDA_PERIODO_MAX_DIAS', N'3700', 'INTEIRO',
      N'Tela inicial: período mais longo que a agenda aceita, em dias (3700 = cerca de 10 anos).', 'FIN', N''),
+    ('AGENDA_ATUALIZAR_MIN', N'5', 'INTEIRO',
+     N'Tela inicial: de quantos em quantos minutos ela se atualiza sozinha enquanto está aberta (0 = não atualiza sozinha).', 'FIN', N''),
     ('TEMA_PADRAO', N'SISTEMA', 'TEXTO',
      N'Tema das telas para quem não escolheu nas Preferências: seguir o Windows (claro ou escuro), sempre claro ou sempre escuro.', 'SIS', N'SISTEMA;CLARO;ESCURO');
 
@@ -936,6 +941,8 @@ GO
                 Permissão: VER em FIN_AGENDA. Padrão "Listar": THROW 50001.
   Changelog:
     v1.0 (27/11/2026) - Criação (etapa 04h1).
+    v1.1 (27/11/2026) - PERIODO_MAX_DIAS e ATUALIZAR_MINUTOS (parâmetro
+                        AGENDA_ATUALIZAR_MIN), para a tela (etapa 04h2).
 
   Homologação (LOCAL):
     -- EXEC FIN.FIN_Agenda_Resumo @IdUsuario = 2, @De = '2026-11-01', @Ate = '2026-11-30';
@@ -968,6 +975,7 @@ BEGIN
     DECLARE @AtrasoQtdP   INT = 0, @AtrasoQtdR INT = 0;
     DECLARE @AtrasoD      DECIMAL(18,2) = 0, @AtrasoC DECIMAL(18,2) = 0;
     DECLARE @Ontem        DATE;
+    DECLARE @AtualizarMin INT;
 
     BEGIN TRY
         IF SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_AGENDA', 'VER') = 0
@@ -982,6 +990,9 @@ BEGIN
         IF @MaxDias NOT BETWEEN 31 AND 7400 SET @MaxDias = 3700;
         IF DATEDIFF(DAY, @De, @Ate) + 1 > @MaxDias
             THROW 50001, N'Período longo demais para a agenda. Escolha um período menor.', 1;
+
+        SET @AtualizarMin = ISNULL(SIS.fn_SIS_Parametro_Inteiro('AGENDA_ATUALIZAR_MIN'), 5);
+        IF @AtualizarMin NOT BETWEEN 0 AND 240 SET @AtualizarMin = 5;
 
         SET @EtapaAtual = 'Permissões e preferências';
         SET @VerPagar   = SIS.fn_SIS_Tem_Permissao(@IdUsuario, 'FIN_PAGAR', 'VER');
@@ -1025,6 +1036,8 @@ BEGIN
         SELECT @De                                                                          AS DE,
                @Ate                                                                         AS ATE,
                @Hoje                                                                        AS HOJE,
+               @MaxDias                                                                     AS PERIODO_MAX_DIAS,
+               @AtualizarMin                                                                AS ATUALIZAR_MINUTOS,
                @VerPagar                                                                    AS VER_PAGAR,
                @VerReceber                                                                  AS VER_RECEBER,
                @VerTotais                                                                   AS VER_TOTAIS,

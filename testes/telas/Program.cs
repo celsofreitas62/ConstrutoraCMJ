@@ -1034,6 +1034,118 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     if (motivo13.Length > 0) await Foto("banco_caixa");
 }
 
+// ---------------------------------------------------------------- 14) Tela inicial e Preferências (04h2, 27/11/2026)
+// Agenda financeira: trocar o período (Mês, ▶, Hoje), conferir o D da barra com o /api/fin/agenda/resumo (ou "—"
+// sem a permissão Ver totais), abrir um lançamento pela lista e voltar pelo Voltar da ficha (mesmo período);
+// Minhas preferências: mudar "Período ao abrir" > Gravar? > Concluído, conferir pela API, Voltar ao padrão > gravar.
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    var relogio14 = Stopwatch.StartNew();
+    var motivo14 = "";
+    var br = new System.Globalization.CultureInfo("pt-BR");
+    try
+    {
+        async Task<string> Gravar14(string acao)
+        {
+            await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); return d && d.querySelector('h2').textContent === 'Gravar?'; }", null, new() { Timeout = 10000 });
+            await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+            try { await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); const h = d && d.querySelector('h2'); return h && h.textContent === 'Concluído'; }", null, new() { Timeout = 15000 }); }
+            catch (TimeoutException) { var j = await JanelaAberta(); return acao + ": nao chegou ao Concluido" + (j is null ? "" : " (" + j.Value.Titulo + ": " + j.Value.Texto + ")"); }
+            await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            return "";
+        }
+        async Task EsperarLista14() =>
+            await pagina.WaitForFunctionAsync("() => { const c = document.getElementById('contagem'); return c && c.textContent && c.textContent !== 'Buscando…'; }", null, new() { Timeout = 20000 });
+
+        // a) período
+        await pagina.GotoAsync(endereco + "/", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+        if (await pagina.Locator("#agenda").IsHiddenAsync()) motivo14 = "o usuario de teste nao ve a agenda (VER em FIN_AGENDA)";
+        if (motivo14.Length == 0)
+        {
+            await pagina.Locator("#periodo").SelectOptionAsync("MES");
+            await EsperarLista14();
+            var mes = (await pagina.Locator("#periodo-texto").InnerTextAsync()).Trim();
+            var esperado = DateTime.Today.ToString("MMMM 'de' yyyy", br);
+            if (mes != esperado) motivo14 = "periodo: esperava '" + esperado + "', veio '" + mes + "'";
+            else
+            {
+                await pagina.Locator("#periodo-proximo").ClickAsync();
+                await EsperarLista14();
+                var prox = (await pagina.Locator("#periodo-texto").InnerTextAsync()).Trim();
+                if (prox != DateTime.Today.AddMonths(1).ToString("MMMM 'de' yyyy", br)) motivo14 = "seta proximo: veio '" + prox + "'";
+                await pagina.Locator("#periodo-hoje").ClickAsync();
+                await EsperarLista14();
+            }
+        }
+        // b) barra D contra a API
+        if (motivo14.Length == 0)
+        {
+            var ini = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            var r = (await Api("/api/fin/agenda/resumo?de=" + ini.ToString("yyyy-MM-dd") + "&ate=" + ini.AddMonths(1).AddDays(-1).ToString("yyyy-MM-dd"))).GetProperty("dados");
+            var tela = (await pagina.Locator("#valor-d").InnerTextAsync()).Trim();
+            var td = r.GetProperty("TOTAL_D");
+            var esperadoD = td.ValueKind == JsonValueKind.Null ? "—" : td.GetDecimal().ToString("N2", br);
+            if (r.GetProperty("VER_PAGAR").GetBoolean() && tela != esperadoD) motivo14 = "barra D: tela '" + tela + "', API '" + esperadoD + "'";
+        }
+        // c) abrir um lançamento e voltar
+        if (motivo14.Length == 0)
+        {
+            var antes = (await pagina.Locator("#periodo-texto").InnerTextAsync()).Trim();
+            var linhas = pagina.Locator("#linhas tr.clicavel");
+            if (await linhas.CountAsync() == 0 && await pagina.Locator("#quadro-atraso").IsVisibleAsync())
+            {
+                await pagina.Locator("#quadro-atraso").ClickAsync();
+                await EsperarLista14();
+            }
+            if (await linhas.CountAsync() > 0)
+            {
+                await linhas.First.ClickAsync();
+                await pagina.WaitForURLAsync(u => u.Contains("/fin/lancamento.html") && u.Contains("voltar=%2F"), new() { Timeout = 15000 });
+                await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                if (!(await pagina.Locator("#link-voltar").InnerTextAsync()).Contains("agenda")) motivo14 = "ficha: o link nao diz 'Voltar para a agenda'";
+                await pagina.Locator("#botao-voltar").ClickAsync();
+                await pagina.WaitForURLAsync(u => new Uri(u).AbsolutePath == "/", new() { Timeout = 15000 });
+                await EsperarLista14();
+                var depois = (await pagina.Locator("#periodo-texto").InnerTextAsync()).Trim();
+                if (motivo14.Length == 0 && depois != antes) motivo14 = "voltar: o periodo mudou ('" + antes + "' > '" + depois + "')";
+            }
+            if (await pagina.Locator("#barra-atraso").IsVisibleAsync()) await pagina.Locator("#botao-sair-atraso").ClickAsync();
+        }
+        // d) preferências
+        if (motivo14.Length == 0)
+        {
+            await pagina.Locator("a.topo-preferencias").ClickAsync();
+            await pagina.WaitForURLAsync(u => u.Contains("/sis/preferencias.html"), new() { Timeout = 15000 });
+            await pagina.Locator("#pref-INICIO_PERIODO").WaitForAsync(new() { Timeout = 10000 });
+            var atual = await pagina.Locator("#pref-INICIO_PERIODO").InputValueAsync();
+            var novo = atual == "SEMANA" ? "QUINZENA" : "SEMANA";
+            await pagina.Locator("#pref-INICIO_PERIODO").SelectOptionAsync(novo);
+            await pagina.Locator("#botao-gravar").ClickAsync();
+            motivo14 = await Gravar14("preferencia");
+            JsonElement Pref(JsonElement d) => d.GetProperty("dados").EnumerateArray().First(p => p.GetProperty("CODIGO").GetString() == "INICIO_PERIODO");
+            if (motivo14.Length == 0)
+            {
+                var p = Pref(await Api("/api/sis/preferencias"));
+                if (!p.GetProperty("PERSONALIZADA").GetBoolean() || p.GetProperty("VALOR").GetString() != novo) motivo14 = "preferencia: nao gravou " + novo;
+            }
+            if (motivo14.Length == 0)
+            {
+                await pagina.Locator(".linha-preferencia", new() { Has = pagina.Locator("#pref-INICIO_PERIODO") }).Locator(".botao", new() { HasText = "Voltar ao padrão" }).ClickAsync();
+                await pagina.Locator("#botao-gravar").ClickAsync();
+                motivo14 = await Gravar14("voltar ao padrao");
+                if (motivo14.Length == 0 && Pref(await Api("/api/sis/preferencias")).GetProperty("PERSONALIZADA").GetBoolean()) motivo14 = "voltar ao padrao: a preferencia continuou personalizada";
+            }
+        }
+        if (motivo14.Length == 0 && errosJs.Count > 0) motivo14 = "erro de JavaScript: " + errosJs[0];
+        if (motivo14.Length == 0 && errosApi.Count > 0) motivo14 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo14 = erro.Message.Split('\n')[0]; }
+    Linha(motivo14.Length == 0, "tela inicial e preferencias: periodo, barra D, abrir lancamento e voltar, gravar e voltar ao padrao (" + relogio14.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo14);
+    if (motivo14.Length > 0) await Foto("inicio_preferencias");
+}
+
 // ---------------------------------------------------------------- Fim
 try { await pagina.EvaluateAsync("() => fetch('/api/logout', { method: 'POST', headers: { 'X-CMJ': '1' } })"); } catch { }
 Console.WriteLine(new string('=', 70));

@@ -7,7 +7,9 @@
                 inicial e P06 tema, aprovados pelo Celso em 27/11/2026, etapa
                 04h) e os parâmetros com o padrão de cada uma (nível 1: os dois
                 administradores mudam pela tela Parâmetros de uso). Também o
-                período máximo da agenda (AGENDA_PERIODO_MAX_DIAS).
+                período máximo da agenda (AGENDA_PERIODO_MAX_DIAS) e de quanto
+                em quanto tempo a tela inicial se atualiza sozinha
+                (AGENDA_ATUALIZAR_MIN).
                 Parâmetros: só insere o que falta (regra 39); NIVEL_MINIMO,
                 OPCOES e DESCRICAO são da instalação e são acertados sempre.
                 Catálogo: insere o que falta e acerta nome, descrição, grupo,
@@ -15,6 +17,7 @@
                 usuário); as escolhas dos usuários ficam intocadas.
   Changelog:
     v1.0 (27/11/2026) - Criação (etapa 04h1).
+    v1.1 (27/11/2026) - AGENDA_ATUALIZAR_MIN (sugestão aprovada na 04h2).
 *******************************************************************************/
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -45,6 +48,8 @@ VALUES
      N'Tela inicial: mostra o saldo previsto acumulado (saldo de hoje nas contas mais o que vence até cada dia). Só para quem pode ver os totais.', 'FIN', N''),
     ('AGENDA_PERIODO_MAX_DIAS', N'3700', 'INTEIRO',
      N'Tela inicial: período mais longo que a agenda aceita, em dias (3700 = cerca de 10 anos).', 'FIN', N''),
+    ('AGENDA_ATUALIZAR_MIN', N'5', 'INTEIRO',
+     N'Tela inicial: de quantos em quantos minutos ela se atualiza sozinha enquanto está aberta (0 = não atualiza sozinha).', 'FIN', N''),
     ('TEMA_PADRAO', N'SISTEMA', 'TEXTO',
      N'Tema das telas para quem não escolheu nas Preferências: seguir o Windows (claro ou escuro), sempre claro ou sempre escuro.', 'SIS', N'SISTEMA;CLARO;ESCURO');
 

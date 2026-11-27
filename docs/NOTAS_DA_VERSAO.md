@@ -4,6 +4,15 @@ Fonte única das notas de cada versão (o que foi corrigido e o que é novo), em
 O `api\publicar.cmd` copia a seção da versão do pacote para `NOTAS_DA_VERSAO.txt`; o `atualizar.cmd` mostra e grava no banco (`SIS.Atualizacao`), base da futura tela **Sistema › Versões** (pedido P22).
 **Regra**: toda versão nova ganha a sua seção aqui **antes** de publicar (o publicar recusa pacote sem nota). Título da seção = versão do banco (`## 1.8 (22/11/2026)`). Itens começam por **Novo:**, **Melhoria:** ou **Correção:**.
 
+## 2.7 (em preparação)
+- Novo: **tela inicial = Agenda financeira**: o que vence a pagar e a receber no período (semana, quinzena, mês, bimestre, trimestre, quadrimestre, ano, vários anos ou datas escolhidas), com as setas para andar de período e o botão Hoje. A barra mostra **D** (a pagar, em vermelho), **C** (a receber, em azul), o **Saldo** e o **saldo previsto** no fim do período.
+- Novo: quadro **Em atraso** (o que venceu e não foi pago ou recebido, de qualquer data): clique para ver só ele.
+- Novo: lista da agenda por dia, com o dia de hoje em destaque e os totais de cada dia; clique na linha para abrir o lançamento, e o Voltar da ficha traz de volta ao mesmo ponto da agenda. Exportar Excel de todo o período.
+- Novo: **atalhos rápidos** na tela inicial (+ conta a pagar, + conta a receber, extrato, fechamento de caixa, transferência), só para quem tem a permissão.
+- Novo: permissão **Ver totais** da agenda: sem ela, a pessoa vê as contas uma a uma, mas não os valores somados.
+- Novo: **Minhas preferências** (botão ⚙ no alto de qualquer tela): cada pessoa escolhe como a tela inicial abre (período, mostrar também o já pago, saldo previsto). O padrão da empresa fica em Parâmetros de uso.
+- Melhoria: a agenda lembra neste computador o último período usado e se atualiza sozinha de tempos em tempos enquanto está aberta.
+
 ## 2.6 (27/11/2026)
 - Novo: **pagar e receber (baixa)**: na ficha do lançamento, o botão Pagar/Receber em cada parcela ou "Baixar marcadas"; na lista de contas, marque várias parcelas (até de parceiros diferentes) e baixe tudo de uma vez. A janela já sugere a conta, a forma de pagamento, os juros e a multa dos atrasados (com carência) e aceita desconto, tarifa e pagamento parcial.
 - Novo: proteções na baixa: data fora do período liberado, mês fechado, caixa já fechado, pendência que bloqueia o pagamento e desconto acima do limite só passam com a permissão certa e um motivo, que fica registrado.

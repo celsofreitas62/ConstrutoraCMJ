@@ -3,6 +3,6 @@
   "endereco": "https://localhost:5443",
   "login": "claude.teste",
   "senha": "ZpQftKCU%MF1JSyyuktTcP",
-  "fichasSemMenu": [ "cad/pessoa.html", "sis/usuario.html", "sis/perfil.html", "cad/empresa.html", "cad/centro-custo.html", "banco/conta.html", "fin/lancamento.html?tipo=P", "fin/lancamento.html?tipo=R" ],
+  "fichasSemMenu": [ "cad/pessoa.html", "sis/usuario.html", "sis/perfil.html", "cad/empresa.html", "cad/centro-custo.html", "banco/conta.html", "fin/lancamento.html?tipo=P", "fin/lancamento.html?tipo=R", "sis/preferencias.html" ],
   "loginGravacao": "teste.automatico"
 }

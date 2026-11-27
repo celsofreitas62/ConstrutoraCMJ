@@ -566,3 +566,41 @@ dialog.janela::backdrop { background: rgba(30, 30, 30, .55); }
 .tabela-caixa .sub { display: block; font-size: 11px; color: var(--texto-suave); margin-top: 2px; }
 .tabela-caixa tr.linha-estornada td { color: var(--texto-suave); }
 .secao-fechar .janela-botoes { margin: 0; }
+
+/* 04h2: tela inicial = agenda financeira (P03). D em vermelho, C em azul, S pelo sinal. */
+:root { --cor-debito: #C0392B; --cor-credito: #1F5FA8; }
+.valor-d { color: var(--cor-debito); }
+.valor-c { color: var(--cor-credito); }
+.atalhos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.periodo-agenda { margin-bottom: 14px; }
+.campo-curto { flex: 0 0 90px; }
+.navegar-periodo { display: flex; align-items: center; gap: 8px; flex: 2 1 320px; }
+.navegar-periodo #periodo-texto { min-width: 190px; text-align: center; font-size: 15px; }
+.contador-debito { border-left-color: var(--cor-debito); }
+.contador-debito .contador-valor { color: var(--cor-debito); }
+.contador-credito { border-left-color: var(--cor-credito); }
+.contador-credito .contador-valor { color: var(--cor-credito); }
+.contador-saldo { border-left-color: #6F6F6C; }
+.contador-previsto { border-left-color: #6B4FA0; }
+.contador.sem-totais .contador-valor { color: var(--texto-suave); }
+.barra-atraso { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 14px; background: #FDE7E4; border-bottom: 1px solid var(--borda); font-size: 13px; }
+.barra-atraso > span { margin-right: auto; }
+.tabela-agenda tr.linha-dia td { padding: 8px 14px; background: #F7F7F5; border-top: 1px solid var(--borda); font-weight: 600; }
+.tabela-agenda tr.linha-dia.dia-hoje td { background: var(--cor-principal-clara); box-shadow: inset 4px 0 0 var(--cor-principal); }
+.tabela-agenda tr.linha-dia.dia-passado .dia-titulo { color: var(--texto-suave); }
+.dia-totais { float: right; display: inline-flex; flex-wrap: wrap; gap: 16px; font-variant-numeric: tabular-nums; }
+.dia-previsto { font-weight: 400; }
+.etiqueta-hoje { margin-left: 8px; padding: 1px 8px; border-radius: 10px; background: var(--cor-principal); color: #FFFFFF; font-size: 11px; vertical-align: 1px; }
+.tipo-agenda { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.tipo-agenda.tipo-p { background: #FBEAE8; color: var(--cor-debito); }
+.tipo-agenda.tipo-r { background: #E7EFFA; color: var(--cor-credito); }
+.tabela-agenda tr.linha-previsao td { font-style: italic; }
+.tabela-agenda tr.linha-projecao td { opacity: .75; background: #F6F4FB; cursor: default; }
+/* 04h2: Minhas preferências */
+.topo-preferencias { min-width: 36px; padding: 0 8px; font-size: 17px; line-height: 1; justify-content: center; }
+.form-preferencias { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.grupo-preferencias { border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 16px 16px; margin: 0 0 14px; display: flex; flex-direction: column; gap: 14px; }
+.grupo-preferencias legend { padding: 0 6px; font-weight: 600; }
+.linha-preferencia { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.linha-preferencia .campo { flex: 0 1 340px; }
+.info-preferencia { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-height: 36px; font-size: 13px; }
