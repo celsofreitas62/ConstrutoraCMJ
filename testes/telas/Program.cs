@@ -27,6 +27,9 @@
 //                11) Movimentação do Parceiro (resumo e filtro pelo contador) e
 //                   Parâmetros de uso (prévia do efeito, motivo ao afrouxar uma
 //                   regra, volta ao valor de antes) (04f2d).
+//                12) baixa e estorno (04g3d): receber 0,10 do lançamento fixo de
+//                   teste pela janela de baixa, estornar pela aba Baixas e
+//                   marcar a parcela na lista ("Baixar marcadas" abre a janela).
 //              Resultado: uma linha por conferência, "RESULTADO: OK" ou
 //              "RESULTADO: FALHAS (n)" no fim; código de saída = falhas.
 //              Foto da tela em cada falha em %LOCALAPPDATA%\SistemaCMJ\testes_telas.
@@ -718,6 +721,125 @@ foreach (var (rota, oque) in new[] { ("/api/cad/consulta/cep/37701000", "consult
     catch (Exception erro) { motivo11 = erro.Message.Split('\n')[0]; }
     Linha(motivo11.Length == 0, "movimentacao do parceiro e parametros de uso: previa do efeito, motivo ao afrouxar (" + relogio11.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo11);
     if (motivo11.Length > 0) await Foto("movimentacao_parametros");
+}
+
+// ---------------------------------------------------------------- 12) Baixa e estorno (04g3d, 27/11/2026)
+// Conta a receber fixa do LOCAL (sql/local/04g3_Lancamento_Teste_Telas_LOCAL.sql): na aba Parcelas,
+// Receber > janela de baixa (conta e forma já vêm escolhidas) > valor 0,10 > Receber > Gravar? >
+// avisos, se vierem > Concluído > saldo 999,90; aba Baixas > Estornar > data e motivo, prévia >
+// Estornar? > Concluído > saldo volta a 1.000,00. Na lista (visão por parcela), marcar a parcela
+// mostra a barra "1 parcela marcada" e "Baixar marcadas" abre a mesma janela (fecha sem gravar).
+{
+    errosJs.Clear();
+    errosApi.Clear();
+    var relogio12 = Stopwatch.StartNew();
+    var motivo12 = "";
+    try
+    {
+        var busca = await Api("/api/fin/lancamentos?tipo=R&visao=LANCAMENTO&situacao=&texto=" + Uri.EscapeDataString("Teste automatico das telas - baixa"));
+        long idLanc = 0;
+        if (busca.TryGetProperty("dados", out var dadosBusca) && dadosBusca.ValueKind == JsonValueKind.Array && dadosBusca.GetArrayLength() > 0)
+            idLanc = dadosBusca[0].GetProperty("ID_LANCAMENTO").GetInt64();
+        if (idLanc == 0) motivo12 = "lancamento de teste nao encontrado: rodar sql/local/04g3_Lancamento_Teste_Telas_LOCAL.sql";
+
+        async Task<decimal> Saldo()
+        {
+            var l = await Api("/api/fin/lancamentos/" + idLanc);
+            return l.GetProperty("dados").GetProperty("PARCELAS")[0].GetProperty("saldo").GetDecimal();
+        }
+        // conclui a gravação: avisos (Estou ciente + motivo), se vierem, e a janela "Concluído"
+        async Task<string> Concluir(string acao)
+        {
+            await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); const h = d && d.querySelector('h2'); return h && !['Gravar?', 'Estornar?'].includes(h.textContent); }", null, new() { Timeout = 15000 });
+            var avisos = pagina.Locator("dialog.janela-avisos");
+            if (await avisos.CountAsync() > 0)
+            {
+                if ((await avisos.Locator("h2").InnerTextAsync()).Trim() == "Não dá para gravar")
+                    return acao + ": bloqueio: " + (await avisos.Locator(".lista-avisos").InnerTextAsync()).Replace("\n", " | ");
+                var marcas = avisos.Locator(".aviso-aviso input[type=checkbox]");
+                for (var i = 0; i < await marcas.CountAsync(); i++) await marcas.Nth(i).SetCheckedAsync(true);
+                if (await avisos.Locator("textarea").CountAsync() > 0) await avisos.Locator("textarea").FillAsync("Teste automatico das telas");
+                await avisos.Locator(".botao-principal").ClickAsync();
+            }
+            await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); const h = d && d.querySelector('h2'); return h && h.textContent === 'Concluído'; }", null, new() { Timeout = 15000 });
+            await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await pagina.WaitForTimeoutAsync(500);
+            return "";
+        }
+
+        if (motivo12.Length == 0)
+        {
+            var antes = await Saldo();
+            if (antes < 0.10m) motivo12 = "a parcela de teste esta sem saldo (" + antes + ")";
+            else
+            {
+                await pagina.GotoAsync(endereco + "/fin/lancamento.html?tipo=R&id=" + idLanc + "#parcelas", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+                await pagina.Locator("#linhas-parcelas .col-baixar .botao", new() { HasText = "Receber" }).First.ClickAsync();
+                var janela = pagina.Locator("dialog.janela-baixa");
+                await janela.WaitForAsync(new() { Timeout = 10000 });
+                await pagina.WaitForFunctionAsync("() => { const c = document.querySelector('dialog.janela-baixa input.seletor-campo'); return c && c.value.trim().length > 0; }", null, new() { Timeout = 10000 });
+                if (await janela.Locator("#baixa-forma").InputValueAsync() == "") motivo12 = "a forma padrao nao veio escolhida";
+                else
+                {
+                    var valor = janela.Locator("input[aria-label^='Valor quitado']").First;
+                    await valor.FillAsync("0,10");
+                    await valor.DispatchEventAsync("change");
+                    if (!(await janela.Locator(".baixa-rodape").InnerTextAsync()).Contains("0,10")) motivo12 = "o total da janela nao mostrou 0,10";
+                    else
+                    {
+                        await janela.Locator(".janela-botoes .botao-principal").ClickAsync();
+                        await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); return d && d.querySelector('h2').textContent === 'Gravar?'; }", null, new() { Timeout = 5000 });
+                        await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+                        motivo12 = await Concluir("baixa");
+                        if (motivo12.Length == 0 && await Saldo() != antes - 0.10m) motivo12 = "depois da baixa, o saldo nao baixou 0,10";
+                    }
+                }
+            }
+        }
+        if (motivo12.Length == 0)
+        {
+            var antes = await Saldo();
+            await pagina.GotoAsync(endereco + "/fin/lancamento.html?tipo=R&id=" + idLanc + "#baixas", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await pagina.Locator("#linhas-baixas .botao", new() { HasText = "Estornar" }).First.ClickAsync();
+            var janela = pagina.Locator("dialog.janela", new() { HasText = "Estornar baixa" });
+            await janela.WaitForAsync(new() { Timeout = 10000 });
+            await janela.Locator("textarea").FillAsync("Teste automatico das telas");
+            var botao = janela.Locator(".botao-perigo");
+            await pagina.WaitForFunctionAsync("() => { const b = document.querySelector('dialog.janela .botao-perigo'); return b && !b.disabled; }", null, new() { Timeout = 10000 });
+            await botao.ClickAsync();
+            await pagina.WaitForFunctionAsync("() => { const d = [...document.querySelectorAll('dialog.janela')].pop(); return d && d.querySelector('h2').textContent === 'Estornar?'; }", null, new() { Timeout = 5000 });
+            await pagina.Locator("dialog.janela").Last.Locator(".botao-principal").ClickAsync();
+            motivo12 = await Concluir("estorno");
+            if (motivo12.Length == 0 && await Saldo() != antes + 0.10m) motivo12 = "depois do estorno, o saldo nao voltou";
+        }
+        if (motivo12.Length == 0)
+        {
+            await pagina.GotoAsync(endereco + "/fin/lancamentos.html?tipo=R&visao=PARCELA&situacao=", new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 60000 });
+            await pagina.Locator("#texto").FillAsync("Teste automatico das telas - baixa");
+            await pagina.WaitForTimeoutAsync(800);
+            await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            var marca = pagina.Locator("#linhas .col-marcar input[type=checkbox]").First;
+            await marca.CheckAsync();
+            if (!(await pagina.Locator("#marcadas-texto").InnerTextAsync()).StartsWith("1 parcela marcada")) motivo12 = "lista: a barra das marcadas nao mostrou 1 parcela";
+            else if (!pagina.Url.Contains("lancamentos.html")) motivo12 = "lista: marcar a parcela abriu a ficha";
+            else
+            {
+                await pagina.Locator("#botao-baixar").ClickAsync();
+                await pagina.Locator("dialog.janela-baixa").WaitForAsync(new() { Timeout = 10000 });
+                await pagina.Locator("dialog.janela-baixa .janela-botoes .botao", new() { HasText = "Cancelar" }).ClickAsync();
+                await pagina.WaitForTimeoutAsync(300);
+                if (await pagina.Locator("dialog.janela").CountAsync() > 0) motivo12 = "lista: a janela de baixa nao fechou com Cancelar";
+                await pagina.Locator("#botao-limpar").ClickAsync();
+                await pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            }
+        }
+        if (motivo12.Length == 0 && errosJs.Count > 0) motivo12 = "erro de JavaScript: " + errosJs[0];
+        if (motivo12.Length == 0 && errosApi.Count > 0) motivo12 = "API respondeu " + errosApi[0];
+    }
+    catch (Exception erro) { motivo12 = erro.Message.Split('\n')[0]; }
+    Linha(motivo12.Length == 0, "baixa e estorno: receber 0,10 pela ficha, estornar, marcar na lista (" + relogio12.Elapsed.TotalSeconds.ToString("0.0") + " s)", motivo12);
+    if (motivo12.Length > 0) await Foto("fin_baixa");
 }
 
 // ---------------------------------------------------------------- Fim

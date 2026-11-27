@@ -32,16 +32,37 @@
     <li>Alguns tipos <strong>bloqueiam a baixa</strong> (🔒): enquanto estiverem abertos, o lançamento não pode ser pago ou recebido. Uma faixa vermelha avisa no topo da ficha.</li>
     <li>Os tipos manuais são cadastrados em <strong>Financeiro › Tipos de pendência</strong>.</li>
   </ul>
+  <h2>Pagar ou receber (baixa)</h2>
+  <ul>
+    <li>Na aba <strong>Parcelas</strong>, clique em <strong>Pagar</strong> (ou <strong>Receber</strong>) na parcela. Para baixar várias juntas, marque-as na primeira coluna e clique em <strong>Baixar marcadas</strong>. Também dá para marcar parcelas de vários lançamentos direto na lista (visão por parcela).</li>
+    <li>A janela já vem com a <strong>data de hoje</strong>, a <strong>conta</strong> prevista da parcela (ou a conta padrão da empresa) e a <strong>forma</strong> padrão. Confira e troque o que precisar. Documento, tarifa e observação são opcionais; a tarifa sai da conta como um movimento à parte.</li>
+    <li>Em cada parcela: o <strong>valor pago/recebido</strong> vem igual ao saldo; um valor menor faz uma <strong>baixa parcial</strong> (o resto continua em aberto).</li>
+    <li><strong>Juros e multa</strong> por atraso são calculados sozinhos nas contas a receber (nas contas a pagar só se o parâmetro mandar). Ao trocar a data ou o valor, são calculados de novo. Pode mudar à mão: valor diferente do calculado pede confirmação ao gravar.</li>
+    <li><strong>Desconto</strong>: até o limite da empresa (aparece na dica do campo). Acima do limite, só quem tem a permissão "Desconto na baixa acima do limite", informando o motivo.</li>
+    <li>Parcela com <strong>🔒</strong> tem pendência que bloqueia a baixa: resolva a pendência ou peça a quem tem a permissão "Liberar pendência" (que grava com uma justificativa).</li>
+    <li>Ao clicar em <strong>Pagar/Receber</strong> (ou Ctrl+S), o sistema pergunta "Gravar?" e mostra os avisos que precisarem de confirmação (ex.: data antes da emissão, conta de outra empresa, data fora da trava). Não deixa baixar em mês fechado, com o caixa da conta fechado nesse dia, nem acima do saldo.</li>
+    <li>Várias parcelas baixadas juntas viram <strong>um só movimento</strong> na conta, pelo total.</li>
+  </ul>
+  <h2>Estornar uma baixa</h2>
+  <ul>
+    <li>Na aba <strong>Baixas</strong>, clique em <strong>Estornar</strong> na baixa errada. Informe a <strong>data do estorno</strong> (padrão hoje) e o <strong>motivo</strong> (obrigatório).</li>
+    <li>Nada é apagado: a baixa ganha um estorno, a conta ganha o movimento inverso e a parcela volta a ficar em aberto. As duas linhas ficam riscadas na aba Baixas.</li>
+    <li>Se a baixa foi paga junto com outras (pagamento em lote), a janela avisa: todas as baixas daquele pagamento, inclusive de outros lançamentos, e a tarifa são estornadas juntas.</li>
+    <li>Precisa da permissão <strong>Estornar</strong>. Valem as mesmas travas de data, de mês fechado e de caixa fechado, no dia do estorno.</li>
+  </ul>
   <h2>Outras ações</h2>
   <ul>
     <li><strong>Copiar</strong>: abre um lançamento novo com os mesmos dados; a emissão vira hoje e o documento fica em branco. Confira antes de gravar.</li>
     <li><strong>Cancelar lançamento</strong>: tira das contas em aberto e guarda o motivo. Só sem baixa.</li>
     <li><strong>Excluir</strong>: manda para a <strong>Lixeira</strong>, de onde pode ser recuperado até o prazo acabar. Só lançamento digitado na tela, sem baixa e fora de mês fechado.</li>
-    <li>Abas <strong>Baixas</strong> (pagamentos e recebimentos, só consulta), <strong>Anexos</strong> (nota fiscal, boleto, contrato) e <strong>Histórico</strong> (quem mudou o quê, com desfazer).</li>
+    <li>Abas <strong>Baixas</strong> (pagamentos e recebimentos, com o estorno), <strong>Anexos</strong> (nota fiscal, boleto, contrato) e <strong>Histórico</strong> (quem mudou o quê, com desfazer).</li>
   </ul>
   <h2>Cuidados</h2>
   <ul>
     <li>Com baixa, o parceiro, o valor total e as parcelas já baixadas não mudam: estorne a baixa antes.</li>
+    <li>Lançamento de <strong>previsão</strong> não é baixado: tire a marca de previsão e grave antes.</li>
+    <li>Grave as alterações da ficha antes de baixar ou estornar.</li>
+    <li>Juros, multa, carência, cálculo no a pagar, limite de desconto e a forma que já vem escolhida ficam nos <strong>Parâmetros de uso</strong>.</li>
     <li>Lançamento que veio de outra rotina (por exemplo, da migração ou de uma venda) só muda pela rotina de origem.</li>
   </ul>
 </body>
