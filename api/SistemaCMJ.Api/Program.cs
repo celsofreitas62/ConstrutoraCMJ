@@ -141,6 +141,7 @@ CaixaEndpoints.Mapear(app);
 PendenciaEndpoints.Mapear(app);
 ParametroEndpoints.Mapear(app);
 FiltroSalvoEndpoints.Mapear(app);
+AgendaEndpoints.Mapear(app);
 AnexoEndpoints.Mapear(app);
 UsuarioEndpoints.Mapear(app);
 HistoricoEndpoints.Mapear(app);
