@@ -10,7 +10,8 @@
                preferência; "Voltar ao padrão" faz a preferência seguir o
                padrão da empresa (grava vazio). Gravar segue o padrão:
                "Gravar?" › "Concluído". Opções ainda não prontas aparecem
-               marcadas "em breve" (calendário: 04h3; tema: 04h4).
+               marcadas "em breve" (tema: 04h4; o calendário ficou pronto na
+               04h3).
    ========================================================================== */
 'use strict';
 
@@ -20,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const $ = (id) => document.getElementById(id);
 
   // O que ainda não funciona nesta versão (some quando a etapa chegar).
-  const EM_BREVE_OPCAO = { INICIO_VISAO: ['CALENDARIO'] };
+  const EM_BREVE_OPCAO = {};
   const EM_BREVE_PREF = new Set(['TEMA']);
 
   const rotulo = (v) => Rotulos.de('preferencia', v);

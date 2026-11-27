@@ -20,11 +20,17 @@
                fica mais forte nos quadros de maior saída (D; de entrada C
                quando a tela mostra só a receber). Por classe (calor-1 a
                calor-4): a política de segurança não aceita estilo no HTML.
+               Quadro com contas é botão: aoClicar(quadro) abre a lista dele.
+               Dica ao passar o mouse (sugestão aprovada na 04h3): as 3
+               maiores contas do quadro e "e mais N" (AgendaCalendario.dicas,
+               com as linhas do /lista do período).
                Uso: AgendaCalendario.desenhar(alvo, { quadros, modo, ini,
-               fim, resumo, tipo, aoClicar }).
+               fim, resumo, tipo, anos, aoClicar }) e
+               AgendaCalendario.dicas(alvo, linhas).
    Changelog:
      v1.0 (27/11/2026) - Modo DIA (etapa 04h3a).
      v1.1 (27/11/2026) - Modo MES, faixas por ano (etapa 04h3b).
+     v1.2 (27/11/2026) - Clique no quadro e dica das 3 maiores (04h3c).
    ========================================================================== */
 'use strict';
 
@@ -91,11 +97,15 @@ const AgendaCalendario = (() => {
 
   /** Quadro clicável (botão) ou só leitura (div). */
   function quadro(q, m, opcoes, titulo, classeExtra) {
-    const clicavel = typeof opcoes.aoClicar === 'function';
+    const temConta = (m.d && Number(q.QTD_PAGAR) > 0) || (m.c && Number(q.QTD_RECEBER) > 0);
+    const clicavel = typeof opcoes.aoClicar === 'function' && temConta;
     const caixa = Util.el(clicavel ? 'button' : 'div', 'cal-quadro' + (classeExtra ? ' ' + classeExtra : ''));
     if (clicavel) {
       caixa.type = 'button';
-      caixa.addEventListener('click', () => opcoes.aoClicar(q));
+      caixa.addEventListener('click', () => opcoes.aoClicar(q, titulo));
+      caixa.dataset.de = Util.dataIso(q.INICIO);
+      caixa.dataset.ate = Util.dataIso(q.FIM);
+      caixa.dataset.dica = 'Clique para ver a lista deste ' + (opcoes.modo === 'DIA' ? 'dia.' : 'período.');
     }
     const topo = Util.el('div', 'cal-topo');
     topo.append(Util.el('span', 'cal-titulo', titulo));
@@ -224,5 +234,25 @@ const AgendaCalendario = (() => {
     alvo.append(legenda(m));
   }
 
-  return { desenhar };
+  /** Dica de cada quadro: as 3 maiores contas e "e mais N" (linhas do /lista do período). */
+  function dicas(alvo, linhas) {
+    const quadros = [...alvo.querySelectorAll('button.cal-quadro[data-de]')];
+    if (!quadros.length || !linhas || !linhas.length) return;
+    const ordenadas = [...linhas].sort((a, b) => Number(b.VALOR_AGENDA) - Number(a.VALOR_AGENDA));
+    for (const caixa of quadros) {
+      const { de, ate } = caixa.dataset;
+      const doQuadro = ordenadas.filter((l) => { const d = Util.dataIso(l.DT_VENCIMENTO); return d >= de && d <= ate; });
+      if (!doQuadro.length) continue;
+      const texto = ['Maiores contas:'];
+      for (const l of doQuadro.slice(0, 3)) {
+        texto.push((l.TIPO === 'P' ? 'Pagar' : 'Receber') + ' · ' + (l.PESSOA_NOME || '(sem parceiro)') + ' · ' + Util.moeda(l.VALOR_AGENDA)
+          + (de !== ate ? ' (' + Util.data(l.DT_VENCIMENTO).substring(0, 5) + ')' : ''));
+      }
+      if (doQuadro.length > 3) texto.push('e mais ' + (doQuadro.length - 3));
+      texto.push('Clique para ver a lista.');
+      caixa.dataset.dica = texto.join('\n');
+    }
+  }
+
+  return { desenhar, dicas };
 })();
