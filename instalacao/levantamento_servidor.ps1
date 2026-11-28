@@ -2,6 +2,9 @@
   SisCMJ - levantamento do servidor antes da instalacao (SO LEITURA: nao muda nada)
   Autor: Celso de Freitas / Refatorado: Claude
   v1.0 (28/11/2026) - Criacao (etapa P28a), no lugar do questionario do tecnico.
+  v1.1 (28/11/2026) - Ensaio no notebook: suspensao lida pelo valor (Windows em portugues),
+                      DHCP so nas placas ligadas (com gateway), listas de programas e
+                      tarefas so com o que interessa.
   Roda pelo levantamento_servidor.cmd, COMO ADMINISTRADOR (BitLocker e SQL pedem).
   Grava levantamento_<computador>_<data>.txt na mesma pasta: mandar o arquivo para o Claude.
   Confere: Windows, energia, discos e BitLocker, rede (IP fixo, perfil Privada/Publica,
@@ -9,10 +12,13 @@
   saida HTTPS (viacep, brasilapi) e SMTP 587 (smtp.gmail.com), Google Drive,
   acesso remoto (AnyViewer/AnyDesk), antivirus, porta 5443 livre, Windows Update.
   Nenhuma senha e lida nem gravada.
+  -PastaSaida: onde gravar o .txt (padrao: a pasta do script; o executor usa a saida dele).
 #>
+param([string]$PastaSaida = '')
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $Pasta   = Split-Path -Parent $MyInvocation.MyCommand.Path
+if ($PastaSaida) { $Pasta = $PastaSaida }
 $Arquivo = Join-Path $Pasta ('levantamento_' + $env:COMPUTERNAME + '_' + (Get-Date -Format 'yyyyMMdd_HHmm') + '.txt')
 $Linhas  = New-Object System.Collections.Generic.List[string]
 $Alertas = New-Object System.Collections.Generic.List[string]
@@ -25,7 +31,7 @@ function Bloco([string]$Nome, [scriptblock]$Acao) {
     try { & $Acao } catch { Escrever ('  (erro ao conferir: ' + $_.Exception.Message + ')') }
 }
 
-Escrever ('SisCMJ - levantamento do servidor v1.0 - ' + (Get-Date -Format 'dd/MM/yyyy HH:mm'))
+Escrever ('SisCMJ - levantamento do servidor v1.1 - ' + (Get-Date -Format 'dd/MM/yyyy HH:mm'))
 Escrever ('Computador: ' + $env:COMPUTERNAME + '   Usuario: ' + $env:USERDOMAIN + '\' + $env:USERNAME)
 $Admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 Escrever ('Rodando como administrador: ' + $Admin)
@@ -50,9 +56,9 @@ Bloco 'Energia (nunca suspender nem hibernar)' {
     $Plano = (powercfg /getactivescheme) -join ' '
     Escrever ('  ' + $Plano.Trim())
     $Q = powercfg /query SCHEME_CURRENT SUB_SLEEP STANDBYIDLE
-    $Ac = ($Q | Select-String 'Current AC Power Setting Index|Indice da Configuracao de Energia CA Atual|Configura.+CA Atual' | Select-Object -First 1)
-    if ($Ac) {
-        $Seg = [Convert]::ToInt32(($Ac.ToString() -split ':')[-1].Trim(), 16)
+    $Hex = @($Q | Select-String ':\s*0x[0-9a-fA-F]{8}\s*$')
+    if ($Hex.Count -ge 2) {
+        $Seg = [Convert]::ToInt32((($Hex[$Hex.Count - 2].ToString() -split ':')[-1].Trim()), 16)
         Escrever ('  Suspender na tomada depois de: ' + $(if ($Seg -eq 0) { 'nunca' } else { [string]($Seg / 60) + ' minutos' }))
         if ($Seg -ne 0) { Alertar 'O servidor suspende sozinho: mudar para Nunca (item 2 do roteiro).' }
     } else { Escrever '  (nao consegui ler o tempo de suspensao; conferir na mao em Configuracoes > Sistema > Energia)' }
@@ -86,7 +92,7 @@ Bloco 'Rede' {
         $Dhcp = (Get-NetIPInterface -InterfaceIndex $_.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue).Dhcp
         Escrever ('  ' + $_.InterfaceAlias + ': ' + $Ip.IPAddress + '/' + $Ip.PrefixLength + ' | gateway ' + (($_.IPv4DefaultGateway | ForEach-Object { $_.NextHop }) -join ',') + ' | DNS ' + (($_.DNSServer | Where-Object { $_.AddressFamily -eq 2 } | ForEach-Object { $_.ServerAddresses }) -join ','))
         Escrever ('    DHCP: ' + $Dhcp + $(if ($Dhcp -eq 'Enabled') { ' (IP pode mudar, a menos que haja reserva no roteador)' } else { ' (IP fixo no Windows)' }))
-        if ($Dhcp -eq 'Enabled') { Alertar ('IP por DHCP em ' + $_.InterfaceAlias + ': fixar o IP ou confirmar reserva no roteador.') }
+        if ($Dhcp -eq 'Enabled' -and $_.IPv4DefaultGateway -and $Ip.IPAddress -notlike '169.254.*') { Alertar ('IP por DHCP em ' + $_.InterfaceAlias + ': fixar o IP ou confirmar reserva no roteador.') }
     }
     Get-NetConnectionProfile -ErrorAction SilentlyContinue | ForEach-Object {
         Escrever ('  Perfil: ' + $_.InterfaceAlias + ' = ' + $_.NetworkCategory + ' (rede "' + $_.Name + '")')
@@ -122,7 +128,7 @@ Bloco 'SQL Server' {
 
 Bloco '.NET' {
     $Dn = Get-Command dotnet.exe -ErrorAction SilentlyContinue
-    if ($Dn) { (& dotnet --list-runtimes) | ForEach-Object { Escrever ('  ' + $_) } } else { Escrever '  dotnet nao encontrado' }
+    if ($Dn) { (& dotnet --list-runtimes) | Where-Object { $_ -match 'AspNetCore' } | ForEach-Object { Escrever ('  ' + $_) } } else { Escrever '  dotnet nao encontrado' }
     $Hb = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue |
           ForEach-Object { $_.DisplayName } | Where-Object { $_ -match 'Hosting Bundle|ASP\.NET Core.*Runtime' } | Sort-Object -Unique
     $Hb | ForEach-Object { Escrever ('  Instalado: ' + $_) }
@@ -150,12 +156,12 @@ Bloco 'Google Drive (copia do backup)' {
     $Gd = Get-Process -Name 'GoogleDriveFS' -ErrorAction SilentlyContinue
     Escrever ('  Google Drive para computador rodando: ' + [bool]$Gd)
     Get-PSDrive -PSProvider FileSystem | Where-Object { (Test-Path ($_.Root + 'Meu Drive')) -or (Test-Path ($_.Root + 'My Drive')) } | ForEach-Object { Escrever ('  Unidade do Drive: ' + $_.Root) }
-    $Tarefas = Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -match 'Drive|Backup|Sync|SisCMJ' }
+    $Tarefas = Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskPath -notlike '\Microsoft\*' -and $_.TaskName -match 'Drive|Backup|Sync|SisCMJ|SistemaCMJ' }
     $Tarefas | ForEach-Object { Escrever ('  Tarefa agendada: ' + $_.TaskPath + $_.TaskName + ' (' + $_.State + ')') }
 }
 
 Bloco 'Acesso remoto, antivirus e outros programas' {
-    $Nomes = 'AnyViewer|AnyDesk|RustDesk|TeamViewer|Chrome Remote|Google Drive|Access|Office|Kaspersky|Avast|AVG|ESET|Norton|McAfee|Bitdefender|Sophos|Nobreak|SMS|APC|PowerChute|Ragtech|Intelbras|SQL|\.NET|Node'
+    $Nomes = '^(AnyViewer|AnyDesk|RustDesk|TeamViewer|Chrome Remote|Google Drive|Microsoft Access|Microsoft Office|Microsoft 365|LibreOffice|Kaspersky|Avast|AVG|ESET|Norton|McAfee|Bitdefender|Sophos|PowerChute|SMS|Ragtech|Intelbras|APC)'
     Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue |
         Where-Object { $_.DisplayName -match $Nomes } | Sort-Object DisplayName -Unique | ForEach-Object { Escrever ('  ' + $_.DisplayName + ' ' + $_.DisplayVersion) }
     $Av = Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntiVirusProduct -ErrorAction SilentlyContinue

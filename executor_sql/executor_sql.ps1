@@ -40,6 +40,10 @@
                       grava um registro de teste); resultado em saida\testar_telas.txt.
                       Precisa do sistema rodando (api\rodar.cmd). Comando fixo.
                       Testes antes de cada publicacao aprovados pelo Celso (03h/04a).
+  v1.7 (28/11/2026) - Pedido de levantamento: entrada\levantamento.pedido roda
+                      instalacao\levantamento_servidor.ps1 (so leitura; ensaio no notebook,
+                      sem administrador); resultado em saida\levantamento.txt. Comando fixo.
+                      Autorizado pelo Celso (P28a, 28/11/2026).
   Uso: iniciado pela tarefa "SistemaCMJ - Executor SQL" (instalar_executor.cmd).
 #>
 param(
@@ -302,6 +306,20 @@ function Extrair-Access {
     return $Codigo
 }
 
+function Levantamento {
+    $ErrorActionPreference = 'Continue'
+    $Script = Join-Path (Split-Path $Raiz -Parent) 'instalacao\levantamento_servidor.ps1'
+    $Ini = Get-Date
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $Saida = (& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Script -PastaSaida (Join-Path $Raiz 'saida') 2>&1 | ForEach-Object { "$_" }) -join "`r`n"
+    $Codigo = $LASTEXITCODE
+    $Texto = 'SistemaCMJ - levantamento do servidor (executor v1.7)' + "`r`n" + 'Inicio : ' + $Ini.ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + 'Fim    : ' + (Get-Date).ToString('dd/MM/yyyy HH:mm:ss') + "`r`n" + ('=' * 70) + "`r`n" + $Saida + "`r`n" + ('=' * 70) + "`r`n" + 'CODIGO_SAIDA=' + $Codigo + "`r`n"
+    $Destino = Join-Path (Join-Path $Raiz 'saida') 'levantamento.txt'
+    [System.IO.File]::WriteAllText($Destino + '.tmp', $Texto, $Utf8)
+    Move-Item -LiteralPath ($Destino + '.tmp') -Destination $Destino -Force
+    return $Codigo
+}
+
 Gravar-Status 'ativo (iniciado)'
 $UltimoStatus = Get-Date
 $TextoStatus = 'ativo'
@@ -352,6 +370,14 @@ while ($true) {
             Gravar-Status 'testando as telas'
             $C = Testar-Telas
             $TextoStatus = 'ativo; ultimo teste das telas -> ' + $(if ($C -eq 0) { 'OK' } else { 'COM FALHAS' })
+            Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
+        }
+        $Pedido = Join-Path $Entrada 'levantamento.pedido'
+        if (Test-Path -LiteralPath $Pedido) {
+            Remove-Item -LiteralPath $Pedido -Force
+            Gravar-Status 'levantamento do servidor'
+            $C = Levantamento
+            $TextoStatus = 'ativo; ultimo levantamento -> CODIGO ' + $C
             Gravar-Status $TextoStatus; $UltimoStatus = Get-Date
         }
         # Sinal de vida a cada minuto (sem regravar a cada ciclo, para nao encher a sincronizacao do Drive)
