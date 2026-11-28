@@ -46,6 +46,7 @@ Convenções: `[ ]` = marcar quando feito. **⚠️** = ponto em que um erro dá
   - **pré-requisito para marcar o dia (regra de ouro 2)**: o técnico confirmou o **IP fixo** do servidor e que a rede dele fica como **Privada**; e respondeu se o **nome do servidor é achado** pelos outros computadores (senão, instalar com `-EnderecoUsuarios <IP fixo>`, item 6);
   - nobreak (responsabilidade da CMJ);
   - CNPJ da CMJ para a licença: **25.686.528/0001-97** (Construtora Marcílio Judice Ltda.).
+- [ ] **Levantamento do servidor** (desde 28/11/2026, P28a): no servidor, `instalacao\levantamento_servidor.cmd` do pacote (ou da pasta do projeto) › Executar como administrador. Só lê, não muda nada; grava `levantamento_<computador>_<data>.txt` com os pontos de atenção (IP por DHCP, rede Pública, falta de D:, BitLocker, SQL já instalado, .NET, sqlcmd, saída HTTPS e SMTP 587, antivírus). Resolver os pontos antes de marcar o dia.
 - [ ] Forma de levar o pacote ao servidor: pasta do Google Drive ou cópia pela rede/acesso remoto (pen drive não é usado).
 
 ## 2. Preparar o servidor (Windows 11 Pro; Ryzen 5, 16 GB, SSD 240 GB + HD 1 TB)
